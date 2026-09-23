@@ -1,15 +1,14 @@
 // Connect Four — gravity grid duel. 1-2 players.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell } from '../js/game-shell.js';
-import { nextPlayer, findWin, winLines, emptyBoard } from '../js/game-utils.js';
+import { createShell, wireBack } from '../js/game-shell.js';
+import { nextPlayer, emptyBoard } from '../js/game-utils.js';
 import { loadJSON, KEYS } from '../js/storage.js';
 
 const ROWS = 6, COLS = 7;
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: '●' }, 2: { color: '#fbbf24', label: '●' } };
 
 function idx(r, c) { return r * COLS + c; }
-function inBounds(r, c) { return r >= 0 && r < ROWS && c >= 0 && c < COLS; }
 
 function checkWin(board, player) {
   for (let r = 0; r < ROWS; r++) {
@@ -34,7 +33,7 @@ function lowestEmptyRow(board, col) {
 }
 
 export default {
-  render(el, game) {
+  render(el, game, { navigate } = {}) {
     const settings = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
     const playerCount = settings.mode === 'ai' ? 1 : 2;
 
@@ -42,7 +41,9 @@ export default {
       title: 'Connect Four',
       meta: settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first',
     });
-    const { stage, getResetButton } = shell;
+    const { stage, getResetButton, getBackButton } = shell;
+
+    if (navigate) wireBack(shell, navigate);
 
     const board = emptyBoard(ROWS * COLS);
     let current = 1, gameOver = false, winCells = null;
@@ -65,6 +66,7 @@ export default {
         for (let c = 0; c < COLS; c++) {
           const cell = document.createElement('div');
           cell.className = 'c4-cell';
+          cell.setAttribute('aria-label', `Row ${r + 1}, Column ${c + 1}`);
           const v = board[idx(r, c)];
           if (v) {
             cell.textContent = TOKEN_STYLE[v].label;
@@ -75,11 +77,11 @@ export default {
           grid.appendChild(cell);
         }
       }
-      // Column buttons: enable if not full and game not over
       colButtons.innerHTML = '';
       for (let c = 0; c < COLS; c++) {
         const btn = document.createElement('button');
         btn.className = 'c4-col-btn';
+        btn.setAttribute('aria-label', `Drop in column ${c + 1}`);
         btn.textContent = '↓';
         btn.disabled = gameOver || lowestEmptyRow(board, c) === -1;
         btn.addEventListener('click', () => onDrop(c));
@@ -114,6 +116,7 @@ export default {
       if (board.every((v) => v !== 0)) {
         gameOver = true; status.textContent = "It's a draw!";
         if (audio) audio.buzz();
+        if (window.haptics) window.haptics.failure();
         return render();
       }
       current = nextPlayer(current, playerCount);
