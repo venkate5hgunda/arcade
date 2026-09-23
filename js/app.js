@@ -4,13 +4,14 @@
 import { initTheme } from './theme.js';
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 import { ArcadeAudio } from './audio.js';
-import { initHapticsUI } from './haptics.js';
+import { initHapticsUI, haptics } from './haptics.js';
 import { initRouter } from './router.js';
 
 initTheme();
 
 const audio = new ArcadeAudio(loadJSON(KEYS.SOUND_ENABLED, true));
-window.arcadeAudio = audio; // expose for games to call
+window.arcadeAudio = audio;
+window.haptics = haptics;
 
 initHapticsUI(audio);
 initSoundControl(audio);
