@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Arcade — Games for Everyone</title>
+  <meta name="description" content="Arcade: a polished, responsive PWA hosting single/double/group games — air hockey, snakes & ladders, ludo, imposter, dumb charades, and more. Light/dark mode, sound, and haptics.">
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" data-nav="back">
+      <img src="assets/logo.svg" class="brand-icon" alt="" width="32" height="32">
+      <span class="brand-title">Arcade</span>
+    </div>
+    <div class="header-actions">
+      <button id="soundToggle" class="icon-btn" aria-label="Mute sounds" data-tooltip="Mute sounds" type="button">
+        <svg class="icon sound-on-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z"/></svg>
+        <svg class="icon sound-off-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M16.5 12a4.5 4.5 0 0 1-2.5 4.03v-8.06A4.5 4.5 0 0 1 16.5 12zM3 9v6h4l5 5V4L7 9H3zm13.8-2.2-14 14 1.4 1.4 14-14z"/></svg>
+      </button>
+      <button id="hapticsToggle" class="icon-btn" aria-label="Vibration on" data-tooltip="Vibration on" type="button">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v12h12V6H6zm4 2h4v8h-4V8z"/></svg>
+      </button>
+      <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Use dark theme" data-tooltip="Use dark theme" type="button">
+        <svg class="icon sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm9-9a1 1 0 1 1 0 2h-2a1 1 0 1 1 0-2zM5 12a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2zm13.07-6.07a1 1 0 0 1 0 1.42l-1.42 1.41a1 1 0 1 1-1.41-1.41l1.41-1.42a1 1 0 0 1 1.42 0zM7.76 16.24a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 1 1-1.41-1.42l1.41-1.41a1 1 0 0 1 1.42 0zM16.24 7.76a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41l-1.41-1.41a1 1 0 0 1 0-1.41zM6.24 6.24a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41L6.24 7.65a1 1 0 0 1 0-1.41z"/></svg>
+        <svg class="icon moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="game-stage" class="game-stage"></div>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

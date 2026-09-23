@@ -1,0 +1,11 @@
+{
+  "name": "arcade",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Arcade — a polished, responsive PWA hosting single/double/group games (air hockey, snakes & ladders, ludo, imposter, dumb charades, and more). Light/dark mode, sound, and haptics.",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}
