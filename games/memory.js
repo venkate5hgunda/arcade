@@ -1,23 +1,25 @@
 // Memory Match — flip cards, find pairs. 1-2 players.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell } from '../js/game-shell.js';
+import { createShell, wireBack } from '../js/game-shell.js';
 import { nextPlayer, loadJSON, KEYS } from '../js/storage.js';
 
-const SYMBOLS = ['🍎','🍌','🍇','🍓','🥝','🍋','🥭','🍒','🥥','🍍','🥑','🥕','🌽','🥔','🍅','🥦','🧄','🧅','🥜','🌰','🍞','🥐','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣','🥤','🧃','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣'];
+const SYMBOLS = ['🍎','🍌','🍇','🍓','🥝','🍋','🥭','🍒','🥥','🍍','🥑','🥕','🌽','🥔','🍅','🥦','🧄','🧅','🥜','🌰','🍞','🥐','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣'];
 
 export default {
-  render(el, game) {
-    const settings = loadJSON(KEYS.SETTINGS + ':memory', { size: 4 }); // 4x4 = 16 cards (8 pairs)
+  render(el, game, { navigate } = {}) {
+    const settings = loadJSON(KEYS.SETTINGS + ':memory', { size: 4 });
     const size = Math.max(2, Math.min(8, settings.size || 4));
     const total = size * size;
-    if (total % 2 !== 0) { size++; } // ensure even
+    if (total % 2 !== 0) { size++; }
 
     const shell = createShell(el, game, {
       title: 'Memory Match',
       meta: `${size}×${size} grid · ${size * size / 2} pairs`,
     });
-    const { stage, getResetButton } = shell;
+    const { stage, getResetButton, getBackButton } = shell;
+
+    if (navigate) wireBack(shell, navigate);
 
     let cards = [], firstPick = null, lock = false, gameOver = false;
     let current = 1, scores = { 1: 0, 2: 0 }, playerCount = 1;
@@ -53,7 +55,7 @@ export default {
       for (const card of cards) {
         const btn = document.createElement('button');
         btn.className = 'mem-card';
-        btn.dataset.index = card.index;
+        btn.setAttribute('aria-label', `Card ${card.index + 1}`);
         if (card.revealed || card.matched) {
           btn.classList.add('revealed');
           btn.textContent = card.symbol;

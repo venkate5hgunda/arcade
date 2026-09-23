@@ -46,7 +46,8 @@ export async function navigate(gameId, { pushState = true } = {}) {
   }
 
   try {
-    await module.render(stage, game);
+    // Pass navigate so games can wire their back buttons
+    await module.render(stage, game, { navigate });
   } catch (err) {
     console.error(`Failed to mount game ${game.id}`, err);
     stage.innerHTML = renderError(game, err);

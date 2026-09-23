@@ -1,7 +1,7 @@
 // Minesweeper — logic classic. Single player.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell } from '../js/game-shell.js';
+import { createShell, wireBack } from '../js/game-shell.js';
 import { loadJSON, KEYS } from '../js/storage.js';
 
 const DIFFICULTIES = {
@@ -14,7 +14,6 @@ const NEIGHBORS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 
 function makeBoard(rows, cols, mines, safeR, safeC) {
   const cells = Array.from({ length: rows * cols }, () => ({ mine: false, revealed: false, flagged: false, count: 0 }));
-  // Place mines avoiding safe cell and its neighbors
   const safeSet = new Set();
   safeSet.add(safeR * cols + safeC);
   for (const [dr, dc] of NEIGHBORS) {
@@ -27,7 +26,6 @@ function makeBoard(rows, cols, mines, safeR, safeC) {
     [positions[i], positions[j]] = [positions[j], positions[i]];
   }
   for (let i = 0; i < mines; i++) cells[positions[i]].mine = true;
-  // Compute counts
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (cells[r * cols + c].mine) continue;
@@ -61,7 +59,7 @@ function checkWin(board) {
 const COUNT_COLORS = ['', '#38bdf8', '#34d399', '#ff5a3c', '#a855f7', '#fbbf24', '#06b6d4', '#e11d48', '#71717a'];
 
 export default {
-  render(el, game) {
+  render(el, game, { navigate } = {}) {
     const settings = loadJSON(KEYS.SETTINGS + ':minesweeper', { difficulty: 'easy' });
     const { rows, cols, mines } = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.easy;
 
@@ -69,7 +67,9 @@ export default {
       title: 'Minesweeper',
       meta: `${rows}×${cols} · ${mines} mines`,
     });
-    const { stage, getResetButton } = shell;
+    const { stage, getResetButton, getBackButton } = shell;
+
+    if (navigate) wireBack(shell, navigate);
 
     let board = null, gameOver = false, firstClick = true, flags = 0;
 
@@ -89,6 +89,7 @@ export default {
         for (let c = 0; c < cols; c++) {
           const cell = document.createElement('button');
           cell.className = 'ms-cell';
+          cell.setAttribute('aria-label', `Row ${r + 1}, Column ${c + 1}`);
           const b = board[r * cols + c];
           if (b.revealed) {
             cell.classList.add('revealed');
