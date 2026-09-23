@@ -1,6 +1,6 @@
 # Arcade
 
-A polished, responsive **progressive web app (PWA)** hosting a bunch of games —
+A polished, responsive **progressive web app (PWA)** hosting a lot of games —
 single player, two player, board games, and group party games. Built with pure
 HTML/CSS/JS (no build step), installable on desktop and mobile, with light/dark
 mode, sound, and haptics.
