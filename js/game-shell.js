@@ -10,7 +10,7 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
   shell.className = 'game-shell';
   shell.innerHTML = `
     <div class="game-head">
-      <button class="back-btn" type="button" data-action="back">← Back to games</button>
+      <button class="back-btn" type="button" data-nav="back">← Back to games</button>
       <div class="game-head-center">
         <h2 class="game-title">${title || game.name}</h2>
         ${meta ? `<p class="game-meta">${meta}</p>` : ''}
@@ -23,13 +23,13 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
   return {
     root: shell,
     stage: shell.querySelector('.game-stage'),
-    getBackButton: () => shell.querySelector('[data-action="back"]'),
+    getBackButton: () => shell.querySelector('[data-nav="back"]'),
     getResetButton: () => shell.querySelector('[data-action="reset"]'),
   };
 }
 
 // Wire the back button to the router's navigate(null).
 export function wireBack(shell, navigate) {
-  const btn = shell.querySelector('[data-action="back"]');
+  const btn = shell.querySelector('[data-nav="back"]');
   if (btn) btn.addEventListener('click', () => navigate(null));
 }
