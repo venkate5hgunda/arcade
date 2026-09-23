@@ -9,16 +9,16 @@ mode, sound, and haptics.
 
 | Game | Players | Category | Status |
 | --- | --- | --- | --- |
-| Air Hockey | 2 | Action | Coming soon |
-| Snakes & Ladders | 2–4 | Board | Coming soon |
-| Ludo | 2–4 | Board | Coming soon |
-| Imposter | 3–8 | Party | Coming soon |
-| Dumb Charades | 2–8 | Party | Coming soon |
-| Tic-Tac-Toe | 1–2 | Puzzle | Coming soon |
-| Connect Four | 1–2 | Puzzle | Coming soon |
-| Minesweeper | 1 | Puzzle | Coming soon |
-| Memory Match | 1–2 | Puzzle | Coming soon |
-| Hangman | 1–2 | Word | Coming soon |
+| Air Hockey | 2 | Action | ✅ Implemented |
+| Snakes & Ladders | 2–4 | Board | ✅ Implemented |
+| Ludo | 2–4 | Board | ✅ Implemented |
+| Imposter | 3–8 | Party | ✅ Implemented |
+| Dumb Charades | 2–8 | Party | ✅ Implemented |
+| Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
+| Connect Four | 1–2 | Puzzle | ✅ Implemented |
+| Minesweeper | 1 | Puzzle | ✅ Implemented |
+| Memory Match | 1–2 | Puzzle | ✅ Implemented |
+| Hangman | 1–2 | Word | ✅ Implemented |
 
 ## Features
 
@@ -53,6 +53,8 @@ arcade/
     haptics.js          # Vibration wrapper + toggle UI
     game-catalog.js     # single source of truth for all games
     router.js           # hash-based router + landing grid
+    game-shell.js       # shared chrome for game views
+    game-utils.js       # shared board game helpers
   games/
     <game-id>.js        # one module per game: default export { render(el, game) }
   assets/
