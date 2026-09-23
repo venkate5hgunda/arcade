@@ -1,5 +1,7 @@
-// Tic-Tac-Toe. Pure DOM.
-import { createShell } from '../js/game-shell.js';
+// Tic-Tac-Toe — local 1-2 player or vs unbeatable computer (minimax).
+// Pure DOM; listens to arcade:themechange to repaint accents.
+
+import { createShell, wireBack } from '../js/game-shell.js';
 import { nextPlayer, findWin, emptyBoard } from '../js/game-utils.js';
 import { loadJSON, KEYS } from '../js/storage.js';
 
@@ -37,7 +39,7 @@ function aiMove(board, aiToken, humanToken) {
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: 'X' }, 2: { color: '#38bdf8', label: 'O' } };
 
 export default {
-  render(el, game) {
+  render(el, game, { navigate } = {}) {
     const settings = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
     const playerCount = settings.mode === 'ai' ? 1 : 2;
 
@@ -45,7 +47,10 @@ export default {
       title: 'Tic-Tac-Toe',
       meta: settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first',
     });
-    const { stage, getResetButton } = shell;
+    const { stage, getResetButton, getBackButton } = shell;
+
+    // Wire back button to router
+    if (navigate) wireBack(shell, navigate);
 
     const board = emptyBoard(N);
     let current = 1, gameOver = false, winLine = null;
@@ -63,7 +68,8 @@ export default {
       for (let i = 0; i < board.length; i++) {
         const cell = document.createElement('button');
         cell.className = 'ttt-cell';
-        const token = board[i] ? board[i] : '';
+        cell.setAttribute('aria-label', `Cell ${Math.floor(i / 3) + 1},${(i % 3) + 1}`);
+        const token = board[i];
         if (token) {
           cell.textContent = TOKEN_STYLE[token].label;
           cell.style.color = TOKEN_STYLE[token].color;
@@ -101,10 +107,13 @@ export default {
       if (board.every((v) => v !== 0)) {
         gameOver = true; status.textContent = "It's a draw!";
         if (audio) audio.buzz();
+        if (window.haptics) window.haptics.failure();
         return render();
       }
       current = nextPlayer(current, playerCount);
       render();
+
+      // Computer turn
       if (settings.mode === 'ai' && current === 2) {
         status.textContent = 'Computer is thinking…';
         setTimeout(() => {
@@ -112,12 +121,12 @@ export default {
           if (m >= 0) {
             board[m] = 2; current = 1;
             const w = findWin(board, N);
-            if (w) { winLine = w; gameOver = true; status.textContent = 'Computer wins!'; if (audio) audio.chime(); }
-            else if (board.every((v) => v !== 0)) { gameOver = true; status.textContent = "It's a draw!"; }
+            if (w) { winLine = w; gameOver = true; status.textContent = 'Computer wins!'; if (audio) audio.chime(); if (window.haptics) window.haptics.failure(); }
+            else if (board.every((v) => v !== 0)) { gameOver = true; status.textContent = "It's a draw!"; if (audio) audio.buzz(); if (window.haptics) window.haptics.failure(); }
             else status.textContent = "Your turn";
           }
           render();
-        }, 320);
+        }, 400);
       }
     }
 

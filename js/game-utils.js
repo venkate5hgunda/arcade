@@ -6,11 +6,11 @@ export function nextPlayer(current, count = 2, startAt = 1) {
   return ((current - startAt + 1) % count) + startAt;
 }
 
-// Check a 1-D win line: all equal and non-empty.
+// Check a 1-D win line: all equal and non-empty (not 0, '', null, undefined).
 export function lineComplete(cells, ...indices) {
-  const [a] = cells[indices[0]];
-  if (a === '' || a === null || a === undefined) return false;
-  return indices.every((i) => cells[i] === a);
+  const first = cells[indices[0]];
+  if (!first) return false; // 0, '', null, undefined all falsy
+  return indices.every((i) => cells[i] === first);
 }
 
 // All winning line index-triples for an n×n board (rows, cols, both diagonals).
@@ -35,5 +35,5 @@ export function findWin(cells, n) {
   return null;
 }
 
-// Draw a board filled with `fill` (e.g. '' or 0).
-export function emptyBoard(n) { return Array.from({ length: n * n }, () => 0); }
+// Draw a board filled with `fill` (default 0 for empty).
+export function emptyBoard(n, fill = 0) { return Array.from({ length: n * n }, () => fill); }
