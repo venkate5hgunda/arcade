@@ -1,8 +1,8 @@
 // Minesweeper — logic classic. Single player.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const DIFFICULTIES = {
   easy: { rows: 9, cols: 9, mines: 10 },
@@ -52,6 +52,10 @@ function reveal(board, rows, cols, r, c) {
   }
 }
 
+function emptyBoard(rows, cols) {
+  return Array.from({ length: rows * cols }, () => ({ mine: false, revealed: false, flagged: false, count: 0 }));
+}
+
 function checkWin(board) {
   return board.every(c => c.revealed || c.mine);
 }
@@ -59,17 +63,31 @@ function checkWin(board) {
 const COUNT_COLORS = ['', '#38bdf8', '#34d399', '#ff5a3c', '#a855f7', '#fbbf24', '#06b6d4', '#e11d48', '#71717a'];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':minesweeper', { difficulty: 'easy' });
-    const { rows, cols, mines } = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.easy;
-
-    const shell = createShell(el, game, {
-      title: 'Minesweeper',
-      meta: `${rows}×${cols} · ${mines} mines`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Minesweeper', meta: 'Clear the field · terminal edition' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('ms-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':minesweeper', { difficulty: 'easy' });
+    const settings = await renderSetup(stage, {
+      title: '💣 Clear the Field',
+      subtitle: 'Pick a difficulty',
+      themeClass: 'ms-theme',
+      fields: [{
+        key: 'difficulty', label: 'Difficulty',
+        options: [
+          { value: 'easy', label: 'Easy · 9×9' },
+          { value: 'medium', label: 'Medium · 16×16' },
+          { value: 'hard', label: 'Hard · 16×30' },
+        ],
+        default: saved.difficulty,
+      }],
+      startLabel: 'Start Clearing',
+    });
+    saveJSON(KEYS.SETTINGS + ':minesweeper', settings);
+    const { rows, cols, mines } = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.easy;
+    shell.root.querySelector('.game-meta').textContent = `${rows}×${cols} · ${mines} mines`;
 
     let board = null, gameOver = false, firstClick = true, flags = 0;
 
@@ -84,7 +102,6 @@ export default {
 
     function render() {
       grid.innerHTML = '';
-      if (!board) return;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const cell = document.createElement('button');
@@ -157,7 +174,7 @@ export default {
     }
 
     function newGame() {
-      board = null; gameOver = false; firstClick = true; flags = 0; render();
+      board = emptyBoard(rows, cols); gameOver = false; firstClick = true; flags = 0; render();
     }
 
     getResetButton().addEventListener('click', newGame);

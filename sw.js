@@ -17,7 +17,12 @@ const STATIC_ASSETS = [
   './js/haptics.js',
   './js/router.js',
   './js/game-catalog.js',
-  './assets/icons/favicon.svg'
+  './js/game-shell.js',
+  './js/game-utils.js',
+  './assets/favicon.svg',
+  './assets/logo.svg',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -3,9 +3,22 @@
 // Pushes/pops state so the back button and deep links work.
 
 import { loadJSON, saveJSON, KEYS } from './storage.js';
-import { loadGameModule, getGame, GAMES, playerLabel } from './game-catalog.js';
+import { loadGameModule, getGame, GAMES, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
 
 const STAGE_ID = 'game-stage';
+const MAX_RECENT = 6;
+
+function recordRecentlyPlayed(id) {
+  const list = loadJSON(KEYS.RECENT_GAMES, []).filter((e) => e.id !== id);
+  list.unshift({ id, at: Date.now() });
+  saveJSON(KEYS.RECENT_GAMES, list.slice(0, MAX_RECENT));
+}
+
+function getRecentlyPlayed() {
+  return loadJSON(KEYS.RECENT_GAMES, [])
+    .map((entry) => getGame(entry.id))
+    .filter(Boolean);
+}
 
 function parseHash(hash) {
   if (!hash) return null;
@@ -18,7 +31,15 @@ function syncHash(gameId) {
   if (location.hash !== next) location.hash = next;
 }
 
+// Guards against a subtle race: syncHash() sets location.hash, which fires an
+// async 'hashchange' event that re-enters navigate() for the same route while
+// the first call is still awaiting its dynamic import — both calls would
+// otherwise render into the stage and double-mount the game. Each call gets a
+// token; only the most recent one is allowed to touch the DOM after an await.
+let navToken = 0;
+
 export async function navigate(gameId, { pushState = true } = {}) {
+  const myToken = ++navToken;
   const game = gameId ? getGame(gameId) : null;
   const stage = document.getElementById(STAGE_ID);
   if (!stage) return;
@@ -38,6 +59,7 @@ export async function navigate(gameId, { pushState = true } = {}) {
   if (pushState) syncHash(game.id);
 
   const module = await loadGameModule(game.id);
+  if (myToken !== navToken) return; // a newer navigation has since taken over
   saveJSON(KEYS.ACTIVE_GAME, game.id);
 
   if (!module || typeof module.render !== 'function') {
@@ -45,22 +67,27 @@ export async function navigate(gameId, { pushState = true } = {}) {
     return;
   }
 
+  recordRecentlyPlayed(game.id);
+
   try {
     // Pass navigate so games can wire their back buttons
     await module.render(stage, game, { navigate });
   } catch (err) {
+    if (myToken !== navToken) return; // superseded mid-render; newer call owns the stage
     console.error(`Failed to mount game ${game.id}`, err);
     stage.innerHTML = renderError(game, err);
   }
 }
 
-export function renderGameGrid(container) {
-  container.innerHTML = '';
-  const list = document.createElement('div');
-  list.className = 'game-grid';
-  list.setAttribute('role', 'list');
+export function renderGameGrid(container, category = 'All') {
+  renderGameList(container, gamesByCategory(category));
+}
 
-  GAMES.forEach((game) => {
+function renderGameList(container, games) {
+  container.innerHTML = '';
+  container.setAttribute('role', 'list');
+
+  games.forEach((game) => {
     const card = document.createElement('article');
     card.className = 'game-card';
     card.setAttribute('role', 'listitem');
@@ -72,20 +99,49 @@ export function renderGameGrid(container) {
         <span class="game-card-tagline">${game.tagline}</span>
         <span class="game-card-meta">${playerLabel(game)} · ${game.category}</span>
       </button>`;
-    list.appendChild(card);
+    container.appendChild(card);
   });
 
-  container.appendChild(list);
+  if (!games.length) {
+    container.innerHTML = `<p class="game-grid-empty">No games in this category yet.</p>`;
+  }
 }
 
 function wireGrid() {
   const grid = document.querySelector('#game-grid');
+  const tabs = document.querySelector('#category-tabs');
+  const landing = document.querySelector('.landing');
   if (!grid) return;
-  renderGameGrid(grid);
-  grid.addEventListener('click', (e) => {
+
+  let active = 'All';
+  renderGameGrid(grid, active);
+
+  const recentSection = document.querySelector('#recent-section');
+  const recentGrid = document.querySelector('#recent-grid');
+  const recent = getRecentlyPlayed();
+  if (recentSection && recentGrid && recent.length) {
+    recentSection.hidden = false;
+    renderGameList(recentGrid, recent);
+  }
+
+  landing.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-game]');
-    if (btn) navigate(btn.dataset.game);
+    if (!btn) return;
+    window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
+    window.haptics?.select();
+    navigate(btn.dataset.game);
   });
+
+  if (tabs) {
+    tabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-category]');
+      if (!btn) return;
+      active = btn.dataset.category;
+      tabs.querySelectorAll('[data-category]').forEach((b) => b.classList.toggle('active', b === btn));
+      window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
+      renderGameGrid(grid, active);
+    });
+  }
 }
 
 function renderLanding() {
@@ -95,6 +151,13 @@ function renderLanding() {
         <img src="assets/logo.svg" class="landing-logo" alt="" width="72" height="72">
         <h1 class="landing-title">Arcade</h1>
         <p class="landing-sub">Pick a game and start playing. Local multiplayer, group games, and puzzles — all in your browser.</p>
+      </div>
+      <section id="recent-section" class="recent-section" hidden>
+        <h2 class="section-heading">↻ Recently Played</h2>
+        <div id="recent-grid" class="game-grid recent-grid" role="list"></div>
+      </section>
+      <div id="category-tabs" class="category-tabs" role="tablist">
+        ${CATEGORIES.map((c) => `<button type="button" class="category-tab${c === 'All' ? ' active' : ''}" data-category="${c}" role="tab">${c}</button>`).join('')}
       </div>
       <div id="game-grid" class="game-grid" role="list"></div>
     </div>`;

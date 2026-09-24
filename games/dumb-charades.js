@@ -1,8 +1,8 @@
 // Dumb Charades — act it, guess it. 2-8 players in teams.
 // Pure DOM; listens to arcade:themechange.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const WORDS = [
   'MOVIE', 'BRUSH TEETH', 'ELEPHANT', 'SWIMMING', 'COOKING', 'DRIVING',
@@ -20,18 +20,35 @@ const WORDS = [
 ];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: 4, timer: 60 });
-    const playerCount = Math.max(2, Math.min(8, settings.players || 4));
-    const timerDuration = settings.timer || 60;
-
-    const shell = createShell(el, game, {
-      title: 'Dumb Charades',
-      meta: `${playerCount} players · ${timerDuration}s per turn`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Dumb Charades', meta: 'Act it out · guess it fast' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('dc-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: '4', timer: '60' });
+    const settings = await renderSetup(stage, {
+      title: '🎭 Dumb Charades',
+      subtitle: 'Set your team size and turn timer',
+      themeClass: 'dc-theme',
+      fields: [
+        {
+          key: 'players', label: 'Players',
+          options: [2, 4, 6, 8].map(n => ({ value: String(n), label: `${n} Players` })),
+          default: saved.players,
+        },
+        {
+          key: 'timer', label: 'Turn Timer',
+          options: [30, 45, 60, 90].map(n => ({ value: String(n), label: `${n}s` })),
+          default: saved.timer,
+        },
+      ],
+      startLabel: 'Start Acting',
+    });
+    saveJSON(KEYS.SETTINGS + ':dumb-charades', settings);
+    const playerCount = Math.max(2, Math.min(8, parseInt(settings.players, 10) || 4));
+    const timerDuration = parseInt(settings.timer, 10) || 60;
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn`;
 
     let phase = 'setup'; // setup -> acting -> scoring -> next
     let currentTeam = 0, currentActor = 0;
@@ -43,16 +60,13 @@ export default {
     card.className = 'dc-card';
     stage.appendChild(card);
 
-    const timerEl = document.createElement('div');
-    timerEl.className = 'dc-timer';
-    stage.appendChild(timerEl);
-
     const status = document.createElement('div');
     status.className = 'dc-status';
     stage.appendChild(status);
 
     function render() {
       card.innerHTML = '';
+      status.textContent = phase === 'gameover' ? '' : `Team 1: ${score[0]} · Team 2: ${score[1]}`;
       if (phase === 'setup') {
         card.innerHTML = `
           <div class="dc-setup">
@@ -119,10 +133,12 @@ export default {
     }
 
     function startTimer() {
-      timerEl.textContent = `${timeLeft}s`;
+      const display = card.querySelector('.dc-timer-display');
+      if (display) display.textContent = `${timeLeft}s`;
       timer = setInterval(() => {
         timeLeft--;
-        timerEl.textContent = `${timeLeft}s`;
+        const el = card.querySelector('.dc-timer-display');
+        if (el) el.textContent = `${timeLeft}s`;
         if (timeLeft <= 0) {
           clearInterval(timer);
           guessed(false);

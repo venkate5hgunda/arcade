@@ -78,3 +78,94 @@ and theme-aware rendering:
   `games/imposter.js`, `games/dumb-charades.js`
 - `js/game-shell.js`, `js/game-utils.js`
 - Extensive CSS in `css/styles.css` for all game components
+
+## 2026-09-24 — Complete Overhaul: bug fixes, 6 new games, homepage redesign
+
+The UI was broken and no game worked as expected. This pass root-caused every
+bug, rebuilt the setup-flow architecture, gave every game its own visual
+identity, added 6 new games (including a from-scratch legal-move chess
+engine), and redesigned the home screen.
+
+### Root-cause bugs fixed
+- **`wireBack()` crashed every game's render.** It referenced a stale
+  `document.querySelector` instead of the passed-in container, throwing on
+  mount for every single game.
+- **Global flexbox layout bug** in the shared shell broke sizing for nearly
+  every game's board/canvas — the game stage wasn't constrained, so canvases
+  and grids rendered at collapsed or runaway sizes.
+- **Router double-render race**: rapid navigation (or a slow dynamic
+  `import()`) could mount two game instances into the same stage. Fixed with
+  a `navToken` guard so only the latest navigation's render wins.
+- **Blank/missing emoji icons** across the catalog grid (encoding issue) and
+  **missing PWA icons** (`manifest.json` pointed at files that didn't exist).
+- **CSS class collisions** between unrelated games (e.g. two games both using
+  `.card` with conflicting rules) caused visual bleed-through.
+- **Broken service worker paths** — `sw.js` cached the wrong asset paths,
+  so the offline shell silently failed to update.
+- **Wrong imports** in several game modules (copy-paste leftovers from a
+  different game's helper functions).
+- **Dumb Charades' visible countdown never updated** — `startTimer()` was
+  mutating a dead, unused element instead of the one actually shown to
+  the player.
+- **Imposter had no setup screen** — player count was hardcoded and
+  unreachable; sound/haptics were never wired into reveal/vote/result.
+
+### Architecture changes
+- **Every game now opens with a `renderSetup()` step** (players, difficulty,
+  mode, timer, etc.) before play starts, instead of jumping straight into a
+  hardcoded configuration. Choices persist per game via
+  `loadJSON(KEYS.SETTINGS + ':<id>')`.
+- **Per-game "vibe" theming** — each game layers its own accent-color CSS
+  class (e.g. `.chess-vibe`, `.imp-vibe`) on the shared shell so the arcade
+  doesn't read as one reskinned template.
+- **Recently Played** — `js/router.js` now tracks the last 6 distinct games
+  played (`KEYS.RECENT_GAMES`, most-recent-first, deduped) and the landing
+  page surfaces them in a dedicated row above the full catalog
+  (`renderGameList()` shared between both grids).
+- **New joystick logo/favicon** — replaced the old placeholder mark with a
+  custom badge design.
+
+### Games added (6)
+1. **Chess** (`games/chess.js`) — full legal-move engine built from scratch:
+   pseudo-legal generation for all pieces, check detection via
+   `isSquareAttacked`, full legality filtering (simulate + king-safety),
+   castling (with transit-square-safety checks), en passant, pawn promotion
+   (interactive picker), checkmate/stalemate detection, insufficient-material
+   draws, and a heuristic AI opponent (material/check/center-square scoring +
+   randomization). Board flips per-move in pass-and-play so it's always shown
+   from the mover's perspective. Does not implement draw-by-repetition or the
+   50-move rule (deliberate scope limit).
+2. **Rock Paper Scissors** (`games/rps.js`) — vs. computer or 2P pass-and-play,
+   best-of-N.
+3. **2048** (`games/2048.js`) — slide/merge/rotate logic, keyboard + touch-swipe
+   input, score/best-score persistence, win/game-over detection.
+4. **Simon Says** (`games/simon.js`) — color-sequence memory game, increasing
+   sequence length, speed setting, high-score persistence.
+5. **Word Scramble** (`games/word-scramble.js`) — unscramble a typed-input
+   word, hint/skip actions, round-based scoring.
+6. **Whack-a-Mole** (`games/whack-a-mole.js`) — 3×3 reflex-tap game, timed
+   rounds, score/miss tracking, high-score persistence.
+
+### Verification
+Every game (10 original + 6 new) was hard-reload-tested end to end in a real
+browser: setup flow, at least one full gameplay loop per mode, win/lose/draw
+detection, and a zero-console-errors check, at both desktop and 390px mobile
+widths and in both themes.
+
+### Scope decisions (see `README.md` "Scope notes")
+- "Saving game states" = per-game settings persistence + Recently Played,
+  not full mid-game board serialization.
+- Chess omits draw-by-repetition/50-move-rule detection.
+
+### Files added
+- `games/chess.js`, `games/rps.js`, `games/2048.js`, `games/simon.js`,
+  `games/word-scramble.js`, `games/whack-a-mole.js`
+- `.gitignore`
+
+### Files modified
+- `js/game-catalog.js` (6 new entries), `js/router.js` (recently-played +
+  shared `renderGameList()`), `js/storage.js` (`KEYS.RECENT_GAMES`),
+  `js/game-shell.js`, `js/game-utils.js`, `css/styles.css` (structural + vibe
+  CSS for all 16 games, recent-games section), `assets/favicon.svg`,
+  `assets/logo.svg`, `index.html`, `sw.js`, and every original game module
+  (setup flows, vibe theming, bug fixes).

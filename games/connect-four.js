@@ -1,9 +1,9 @@
 // Connect Four — gravity grid duel. 1-2 players.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell, wireBack } from '../js/game-shell.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer, emptyBoard } from '../js/game-utils.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const ROWS = 6, COLS = 7;
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: '●' }, 2: { color: '#fbbf24', label: '●' } };
@@ -32,18 +32,51 @@ function lowestEmptyRow(board, col) {
   return -1;
 }
 
+// Lightweight heuristic AI (not a full minimax — 42 columns deep is expensive):
+// take an immediate win, else block an immediate opponent win, else prefer
+// center columns with a little randomness so it isn't perfectly predictable.
+function aiColumn(board, aiToken, humanToken) {
+  const open = Array.from({ length: COLS }, (_, c) => c).filter((c) => lowestEmptyRow(board, c) !== -1);
+  for (const c of open) {
+    const r = lowestEmptyRow(board, c);
+    board[idx(r, c)] = aiToken;
+    const win = checkWin(board, aiToken);
+    board[idx(r, c)] = 0;
+    if (win) return c;
+  }
+  for (const c of open) {
+    const r = lowestEmptyRow(board, c);
+    board[idx(r, c)] = humanToken;
+    const win = checkWin(board, humanToken);
+    board[idx(r, c)] = 0;
+    if (win) return c;
+  }
+  const weighted = open.flatMap((c) => Array(4 - Math.abs(c - 3)).fill(c));
+  return weighted[Math.floor(Math.random() * weighted.length)] ?? open[0];
+}
+
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
-    const playerCount = settings.mode === 'ai' ? 1 : 2;
-
-    const shell = createShell(el, game, {
-      title: 'Connect Four',
-      meta: settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first',
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Connect Four', meta: 'Drop to win · gravity edition' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('c4-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
+    const settings = await renderSetup(stage, {
+      title: '🔴 Drop to Win',
+      subtitle: 'Choose your opponent',
+      themeClass: 'c4-theme',
+      fields: [{
+        key: 'mode', label: 'Opponent',
+        options: [{ value: 'pvp', label: '👥 Friend' }, { value: 'ai', label: '🤖 Computer' }],
+        default: saved.mode,
+      }],
+      startLabel: 'Drop In',
+    });
+    saveJSON(KEYS.SETTINGS + ':connect-four', settings);
+    shell.root.querySelector('.game-meta').textContent =
+      settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first';
 
     const board = emptyBoard(ROWS * COLS);
     let current = 1, gameOver = false, winCells = null;
@@ -119,8 +152,35 @@ export default {
         if (window.haptics) window.haptics.failure();
         return render();
       }
-      current = nextPlayer(current, playerCount);
+      current = nextPlayer(current, 2);
       render();
+
+      // Computer turn
+      if (settings.mode === 'ai' && current === 2 && !gameOver) {
+        status.textContent = 'Computer is thinking…';
+        setTimeout(async () => {
+          const c = aiColumn(board, 2, 1);
+          const r = lowestEmptyRow(board, c);
+          if (r !== -1) {
+            board[idx(r, c)] = 2;
+            if (audio) audio.tap();
+            const w = checkWin(board, 2);
+            if (w) {
+              winCells = w; gameOver = true; status.textContent = 'Computer wins!';
+              if (audio) audio.chime();
+              if (window.haptics) window.haptics.failure();
+            } else if (board.every((v) => v !== 0)) {
+              gameOver = true; status.textContent = "It's a draw!";
+              if (audio) audio.buzz();
+              if (window.haptics) window.haptics.failure();
+            } else {
+              current = 1;
+              status.textContent = 'Your turn';
+            }
+          }
+          render();
+        }, 450);
+      }
     }
 
     getResetButton().addEventListener('click', () => {

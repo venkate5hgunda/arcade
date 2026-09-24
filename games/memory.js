@@ -1,28 +1,56 @@
 // Memory Match — flip cards, find pairs. 1-2 players.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { nextPlayer, loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { nextPlayer } from '../js/game-utils.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const SYMBOLS = ['🍎','🍌','🍇','🍓','🥝','🍋','🥭','🍒','🥥','🍍','🥑','🥕','🌽','🥔','🍅','🥦','🧄','🧅','🥜','🌰','🍞','🥐','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣'];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':memory', { size: 4 });
-    const size = Math.max(2, Math.min(8, settings.size || 4));
-    const total = size * size;
-    if (total % 2 !== 0) { size++; }
-
-    const shell = createShell(el, game, {
-      title: 'Memory Match',
-      meta: `${size}×${size} grid · ${size * size / 2} pairs`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Memory Match', meta: 'Flip cards, find pairs' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('mem-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':memory', { size: '4', players: '1' });
+    const settings = await renderSetup(stage, {
+      title: '🧠 Memory Match',
+      subtitle: 'Choose your grid and players',
+      themeClass: 'mem-theme',
+      fields: [
+        {
+          key: 'size', label: 'Grid size',
+          options: [
+            { value: '4', label: '4×4 · Easy' },
+            { value: '6', label: '6×6 · Medium' },
+            { value: '8', label: '8×8 · Hard' },
+          ],
+          default: saved.size,
+        },
+        {
+          key: 'players', label: 'Players',
+          options: [
+            { value: '1', label: 'Solo' },
+            { value: '2', label: '2 Players' },
+          ],
+          default: saved.players,
+        },
+      ],
+      startLabel: 'Start Matching',
+    });
+    saveJSON(KEYS.SETTINGS + ':memory', settings);
+
+    let size = Math.max(2, Math.min(8, parseInt(settings.size, 10) || 4));
+    const total0 = size * size;
+    if (total0 % 2 !== 0) size++;
+    const total = size * size;
+    const playerCount = settings.players === '2' ? 2 : 1;
+    shell.root.querySelector('.game-meta').textContent = `${size}×${size} grid · ${total / 2} pairs · ${playerCount === 2 ? '2 players' : 'solo'}`;
 
     let cards = [], firstPick = null, lock = false, gameOver = false;
-    let current = 1, scores = { 1: 0, 2: 0 }, playerCount = 1;
+    let current = 1, scores = { 1: 0, 2: 0 };
 
     const grid = document.createElement('div');
     grid.className = 'mem-grid';
@@ -84,7 +112,7 @@ export default {
       if (audio) audio.tap();
       render();
 
-      if (!firstPick) {
+      if (firstPick === null) {
         firstPick = i;
         return;
       }

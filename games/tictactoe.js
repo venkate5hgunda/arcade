@@ -1,9 +1,9 @@
 // Tic-Tac-Toe — local 1-2 player or vs unbeatable computer (minimax).
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell, wireBack } from '../js/game-shell.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer, findWin, emptyBoard } from '../js/game-utils.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const N = 3;
 
@@ -39,18 +39,27 @@ function aiMove(board, aiToken, humanToken) {
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: 'X' }, 2: { color: '#38bdf8', label: 'O' } };
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
-    const playerCount = settings.mode === 'ai' ? 1 : 2;
-
-    const shell = createShell(el, game, {
-      title: 'Tic-Tac-Toe',
-      meta: settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first',
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
-    // Wire back button to router
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Tic-Tac-Toe', meta: 'Classic 3-in-a-row · neon edition' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('ttt-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
+    const settings = await renderSetup(stage, {
+      title: '⚡ Ready to play?',
+      subtitle: 'Choose your opponent',
+      themeClass: 'ttt-theme',
+      fields: [{
+        key: 'mode', label: 'Opponent',
+        options: [{ value: 'pvp', label: '👥 Friend' }, { value: 'ai', label: '🤖 Computer' }],
+        default: saved.mode,
+      }],
+      startLabel: 'Drop In',
+    });
+    saveJSON(KEYS.SETTINGS + ':tictactoe', settings);
+    shell.root.querySelector('.game-meta').textContent =
+      settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first';
 
     const board = emptyBoard(N);
     let current = 1, gameOver = false, winLine = null;
@@ -110,7 +119,7 @@ export default {
         if (window.haptics) window.haptics.failure();
         return render();
       }
-      current = nextPlayer(current, playerCount);
+      current = nextPlayer(current, 2);
       render();
 
       // Computer turn

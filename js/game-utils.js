@@ -37,3 +37,22 @@ export function findWin(cells, n) {
 
 // Draw a board filled with `fill` (default 0 for empty).
 export function emptyBoard(n, fill = 0) { return Array.from({ length: n * n }, () => fill); }
+
+// Pip layout (row,col in a 3x3 grid) for each die face 1-6.
+const DIE_PIPS = {
+  1: [[1, 1]],
+  2: [[0, 0], [2, 2]],
+  3: [[0, 0], [1, 1], [2, 2]],
+  4: [[0, 0], [0, 2], [2, 0], [2, 2]],
+  5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
+  6: [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2]],
+};
+
+// Renders a crisp, font-independent die face as an HTML string (a 3x3 grid of pips).
+// Avoids relying on the Unicode die-face glyphs (⚀-⚅), which don't render
+// consistently across platforms/fonts.
+export function diceFaceHTML(n) {
+  const pips = DIE_PIPS[Math.max(1, Math.min(6, n))] || DIE_PIPS[1];
+  const dots = pips.map(([r, c]) => `<span class="die-pip" style="grid-row:${r + 1};grid-column:${c + 1}"></span>`).join('');
+  return `<span class="die-face">${dots}</span>`;
+}
