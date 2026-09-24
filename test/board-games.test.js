@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRACK, legalMoves } from '../games/ludo.js';
-import { createBoardLayout, squareCenter, boardArt } from '../js/snakes-board.js';
+import { createBoardLayout, squareCenter, boardArt, snakeTravelPoints, ladderTravelPoints } from '../js/snakes-board.js';
 import { dieMarkup } from '../js/dice.js';
 
 test('ludo track is a continuous 52-square circuit with quarter-turn starts', () => {
@@ -39,6 +39,45 @@ test('snakes and ladders vary but never overlap or reverse direction', () => {
   assert.notDeepEqual(createBoardLayout('shared-room-1'), createBoardLayout('shared-room-2'));
   assert.deepEqual(squareCenter(1), { x: 50, y: 950 });
   assert.deepEqual(squareCenter(100), { x: 50, y: 50 });
+});
+
+test('generated obstacle paths stay apart and travel reaches the illustrated endpoints', () => {
+  const distance = (point, a, b) => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
+  };
+  for (let seed = 0; seed < 250; seed++) {
+    const { snakes, ladders } = createBoardLayout(`board-${seed}`);
+    assert.equal(snakes.length, 4);
+    assert.equal(ladders.length, 4);
+    const paths = [
+      ...snakes.map((obstacle) => [obstacle, snakeTravelPoints(obstacle)]),
+      ...ladders.map((obstacle) => [obstacle, [squareCenter(obstacle.start), squareCenter(obstacle.end)]]),
+    ];
+    for (const [obstacle, points] of paths) {
+      assert.deepEqual(points[0], squareCenter(obstacle.start));
+      assert.deepEqual(points.at(-1), squareCenter(obstacle.end));
+    }
+    for (let i = 0; i < paths.length; i++) {
+      for (let j = i + 1; j < paths.length; j++) {
+        const a = paths[i][1], b = paths[j][1];
+        for (const point of a) {
+          const closest = Math.min(...b.slice(1).map((end, index) => distance(point, b[index], end)));
+          assert.ok(closest >= 31, `board ${seed}: obstacle ${i} meets ${j}`);
+        }
+        for (const point of b) {
+          const closest = Math.min(...a.slice(1).map((end, index) => distance(point, a[index], end)));
+          assert.ok(closest >= 31, `board ${seed}: obstacle ${j} meets ${i}`);
+        }
+      }
+    }
+    for (const ladder of ladders) {
+      const climb = ladderTravelPoints(ladder);
+      assert.deepEqual(climb[0], squareCenter(ladder.start));
+      assert.deepEqual(climb.at(-1), squareCenter(ladder.end));
+    }
+  }
 });
 
 test('dice have six numbered 3D faces and semantic roll control', () => {

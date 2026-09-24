@@ -4,6 +4,8 @@
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 
@@ -12,7 +14,57 @@ const KNIGHT_OFFSETS = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-
 const KING_OFFSETS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
 const BISHOP_DIRS = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
 const ROOK_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const PIECE_GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+const PIECE_NAMES = { k: 'king', q: 'queen', r: 'rook', b: 'bishop', n: 'knight', p: 'pawn' };
+const PIECE_ART = {
+  p: `
+    <circle class="chess-body" cx="32" cy="17" r="8"/>
+    <path class="chess-glint" d="M28 13q3-3 7-1"/>
+    <path class="chess-body" d="M27 27h10l2 5-2 3 6 15H21l6-15-2-3z"/>
+    <path class="chess-band" d="M25 32h14"/>
+    <path class="chess-glint" d="M28 37l-4 10"/>
+    <path class="chess-body" d="M18 50h28l3 6H15z"/>`,
+  r: `
+    <path class="chess-body" d="M15 10h8v6h6v-6h6v6h6v-6h8v18H15z"/>
+    <path class="chess-band" d="M17 23h30v5H17z"/>
+    <path class="chess-body" d="M22 28h20l4 22H18z"/>
+    <path class="chess-glint" d="M25 32l-3 14"/>
+    <path class="chess-body" d="M15 50h34l3 6H12z"/>`,
+  n: `
+    <path class="chess-body" d="M17 50c1-9 6-14 6-18l-6-1q-5-1-3-5l8-9 2-8 5 5 5-5q12 6 11 19l-4 5q0 10 8 17z"/>
+    <path class="chess-detail" d="M17 28l5 2m17-14q2 8-5 16l4 5"/>
+    <circle class="chess-detail-dot" cx="27" cy="21" r="2"/>
+    <path class="chess-glint" d="M25 12l2 5"/>
+    <path class="chess-band" d="M18 46h29l2 4H16z"/>
+    <path class="chess-body" d="M14 50h35l3 6H12z"/>`,
+  b: `
+    <circle class="chess-band" cx="32" cy="10" r="3"/>
+    <path class="chess-body" d="M32 12c9 4 13 9 13 16 0 5-5 9-9 12h-8c-4-3-9-7-9-12 0-7 4-12 13-16z"/>
+    <path class="chess-detail" d="M38 19L26 34"/>
+    <path class="chess-glint" d="M26 20q-4 4-3 9"/>
+    <path class="chess-body" d="M25 40h14l5 10H20z"/>
+    <path class="chess-band" d="M23 40h18"/>
+    <path class="chess-body" d="M16 50h32l3 6H13z"/>`,
+  q: `
+    <path class="chess-body" d="M12 18l8 9 6-14 6 12 6-12 6 14 8-9-7 27H19z"/>
+    <circle class="chess-band" cx="12" cy="17" r="3"/>
+    <circle class="chess-band" cx="26" cy="12" r="3"/>
+    <circle class="chess-band" cx="38" cy="12" r="3"/>
+    <circle class="chess-band" cx="52" cy="17" r="3"/>
+    <path class="chess-detail" d="M22 42h20"/>
+    <path class="chess-body" d="M19 45h26l2 5H17zM15 50h34l3 6H12z"/>`,
+  k: `
+    <path class="chess-body" d="M29 7h6v8h8v6h-8v8h-6v-8h-8v-6h8z"/>
+    <path class="chess-body" d="M25 31q7-5 14 0l5 14H20z"/>
+    <path class="chess-glint" d="M26 35l-3 7"/>
+    <path class="chess-band" d="M19 45h26l2 5H17z"/>
+    <path class="chess-body" d="M15 50h34l3 6H12z"/>`,
+};
+
+export function chessPieceMarkup(type, color) {
+  if (!Object.hasOwn(PIECE_ART, type) || !['w', 'b'].includes(color))
+    throw new TypeError('Unknown chess piece.');
+  return `<svg class="chess-piece ${color === 'w' ? 'cw' : 'cb'}" viewBox="8 4 48 54" aria-hidden="true" focusable="false">${PIECE_ART[type]}</svg>`;
+}
 const PIECE_VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 const PROMO_CHOICES = ['q', 'r', 'b', 'n'];
 
@@ -368,14 +420,16 @@ export default {
           const cell = document.createElement('button');
           cell.type = 'button';
           cell.className = 'chess-sq ' + ((rank + file) % 2 === 0 ? 'chess-dark' : 'chess-light');
-          cell.setAttribute('aria-label', sqName(sq));
+          const piece = state.board[sq];
+          cell.setAttribute('aria-label', piece
+            ? `${sqName(sq)}, ${piece.color === 'w' ? 'white' : 'black'} ${PIECE_NAMES[piece.type]}`
+            : sqName(sq));
           if (lastMove && (sq === lastMove.from || sq === lastMove.to)) cell.classList.add('chess-lastmove');
           if (selected === sq) cell.classList.add('chess-selected');
           const targetMove = legalFromSelected.find((m) => m.to === sq);
           if (targetMove) cell.classList.add(targetMove.capture ? 'chess-capture-hint' : 'chess-move-hint');
-          const piece = state.board[sq];
           if (piece) {
-            cell.innerHTML = `<span class="chess-piece ${piece.color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[piece.type]}</span>`;
+            cell.innerHTML = chessPieceMarkup(piece.type, piece.color);
           }
           cell.addEventListener('click', () => onSquareClick(sq));
           board.appendChild(cell);
@@ -387,7 +441,7 @@ export default {
     }
 
     function renderCaptured() {
-      const line = (color) => captured[color].map((t) => `<span class="chess-piece ${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[t]}</span>`).join('');
+      const line = (color) => captured[color].map((t) => chessPieceMarkup(t, color)).join('');
       capturedRow.innerHTML = `<div class="chess-captured-row">${line('b')}</div><div class="chess-captured-row">${line('w')}</div>`;
     }
 
@@ -404,7 +458,8 @@ export default {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'chess-promo-btn';
-        btn.innerHTML = `<span class="chess-piece ${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[t]}</span>`;
+        btn.setAttribute('aria-label', `Promote to ${PIECE_NAMES[t]}`);
+        btn.innerHTML = chessPieceMarkup(t, color);
         btn.addEventListener('click', () => resolvePromotion(t));
         opts.appendChild(btn);
       }
@@ -482,16 +537,22 @@ export default {
       if (legal.length === 0) {
         over = true;
         if (inCheck) {
-          const winner = opp(state.turn) === 'w' ? 'White' : 'Black';
-          status.textContent = `Checkmate! ${winner} wins`;
+          const side = opp(state.turn);
+          const winnerIndex = side === 'w' ? 0 : 1;
+          const name = aiMode && side === aiSide ? 'Computer' : playerName(winnerIndex, match);
+          status.textContent = `Checkmate! ${name} (${side === 'w' ? 'White' : 'Black'}) wins`;
+          if (match?.role === 'host') match.recordResult(game.id, winnerIndex, generation);
+          if ((!aiMode || side === humanSide) && (!match || seat(match) === winnerIndex + 1))
+            celebrate(shell.root, `${name} wins by checkmate!`);
         } else {
           status.textContent = 'Stalemate — Draw';
+          if (match?.role === 'host') match.recordResult(game.id, null, generation);
         }
-        if (audio) inCheck ? audio.chime() : audio.buzz();
-        window.haptics?.[inCheck ? 'success' : 'failure']?.();
+        if (!inCheck && audio) audio.buzz();
       } else if (insufficientMaterial(state.board)) {
         over = true;
         status.textContent = 'Draw — insufficient material';
+        if (match?.role === 'host') match.recordResult(game.id, null, generation);
       }
     }
 
@@ -505,6 +566,7 @@ export default {
     function newGame() {
       clearTimeout(aiTimer);
       generation++;
+      shell.root.querySelector('.arcade-victory')?.remove();
       state = initialState();
       selected = null; legalFromSelected = []; lastMove = null; over = false; pendingPromotion = null; busy = false;
       captured.w = []; captured.b = [];

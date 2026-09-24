@@ -2,6 +2,8 @@
 // or the computer. Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 
@@ -136,24 +138,32 @@ export default {
       } else if (phase === 'reveal') {
         const p1 = choiceOf(p1Pick), p2 = choiceOf(p2Pick);
         const result = decide(p1Pick, p2Pick);
-        const label = result === 'draw' ? "It's a draw!" : result === 'p1' ? `${aiMode ? 'You win' : 'Player 1 wins'} the round!` : `${aiMode ? 'Computer wins' : 'Player 2 wins'} the round!`;
+        const label = result === 'draw' ? "It's a draw!" : result === 'p1' ?
+          aiMode ? 'You win the round!' : `${playerName(0, match)} wins the round!` :
+          `${aiMode ? 'Computer' : playerName(1, match)} wins the round!`;
         card.innerHTML = `
           <div class="rps-reveal">
             <div class="rps-vs"><span>${p1.icon}</span><span class="rps-vs-x">✕</span><span>${p2.icon}</span></div>
-            <h3>${label}</h3>
+            <h3></h3>
             <button class="rps-btn" id="next">${score.p1 >= target || score.p2 >= target ? 'See Result' : 'Next Round'}</button>
           </div>`;
+        card.querySelector('.rps-reveal h3').textContent = label;
         const next = card.querySelector('#next');
         if (match && match.role !== 'host') next.disabled = true;
         else next.addEventListener('click', () => match ? match.sendAction({ type: 'next' }) : nextRound());
       } else if (phase === 'over') {
-        const winner = score.p1 > score.p2 ? (aiMode ? 'You win the match! 🏆' : 'Player 1 wins the match! 🏆') : (aiMode ? 'Computer wins the match!' : 'Player 2 wins the match!');
+        const winnerIndex = score.p1 > score.p2 ? 0 : 1;
+        const winner = aiMode ? winnerIndex === 0 ? 'You' : 'Computer' : playerName(winnerIndex, match);
         card.innerHTML = `
           <div class="rps-gameover">
-            <h3>${winner}</h3>
-            <p>Final score — ${aiMode ? 'You' : 'P1'}: ${score.p1} · ${aiMode ? 'Computer' : 'P2'}: ${score.p2}</p>
+            <h3></h3>
+            <p></p>
             <button class="rps-btn" id="playAgain">Play Again</button>
           </div>`;
+        card.querySelector('.rps-gameover h3').textContent =
+          aiMode && winnerIndex === 0 ? 'You win the match! 🏆' : `${winner} wins the match! 🏆`;
+        card.querySelector('.rps-gameover p').textContent =
+          `Final score — ${aiMode ? 'You' : playerName(0, match)}: ${score.p1} · ${aiMode ? 'Computer' : playerName(1, match)}: ${score.p2}`;
         const again = card.querySelector('#playAgain');
         if (match && match.role !== 'host') again.disabled = true;
         else again.addEventListener('click', () => match ? match.sendAction({ type: 'reset' }) : newMatch());
@@ -227,11 +237,15 @@ export default {
       if (nextPending) { nextPending = false; nextRound(); }
     }
 
+    let matchGeneration = 0;
     function nextRound() {
       if (score.p1 >= target || score.p2 >= target) {
         over = true; phase = 'over';
-        const audio = window.arcadeAudio;
-        if (audio) score.p1 > score.p2 ? audio.chime() : audio.buzz();
+        const winnerIndex = score.p1 > score.p2 ? 0 : 1;
+        const name = aiMode && winnerIndex === 1 ? 'Computer' : playerName(winnerIndex, match);
+        if (match?.role === 'host') match.recordResult(game.id, winnerIndex, `${matchGeneration}:${round}`);
+        if ((!match || seat(match) === winnerIndex + 1) && (!aiMode || winnerIndex === 0))
+          celebrate(shell.root, `${name} wins the match!`);
       } else {
         p1Pick = null; p2Pick = null;
         phase = match && seat(match) === 2 ? 'p2pick' : 'p1pick';
@@ -241,6 +255,8 @@ export default {
     }
 
     function newMatch() {
+      matchGeneration++;
+      shell.root.querySelector('.arcade-victory')?.remove();
       countdownController.abort();
       countdownController = new AbortController();
       nextPending = false;

@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const DIFFICULTIES = {
@@ -199,8 +200,7 @@ export default {
         gameOver = true;
         board.forEach(c => { if (c.mine) c.flagged = true; });
         const audio = window.arcadeAudio;
-        if (audio) { audio.prepare(); audio.chime(); }
-        if (window.haptics) window.haptics.success();
+        celebrate(shell.root, 'You cleared the minefield!');
         status.textContent = '🎉 You cleared the field!';
         session?.finish();
       } else {
@@ -220,6 +220,7 @@ export default {
     }
 
     function newGame() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       board = emptyBoard(rows, cols); gameOver = false; firstClick = true; flags = 0; flagMode = false;
       flagToggle.textContent = '🚩 Flag mode: off';
       flagToggle.setAttribute('aria-pressed', 'false');

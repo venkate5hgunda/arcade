@@ -46,6 +46,13 @@ mode, sound, and haptics.
 - **Setup flow** — every game opens with a lightweight options screen (player
   count, difficulty, mode, timer, etc.) before play starts; choices persist
   per game.
+- **How to play** — every cabinet has a quick help dialog with three illustrated
+  steps, controls, available options and a goal. Moves and impacts are animated
+  when motion is enabled; 2048 shows slides before merges and new tile spawns.
+- **Victory moments** — earned wins announce the winning player (or team) with
+  confetti, sound and haptics; the visual effects respect reduced-motion settings.
+  Set local player names from the game header or use names chosen on joining a
+  room. Room guests only celebrate their own victories.
 - **Recently played** — the home screen surfaces your last few games (deduped,
   most-recent-first) above the full catalog for quick re-entry.
 - **Return to play** — opening the arcade starts at home unless the most
@@ -68,11 +75,17 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   distinct room, sound, vibration and theme controls, and reduced-motion support.
 - **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
   simulation. Pool has rack, collisions, pockets, scratches and house-rule
-  8-ball play; air hockey has moving paddles, puck impacts and goals. After
-  a goal, the puck rests on the non-scoring player's half until they strike it.
+  8-ball play; air hockey has acceleration-limited paddles, impact-dependent
+  puck velocity, low-friction travel, collisions, rebounds and goals. After
+  the opening faceoff, the puck rests at center until either player strikes it.
+  After a goal, it rests on the non-scoring player's half until they strike it.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
   adapted from Pick's tabletop animation. Snakes & Ladders draws varied
-  snakes and ladders on each new board with square numbers above the artwork;
+  non-intersecting snakes and ladders on each new board with square numbers above
+  the artwork. Distinctive player emblems travel square by square, climb ladders
+  or slide through snakes. Nearby snakes hiss, flick their tongues and sway
+  their tails; nearby ladders wobble. Ludo pieces follow the track and return
+  captured pieces to their yards. Both boards honor reduced-motion preferences;
   Ludo uses a full 52-square cross
   track and lets the player select which legal token to move.
 - **Cards** — UNO-inspired supports 2–4 players locally (with private
@@ -84,7 +97,12 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
   games), plus UNO-inspired (2–4 players, host-authoritative private hands).
+  The room lobby keeps per-player and per-game wins, losses, draws and rankings
+  for the lifetime of the room, including across replays and game changes.
   Other games remain local-only.
+
+**Future enhancement:** Solo campaigns with progressive stages, unlocks and
+longer-term goals (distinct from the current single-round/high-score play).
 
 ### Telugu movie catalogue
 

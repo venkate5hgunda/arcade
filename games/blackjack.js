@@ -1,4 +1,5 @@
 import { createShell, wireBack } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -108,7 +109,7 @@ export default {
       if (outcome === 'win') {
         record.wins++;
         record.net += player.length === 2 && handValue(player).total === 21 && !doubled ? 1.5 : doubled ? 2 : 1;
-        sound('chime');
+        celebrate(shell.root, 'You beat the dealer!');
       } else if (outcome === 'loss') {
         record.losses++;
         record.net -= doubled ? 2 : 1;
@@ -133,6 +134,7 @@ export default {
     }
 
     function newRound() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       deck = shuffledDeck();
       dealer = [];
       player = [];

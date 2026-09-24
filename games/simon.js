@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const PADS = [
@@ -44,6 +45,7 @@ export default {
     shell.root.querySelector('.game-meta').textContent = `Speed: ${settings.speed} · watch, remember, repeat`;
 
     let bestScore = loadJSON(KEYS.HIGH_SCORES + ':simon', 0);
+    let runStartBest = bestScore;
     let sequence = [];
     let playerStep = 0;
     let phase = 'idle'; // idle -> playing -> input -> over
@@ -156,14 +158,16 @@ export default {
       locked = true;
       padEls.forEach((b) => (b.disabled = true));
       const audio = window.arcadeAudio;
-      if (audio) audio.buzz();
-      window.haptics?.failure();
+      if (bestScore > runStartBest && bestScore >= 3) celebrate(shell.root, 'New Simon record!');
+      else { audio?.buzz(); window.haptics?.failure(); }
       message.innerHTML = `<div class="simon-overlay"><h3>Game Over — reached round ${sequence.length}</h3><button class="simon-btn" id="retry">Play Again</button></div>`;
       message.querySelector('#retry').addEventListener('click', newGame);
       updateStatus();
     }
 
     function newGame() {
+      runStartBest = bestScore;
+      shell.root.querySelector('.arcade-victory')?.remove();
       controller.abort();
       controller = new AbortController();
       padEls.forEach((pad) => pad.classList.remove('active'));

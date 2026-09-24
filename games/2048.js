@@ -3,6 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { celebrate } from '../js/celebration.js';
 
 const SIZE = 4;
 const TILE_COLORS = {
@@ -31,50 +32,46 @@ function addRandomTile(grid) {
   if (!cell) return false;
   const [r, c] = cell;
   grid[r][c] = Math.random() < 0.9 ? 2 : 4;
-  return true;
+  return { r, c };
 }
 
-// Slide + merge a single row to the left. Returns { row, gained }.
-function slideRowLeft(row) {
-  const vals = row.filter((v) => v !== 0);
-  const result = [];
+export function move(grid, dir) {
+  const coordinate = {
+    left: (line, offset) => [line, offset],
+    right: (line, offset) => [line, SIZE - 1 - offset],
+    up: (line, offset) => [offset, line],
+    down: (line, offset) => [SIZE - 1 - offset, line],
+  }[dir];
+  if (!coordinate) throw new RangeError(`Unknown direction: ${dir}`);
+  const result = emptyGrid();
+  const tiles = [];
+  const merges = [];
   let gained = 0;
-  for (let i = 0; i < vals.length; i++) {
-    if (vals[i] === vals[i + 1]) {
-      const merged = vals[i] * 2;
-      result.push(merged);
-      gained += merged;
-      i++;
-    } else {
-      result.push(vals[i]);
+  for (let line = 0; line < SIZE; line++) {
+    let target = 0;
+    let lastMerged = false;
+    for (let offset = 0; offset < SIZE; offset++) {
+      const [r, c] = coordinate(line, offset);
+      const value = grid[r][c];
+      if (!value) continue;
+      const [tr, tc] = coordinate(line, target);
+      const previous = target > 0 ? coordinate(line, target - 1) : null;
+      if (previous && !lastMerged && result[previous[0]][previous[1]] === value) {
+        const [pr, pc] = previous;
+        result[pr][pc] *= 2;
+        gained += result[pr][pc];
+        tiles.push({ r, c, tr: pr, tc: pc, value });
+        merges.push({ r: pr, c: pc });
+        lastMerged = true;
+      } else {
+        result[tr][tc] = value;
+        tiles.push({ r, c, tr, tc, value });
+        target++;
+        lastMerged = false;
+      }
     }
   }
-  while (result.length < SIZE) result.push(0);
-  return { row: result, gained };
-}
-
-function rotateGrid(grid) {
-  // Rotate clockwise 90deg.
-  const rotated = emptyGrid();
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) rotated[c][SIZE - 1 - r] = grid[r][c];
-  return rotated;
-}
-
-// Move in `dir` (left/right/up/down) by rotating so the move is always "left",
-// applying the row-slide, then rotating back.
-function move(grid, dir) {
-  let g = cloneGrid(grid);
-  let rotations = { left: 0, up: 3, right: 2, down: 1 }[dir];
-  for (let i = 0; i < rotations; i++) g = rotateGrid(g);
-  let gained = 0;
-  const moved = g.map((row) => {
-    const { row: newRow, gained: g2 } = slideRowLeft(row);
-    gained += g2;
-    return newRow;
-  });
-  let result = moved;
-  for (let i = 0; i < (4 - rotations) % 4; i++) result = rotateGrid(result);
-  return { grid: result, gained };
+  return { grid: result, gained, tiles, merges };
 }
 
 function hasMoves(grid) {
@@ -120,6 +117,7 @@ export default {
     let grid = emptyGrid();
     let score = 0;
     let over = false, won = false, keepPlaying = false;
+    let animationTimer = null, animationFrame = null, queuedMove = null, disposed = false;
 
     const status = document.createElement('div');
     status.className = 't48-status';
@@ -165,21 +163,69 @@ export default {
       session?.save({ grid: cloneGrid(grid), score, won, keepPlaying });
     }
 
+    function cancelAnimation() {
+      if (animationTimer !== null) clearTimeout(animationTimer);
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      animationTimer = animationFrame = null;
+      queuedMove = null;
+      board.classList.remove('t48-moving');
+      board.querySelector('.t48-motion')?.remove();
+    }
+
+    function animateMove(tiles, merges, spawned, before) {
+      const boardRect = board.getBoundingClientRect();
+      const after = [...board.querySelectorAll('.t48-cell')].map(cell => cell.getBoundingClientRect());
+      const overlay = document.createElement('div');
+      overlay.className = 't48-motion';
+      for (const { r, c, tr, tc, value } of tiles) {
+        const source = before[r * SIZE + c], destination = after[tr * SIZE + tc];
+        const tile = document.createElement('div');
+        tile.className = 't48-cell filled t48-motion-tile';
+        tile.textContent = value;
+        tile.style.cssText = `left:${source.left - boardRect.left}px;top:${source.top - boardRect.top}px;width:${source.width}px;height:${source.height}px;background:${TILE_COLORS[value] || '#3c3a32'};color:${value <= 4 ? '#776e65' : '#f9f6f2'};font-size:${value >= 1024 ? '1.3rem' : value >= 128 ? '1.6rem' : '1.9rem'}`;
+        overlay.appendChild(tile);
+        tile.dataset.dx = destination.left - source.left;
+        tile.dataset.dy = destination.top - source.top;
+      }
+      board.appendChild(overlay);
+      board.classList.add('t48-moving');
+      animationFrame = requestAnimationFrame(() => {
+        animationFrame = null;
+        overlay.querySelectorAll('.t48-motion-tile').forEach(tile => {
+          tile.style.transform = `translate(${tile.dataset.dx}px, ${tile.dataset.dy}px)`;
+        });
+      });
+      animationTimer = setTimeout(() => {
+        animationTimer = null;
+        overlay.remove();
+        board.classList.remove('t48-moving');
+        for (const { r, c } of merges) board.children[r * SIZE + c]?.classList.add('t48-merged');
+        board.children[spawned.r * SIZE + spawned.c]?.classList.add('t48-spawned');
+        if (!disposed && queuedMove) {
+          const next = queuedMove;
+          queuedMove = null;
+          doMove(next);
+        }
+      }, 175);
+    }
+
     function doMove(dir) {
       if (over || (won && !keepPlaying)) return;
-      const { grid: newGrid, gained } = move(grid, dir);
+      if (animationTimer !== null) { queuedMove = dir; return; }
+      const { grid: newGrid, gained, tiles, merges } = move(grid, dir);
       if (gridsEqual(grid, newGrid)) return;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      const before = reducedMotion ? null : [...board.querySelectorAll('.t48-cell')].map(cell => cell.getBoundingClientRect());
       grid = newGrid;
       score += gained;
       if (score > bestScore) { bestScore = score; saveJSON(KEYS.HIGH_SCORES + ':2048', bestScore); }
-      addRandomTile(grid);
+      const spawned = addRandomTile(grid);
       const audio = window.arcadeAudio;
       if (audio) { audio.prepare(); gained ? audio.pop() : audio.tap(); }
       window.haptics?.select();
       if (!won && grid.some((row) => row.some((v) => v >= 2048))) {
         won = true;
-        if (audio) audio.chime();
-        window.haptics?.success();
+        celebrate(shell.root, 'You reached 2048!');
       } else if (!hasMoves(grid)) {
         over = true;
         if (audio) audio.buzz();
@@ -188,11 +234,12 @@ export default {
       if (over || (won && !keepPlaying)) session?.finish();
       else checkpoint();
       render();
+      if (before) animateMove(tiles, merges, spawned, before);
     }
 
     function onKeydown(e) {
       const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
-      if (map[e.key]) { e.preventDefault(); doMove(map[e.key]); }
+      if (map[e.key] && !document.querySelector('dialog[open]')) { e.preventDefault(); doMove(map[e.key]); }
     }
     window.addEventListener('keydown', onKeydown);
 
@@ -209,6 +256,8 @@ export default {
     }, { passive: true });
 
     function newGame() {
+      cancelAnimation();
+      shell.root.querySelector('.arcade-victory')?.remove();
       grid = emptyGrid();
       score = 0; over = false; won = false; keepPlaying = false;
       addRandomTile(grid); addRandomTile(grid);
@@ -218,13 +267,13 @@ export default {
 
     getResetButton().addEventListener('click', newGame);
 
-    const onTheme = () => render();
+    const onTheme = () => { cancelAnimation(); render(); };
     window.addEventListener('arcade:themechange', onTheme);
     if (restored) {
       grid = cloneGrid(restored.grid);
       score = restored.score; won = restored.won; keepPlaying = restored.keepPlaying;
       render();
     } else newGame();
-    return { dispose: () => { window.removeEventListener('keydown', onKeydown); window.removeEventListener('arcade:themechange', onTheme); } };
+    return { dispose: () => { disposed = true; cancelAnimation(); window.removeEventListener('keydown', onKeydown); window.removeEventListener('arcade:themechange', onTheme); } };
   },
 };

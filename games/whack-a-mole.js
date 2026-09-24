@@ -2,6 +2,7 @@
 // they vanish. Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const HOLES = 9;
@@ -127,6 +128,7 @@ export default {
     }
 
     function startRound() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       clearTimers();
       holeEls.forEach(h => h.classList.remove('up', 'hit'));
       running = true;
@@ -146,10 +148,11 @@ export default {
       timeLeft = 0;
       session?.finish();
       holeEls.forEach((h) => h.classList.remove('up', 'hit'));
-      if (score > bestScore) { bestScore = score; saveJSON(KEYS.HIGH_SCORES + ':whack-a-mole', bestScore); }
+      const newBest = score > bestScore;
+      if (newBest) { bestScore = score; saveJSON(KEYS.HIGH_SCORES + ':whack-a-mole', bestScore); }
       const audio = window.arcadeAudio;
-      if (audio) audio.chime();
-      window.haptics?.success();
+      if (newBest) celebrate(shell.root, 'New Whack-a-Mole record!');
+      else audio?.chime();
       message.innerHTML = `
         <div class="wam-overlay">
           <h3>Time's Up! Score: ${score}</h3>

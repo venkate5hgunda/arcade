@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const WORDS = [
@@ -161,7 +162,10 @@ export default {
       round++;
       solved = false; hinted = false;
       if (round <= totalRounds) pickWord();
-      if (round > totalRounds) session?.finish();
+      if (round > totalRounds) {
+        session?.finish();
+        if (correctCount === totalRounds) celebrate(shell.root, 'Perfect word scramble!');
+      }
       else checkpoint();
       render();
     }
@@ -173,6 +177,7 @@ export default {
     }
 
     function newGame() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       clearTimeout(advanceTimer);
       round = 1; correctCount = 0; hintsUsed = 0; solved = false; hinted = false;
       refillPool();

@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
 
@@ -151,6 +152,7 @@ export default {
     }
 
     function newGame() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       clearInterval(timer);
       score = { 0: 0, 1: 0 };
       currentTeam = 0; currentActor = 0;
@@ -218,7 +220,12 @@ export default {
       if (currentTeam === 0) {
         currentActor = (currentActor + 1) % Math.ceil(playerCount / 2);
         const totalGuessed = score[0] + score[1];
-        if (totalGuessed >= 10) { phase = 'gameover'; checkpointGame(); render(); return; }
+        if (totalGuessed >= 10) {
+          phase = 'gameover';
+          const winner = score[0] > score[1] ? 1 : score[1] > score[0] ? 2 : 0;
+          if (winner) celebrate(shell.root, `Team ${winner} wins Charades!`);
+          checkpointGame(); render(); return;
+        }
       }
       phase = 'setup';
       currentWord = '';

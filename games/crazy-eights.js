@@ -1,4 +1,6 @@
 import { createShell, wireBack } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const SUIT_NAMES = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
@@ -126,6 +128,7 @@ export default {
       pendingEight = null;
       winner = null;
       ending = '';
+      shell.root.querySelector('.arcade-victory')?.remove();
       turn = 1;
       resumePhase = null;
       render();
@@ -146,9 +149,9 @@ export default {
     function finishTurn() {
       if (hands[current].length === 0) {
         winner = current;
-        ending = `Player ${current + 1} played their last card and wins!`;
+        ending = `${playerName(current)} played their last card and wins!`;
         phase = 'over';
-        sound('chime');
+        celebrate(shell.root, `${playerName(winner)} wins Crazy Eights!`);
       } else {
         replenish();
         if (passes === 2 && stock.length === 0) {
@@ -156,9 +159,9 @@ export default {
           winner = scores[0] === scores[1] ? null : scores[0] < scores[1] ? 0 : 1;
           ending = winner === null
             ? `Blocked game · ${scores[0]} points each. It's a tie!`
-            : `Blocked game · Player ${winner + 1} wins with ${scores[winner]} points against ${scores[1 - winner]}!`;
+            : `Blocked game · ${playerName(winner)} wins with ${scores[winner]} points against ${scores[1 - winner]}!`;
           phase = 'over';
-          sound('chime');
+          if (winner !== null) celebrate(shell.root, `${playerName(winner)} wins Crazy Eights!`);
         } else {
           current = 1 - current;
           turn++;

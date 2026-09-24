@@ -2,6 +2,8 @@
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
@@ -74,7 +76,7 @@ export default {
     const playerCount = settings.players === '2' ? 2 : 1;
     shell.root.querySelector('.game-meta').textContent = `${size}×${size} grid · ${total / 2} pairs · ${playerCount === 2 ? '2 players' : 'solo'}`;
 
-    let cards = [], firstPick = null, lock = false, gameOver = false;
+    let cards = [], firstPick = null, lock = false, gameOver = false, recentFlip = -1;
     let current = 1, scores = { 1: 0, 2: 0 };
     let disposed = false, mismatchTimer = null, roundId = 0;
 
@@ -101,12 +103,14 @@ export default {
 
     function newGame() {
       roundId++;
+      shell.root.querySelector('.arcade-victory')?.remove();
       clearTimeout(mismatchTimer);
       const pairs = total / 2;
       const deck = SYMBOLS.slice(0, pairs).flatMap(s => [s, s]);
       shuffle(deck);
       cards = deck.map((symbol, i) => ({ symbol, revealed: false, matched: false, index: i }));
       firstPick = null; lock = false; gameOver = false;
+      recentFlip = -1;
       current = 1; scores = { 1: 0, 2: 0 };
       checkpoint();
       render();
@@ -120,6 +124,7 @@ export default {
         btn.setAttribute('aria-label', `Card ${card.index + 1}`);
         if (card.revealed || card.matched) {
           btn.classList.add('revealed');
+          if (card.index === recentFlip) btn.classList.add('just-flipped');
           btn.textContent = card.symbol;
         } else {
           btn.textContent = '❓';
@@ -130,6 +135,7 @@ export default {
         grid.appendChild(btn);
       }
       updateStatus();
+      recentFlip = -1;
     }
 
     function updateStatus() {
@@ -146,6 +152,7 @@ export default {
       if (audio) await audio.prepare();
       if (disposed || gameOver || startedRound !== roundId) return;
       cards[i].revealed = true;
+      recentFlip = i;
       if (audio) audio.tap();
 
       if (firstPick === null) {
@@ -168,9 +175,11 @@ export default {
           session?.finish();
           if (playerCount === 1) {
             status.textContent = `🎉 All pairs found! Mismatches: ${cards.length / 2 - scores[1]}`;
+            celebrate(shell.root, 'You found every pair!');
           } else {
             const winner = scores[1] > scores[2] ? 1 : (scores[2] > scores[1] ? 2 : 0);
-            status.textContent = winner ? `🎉 Player ${winner} wins!` : "🤝 It's a tie!";
+            status.textContent = winner ? `🎉 ${playerName(winner - 1)} wins!` : "🤝 It's a tie!";
+            if (winner) celebrate(shell.root, `${playerName(winner - 1)} wins Memory!`);
           }
         }
       } else {
