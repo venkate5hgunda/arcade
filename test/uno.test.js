@@ -61,16 +61,18 @@ test('skip, reverse including two-player repeat, and drawing penalties advance c
   assert.equal(s.hands[3].length, before + 2);
   assert.equal(s.current, 0);
   const wildFour = give(0, 'wild', 'wild4');
-  const colored = give(0, 'red', '8');
-  assert.equal(canPlayUno(s, wildFour), false);
-  assert.equal(actUno(s, { type: 'play', id: wildFour.id, color: 'blue' }), false);
-  assert.equal(actUno(s, { type: 'play', id: colored.id }), true);
-  s.current = 0;
+  give(0, 'red', '8');
+  assert.equal(canPlayUno(s, wildFour), true, 'a +4 bluff may be challenged');
   assert.equal(actUno(s, { type: 'play', id: wildFour.id, color: 'purple' }), false);
   assert.equal(actUno(s, { type: 'play', id: wildFour.id, color: 'blue' }), true);
   assert.equal(s.color, 'blue');
-  assert.equal(s.current, 2);
-  assert.equal(s.hands[1].length, before + 4);
+  assert.equal(s.current, 1);
+  assert.equal(unoView(s, 1).challenge, true);
+  assert.equal(JSON.stringify(unoView(s, 1)).includes('"illegal"'), false);
+  assert.equal(actUno(s, { type: 'challenge' }), true);
+  assert.equal(s.current, 1, 'a successful challenge leaves the challenger on turn');
+  assert.equal(s.hands[0].length, 6);
+  assert.equal(s.hands[1].length, before);
 });
 
 test('one drawn card may be played or passed; old cards may not be played that turn', () => {
@@ -94,6 +96,9 @@ test('a drawn playable card can be played, wild color is required, and two-playe
   give(1, 'yellow', '4');
   assert.equal(actUno(s, { type: 'play', id: wild.id }), false);
   assert.equal(actUno(s, { type: 'play', id: wild.id, color: 'green' }), true);
+  assert.equal(s.current, 1);
+  assert.equal(actUno(s, { type: 'draw' }), false, 'a +4 must be resolved first');
+  assert.equal(actUno(s, { type: 'accept' }), true);
   assert.equal(s.current, 0);
   assert.equal(s.hands[1].length, 5);
   assert.equal(s.color, 'green');
@@ -105,6 +110,45 @@ test('a drawn playable card can be played, wild color is required, and two-playe
   assert.equal(actUno(s, { type: 'play', id: drawn.id,
     ...(drawn.color === 'wild' ? { color: 'yellow' } : {}) }), true);
   assert.equal(s.drawnId, null);
+});
+
+test('draw-four challenges penalize a failed challenger and defer a last-card win', () => {
+  const { state: s, give } = rig(2);
+  const wild = give(0, 'wild', 'wild4');
+  give(1, 'yellow', '9');
+  assert.equal(actUno(s, { type: 'play', id: wild.id, color: 'green' }), true);
+  assert.equal(s.winner, null);
+  assert.equal(s.hands[0].length, 0);
+  assert.equal(validUnoCheckpoint(s), true);
+  assert.equal(actUno(s, { type: 'challenge' }), true);
+  assert.equal(s.hands[1].length, 7);
+  assert.equal(s.winner, 0);
+  assert.equal(s.challenge, null);
+});
+
+test('one-card callouts and catches validate actor, avoid leaking hidden hands, and preserve turn', () => {
+  const { state: s, give } = rig(2);
+  const card = give(0, 'red', '5');
+  give(0, 'blue', '6');
+  give(1, 'green', '7');
+  assert.equal(actUno(s, { type: 'uno' }), true);
+  assert.equal(actUno(s, { type: 'play', id: card.id }), true);
+  assert.equal(s.unoPending, null);
+  assert.equal(s.current, 1);
+
+  const { state: missed, give: giveMissed } = rig(2);
+  const played = giveMissed(0, 'red', '5');
+  giveMissed(0, 'blue', '6');
+  giveMissed(1, 'green', '7');
+  assert.equal(actUno(missed, { type: 'play', id: played.id }), true);
+  assert.equal(missed.unoPending, 0);
+  assert.equal(unoView(missed, 1).unoPending, 0);
+  assert.equal(actUno(missed, { type: 'catch' }, Math.random, 0), false);
+  assert.equal(actUno(missed, { type: 'catch' }, Math.random, 1), true);
+  assert.equal(missed.hands[0].length, 3);
+  assert.equal(missed.current, 1);
+  assert.equal(missed.unoPending, null);
+  assert.equal(actUno(missed, { type: 'catch' }), false);
 });
 
 test('discard recycling preserves top, blocked games terminate, last card wins', () => {
@@ -169,4 +213,20 @@ test('host rejects stale revisions, out-of-turn requests and illegal card IDs', 
   assert.equal(s.current, 1);
   assert.equal(s.discard.at(-1).id, card.id);
   assert.equal(applyRemoteUnoAction(s, request, 4, seats[0], seats), false);
+});
+
+test('host allows only the declared seat to call UNO and only the next seat to catch', () => {
+  const { state, give } = rig(2);
+  const card = give(0, 'red', '5');
+  give(0, 'blue', '6');
+  give(1, 'green', '7');
+  const ids = ['host', 'guest'];
+  const request = (move, revision = 2) => ({ type: 'uno-request', revision, move });
+  assert.equal(applyRemoteUnoAction(state, request({ type: 'play', id: card.id }), 2, ids[0], ids), true);
+  assert.equal(state.unoPending, 0);
+  assert.equal(applyRemoteUnoAction(state, request({ type: 'uno' }, 1), 2, ids[0], ids), false);
+  assert.equal(applyRemoteUnoAction(state, request({ type: 'catch' }), 2, ids[0], ids), false);
+  assert.equal(applyRemoteUnoAction(state, request({ type: 'catch' }), 2, ids[1], ids), true);
+  assert.equal(state.hands[0].length, 3);
+  assert.equal(applyRemoteUnoAction(state, request({ type: 'catch' }), 2, ids[1], ids), false);
 });

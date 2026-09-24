@@ -3,9 +3,10 @@ import { remoteMatch, seat } from '../js/remote-match.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
+import { chooseCardTable } from '../js/card-room-entry.js';
 
 export const COLORS = ['red', 'yellow', 'green', 'blue'];
-const INK = { red: '#cd343c', yellow: '#b87a08', green: '#238354', blue: '#3278c6', wild: '#292b45' };
+const INK = { red: '#e24458', yellow: '#eeb744', green: '#31a77d', blue: '#4385df', wild: '#272a4e' };
 const LABEL = { skip: '⊘', reverse: '↶', draw2: '+2', wild: '★', wild4: '+4' };
 
 export function unoDeck() {
@@ -36,15 +37,15 @@ export function newUnoGame(count, random = Math.random) {
   const first = stock.findLastIndex(card => /^[0-9]$/.test(card.value));
   const discard = [stock.splice(first, 1)[0]];
   return { stock, discard, hands, color: discard[0].color, current: 0,
-    direction: 1, drawnId: null, passes: 0, winner: null, turn: 1 };
+    direction: 1, drawnId: null, passes: 0, winner: null, turn: 1,
+    challenge: null, unoPending: null, unoDeclared: null };
 }
 
 export function canPlayUno(state, card, player = state.current) {
-  if (!card || state.winner !== null || player !== state.current ||
+  if (!card || state.winner !== null || state.challenge || player !== state.current ||
       (state.drawnId !== null && state.drawnId !== card.id)) return false;
   const hand = state.hands[player];
   if (!hand?.some(held => held.id === card.id)) return false;
-  if (card.value === 'wild4') return !hand.some(held => held.color === state.color);
   return card.color === 'wild' || card.color === state.color ||
     card.value === state.discard.at(-1).value;
 }
@@ -74,18 +75,65 @@ function drawCards(state, count, random) {
 }
 
 // Returns false without mutating state for every invalid action.
-export function actUno(state, action, random = Math.random) {
+export function actUno(state, action, random = Math.random, actor = state.current) {
   if (state.winner !== null || !action || typeof action !== 'object') return false;
+  if (action.type === 'uno') {
+    if (state.unoPending !== actor && (actor !== state.current ||
+        state.hands[actor]?.length !== 2)) return false;
+    if (state.unoPending === actor) state.unoPending = null;
+    else state.unoDeclared = actor;
+    return true;
+  }
+  if (action.type === 'catch') {
+    if (state.unoPending === null || state.unoPending === actor ||
+        actor !== state.current) return false;
+    const current = state.current;
+    state.current = state.unoPending;
+    drawCards(state, 2, random);
+    state.current = current;
+    state.unoPending = null;
+    return true;
+  }
+  if (actor !== state.current) return false;
+  if (state.challenge) {
+    if (action.type !== 'accept' && action.type !== 'challenge') return false;
+    const { offender, illegal } = state.challenge;
+    state.challenge = null;
+    state.unoPending = null;
+    if (action.type === 'challenge' && illegal) {
+      const current = state.current;
+      state.current = offender;
+      drawCards(state, 4, random);
+      state.current = current;
+    } else {
+      drawCards(state, action.type === 'challenge' ? 6 : 4, random);
+      next(state);
+    }
+    if (!state.hands[offender].length) state.winner = offender;
+    return true;
+  }
   const hand = state.hands[state.current];
   if (action.type === 'play') {
     const card = hand.find(held => held.id === action.id);
     if (!canPlayUno(state, card) ||
         (card.color === 'wild' ? !COLORS.includes(action.color) : action.color !== undefined)) return false;
+    const illegalDrawFour = card.value === 'wild4' &&
+      hand.some(held => held.color === state.color);
+    const declared = state.unoDeclared === state.current;
+    const offender = state.current;
+    if (state.unoPending !== null) state.unoPending = null;
     hand.splice(hand.indexOf(card), 1);
     state.discard.push(card);
     state.color = card.color === 'wild' ? action.color : card.color;
     state.passes = 0;
-    if (!hand.length) { state.winner = state.current; state.drawnId = null; return true; }
+    state.unoDeclared = null;
+    if (hand.length === 1 && !declared) state.unoPending = offender;
+    if (card.value === 'wild4') {
+      next(state);
+      state.challenge = { offender, illegal: illegalDrawFour };
+      return true;
+    }
+    if (!hand.length) { state.winner = offender; state.drawnId = null; return true; }
     if (card.value === 'reverse') {
       state.direction *= -1;
       next(state, state.hands.length === 2 ? 2 : 1);
@@ -99,14 +147,18 @@ export function actUno(state, action, random = Math.random) {
   }
   if (action.type === 'draw') {
     if (state.drawnId !== null || !(state.stock.length || state.discard.length > 1)) return false;
+    state.unoPending = null;
     drawCards(state, 1, random);
     state.drawnId = hand.at(-1).id;
+    if (hand.length > 2) state.unoDeclared = null;
     state.passes = 0;
     return true;
   }
   if (action.type === 'pass') {
     if (state.drawnId === null && (state.stock.length || state.discard.length > 1 ||
         hand.some(card => canPlayUno(state, card)))) return false;
+    state.unoPending = null;
+    state.unoDeclared = null;
     state.passes = state.drawnId === null ? state.passes + 1 : 0;
     if (state.passes >= state.hands.length) {
       const fewest = Math.min(...state.hands.map(cards => cards.length));
@@ -121,18 +173,28 @@ export function actUno(state, action, random = Math.random) {
 
 export function applyRemoteUnoAction(state, request, revision, from, playerIds) {
   return request?.type === 'uno-request' && request.revision === revision &&
-    playerIds[state.current] === from && actUno(state, request.move);
+    playerIds.includes(from) &&
+    actUno(state, request.move, Math.random, playerIds.indexOf(from));
 }
 
 export function validUnoCheckpoint(s) {
   if (!s || typeof s !== 'object' || !Array.isArray(s.hands) ||
-      s.hands.length < 2 || s.hands.length > 4 || s.hands.some(hand => !Array.isArray(hand) || !hand.length) ||
+      s.hands.length < 2 || s.hands.length > 4 || s.hands.some((hand, index) =>
+        !Array.isArray(hand) || !hand.length && s.challenge?.offender !== index) ||
       !Array.isArray(s.stock) || !Array.isArray(s.discard) || !s.discard.length ||
       !COLORS.includes(s.color) || !Number.isInteger(s.current) || s.current < 0 || s.current >= s.hands.length ||
       ![-1, 1].includes(s.direction) || s.winner !== null ||
       !Number.isInteger(s.turn) || s.turn < 1 || !Number.isInteger(s.passes) ||
       s.passes < 0 || s.passes >= s.hands.length ||
       (s.discard.at(-1)?.color !== 'wild' && s.color !== s.discard.at(-1)?.color) ||
+      !(s.challenge == null || Number.isInteger(s.challenge.offender) &&
+        s.challenge.offender >= 0 && s.challenge.offender < s.hands.length &&
+        s.challenge.offender !== s.current && typeof s.challenge.illegal === 'boolean') ||
+      !(s.unoPending == null || Number.isInteger(s.unoPending) &&
+        s.unoPending >= 0 && s.unoPending < s.hands.length &&
+        s.hands[s.unoPending].length === 1) ||
+      !(s.unoDeclared == null || Number.isInteger(s.unoDeclared) &&
+        s.unoDeclared === s.current && s.hands[s.unoDeclared].length === 2) ||
       !(s.drawnId === null || Number.isInteger(s.drawnId) &&
         s.hands[s.current].some(card => card?.id === s.drawnId))) return false;
   const cards = [...s.stock, ...s.discard, ...s.hands.flat()];
@@ -150,22 +212,37 @@ export function unoView(state, player) {
     color: state.color, current: state.current, direction: state.direction,
     drawnId: player === state.current ? state.drawnId : null,
     stockCount: state.stock.length, canDraw: !!(state.stock.length || state.discard.length > 1),
-    canPass: player === state.current && (state.drawnId !== null ||
+    canPass: !state.challenge && player === state.current && (state.drawnId !== null ||
       !(state.stock.length || state.discard.length > 1) &&
       !state.hands[state.current].some(card => canPlayUno(state, card))),
+    challenge: !!state.challenge, unoPending: state.unoPending,
+    unoDeclared: state.unoDeclared === player,
     turn: state.turn, winner: state.winner };
 }
 
 function cardNode(card, onClick, playable = false) {
   const node = document.createElement(onClick ? 'button' : 'div');
   node.className = 'cg-card uno-card' + (onClick ? ' cg-card--button' : '') +
-    (card ? '' : ' cg-card--back');
+    (card ? ` uno-card--${card.color}` : ' cg-card--back');
   if (card) {
     node.style.setProperty('--uno-color', INK[card.color]);
-    node.textContent = LABEL[card.value] || card.value;
+    const label = LABEL[card.value] || card.value;
+    const corner = document.createElement('span');
+    corner.className = 'uno-card-corner';
+    corner.textContent = label;
+    const face = document.createElement('span');
+    face.className = 'uno-card-face';
+    const symbol = document.createElement('span');
+    symbol.className = 'uno-card-symbol';
+    symbol.textContent = label;
+    face.append(symbol);
+    const echo = document.createElement('span');
+    echo.className = 'uno-card-corner uno-card-corner--bottom';
+    echo.textContent = label;
+    node.append(corner, face, echo);
     node.setAttribute('aria-label', `${card.color} ${card.value}${onClick ? playable ? ', play' : ', cannot play' : ''}`);
   } else {
-    node.textContent = '★';
+    node.innerHTML = '<span class="uno-card-back-mark" aria-hidden="true">✦</span>';
     node.setAttribute('aria-label', 'Face-down card');
   }
   if (onClick) {
@@ -192,6 +269,8 @@ export default {
     shell.root.classList.add('uno-vibe');
     const room = remoteMatch(multiplayer, game.id);
     const restored = !room && validUnoCheckpoint(session?.state) ? session.state : null;
+    if (!room && !restored && !await chooseCardTable(shell.stage, multiplayer, game))
+      return { dispose: () => shell.root.remove() };
     const saved = loadJSON(KEYS.SETTINGS + ':uno', { count: '2' });
     const settings = room ? { count: String(room.activeGame.playerIds.length) } :
       restored ? { count: String(restored.hands.length) } : await renderSetup(shell.stage, {
@@ -205,9 +284,10 @@ export default {
     const mySeat = room ? seat(room) - 1 : null;
     shell.root.querySelector('.game-meta').textContent = room
       ? `Private room · Player ${mySeat + 1} · ${count} players`
-      : `${count} players · pass & play`;
+      : `${count} players · local pass & play`;
     let state = room ? room.role === 'host' ? newUnoGame(count) : null :
-      restored || newUnoGame(count);
+      restored ? { ...restored, challenge: restored.challenge ?? null,
+        unoPending: restored.unoPending ?? null, unoDeclared: restored.unoDeclared ?? null } : newUnoGame(count);
     let view = room ? room.role === 'host' ? unoView(state, mySeat) : null : null;
     let covered = !room && state.winner === null;
     let pending = null, disposed = false, revision = 0, lastRevision = -1, gameRound = 0;
@@ -215,6 +295,12 @@ export default {
     const table = document.createElement('div');
     table.className = 'cg-table uno-table';
     shell.stage.appendChild(table);
+    function feedback() {
+      const audio = window.arcadeAudio;
+      if (audio) void audio.prepare().then(() => audio.tap()).catch(error =>
+        console.warn('Card sound unavailable:', error));
+      window.haptics?.select();
+    }
     function checkpoint() {
       if (room) return;
       if (state.winner !== null) session?.finish();
@@ -233,24 +319,25 @@ export default {
       for (let i = 1; i < count; i++)
         room.sendPrivateAction(room.activeGame.playerIds[i], { type: 'uno-state', revision, view: unoView(state, i) });
     }
-    function request(action) {
+    function request(action, actor = state?.current) {
       if (room) room.sendAction({ type: 'uno-request',
         revision: room.role === 'host' ? revision : lastRevision, move: action });
       else {
         const previousWinner = state.winner;
-        if (actUno(state, action)) {
+        if (actUno(state, action, Math.random, actor)) {
+          feedback();
           if (previousWinner === null && state.winner !== null) announceResult(state.winner);
           pending = null;
-          covered = state.winner === null && state.current !== previous;
+          covered = state.winner === null && (covered || state.current !== previous);
           checkpoint();
           render();
         }
       }
     }
     let previous = state?.current ?? 0;
-    function move(action) {
+    function move(action, actor) {
       if (!room) previous = state.current;
-      request(action);
+      request(action, actor);
     }
     const offRoom = room?.on(event => {
       if (disposed || event.type !== 'action' || room.activeGame?.id !== game.id) return;
@@ -263,6 +350,7 @@ export default {
           const previousWinner = state.winner;
           if (applyRemoteUnoAction(state, event.action, revision, event.from,
             room.activeGame.playerIds)) {
+            feedback();
             if (previousWinner === null && state.winner !== null) announceResult(state.winner, true);
             pending = null;
             publish();
@@ -299,15 +387,24 @@ export default {
             ![-1, 1].includes(incoming.direction) ||
             ![null, -1, ...Array.from({ length: count }, (_, i) => i)].includes(incoming.winner) ||
             typeof incoming.canDraw !== 'boolean' || typeof incoming.canPass !== 'boolean' ||
+            typeof incoming.challenge !== 'boolean' ||
+            !(incoming.unoPending === null || Number.isInteger(incoming.unoPending) &&
+              incoming.unoPending >= 0 && incoming.unoPending < count &&
+              incoming.counts[incoming.unoPending] === 1) ||
+            typeof incoming.unoDeclared !== 'boolean' ||
             !(incoming.drawnId === null || Number.isInteger(incoming.drawnId) &&
               incoming.hand.some(card => card?.id === incoming.drawnId)) ||
             incoming.hand.some(card => !Number.isInteger(card?.id) ||
               card.color !== deckById[card.id]?.color ||
               card.value !== deckById[card.id]?.value) ||
-            new Set(incoming.hand.map(card => card.id)).size !== incoming.hand.length) return;
+            new Set(incoming.hand.map(card => card.id)).size !== incoming.hand.length) {
+          console.warn('Invalid UNO room state received.');
+          return;
+        }
         lastRevision = event.action.revision;
         const previousWinner = view?.winner;
         view = incoming;
+        if (previousWinner !== undefined && incoming.turn !== undefined) feedback();
         if (previousWinner === null && incoming.winner !== null) announceResult(incoming.winner);
         pending = null;
         render();
@@ -321,9 +418,12 @@ export default {
       table.replaceChildren();
       const heading = document.createElement('header');
       heading.className = 'cg-table-heading';
+      const eyebrow = document.createElement('span');
+      eyebrow.className = 'cg-eyebrow';
+      eyebrow.textContent = room ? 'PRIVATE ROOM • LIVE TABLE' : 'LOCAL TABLE • PASS & PLAY';
       const label = document.createElement('strong');
-      label.textContent = 'UNO-inspired 🌈';
-      heading.append(label);
+      label.textContent = 'CHROMATIC · UNO-inspired';
+      heading.append(eyebrow, label);
       table.append(heading);
       if (!view && room) {
         const waiting = document.createElement('p');
@@ -338,7 +438,15 @@ export default {
         curtain.className = 'ce-curtain uno-curtain';
         const title = document.createElement('h3');
         title.textContent = `Pass to ${playerName(data.current)}`;
-        curtain.append(title, button(`I'm ${playerName(data.current)} · show hand`, () => {
+        curtain.append(title);
+        if (data.unoPending !== null && data.unoPending !== data.current) {
+          const reminder = document.createElement('p');
+          reminder.className = 'ce-curtain-instructions';
+          reminder.textContent = `${playerName(data.unoPending)}: one card left! Call UNO before handing over, or risk a +2 catch.`;
+          curtain.append(reminder, button(`I'm ${playerName(data.unoPending)} · call UNO!`, () =>
+            move({ type: 'uno' }, data.unoPending)));
+        }
+        curtain.append(button(`I'm ${playerName(data.current)} · show hand`, () => {
           covered = false; render();
         }));
         const note = document.createElement('p');
@@ -353,7 +461,12 @@ export default {
       data.counts.forEach((cards, i) => {
         const tag = document.createElement('span');
         tag.className = `uno-player${i === data.current ? ' uno-player--current' : ''}`;
-        tag.textContent = `${playerName(i, room)} · ${cards} cards${i === data.current ? ' ←' : ''}`;
+        const name = document.createElement('strong');
+        name.textContent = playerName(i, room);
+        const count = document.createElement('small');
+        count.textContent = `${cards} ${cards === 1 ? 'card' : 'cards'}`;
+        tag.append(name, count);
+        if (i === data.current) tag.setAttribute('aria-current', 'true');
         players.append(tag);
       });
       table.append(players);
@@ -365,6 +478,7 @@ export default {
       const active = document.createElement('p');
       active.className = 'cg-message';
       active.textContent = `${data.color.toUpperCase()} · ${data.direction === 1 ? '↻' : '↺'} · Turn ${data.turn} · ${data.stockCount} to draw`;
+      active.style.setProperty('--active-color', INK[data.color]);
       middle.append(piles, active);
       table.append(middle);
       const status = document.createElement('p');
@@ -373,7 +487,9 @@ export default {
       status.textContent = data.winner !== null
         ? data.winner === -1 ? 'Blocked game — tie!' : `${playerName(data.winner, room)} wins!`
         : room && data.current !== mySeat ? `Waiting for ${playerName(data.current, room)}`
-          : pending !== null ? 'Choose a color for your wild card.'
+          : data.challenge ? 'Wild +4: accept the draw or challenge the previous player.'
+            : pending !== null ? 'Choose a color for your wild card.'
+            : data.unoPending !== null ? `${playerName(data.unoPending, room)} is down to one card — call or catch UNO!`
             : data.drawnId !== null ? 'Play the drawn card or pass.' : 'Match color or value, or draw one.';
       table.append(status);
       const hand = document.createElement('section');
@@ -386,19 +502,34 @@ export default {
       const visibleHand = room ? data.hand : state.hands[state.current];
       const legal = card => canAct && pending === null && (room
         ? (data.drawnId === null || data.drawnId === card.id) &&
-          (card.value === 'wild4' ? !visibleHand.some(held => held.color === data.color) :
-            card.color === 'wild' || card.color === data.color || card.value === data.top.value)
+          (card.color === 'wild' || card.color === data.color || card.value === data.top.value) &&
+          !data.challenge
         : canPlayUno(state, card));
       visibleHand.forEach(card => row.append(cardNode(card, () => play(card), legal(card))));
       hand.append(title, row);
       table.append(hand);
       const actions = document.createElement('div');
       actions.className = 'cg-actions';
+      if (data.winner === null && data.unoPending !== null &&
+          data.unoPending === (room ? mySeat : data.current))
+        actions.append(button('Call UNO! ✦', () => move({ type: 'uno' })));
+      if (canAct && data.unoPending !== null && data.unoPending !== (room ? mySeat : data.current))
+        actions.append(button('Catch missed UNO · +2', () => move({ type: 'catch' }), true));
       if (canAct) {
-        if (pending !== null) {
-          COLORS.forEach(color => actions.append(button(color, () => move({ type: 'play', id: pending, color }))));
+        if (data.challenge) {
+          actions.append(button('Take 4 · continue', () => move({ type: 'accept' })));
+          actions.append(button('Challenge +4', () => move({ type: 'challenge' }), true));
+        } else if (pending !== null) {
+          COLORS.forEach(color => {
+            const choice = button(color, () => move({ type: 'play', id: pending, color }));
+            choice.classList.add('uno-color-choice');
+            choice.style.setProperty('--uno-color', INK[color]);
+            actions.append(choice);
+          });
           actions.append(button('Cancel', () => { pending = null; render(); }, true));
         } else {
+          if (visibleHand.length === 2 && !data.unoDeclared)
+            actions.append(button('Call UNO! ✦', () => move({ type: 'uno' }), true));
           if (data.drawnId === null && data.canDraw)
             actions.append(button('Draw one +', () => move({ type: 'draw' })));
           if (data.canPass)
@@ -410,7 +541,7 @@ export default {
       table.append(actions);
       const rules = document.createElement('p');
       rules.className = 'cg-rules';
-      rules.textContent = 'Draw one, then play only that card or pass. +2/+4 make the next player draw and lose a turn. +4 requires no card of the active color. No stacking.';
+      rules.textContent = 'Draw one, then play only that card or pass. Call UNO at one card or risk a +2 catch. Challenge a +4 bluff: the player draws 4 if caught, otherwise the challenger draws 6. No stacking.';
       table.append(rules);
     }
     function reset() {

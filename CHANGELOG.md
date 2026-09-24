@@ -3,6 +3,20 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-24 — Live card tables and private rooms
+
+- UNO-inspired and Crazy Eights now open with a private-room invitation
+  instead of assuming everyone shares one phone. Local pass-and-play remains
+  an explicit offline option. Crazy Eights now supports two remote seats with
+  host-validated actions, private per-player hands, wild suit choices,
+  reconnect synchronization, and room standings.
+- Gave the card tables original, colorful artwork, clearer active seats,
+  responsive card faces and richer felt-table styling without copying a
+  commercial deck or logo. Blackjack remains a solo dealer game.
+- UNO-inspired now handles a missed one-card callout (+2 catch) and challenges
+  to a wild +4, with host-verified penalties for bluffs and failed challenges.
+- Precached the card-room entry module and refreshed offline styles in v28.
+
 ## 2026-09-24 — Board game table and movement
 
 - Snakes & Ladders and Ludo have larger, shape-coded player pieces and named
