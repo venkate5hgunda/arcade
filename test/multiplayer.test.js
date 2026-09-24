@@ -297,3 +297,182 @@ test('raw fallback remains readable and malformed compressed payloads fail safel
     globalThis.DecompressionStream = decompression;
   }
 });
+
+async function connectGuest(host, name) {
+  const guest = new MultiplayerRoom();
+  const answer = await guest.joinInvite(await host.createInvite(), name);
+  await host.acceptAnswer(answer);
+  const hp = FakePeer.instances.at(-2);
+  const gp = FakePeer.instances.at(-1);
+  const channel = new FakeChannel('arcade');
+  hp.channel.other = channel;
+  channel.other = hp.channel;
+  gp.ondatachannel({ channel });
+  hp.channel.readyState = channel.readyState = 'open';
+  hp.channel.onopen();
+  channel.onopen();
+  return { guest, hostChannel: hp.channel, guestChannel: channel };
+}
+
+test('host records each round once, retains results across games, and resets on a new room', () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  const guestId = crypto.randomUUID();
+  host.members.push({ id: guestId, name: 'Guest', connected: true, admitted: true });
+  assert.throws(() => host.recordResult('chess', 0, 'one'), /active game/);
+  host.startGame('chess', [host.peerId, guestId]);
+  for (const [game, winner, key, error] of [
+    ['rps', 0, 'one', /active game/], ['chess', 2, 'one', /Winner/],
+    ['chess', -1, 'one', /Winner/], ['chess', 0.5, 'one', /Winner/],
+    ['chess', undefined, 'one', /Winner/], ['chess', 0, '', /Round key/],
+    ['chess', 0, {}, /Round key/], ['chess', 0, -1, /Round key/],
+    ['chess', 0, Number.MAX_SAFE_INTEGER + 1, /Round key/],
+  ]) assert.throws(() => host.recordResult(game, winner, key), error);
+  assert.equal(host.recordResult('chess', 0, 'one'), true);
+  assert.equal(host.recordResult('chess', 1, 'one'), false, 'retry cannot change the winner');
+  assert.equal(host.recordResult('chess', null, 1), true);
+  assert.equal(host.recordResult('chess', 1, '1'), true, 'string and integer keys differ');
+  assert.deepEqual(host.stats.games, [{ id: 'chess', wins: 2, losses: 2, draws: 2 }]);
+  host.returnLobby();
+  assert.throws(() => host.recordResult('chess', 0, 'one'), /active game/);
+  host.startGame('chess', [host.peerId, guestId]);
+  assert.equal(host.recordResult('chess', 1, 'one'), true, 'new game generation reuses local key');
+  host.startGame('rps', [host.peerId, guestId]);
+  assert.equal(host.recordResult('rps', null, 'one'), true);
+  assert.deepEqual(host.stats.games, [
+    { id: 'chess', wins: 3, losses: 3, draws: 2 },
+    { id: 'rps', wins: 0, losses: 0, draws: 2 },
+  ]);
+  host.close();
+  assert.deepEqual(host.stats, { games: [], players: [] });
+  host.createHost('New host');
+  assert.deepEqual(host.stats, { games: [], players: [] });
+  host.close();
+});
+
+test('standings sync to guests, reject forged and malformed state, and keep disconnected names', async () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Captain');
+  const { guest, hostChannel, guestChannel } = await connectGuest(host, 'Zed');
+  const errors = [];
+  host.on((event) => { if (event.type === 'error') errors.push(event.message); });
+  guest.on((event) => { if (event.type === 'error') errors.push(event.message); });
+  host.startGame('chess', [host.peerId, guest.peerId]);
+  assert.throws(() => guest.recordResult('chess', 1, 'g1'), /Only the host/);
+  guestChannel.send(JSON.stringify({
+    v: 1, room: host.roomId, id: guest.peerId, request: `${guest.peerId}:100`,
+    kind: 'result', game: 'chess', winnerIndex: 1, roundKey: 'g1',
+  }));
+  assert.match(errors.at(-1), /Guests cannot change room state/);
+  assert.deepEqual(host.stats.players, []);
+  host.recordResult('chess', 1, 'g1');
+  assert.deepEqual(guest.stats, host.stats);
+  assert.equal(guest.leaderboard()[0].name, 'Zed');
+  const late = await connectGuest(host, 'Late guest');
+  assert.deepEqual(late.guest.stats, host.stats, 'late joiners receive prior results');
+  const before = structuredClone(guest.stats);
+  const valid = JSON.parse(hostChannel.sent);
+  const broken = [
+    { ...valid, stats: { games: [], players: [{ id: guest.peerId, wins: 1, losses: 0, draws: 0, games: [] }] } },
+    { ...valid, stats: { games: [{ id: '__proto__', wins: 1, losses: 0, draws: 0 }], players: [] } },
+    { ...valid, stats: { games: [{ id: 'chess', wins: -1, losses: 1, draws: 0 }], players: [] } },
+    { ...valid, stats: { games: [], players: [{ id: crypto.randomUUID(), wins: 0, losses: 0, draws: 0, games: [] }] } },
+    { ...valid, stats: null },
+  ];
+  const guestPeer = guest.peers.get(host.peerId);
+  for (const [index, state] of broken.entries()) {
+    state.request = `${host.peerId}:${guestPeer.lastRequest + index + 1}`;
+    guest.receive(guestPeer, host.peerId, JSON.stringify(state));
+    assert.match(errors.at(-1), /Invalid room standings/);
+    assert.deepEqual(guest.stats, before);
+  }
+  hostChannel.close();
+  assert.equal(host.members.find((member) => member.id === guest.peerId).connected, false);
+  assert.equal(host.leaderboard()[0].name, 'Zed');
+  assert.equal(host.leaderboard()[0].connected, false);
+  guest.close();
+  assert.deepEqual(guest.stats, { games: [], players: [] });
+  const otherHost = new MultiplayerRoom();
+  otherHost.createHost('Another host');
+  await late.guest.joinInvite(await otherHost.createInvite(), 'Late guest');
+  assert.deepEqual(late.guest.stats, { games: [], players: [] }, 'joining a new room discards prior results');
+  late.guest.close();
+  otherHost.close();
+  host.close();
+});
+
+test('leaderboard orders ties by losses, draws, name then peer ID; lobby renders standings', () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Zed');
+  const names = ['Amy', 'Bob', 'Bob'];
+  const ids = names.map(() => crypto.randomUUID());
+  host.members.push(...ids.map((id, index) =>
+    ({ id, name: names[index], connected: true, admitted: true })));
+  host.startGame('ludo', [host.peerId, ...ids]);
+  host.recordResult('ludo', null, 'draw');
+  host.recordResult('ludo', 1, 'win');
+  assert.deepEqual(host.leaderboard().map((entry) => entry.name), ['Amy', 'Bob', 'Bob', 'Zed']);
+  // Identical name and score ties resolve deterministically by peer ID.
+  const tied = host.leaderboard().filter((entry) => entry.name === 'Bob');
+  assert.deepEqual(tied.map((entry) => entry.id), [...tied.map((entry) => entry.id)].sort());
+  const previousDocument = globalThis.document;
+  const previousElement = globalThis.Element;
+  class ElementStub {
+    constructor(tag = 'div') { this.tag = tag; this.children = []; this.attributes = {}; this.textContent = ''; }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children = [...nodes]; }
+    setAttribute(key, value) { this.attributes[key] = value; }
+    addEventListener() {}
+    querySelectorAll() { return []; }
+    querySelector() { return null; }
+  }
+  const text = (node) => node?.textContent + (node?.children ?? []).map(text).join('');
+  try {
+    globalThis.Element = ElementStub;
+    globalThis.document = {
+      createElement: (tag) => new ElementStub(tag),
+      createTextNode: (value) => new ElementStub(value),
+    };
+    const container = new ElementStub();
+    const unmount = host.mountLobby(container, [{ id: 'ludo', name: 'Ludo', players: { min: 2, max: 4 } }], () => {});
+    assert.match(text(container), /Room standings/);
+    assert.match(text(container), /Amy · 1 W \/ 0 L \/ 1 D/);
+    assert.match(text(container), /Ludo: 1 W \/ 3 L \/ 4 D/);
+    assert.match(text(container), /Bob: 0 W \/ 1 L \/ 1 D/);
+    unmount();
+    const guest = new MultiplayerRoom();
+    guest.role = 'guest';
+    guest.peerId = ids[0];
+    guest.members = structuredClone(host.members);
+    guest.stats = structuredClone(host.stats);
+    guest.activeGame = structuredClone(host.activeGame);
+    const guestContainer = new ElementStub();
+    const unmountGuest = guest.mountLobby(guestContainer, [{ id: 'ludo', name: 'Ludo' }], () => {});
+    assert.match(text(guestContainer), /Room standings/);
+    assert.match(text(guestContainer), /Amy · 1 W \/ 0 L \/ 1 D/);
+    unmountGuest();
+    guest.close();
+  } finally {
+    globalThis.document = previousDocument;
+    globalThis.Element = previousElement;
+    host.close();
+  }
+});
+
+test('leaderboard prioritizes wins, then fewer losses, then more draws', () => {
+  const room = new MultiplayerRoom();
+  room.createHost('One');
+  const ids = Array.from({ length: 3 }, () => crypto.randomUUID());
+  room.members.push(...ids.map((id, index) => ({
+    id, name: ['Two', 'Three', 'Four'][index], connected: true, admitted: true,
+  })));
+  room.stats.players = [
+    { id: room.peerId, wins: 2, losses: 9, draws: 0, games: [] },
+    { id: ids[0], wins: 1, losses: 2, draws: 1, games: [] },
+    { id: ids[1], wins: 1, losses: 1, draws: 0, games: [] },
+    { id: ids[2], wins: 1, losses: 1, draws: 2, games: [] },
+  ];
+  assert.deepEqual(room.leaderboard().map(({ name, rank }) => [name, rank]),
+    [['One', 1], ['Four', 2], ['Three', 3], ['Two', 4]]);
+  room.close();
+});

@@ -74,6 +74,12 @@
 .mp-games { padding: 16px; border: 1px solid #7ba1a452; border-radius: 14px; background: #102f37; }
 .mp-games > p:first-child { flex-basis: 100%; margin: 0 0 8px; color: #bff4dc; }
 .mp-local-only { flex-basis: 100%; margin: 0; color: #adbdd0; font-size: .9rem; }
+.mp-standings { padding: 16px; margin: 18px 0; border: 1px solid #7ba1a452; border-radius: 14px; background: #141f36; }
+.mp-standings h3 { margin: 0 0 10px; color: #ffe2a4; }
+.mp-standings ol, .mp-standings-games { margin: 8px 0; padding-left: 28px; }
+.mp-standings li { padding: 4px 0; overflow-wrap: anywhere; }
+.mp-standings-games { border-top: 1px solid #7ba1a452; padding-top: 10px; }
+.mp-standings-games ul { padding-left: 20px; font-size: .9rem; color: #bfcde0; }
 @media (max-width: 560px) {
   .mp-lobby input:not([type="checkbox"]) { max-width: 100%; }
   .mp-controls button { width: 100%; }

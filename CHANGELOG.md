@@ -3,6 +3,56 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-24 — Board game table and movement
+
+- Snakes & Ladders and Ludo have larger, shape-coded player pieces and named
+  roster cards, with square numbers above board artwork. The generated snakes
+  and ladders keep their drawn paths apart; snakes have scaled bodies, shaped
+  heads, forked tongues and tapered, moving tails. Tokens follow each square
+  and animate climbs, slides, and captures. Snakes hiss within three squares;
+  ladders wobble nearby. Motion respects reduced-motion settings. Offline
+  cache v25 includes the shared token module and final board styling.
+
+## 2026-09-24 — Momentum-based Air Hockey
+
+- Paddle motion now has bounded acceleration, while both faceoffs and
+  post-goal serves transfer speed based on the paddle's velocity along the
+  contact normal. Gentle and hard strikes produce different puck speeds,
+  angled hits deflect accordingly, and low-friction travel decelerates
+  naturally rather than receiving a hidden minimum-speed boost. A motion
+  trail shows puck momentum. Offline cache v23.
+
+## 2026-09-24 — Stationary opening faceoff
+
+- Air Hockey now parks the opening puck at center until a paddle hits it,
+  including after a reset or checkpoint restore. Either player can open play;
+  post-goal possession and manual serves remain unchanged. Offline cache v21.
+
+## 2026-09-24 — Help, movement, victories and room standings
+
+- Every game has a shared How to play dialog with illustrated steps, controls,
+  options and a goal. 2048 now animates tile movement before revealing merges
+  and the new spawn; Tic-Tac-Toe, Connect Four and Memory animate only the
+  newly changed piece or card. Motion respects reduced-motion preferences.
+- Shared victory confetti, sound and haptics announce solo achievements and
+  named local or room winners. Local players can save their names in the game
+  header; room seats use the names from the lobby.
+- Room standings record completed rounds for all seven remote games and
+  display per-player and per-game results and rankings across games for the
+  lifetime of the room. The host owns the results; guests receive updates.
+- Solo campaigns remain a future enhancement. Updated the offline cache to v20
+  for the new shared modules.
+
+## 2026-09-24 — Chess piece clarity on phones
+
+- Replaced platform-dependent chess font glyphs with matching, hand-drawn SVG
+  silhouettes for both sides, with sculpted contours, collars, engraved
+  details, and a distinct horse-head knight. Consistent ivory/ink fills and contrast
+  outlines on both square colors. Captured pieces and promotion choices use
+  the same artwork; board buttons announce piece color and type.
+- Reduced the chess-only mobile frame and board borders so the board and pieces
+  occupy more of a 320px screen, and updated the offline cache to v17.
+
 ## 2026-09-22 — Foundation (v0.1.0)
 
 ### Decisions

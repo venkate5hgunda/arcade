@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
 
@@ -177,6 +178,7 @@ export default {
     }
 
     function newGame() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       const pairs = pairsFor(category);
       const pair = pairs[Math.floor(Math.random() * pairs.length)];
       word = pair.word; clue = pair.clue;
@@ -243,8 +245,8 @@ export default {
         const maxVotes = Math.max(...voteCounts);
         const votedOut = voteCounts.indexOf(maxVotes);
         const imposterCaught = votedOut === imposterIndex && voteCounts.filter(v => v === maxVotes).length === 1;
-        if (audio) imposterCaught ? audio.chime() : audio.buzz();
-        if (window.haptics) imposterCaught ? window.haptics.success() : window.haptics.failure();
+        if (imposterCaught) celebrate(shell.root, 'The table caught the imposter!');
+        else { audio?.buzz(); window.haptics?.failure(); }
       }
       checkpointGame();
       render();

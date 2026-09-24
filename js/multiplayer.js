@@ -4,7 +4,7 @@ import { GAMES, getGame } from './game-catalog.js';
 const VERSION = 1;
 const MAX_URL = 16000;
 const MAX_PAYLOAD = 120000;
-const MAX_MESSAGE = 12000;
+const MAX_MESSAGE = 32000;
 const ICE_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
@@ -147,6 +147,45 @@ function validGame(value, members, hostId) {
     Number.isInteger(value.seed) && value.seed >= 0 && value.seed <= 0xffffffff;
 }
 
+const emptyStats = () => ({ games: [], players: [] });
+const counts = () => ({ wins: 0, losses: 0, draws: 0 });
+function validCounts(value) {
+  return value && ['wins', 'losses', 'draws'].every((key) =>
+    Number.isSafeInteger(value[key]) && value[key] >= 0);
+}
+function validStats(stats, members) {
+  if (!stats || !Array.isArray(stats.games) || stats.games.length > REMOTE_GAMES.size ||
+      !Array.isArray(stats.players) || stats.players.length > members.length) return false;
+  const games = new Map();
+  for (const entry of stats.games) {
+    if (!entry || !REMOTE_GAMES.has(entry.id) || games.has(entry.id) || !validCounts(entry)) return false;
+    games.set(entry.id, entry);
+  }
+  const totals = new Map([...games.keys()].map((id) => [id, counts()]));
+  const players = new Set();
+  for (const player of stats.players) {
+    if (!player || !members.some((member) => member.id === player.id) ||
+        players.has(player.id) || !validCounts(player) ||
+        !Array.isArray(player.games) || player.games.length > games.size) return false;
+    players.add(player.id);
+    const seen = new Set();
+    const total = counts();
+    for (const entry of player.games) {
+      if (!entry || !games.has(entry.id) || seen.has(entry.id) || !validCounts(entry)) return false;
+      seen.add(entry.id);
+      for (const key of ['wins', 'losses', 'draws']) {
+        total[key] += entry[key];
+        totals.get(entry.id)[key] += entry[key];
+        if (!Number.isSafeInteger(total[key]) || !Number.isSafeInteger(totals.get(entry.id)[key]))
+          return false;
+      }
+    }
+    if (['wins', 'losses', 'draws'].some((key) => total[key] !== player[key])) return false;
+  }
+  return [...games].every(([id, game]) =>
+    ['wins', 'losses', 'draws'].every((key) => totals.get(id)[key] === game[key]));
+}
+
 export class MultiplayerRoom {
   constructor() {
     this.role = null;
@@ -162,6 +201,8 @@ export class MultiplayerRoom {
     this.lastActionSequence = 0;
     this.gameGeneration = 0;
     this.lastGameGeneration = 0;
+    this.stats = emptyStats();
+    this.roundKeys = new Set();
   }
   on(listener) {
     if (typeof listener !== 'function') fail('Listener must be a function.');
@@ -174,7 +215,8 @@ export class MultiplayerRoom {
     }
     if (event.type === 'state' || event.type === 'game') for (const render of this.lobbies) render();
   }
-  state() { this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })), activeGame: this.activeGame }); }
+  state() { this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })),
+    activeGame: this.activeGame, stats: structuredClone(this.stats) }); }
   error(error) { this.emit({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
   createHost(name) {
     const localName = nameOf(name);
@@ -329,7 +371,8 @@ export class MultiplayerRoom {
     if (this.role !== 'host') return;
     const members = this.members.map(({ id, name, connected, admitted }) => ({ id, name, connected, admitted }));
     for (const peer of this.peers.values()) {
-      this.send(peer.channel, 'state', { members, activeGame: this.activeGame, gameGeneration: this.gameGeneration });
+      this.send(peer.channel, 'state', { members, activeGame: this.activeGame,
+        gameGeneration: this.gameGeneration, stats: this.stats });
     }
   }
   receive(peer, id, raw) {
@@ -367,6 +410,7 @@ export class MultiplayerRoom {
               new Set(msg.members.map((person) => person.id)).size !== msg.members.length) fail('Invalid room roster.');
           if (msg.activeGame !== null && !validGame(msg.activeGame, msg.members, id))
             fail('Invalid game state.');
+          if (!validStats(msg.stats, msg.members)) fail('Invalid room standings.');
           if (msg.game !== (msg.activeGame?.id ?? null) ||
               !Number.isSafeInteger(msg.gameGeneration) ||
               msg.gameGeneration < this.lastGameGeneration) fail('Invalid game identifier.');
@@ -375,6 +419,7 @@ export class MultiplayerRoom {
           const newGeneration = msg.gameGeneration !== this.lastGameGeneration;
           this.members = msg.members.map(({ id: memberId, name, connected, admitted }) =>
             ({ id: memberId, name, connected, admitted }));
+          this.stats = structuredClone(msg.stats);
           this.activeGame = msg.activeGame ? {
             id: msg.activeGame.id, playerIds: [...msg.activeGame.playerIds], seed: msg.activeGame.seed,
           } : null;
@@ -449,9 +494,69 @@ export class MultiplayerRoom {
       id: gameId, playerIds: [...playerIds], seed: crypto.getRandomValues(new Uint32Array(1))[0],
     };
     this.gameGeneration++;
+    this.roundKeys.clear();
     this.publish();
     this.state();
     this.emit({ type: 'game', game: this.activeGame, spectating: false });
+  }
+  recordResult(gameId, winnerIndex, roundKey) {
+    if (this.role !== 'host' || !this.activeGame || this.activeGame.id !== gameId ||
+        typeof gameId !== 'string' || !REMOTE_GAMES.has(gameId))
+      fail('Only the host can record a result for the active game.');
+    if (winnerIndex !== null && (!Number.isInteger(winnerIndex) ||
+        winnerIndex < 0 || winnerIndex >= this.activeGame.playerIds.length))
+      fail('Winner must be an active zero-based seat index or null for a draw.');
+    if (!((typeof roundKey === 'string' && roundKey.length > 0 && roundKey.length <= 128) ||
+        (Number.isSafeInteger(roundKey) && roundKey >= 0)))
+      fail('Round key must be a nonempty string (up to 128 characters) or nonnegative safe integer.');
+    const key = `${typeof roundKey}:${roundKey}`;
+    if (this.roundKeys.has(key)) return false;
+    const players = this.activeGame.playerIds;
+    const increments = players.map((id, index) => ({
+      id, field: winnerIndex === null ? 'draws' : index === winnerIndex ? 'wins' : 'losses',
+    }));
+    const game = this.stats.games.find((entry) => entry.id === gameId);
+    const delta = counts();
+    for (const { field } of increments) delta[field]++;
+    if (game && ['wins', 'losses', 'draws'].some((field) =>
+      game[field] > Number.MAX_SAFE_INTEGER - delta[field]))
+      fail('Room standings have reached the safe integer limit.');
+    for (const { id, field } of increments) {
+      const player = this.stats.players.find((entry) => entry.id === id);
+      const perGame = player?.games.find((entry) => entry.id === gameId);
+      if ([player, perGame].some((entry) => entry && entry[field] >= Number.MAX_SAFE_INTEGER))
+        fail('Room standings have reached the safe integer limit.');
+    }
+    const gameStats = game ?? { id: gameId, ...counts() };
+    if (!game) this.stats.games.push(gameStats);
+    for (const { id, field } of increments) {
+      let player = this.stats.players.find((entry) => entry.id === id);
+      if (!player) {
+        player = { id, ...counts(), games: [] };
+        this.stats.players.push(player);
+      }
+      let perGame = player.games.find((entry) => entry.id === gameId);
+      if (!perGame) {
+        perGame = { id: gameId, ...counts() };
+        player.games.push(perGame);
+      }
+      player[field]++;
+      perGame[field]++;
+      gameStats[field]++;
+    }
+    this.roundKeys.add(key);
+    this.publish();
+    this.state();
+    return true;
+  }
+  leaderboard() {
+    return this.stats.players.map((player) => ({
+      ...structuredClone(player),
+      name: this.members.find((member) => member.id === player.id)?.name ?? 'Former player',
+      connected: this.members.find((member) => member.id === player.id)?.connected ?? false,
+    })).sort((a, b) => b.wins - a.wins || a.losses - b.losses || b.draws - a.draws ||
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || a.id.localeCompare(b.id))
+      .map((entry, index) => ({ rank: index + 1, ...entry }));
   }
   returnLobby() {
     if (this.role !== 'host') fail('Only the host can return the room to the lobby.');
@@ -498,6 +603,8 @@ export class MultiplayerRoom {
     this.lastActionSequence = 0;
     this.gameGeneration = 0;
     this.lastGameGeneration = 0;
+    this.stats = emptyStats();
+    this.roundKeys.clear();
     this.state();
   }
   mountLobby(container, catalog, onStart) {
@@ -612,6 +719,45 @@ export class MultiplayerRoom {
         roster.append(row);
       }
       root.append(roster);
+      if (this.role) {
+        const standings = document.createElement('section');
+        standings.className = 'mp-standings';
+        const heading = document.createElement('h3');
+        heading.textContent = 'Room standings';
+        standings.append(heading);
+        const leaders = this.leaderboard();
+        if (!leaders.length) {
+          const empty = document.createElement('p');
+          empty.textContent = 'No results yet. Play a game to start the leaderboard.';
+          standings.append(empty);
+        } else {
+          const list = document.createElement('ol');
+          list.setAttribute('aria-label', 'Room leaderboard');
+          for (const player of leaders) {
+            const row = document.createElement('li');
+            row.textContent = `${player.name}${player.connected ? '' : ' (offline)'} · ${player.wins} W / ${player.losses} L / ${player.draws} D`;
+            list.append(row);
+          }
+          standings.append(list);
+          const breakdown = document.createElement('ul');
+          breakdown.className = 'mp-standings-games';
+          for (const game of this.stats.games) {
+            const row = document.createElement('li');
+            row.textContent = `${catalog.find((entry) => entry.id === game.id)?.name ?? game.id}: ${game.wins} W / ${game.losses} L / ${game.draws} D`;
+            const detail = document.createElement('ul');
+            for (const player of leaders.filter((entry) => entry.games.some((played) => played.id === game.id))) {
+              const line = document.createElement('li');
+              const result = player.games.find((played) => played.id === game.id);
+              line.textContent = `${player.name}: ${result.wins} W / ${result.losses} L / ${result.draws} D`;
+              detail.append(line);
+            }
+            row.append(detail);
+            breakdown.append(row);
+          }
+          standings.append(breakdown);
+        }
+        root.append(standings);
+      }
       if (this.activeGame) {
         const current = document.createElement('p');
         current.textContent = `Playing: ${catalog.find((game) => game.id === this.activeGame.id)?.name || this.activeGame.id}` +

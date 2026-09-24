@@ -1,6 +1,8 @@
 // Local two-player 8-ball. All dimensions are table coordinates, independent
 // of canvas CSS size and device pixel ratio.
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { canvasPoint, clamp, createFixedStepper, stepDiscs } from '../js/disc-physics.js';
 
@@ -128,15 +130,18 @@ export default {
 
     function announce(text) {
       message = text;
-      const who = winner !== null ? `Player ${winner + 1} wins!` : `Player ${player + 1}'s turn`;
+      const who = winner !== null ? `${playerName(winner)} wins!` : `${playerName(player)}'s turn`;
       const g = assignments[player];
       const left = g ? balls.filter((b) => !b.pocketed && group(b.number) === g).length : 0;
-      hud.innerHTML = `<span class="pool-badge">🎱 ${who}</span><span>${g ? `${g} · ${left} remaining` : 'Open table'}</span><span class="pool-result"></span>`;
+      hud.innerHTML = '<span class="pool-badge"></span><span class="pool-group"></span><span class="pool-result"></span>';
+      hud.querySelector('.pool-badge').textContent = `🎱 ${who}`;
+      hud.querySelector('.pool-group').textContent = g ? `${g} · ${left} remaining` : 'Open table';
       hud.querySelector('.pool-result').textContent = message;
       shootButton.disabled = winner !== null || rolling;
     }
 
     function reset() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       balls = rack();
       player = Number(settings.break) - 1;
       assignments = [null, null];
@@ -186,8 +191,7 @@ export default {
       if (taken.includes(8)) {
         winner = !foul && canEight && hit === 8 ? player : other(player);
         announce(winner === player ? 'Legal 8-ball! Match won.' : 'Early or fouled 8-ball — opponent wins.');
-        window.arcadeAudio?.prepare().then(() => window.arcadeAudio?.chime());
-        window.haptics?.success();
+        celebrate(shell.root, `${playerName(winner)} wins Pool!`);
         session?.finish();
         return;
       }

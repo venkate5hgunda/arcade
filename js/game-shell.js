@@ -3,7 +3,9 @@
 // a stage container it can fill. Keeping this in one place means every game
 // automatically gets the same polished, responsive frame.
 
-import { getGame } from './game-catalog.js';
+import { openNameEditor } from './player-names.js';
+import { room } from './multiplayer.js';
+import { GAME_HELP, openGameHelp } from './game-help.js';
 
 export function createShell(container, game, { title, meta, resetLabel = 'Reset' } = {}) {
   const shell = document.createElement('div');
@@ -21,6 +23,22 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
     <div class="game-stage"></div>`;
 
   container.appendChild(shell);
+  if (GAME_HELP[game.id]) {
+    const help = document.createElement('button');
+    help.type = 'button';
+    help.className = 'game-help-btn';
+    help.textContent = 'ⓘ How to play';
+    help.addEventListener('click', () => openGameHelp(game.id));
+    shell.querySelector('.game-head-center').appendChild(help);
+  }
+  if (game.players?.max > 1 && room.activeGame?.id !== game.id) {
+    const names = document.createElement('button');
+    names.type = 'button';
+    names.className = 'game-names-btn';
+    names.textContent = '✎ Player names';
+    names.addEventListener('click', () => openNameEditor(game.players.max));
+    shell.querySelector('.game-head-center').appendChild(names);
+  }
   return {
     root: shell,
     stage: shell.querySelector('.game-stage'),

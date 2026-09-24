@@ -1,6 +1,8 @@
 // Two-player air hockey; fixed world coordinates keep touch, desktop and HiDPI
 // play identical. Both puck and moving paddles use the shared disc solver.
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { canvasPoint, clamp, createFixedStepper, stepDiscs } from '../js/disc-physics.js';
 
@@ -8,7 +10,10 @@ const W = 600, H = 900;
 const GOAL_LEFT = 195, GOAL_RIGHT = 405;
 const BOUNDS = { left: 23, right: 577, top: -10000, bottom: 10000 };
 const PADDLE_SPEED = 690;
-const DRAG_SPEED = 2400;
+const DRAG_SPEED = 1250;
+const PADDLE_ACCEL = 28000;
+const PUCK_SPEED_LIMIT = 1050;
+const RESTITUTION = .93;
 
 export function parkPuck(puck, receiver) {
   puck.x = W / 2;
@@ -16,19 +21,36 @@ export function parkPuck(puck, receiver) {
   puck.vx = puck.vy = 0;
 }
 
-export function strikeParkedPuck(puck, paddle, receiver) {
-  if (Math.hypot(puck.x - paddle.x, puck.y - paddle.y) > puck.r + paddle.r) return false;
-  puck.vx = clamp((puck.x - paddle.x) * 12 + paddle.vx * .25, -900, 900);
-  puck.vy = (receiver === 0 ? -1 : 1) * Math.max(320, Math.abs(paddle.vy) * .9);
+export function parkOpeningPuck(puck) {
+  puck.x = W / 2;
+  puck.y = H / 2;
+  puck.vx = puck.vy = 0;
+}
+
+export function strikeParkedPuck(puck, paddle) {
+  const dx = puck.x - paddle.x, dy = puck.y - paddle.y;
+  const distance = Math.hypot(dx, dy);
+  if (!distance || distance > puck.r + paddle.r) return false;
+  const nx = dx / distance, ny = dy / distance;
+  const impactSpeed = paddle.vx * nx + paddle.vy * ny;
+  if (impactSpeed <= 0) return false;
+  const speed = Math.min(PUCK_SPEED_LIMIT, (1 + RESTITUTION) * impactSpeed);
+  puck.vx = nx * speed;
+  puck.vy = ny * speed;
   return true;
 }
 
-export function keepPuckMoving(puck, waitingFor) {
-  if (waitingFor !== null) return;
-  const speed = Math.hypot(puck.vx, puck.vy);
-  if (speed >= 70) return;
-  if (speed) { puck.vx *= 70 / speed; puck.vy *= 70 / speed; }
-  else puck.vy = puck.y < H / 2 ? 70 : -70;
+export function acceleratePaddle(paddle, desiredVx, desiredVy, dt, bounds) {
+  const deltaX = desiredVx - paddle.vx, deltaY = desiredVy - paddle.vy;
+  const delta = Math.hypot(deltaX, deltaY);
+  const fraction = delta ? Math.min(1, PADDLE_ACCEL * dt / delta) : 1;
+  const vx = paddle.vx + deltaX * fraction, vy = paddle.vy + deltaY * fraction;
+  const x = clamp(paddle.x + vx * dt, bounds.left, bounds.right);
+  const y = clamp(paddle.y + vy * dt, bounds.top, bounds.bottom);
+  paddle.vx = (x - paddle.x) / dt;
+  paddle.vy = (y - paddle.y) / dt;
+  paddle.x = x;
+  paddle.y = y;
 }
 
 function validCheckpoint(s) {
@@ -43,6 +65,10 @@ function validCheckpoint(s) {
     Number.isFinite(s.puck.vx) && Math.abs(s.puck.vx) <= 1200 &&
     Number.isFinite(s.puck.vy) && Math.abs(s.puck.vy) <= 1200 &&
     (s.waitingFor === undefined || s.waitingFor === null || s.waitingFor === 0 || s.waitingFor === 1) &&
+    (s.openingFaceoff === undefined || typeof s.openingFaceoff === 'boolean') &&
+    (!s.openingFaceoff || (s.waitingFor == null && s.puck.x === W / 2 &&
+      s.puck.y === H / 2 && s.puck.vx === 0 && s.puck.vy === 0 &&
+      s.paddles.every(p => p.score === 0))) &&
     (s.waitingFor == null || (s.puck.x === W / 2 &&
       s.puck.y === (s.waitingFor === 0 ? 610 : 290) &&
       s.puck.vx === 0 && s.puck.vy === 0));
@@ -65,7 +91,7 @@ export default {
         options: [5, 7, 10].map((n) => ({ value: String(n), label: `First to ${n}` })),
         default: saved.target,
       }],
-      startLabel: 'Drop the Puck',
+      startLabel: 'Start Faceoff',
     });
     saveJSON(KEYS.SETTINGS + ':air-hockey', settings);
     const target = Number(settings.target) || 7;
@@ -80,7 +106,7 @@ export default {
     status.setAttribute('aria-live', 'polite');
     const help = document.createElement('p');
     help.className = 'ah-help';
-    help.textContent = 'P1 (bottom): arrow keys · P2 (top): WASD · Drag a paddle to strike. After a goal, the other player serves.';
+    help.textContent = 'P1 (bottom): arrow keys · P2 (top): WASD · Strike the resting puck to start. After a goal, the other player serves.';
     stage.append(canvas, status, help);
     const ctx = canvas.getContext('2d');
     const puck = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 17 };
@@ -91,14 +117,14 @@ export default {
     const pointers = [null, null];
     const positions = [null, null];
     const keys = new Set();
-    let winner = null, waitingFor = null, disposed = false, raf, lastSave = 0, lastImpact = 0;
+    let winner = null, waitingFor = null, openingFaceoff = true, disposed = false, raf, lastSave = 0, lastImpact = 0;
 
     function checkpointGame(force = false) {
       if (!session || winner !== null || (!force && Date.now() - lastSave < 1000)) return;
       lastSave = Date.now();
       session.save({
         target, paddles: paddles.map(({ x, y, score }) => ({ x, y, score })),
-        puck: { x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy }, waitingFor,
+        puck: { x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy }, waitingFor, openingFaceoff,
       });
     }
 
@@ -108,24 +134,22 @@ export default {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       draw();
     }
-    function serve(toward = 0) {
-      puck.x = W / 2; puck.y = H / 2;
-      puck.vx = (Math.random() - .5) * 160;
-      puck.vy = (toward === 0 ? 1 : -1) * 340;
-    }
     function updateStatus(text = '') {
+      const detail = text || (openingFaceoff ? 'Faceoff · strike the puck to start' : '');
       status.textContent = winner === null
-        ? `P1 ${paddles[0].score} : ${paddles[1].score} P2${text ? ` · ${text}` : ''}`
-        : `🏆 Player ${winner + 1} wins! ${paddles[0].score} – ${paddles[1].score}`;
+        ? `P1 ${paddles[0].score} : ${paddles[1].score} P2${detail ? ` · ${detail}` : ''}`
+        : `🏆 ${playerName(winner)} wins! ${paddles[0].score} – ${paddles[1].score}`;
     }
     function reset() {
+      shell.root.querySelector('.arcade-victory')?.remove();
       winner = null;
       for (const [i, p] of paddles.entries()) {
         p.score = 0; p.x = W / 2; p.y = i ? 160 : 740; p.vx = p.vy = 0;
         positions[i] = null;
       }
       waitingFor = null;
-      serve();
+      openingFaceoff = true;
+      parkOpeningPuck(puck);
       stepper.reset();
       updateStatus();
       draw();
@@ -138,8 +162,9 @@ export default {
       if (paddles[scorer].score >= target) {
         winner = scorer;
         puck.vx = puck.vy = 0;
-        window.arcadeAudio?.chime();
+        celebrate(shell.root, `${playerName(winner)} wins Air Hockey!`);
       } else {
+        openingFaceoff = false;
         waitingFor = 1 - scorer;
         parkPuck(puck, waitingFor);
       }
@@ -154,35 +179,42 @@ export default {
         const dy = (i ? Number(keys.has('s')) - Number(keys.has('w')) :
           Number(keys.has('ArrowDown')) - Number(keys.has('ArrowUp')));
         const direction = Math.hypot(dx, dy) || 1;
-        let x = p.x + dx / direction * PADDLE_SPEED * dt;
-        let y = p.y + dy / direction * PADDLE_SPEED * dt;
+        let desiredVx = dx / direction * PADDLE_SPEED;
+        let desiredVy = dy / direction * PADDLE_SPEED;
         if (positions[i]) {
           const remainingX = positions[i].x - p.x, remainingY = positions[i].y - p.y;
           const distance = Math.hypot(remainingX, remainingY);
-          const fraction = Math.min(1, DRAG_SPEED * dt / (distance || 1));
-          x = p.x + remainingX * fraction;
-          y = p.y + remainingY * fraction;
+          const response = Math.min(24, DRAG_SPEED / (distance || 1));
+          desiredVx = remainingX * response;
+          desiredVy = remainingY * response;
         }
-        x = clamp(x, 23 + p.r, 577 - p.r);
-        y = clamp(y, i ? 23 + p.r : H / 2 + p.r + 5,
-          i ? H / 2 - p.r - 5 : 877 - p.r);
-        p.vx = (x - p.x) / dt;
-        p.vy = (y - p.y) / dt;
-        p.x = x; p.y = y;
+        acceleratePaddle(p, desiredVx, desiredVy, dt, {
+          left: 23 + p.r, right: 577 - p.r,
+          top: i ? 23 + p.r : H / 2 + p.r + 5,
+          bottom: i ? H / 2 - p.r - 5 : 877 - p.r,
+        });
       });
     }
     const stepper = createFixedStepper((dt) => {
       if (winner !== null) return;
       movePaddles(dt);
+      if (openingFaceoff) {
+        const striker = paddles.findIndex(p => strikeParkedPuck(puck, p));
+        if (striker === -1) return;
+        openingFaceoff = false;
+        updateStatus();
+        window.arcadeAudio?.impact(Math.min(Math.hypot(puck.vx, puck.vy) / PUCK_SPEED_LIMIT, .75));
+        window.haptics?.select();
+      }
       if (waitingFor !== null) {
-        if (!strikeParkedPuck(puck, paddles[waitingFor], waitingFor)) return;
+        if (!strikeParkedPuck(puck, paddles[waitingFor])) return;
         waitingFor = null;
         updateStatus();
-        window.arcadeAudio?.impact(.55);
+        window.arcadeAudio?.impact(Math.min(Math.hypot(puck.vx, puck.vy) / PUCK_SPEED_LIMIT, .75));
         window.haptics?.select();
       }
       stepDiscs([puck, ...paddles], dt, {
-        bounds: BOUNDS, friction: 13, restitution: .93,
+        bounds: BOUNDS, friction: 40, restitution: RESTITUTION,
         onCollision(a, b, force) {
           if (a === puck || b === puck) {
             if (force > 80 && performance.now() - lastImpact > 70) {
@@ -191,8 +223,8 @@ export default {
               window.haptics?.light();
             }
             const speed = Math.hypot(puck.vx, puck.vy);
-            if (speed > 1050) {
-              puck.vx *= 1050 / speed; puck.vy *= 1050 / speed;
+            if (speed > PUCK_SPEED_LIMIT) {
+              puck.vx *= PUCK_SPEED_LIMIT / speed; puck.vy *= PUCK_SPEED_LIMIT / speed;
             }
           }
         },
@@ -204,7 +236,6 @@ export default {
         if (puck.x > GOAL_LEFT && puck.x < GOAL_RIGHT) goal(1);
         else { puck.y = 877 - puck.r; puck.vy = -Math.abs(puck.vy) * .94; }
       }
-      if (winner === null) keepPuckMoving(puck, waitingFor);
     });
 
     function draw() {
@@ -240,6 +271,19 @@ export default {
         ctx.fillStyle = '#ffffff66';
         ctx.beginPath(); ctx.arc(p.x - 9, p.y - 10, 7, 0, Math.PI * 2); ctx.fill();
       });
+      const speed = Math.hypot(puck.vx, puck.vy);
+      if (speed > 100) {
+        const tail = Math.min(60, speed * .055);
+        const trail = ctx.createLinearGradient(
+          puck.x - puck.vx / speed * tail, puck.y - puck.vy / speed * tail, puck.x, puck.y);
+        trail.addColorStop(0, '#f8f3db00');
+        trail.addColorStop(1, '#f8f3dbbb');
+        ctx.strokeStyle = trail; ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.moveTo(puck.x - puck.vx / speed * tail, puck.y - puck.vy / speed * tail);
+        ctx.lineTo(puck.x, puck.y);
+        ctx.stroke();
+      }
       ctx.shadowBlur = 15; ctx.shadowColor = '#f8f3db';
       ctx.fillStyle = '#f6f2e6';
       ctx.beginPath(); ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2); ctx.fill();
@@ -309,6 +353,7 @@ export default {
       checkpoint.paddles.forEach((p, i) => Object.assign(paddles[i], p));
       Object.assign(puck, checkpoint.puck);
       waitingFor = checkpoint.waitingFor ?? null;
+      openingFaceoff = checkpoint.openingFaceoff ?? false;
       updateStatus(waitingFor === null ? '' : `P${waitingFor + 1} serves`);
     } else reset();
     size();

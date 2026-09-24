@@ -1,6 +1,8 @@
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 
 export const COLORS = ['red', 'yellow', 'green', 'blue'];
 const INK = { red: '#cd343c', yellow: '#b87a08', green: '#238354', blue: '#3278c6', wild: '#292b45' };
@@ -208,7 +210,7 @@ export default {
       restored || newUnoGame(count);
     let view = room ? room.role === 'host' ? unoView(state, mySeat) : null : null;
     let covered = !room && state.winner === null;
-    let pending = null, disposed = false, revision = 0, lastRevision = -1;
+    let pending = null, disposed = false, revision = 0, lastRevision = -1, gameRound = 0;
     const deckById = unoDeck();
     const table = document.createElement('div');
     table.className = 'cg-table uno-table';
@@ -217,6 +219,12 @@ export default {
       if (room) return;
       if (state.winner !== null) session?.finish();
       else session?.save(state);
+    }
+    function announceResult(winner, record = false) {
+      if (record && room?.role === 'host')
+        room.recordResult(game.id, winner === -1 ? null : winner, gameRound);
+      if (winner >= 0 && (!room || winner === mySeat))
+        celebrate(shell.root, `${playerName(winner, room)} wins UNO!`);
     }
     function publish() {
       if (!room || room.role !== 'host') return;
@@ -229,7 +237,9 @@ export default {
       if (room) room.sendAction({ type: 'uno-request',
         revision: room.role === 'host' ? revision : lastRevision, move: action });
       else {
+        const previousWinner = state.winner;
         if (actUno(state, action)) {
+          if (previousWinner === null && state.winner !== null) announceResult(state.winner);
           pending = null;
           covered = state.winner === null && state.current !== previous;
           checkpoint();
@@ -250,8 +260,10 @@ export default {
           if (index > 0) room.sendPrivateAction(event.from,
             { type: 'uno-state', revision, view: unoView(state, index) });
         } else if (event.action?.type === 'uno-request') {
+          const previousWinner = state.winner;
           if (applyRemoteUnoAction(state, event.action, revision, event.from,
             room.activeGame.playerIds)) {
+            if (previousWinner === null && state.winner !== null) announceResult(state.winner, true);
             pending = null;
             publish();
             render();
@@ -263,6 +275,8 @@ export default {
         } else if (event.action?.type === 'uno-reset' &&
             event.from === room.peerId) {
           state = newUnoGame(count);
+          gameRound++;
+          shell.root.querySelector('.arcade-victory')?.remove();
           pending = null;
           publish();
           render();
@@ -292,7 +306,9 @@ export default {
               card.value !== deckById[card.id]?.value) ||
             new Set(incoming.hand.map(card => card.id)).size !== incoming.hand.length) return;
         lastRevision = event.action.revision;
+        const previousWinner = view?.winner;
         view = incoming;
+        if (previousWinner === null && incoming.winner !== null) announceResult(incoming.winner);
         pending = null;
         render();
       }
@@ -321,8 +337,8 @@ export default {
         const curtain = document.createElement('div');
         curtain.className = 'ce-curtain uno-curtain';
         const title = document.createElement('h3');
-        title.textContent = `Pass to Player ${data.current + 1}`;
-        curtain.append(title, button(`I'm Player ${data.current + 1} · show hand`, () => {
+        title.textContent = `Pass to ${playerName(data.current)}`;
+        curtain.append(title, button(`I'm ${playerName(data.current)} · show hand`, () => {
           covered = false; render();
         }));
         const note = document.createElement('p');
@@ -337,7 +353,7 @@ export default {
       data.counts.forEach((cards, i) => {
         const tag = document.createElement('span');
         tag.className = `uno-player${i === data.current ? ' uno-player--current' : ''}`;
-        tag.textContent = `P${i + 1} · ${cards} cards${i === data.current ? ' ←' : ''}`;
+        tag.textContent = `${playerName(i, room)} · ${cards} cards${i === data.current ? ' ←' : ''}`;
         players.append(tag);
       });
       table.append(players);
@@ -355,15 +371,15 @@ export default {
       status.className = 'cg-message';
       status.setAttribute('role', 'status');
       status.textContent = data.winner !== null
-        ? data.winner === -1 ? 'Blocked game — tie!' : `Player ${data.winner + 1} wins!`
-        : room && data.current !== mySeat ? `Waiting for Player ${data.current + 1}`
+        ? data.winner === -1 ? 'Blocked game — tie!' : `${playerName(data.winner, room)} wins!`
+        : room && data.current !== mySeat ? `Waiting for ${playerName(data.current, room)}`
           : pending !== null ? 'Choose a color for your wild card.'
             : data.drawnId !== null ? 'Play the drawn card or pass.' : 'Match color or value, or draw one.';
       table.append(status);
       const hand = document.createElement('section');
       hand.className = 'uno-hand';
       const title = document.createElement('h3');
-      title.textContent = `Player ${room ? mySeat + 1 : data.current + 1} · your hand`;
+      title.textContent = `${playerName(room ? mySeat : data.current, room)} · your hand`;
       const row = document.createElement('div');
       row.className = 'cg-card-row';
       const canAct = data.winner === null && (!room || data.current === mySeat);
@@ -402,6 +418,8 @@ export default {
         if (room.role === 'host') room.sendAction({ type: 'uno-reset' });
       } else {
         state = newUnoGame(count);
+        gameRound++;
+        shell.root.querySelector('.arcade-victory')?.remove();
         pending = null;
         covered = true;
         checkpoint();

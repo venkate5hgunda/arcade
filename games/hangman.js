@@ -2,6 +2,8 @@
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
@@ -86,6 +88,7 @@ export default {
 
     function newGame() {
       roundId++;
+      shell.root.querySelector('.arcade-victory')?.remove();
       busy = false;
       word = WORDS[Math.floor(Math.random() * WORDS.length)];
       guessed.clear(); wrong = 0; gameOver = false;
@@ -171,8 +174,7 @@ export default {
       if (allGuessed) {
         gameOver = true;
         scores[current]++;
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
+        celebrate(shell.root, playerCount === 1 ? 'You found the word!' : `${playerName(current - 1)} found the word!`);
         status.textContent = `🎉 You found "${word}"!`;
       } else if (wrong >= maxWrong) {
         gameOver = true;

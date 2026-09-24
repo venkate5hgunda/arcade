@@ -71,6 +71,26 @@ export class ArcadeAudio {
   // A "wrong" buzz.
   buzz() { this.tone(160, 0.2, 'sawtooth', 0.2); }
 
+  hiss() {
+    if (!this.enabled || this.silenced || !this.context) return;
+    const now = this.context.currentTime;
+    const noise = this.context.createBufferSource();
+    const buffer = this.context.createBuffer(1, Math.floor(this.context.sampleRate * .55), this.context.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+    const filter = this.context.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 900;
+    const gain = this.context.createGain();
+    gain.gain.setValueAtTime(.001, now);
+    gain.gain.linearRampToValueAtTime(.13, now + .1);
+    gain.gain.exponentialRampToValueAtTime(.001, now + .55);
+    noise.connect(filter).connect(gain).connect(this.master);
+    noise.start(now);
+    noise.stop(now + .56);
+  }
+
   // Rolling dice / spinning wheel: a sequence of short clicks.
   rattle(count = 6, base = 520) {
     if (!this.enabled || this.silenced || !this.context) return;

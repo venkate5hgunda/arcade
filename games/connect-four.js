@@ -5,6 +5,8 @@ import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
+import { playerName } from '../js/player-names.js';
+import { celebrate } from '../js/celebration.js';
 
 const ROWS = 6, COLS = 7;
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: '●' }, 2: { color: '#fbbf24', label: '●' } };
@@ -95,7 +97,7 @@ export default {
         settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first';
 
     const board = Array(ROWS * COLS).fill(0);
-    let current = 1, gameOver = false, winCells = null, busy = false, aiTimer = null;
+    let current = 1, gameOver = false, winCells = null, busy = false, aiTimer = null, recentDrop = -1;
     if (restored) { restored.board.forEach((v, i) => { board[i] = v; }); current = restored.current; }
     let disposed = false, roundId = 0;
 
@@ -125,6 +127,7 @@ export default {
             cell.textContent = TOKEN_STYLE[v].label;
             cell.style.color = TOKEN_STYLE[v].color;
             cell.classList.add('filled');
+            if (idx(r, c) === recentDrop) cell.classList.add('just-dropped');
           }
           if (winCells && winCells.some(([wr, wc]) => wr === r && wc === c)) cell.classList.add('win');
           grid.appendChild(cell);
@@ -145,6 +148,7 @@ export default {
         colButtons.appendChild(btn);
       }
       updateStatus();
+      recentDrop = -1;
     }
 
     function updateStatus() {
@@ -166,19 +170,22 @@ export default {
       if (disposed || startedRound !== roundId || gameOver || lowestEmptyRow(board, col) !== row) return;
       busy = false;
       board[idx(row, col)] = current;
+      recentDrop = idx(row, col);
       if (audio) audio.tap();
       const win = checkWin(board, current);
       if (win) {
         winCells = win; gameOver = true;
-        status.textContent = `Player ${TOKEN_STYLE[current].label} wins!`;
+        const name = playerName(current - 1, match);
+        status.textContent = `${name} (${TOKEN_STYLE[current].label}) wins!`;
         status.style.color = TOKEN_STYLE[current].color;
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
+        if (match?.role === 'host') match.recordResult(game.id, current - 1, roundId);
+        if (!match || seat(match) === current) celebrate(shell.root, `${name} wins!`);
         session?.finish();
         return render();
       }
       if (board.every((v) => v !== 0)) {
         gameOver = true; status.textContent = "It's a draw!";
+        if (match?.role === 'host') match.recordResult(game.id, null, roundId);
         if (audio) audio.buzz();
         if (window.haptics) window.haptics.failure();
         session?.finish();
@@ -201,6 +208,7 @@ export default {
           const r = lowestEmptyRow(board, c);
           if (r !== -1) {
             board[idx(r, c)] = 2;
+            recentDrop = idx(r, c);
             if (audio) audio.tap();
             const w = checkWin(board, 2);
             if (w) {
@@ -227,7 +235,9 @@ export default {
       roundId++;
       clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
-      current = 1; gameOver = false; winCells = null; busy = false; checkpoint(); render();
+      current = 1; gameOver = false; winCells = null; busy = false; recentDrop = -1;
+      shell.root.querySelector('.arcade-victory')?.remove();
+      checkpoint(); render();
     }
     getResetButton().addEventListener('click', () => {
       if (match) {
