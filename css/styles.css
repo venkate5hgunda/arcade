@@ -782,6 +782,16 @@ body {
 .chess-vibe .chess-sq.chess-light { background: linear-gradient(135deg, #f3ddb6, #d9b58c); }
 .chess-vibe .chess-sq.chess-dark { background: linear-gradient(135deg, #95603b, #6f3c2e); }
 .chess-vibe .chess-piece { filter: drop-shadow(1px 4px 1px #170e0e7d); }
+.chess-vibe .chess-piece.cw {
+  color: #fff4d7;
+  -webkit-text-stroke: 1px #46352e;
+  text-shadow: 0 1px 2px #281718;
+}
+.chess-vibe .chess-piece.cb {
+  color: #202337;
+  -webkit-text-stroke: .7px #e5ae6e;
+  text-shadow: 0 1px 1px #f4e7cc;
+}
 .chess-vibe .chess-status { color: #f7efe1; }
 .wam-vibe .game-stage {
   background: radial-gradient(circle at 50% 0%, #b6dc5a, #54812a 75%);

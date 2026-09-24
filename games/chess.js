@@ -12,10 +12,7 @@ const KNIGHT_OFFSETS = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-
 const KING_OFFSETS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
 const BISHOP_DIRS = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
 const ROOK_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const PIECE_GLYPH = {
-  w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
-  b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' },
-};
+const PIECE_GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
 const PIECE_VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 const PROMO_CHOICES = ['q', 'r', 'b', 'n'];
 
@@ -44,6 +41,36 @@ function initialState() {
     castling: { wK: true, wQ: true, bK: true, bQ: true },
     epTarget: null,
   };
+}
+
+function validCheckpoint(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || !['pvp', 'ai'].includes(snapshot.mode) ||
+      !['w', 'b'].includes(snapshot.side) || !snapshot.state || typeof snapshot.state !== 'object') return false;
+  const { board, turn, castling, epTarget } = snapshot.state;
+  if (!Array.isArray(board) || board.length !== 64 ||
+      board.some((piece) => piece !== null && (!piece || !['k', 'q', 'r', 'b', 'n', 'p'].includes(piece.type) ||
+        !['w', 'b'].includes(piece.color))) ||
+      board.filter((p) => p?.type === 'k' && p.color === 'w').length !== 1 ||
+      board.filter((p) => p?.type === 'k' && p.color === 'b').length !== 1 ||
+      !['w', 'b'].includes(turn) || !castling || typeof castling !== 'object' ||
+      !['wK', 'wQ', 'bK', 'bQ'].every((key) => typeof castling[key] === 'boolean') ||
+      !(epTarget === null || (Number.isInteger(epTarget) && epTarget >= 0 && epTarget < 64))) return false;
+  if (!snapshot.captured || !['w', 'b'].every((color) =>
+    Array.isArray(snapshot.captured[color]) && snapshot.captured[color].length <= 16 &&
+    snapshot.captured[color].every((type) => ['q', 'r', 'b', 'n', 'p'].includes(type)))) return false;
+  if (typeof snapshot.over !== 'boolean' ||
+      !(snapshot.lastMove === null || (snapshot.lastMove && [snapshot.lastMove.from, snapshot.lastMove.to]
+        .every((sq) => Number.isInteger(sq) && sq >= 0 && sq < 64)))) return false;
+  if (snapshot.pendingPromotion !== null && snapshot.pendingPromotion !== undefined) {
+    const pending = snapshot.pendingPromotion;
+    if (snapshot.over || !pending || !Number.isInteger(pending.from) || !Number.isInteger(pending.to) ||
+        pending.from < 0 || pending.from > 63 || pending.to < 0 || pending.to > 63 ||
+        !board[pending.from] || board[pending.from].type !== 'p' ||
+        board[pending.from].color !== turn || snapshot.mode === 'ai' && turn !== snapshot.side ||
+        !generateLegalMoves(snapshot.state, turn).some((m) =>
+          m.from === pending.from && m.to === pending.to && m.promotion)) return false;
+  }
+  return !snapshot.over && !isSquareAttacked(board, findKing(board, opp(turn)), turn);
 }
 
 function slidingTargets(board, sq, color, dirs) {
@@ -261,15 +288,16 @@ function pickAiMove(state, aiColor) {
 }
 
 export default {
-  async render(el, game, { navigate, multiplayer } = {}) {
+  async render(el, game, { navigate, multiplayer, session } = {}) {
     const shell = createShell(el, game, { title: 'Chess', meta: 'Classic strategy · 64 squares' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('chess-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':chess', { mode: 'pvp', side: 'w' });
-    const settings = match ? { mode: 'pvp', side: 'w' } : await renderSetup(stage, {
+    const settings = match ? { mode: 'pvp', side: 'w' } : resume ? { mode: resume.mode, side: resume.side } : await renderSetup(stage, {
       title: '♟️ Chess',
       subtitle: 'Choose your opponent',
       themeClass: 'chess-theme',
@@ -303,8 +331,15 @@ export default {
     let lastMove = null;
     let over = false;
     let pendingPromotion = null; // { from, m }
-    let aiTimer = null, busy = false;
+    let aiTimer = null, busy = false, generation = 0;
     const captured = { w: [], b: [] };
+    function checkpoint() {
+      if (match) return;
+      if (over) session?.finish();
+      else session?.save({ mode: settings.mode, side: settings.side, state, captured,
+        lastMove, over, pendingPromotion: pendingPromotion &&
+          { from: pendingPromotion.from, to: pendingPromotion.m.to } });
+    }
 
     const board = document.createElement('div');
     board.className = 'chess-board';
@@ -340,7 +375,7 @@ export default {
           if (targetMove) cell.classList.add(targetMove.capture ? 'chess-capture-hint' : 'chess-move-hint');
           const piece = state.board[sq];
           if (piece) {
-            cell.innerHTML = `<span class="chess-piece ${piece.color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[piece.color][piece.type]}</span>`;
+            cell.innerHTML = `<span class="chess-piece ${piece.color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[piece.type]}</span>`;
           }
           cell.addEventListener('click', () => onSquareClick(sq));
           board.appendChild(cell);
@@ -352,7 +387,7 @@ export default {
     }
 
     function renderCaptured() {
-      const line = (color) => captured[color].map((t) => `<span class="${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[color][t]}</span>`).join('');
+      const line = (color) => captured[color].map((t) => `<span class="chess-piece ${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[t]}</span>`).join('');
       capturedRow.innerHTML = `<div class="chess-captured-row">${line('b')}</div><div class="chess-captured-row">${line('w')}</div>`;
     }
 
@@ -369,7 +404,7 @@ export default {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'chess-promo-btn';
-        btn.innerHTML = `<span class="chess-piece ${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[color][t]}</span>`;
+        btn.innerHTML = `<span class="chess-piece ${color === 'w' ? 'cw' : 'cb'}">${PIECE_GLYPH[t]}</span>`;
         btn.addEventListener('click', () => resolvePromotion(t));
         opts.appendChild(btn);
       }
@@ -406,7 +441,7 @@ export default {
     }
 
     function performMove(from, m) {
-      if (m.promotion) { pendingPromotion = { from, m }; selected = null; legalFromSelected = []; render(); return; }
+      if (m.promotion) { pendingPromotion = { from, m }; selected = null; legalFromSelected = []; render(); checkpoint(); return; }
       if (match) match.sendAction({ type: 'move', from, to: m.to });
       else finalizeMove(from, m);
     }
@@ -421,8 +456,10 @@ export default {
     async function finalizeMove(from, m) {
       if (busy) return;
       busy = true;
+      const started = generation;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      if (started !== generation) return;
       const capturedPiece = applyMove(state, from, m);
       if (capturedPiece) captured[capturedPiece.color].push(capturedPiece.type);
       lastMove = { from, to: m.to };
@@ -432,6 +469,7 @@ export default {
       window.haptics?.select();
       checkGameEnd();
       render();
+      checkpoint();
       if (!over && aiMode && state.turn === aiSide) {
         aiTimer = setTimeout(runAiTurn, 500);
       }
@@ -466,10 +504,12 @@ export default {
 
     function newGame() {
       clearTimeout(aiTimer);
+      generation++;
       state = initialState();
       selected = null; legalFromSelected = []; lastMove = null; over = false; pendingPromotion = null; busy = false;
       captured.w = []; captured.b = [];
       render();
+      checkpoint();
       if (aiMode && state.turn === aiSide) aiTimer = setTimeout(runAiTurn, 500);
     }
 
@@ -495,9 +535,22 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
+    if (resume) {
+      state = resume.state;
+      captured.w = resume.captured.w;
+      captured.b = resume.captured.b;
+      lastMove = resume.lastMove;
+      const pending = resume.pendingPromotion;
+      if (pending) pendingPromotion = {
+        from: pending.from,
+        m: generateLegalMoves(state, state.turn).find((m) => m.from === pending.from && m.to === pending.to),
+      };
+      render();
+      if (aiMode && state.turn === aiSide) aiTimer = setTimeout(runAiTurn, 500);
+    } else newGame();
     return { dispose: () => {
       clearTimeout(aiTimer);
+      generation++;
       offRoom?.();
       window.removeEventListener('arcade:themechange', onTheme);
     } };

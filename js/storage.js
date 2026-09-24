@@ -35,6 +35,7 @@ export const KEYS = {
   SOUND_ENABLED: 'ui.soundEnabled',
   HAPTICS_ENABLED: 'ui.hapticsEnabled',
   ACTIVE_GAME: 'ui.activeGame',
+  GAME_SESSIONS: 'game.sessions',
   RECENT_GAMES: 'ui.recentGames', // [{ id, at }] most-recent-first, capped list
   PLAYER_NAMES: 'players.names',
   HIGH_SCORES: 'scores.highScores', // { [gameId]: { [playerId]: number } }

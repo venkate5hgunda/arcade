@@ -89,14 +89,26 @@ function hasMoves(grid) {
   return false;
 }
 
+function validState(state) {
+  return state && typeof state === 'object' && !Array.isArray(state) &&
+    Array.isArray(state.grid) && state.grid.length === SIZE &&
+    state.grid.every(row => Array.isArray(row) && row.length === SIZE &&
+      row.every(v => Number.isSafeInteger(v) && (v === 0 || (v >= 2 && Number.isInteger(Math.log2(v)))))) &&
+    Number.isSafeInteger(state.score) && state.score >= 0 &&
+    typeof state.won === 'boolean' && typeof state.keepPlaying === 'boolean' &&
+    (!state.keepPlaying || state.won) && !state.grid.every(row => row.every(v => v === 0)) &&
+    state.won === state.grid.some(row => row.some(v => v >= 2048)) && hasMoves(state.grid);
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: '2048', meta: 'Slide, merge, reach 2048' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('t48-vibe');
 
-    await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    if (!restored) await renderSetup(stage, {
       title: '🔢 2048',
       subtitle: 'Slide tiles with arrow keys or swipe. Merge to reach 2048!',
       themeClass: 't48-theme',
@@ -144,9 +156,13 @@ export default {
         message.querySelector('#retry').addEventListener('click', newGame);
       } else if (won && !keepPlaying) {
         message.innerHTML = `<div class="t48-overlay"><h3>🎉 You reached 2048!</h3><button class="t48-btn" id="continue">Keep Going</button><button class="t48-btn t48-btn-secondary" id="retry2">New Game</button></div>`;
-        message.querySelector('#continue').addEventListener('click', () => { keepPlaying = true; render(); });
+        message.querySelector('#continue').addEventListener('click', () => { keepPlaying = true; checkpoint(); render(); });
         message.querySelector('#retry2').addEventListener('click', newGame);
       }
+    }
+
+    function checkpoint() {
+      session?.save({ grid: cloneGrid(grid), score, won, keepPlaying });
     }
 
     function doMove(dir) {
@@ -169,6 +185,8 @@ export default {
         if (audio) audio.buzz();
         window.haptics?.failure();
       }
+      if (over || (won && !keepPlaying)) session?.finish();
+      else checkpoint();
       render();
     }
 
@@ -194,6 +212,7 @@ export default {
       grid = emptyGrid();
       score = 0; over = false; won = false; keepPlaying = false;
       addRandomTile(grid); addRandomTile(grid);
+      checkpoint();
       render();
     }
 
@@ -201,7 +220,11 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
+    if (restored) {
+      grid = cloneGrid(restored.grid);
+      score = restored.score; won = restored.won; keepPlaying = restored.keepPlaying;
+      render();
+    } else newGame();
     return { dispose: () => { window.removeEventListener('keydown', onKeydown); window.removeEventListener('arcade:themechange', onTheme); } };
   },
 };

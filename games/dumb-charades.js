@@ -19,15 +19,33 @@ const WORDS = [
   'ACTING', 'DIRECTING', 'FILMING', 'EDITING', 'WRITING SCRIPT',
 ];
 
+function validCheckpoint(s) {
+  return s && [2, 4, 6, 8].includes(s.players) && [30, 45, 60, 90].includes(s.duration) &&
+    ['setup', 'acting', 'scoring'].includes(s.phase) &&
+    (s.team === 0 || s.team === 1) &&
+    Number.isInteger(s.actor) && s.actor >= 0 && s.actor < s.players / 2 &&
+    Array.isArray(s.score) && s.score.length === 2 &&
+    s.score.every((n) => Number.isInteger(n) && n >= 0 && n <= 10) &&
+    (s.phase === 'setup' ? s.word === '' : WORDS.includes(s.word));
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Dumb Charades', meta: 'Act it out · guess it fast' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('dc-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: '4', timer: '60' });
-    const settings = await renderSetup(stage, {
+    const candidate = session?.state;
+    const checkpoint = validCheckpoint(candidate) &&
+      Array.isArray(candidate.wordsUsed) && candidate.wordsUsed.length <= WORDS.length &&
+      candidate.wordsUsed.every((w) => WORDS.includes(w)) &&
+      typeof candidate.guessedCorrect === 'boolean' &&
+      Number.isFinite(candidate.deadline) && candidate.deadline >= 0 &&
+      (candidate.phase !== 'acting' || candidate.deadline > 0) &&
+      (candidate.phase === 'setup' || candidate.word !== '') ? candidate : null;
+    const settings = checkpoint ? { players: String(checkpoint.players), timer: String(checkpoint.duration) } : await renderSetup(stage, {
       title: '🎭 Dumb Charades',
       subtitle: 'Set your team size and turn timer',
       themeClass: 'dc-theme',
@@ -54,7 +72,16 @@ export default {
     let currentTeam = 0, currentActor = 0;
     let score = { 0: 0, 1: 0 };
     let currentWord = '', timeLeft = timerDuration, timer = null;
-    let wordsUsed = [], guessedCorrect = false;
+    let wordsUsed = [], guessedCorrect = false, deadline = 0;
+
+    function checkpointGame() {
+      if (phase === 'gameover') { session?.finish(); return; }
+      session?.save({
+        players: playerCount, duration: timerDuration, phase, team: currentTeam,
+        actor: currentActor, score: [score[0], score[1]], word: currentWord,
+        wordsUsed: [...wordsUsed], guessedCorrect, deadline,
+      });
+    }
 
     const card = document.createElement('div');
     card.className = 'dc-card';
@@ -109,17 +136,21 @@ export default {
     }
 
     function newGame() {
+      clearInterval(timer);
       score = { 0: 0, 1: 0 };
       currentTeam = 0; currentActor = 0;
       wordsUsed = []; guessedCorrect = false;
+      currentWord = ''; deadline = 0; timeLeft = timerDuration;
       phase = 'setup';
+      checkpointGame();
       render();
     }
 
     function getRandomWord() {
       const available = WORDS.filter(w => !wordsUsed.includes(w));
-      if (available.length === 0) { wordsUsed = []; return WORDS[Math.floor(Math.random() * WORDS.length)]; }
-      const w = available[Math.floor(Math.random() * available.length)];
+      if (available.length === 0) wordsUsed = [];
+      const choices = available.length ? available : WORDS;
+      const w = choices[Math.floor(Math.random() * choices.length)];
       wordsUsed.push(w);
       return w;
     }
@@ -127,23 +158,27 @@ export default {
     function startActing() {
       currentWord = getRandomWord();
       timeLeft = timerDuration;
+      deadline = Date.now() + timerDuration * 1000;
       phase = 'acting';
+      checkpointGame();
       render();
       startTimer();
     }
 
     function startTimer() {
-      const display = card.querySelector('.dc-timer-display');
-      if (display) display.textContent = `${timeLeft}s`;
-      timer = setInterval(() => {
-        timeLeft--;
+      clearInterval(timer);
+      function tick() {
+        if (phase !== 'acting') return;
+        timeLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
         const el = card.querySelector('.dc-timer-display');
         if (el) el.textContent = `${timeLeft}s`;
         if (timeLeft <= 0) {
           clearInterval(timer);
           guessed(false);
         }
-      }, 1000);
+      }
+      tick();
+      if (phase === 'acting') timer = setInterval(tick, 250);
     }
 
     function guessed(correct) {
@@ -158,6 +193,8 @@ export default {
         if (window.haptics) window.haptics.failure();
       }
       phase = 'scoring';
+      deadline = 0;
+      checkpointGame();
       render();
     }
 
@@ -166,17 +203,28 @@ export default {
       if (currentTeam === 0) {
         currentActor = (currentActor + 1) % Math.ceil(playerCount / 2);
         const totalGuessed = score[0] + score[1];
-        if (totalGuessed >= 10) { phase = 'gameover'; render(); return; }
+        if (totalGuessed >= 10) { phase = 'gameover'; checkpointGame(); render(); return; }
       }
       phase = 'setup';
+      currentWord = '';
+      checkpointGame();
       render();
     }
 
     getResetButton().addEventListener('click', newGame);
 
-    const onTheme = () => render();
+    const onTheme = () => { if (phase === 'acting') timeLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000)); render(); };
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
+    if (checkpoint) {
+      currentTeam = checkpoint.team; currentActor = checkpoint.actor;
+      score = { 0: checkpoint.score[0], 1: checkpoint.score[1] };
+      currentWord = checkpoint.word; wordsUsed = [...checkpoint.wordsUsed];
+      guessedCorrect = checkpoint.guessedCorrect; deadline = checkpoint.deadline;
+      phase = checkpoint.phase;
+      timeLeft = phase === 'acting' ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : timerDuration;
+      if (phase === 'acting' && !timeLeft) guessed(false);
+      else { render(); if (phase === 'acting') startTimer(); }
+    } else newGame();
     return { dispose: () => { clearInterval(timer); window.removeEventListener('arcade:themechange', onTheme); } };
   },
 };

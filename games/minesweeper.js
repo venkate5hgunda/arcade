@@ -62,15 +62,33 @@ function checkWin(board) {
 
 const COUNT_COLORS = ['', '#38bdf8', '#34d399', '#ff5a3c', '#a855f7', '#fbbf24', '#06b6d4', '#e11d48', '#71717a'];
 
+function validState(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s) || !Object.hasOwn(DIFFICULTIES, s.difficulty) ||
+      typeof s.firstClick !== 'boolean' || typeof s.flagMode !== 'boolean' ||
+      !Array.isArray(s.board)) return false;
+  const { rows, cols, mines } = DIFFICULTIES[s.difficulty];
+  if (s.board.length !== rows * cols || !s.board.every(c => c && typeof c === 'object' && !Array.isArray(c) &&
+      typeof c.mine === 'boolean' && typeof c.revealed === 'boolean' && typeof c.flagged === 'boolean' &&
+      Number.isInteger(c.count) && c.count >= 0 && c.count <= 8 && !(c.revealed && c.flagged)) ||
+      s.board.some(c => c.revealed && c.mine) || checkWin(s.board)) return false;
+  if (s.firstClick) return s.board.every(c => !c.mine && !c.revealed && c.count === 0);
+  if (s.board.filter(c => c.mine).length !== mines || !s.board.some(c => c.revealed)) return false;
+  return s.board.every((c, i) => c.mine ? c.count === 0 : c.count === NEIGHBORS.filter(([dr, dc]) => {
+    const r = Math.floor(i / cols) + dr, col = i % cols + dc;
+    return r >= 0 && r < rows && col >= 0 && col < cols && s.board[r * cols + col].mine;
+  }).length);
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Minesweeper', meta: 'Clear the field · terminal edition' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ms-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':minesweeper', { difficulty: 'easy' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const settings = restored ? { difficulty: restored.difficulty } : await renderSetup(stage, {
       title: '💣 Clear the Field',
       subtitle: 'Pick a difficulty',
       themeClass: 'ms-theme',
@@ -90,6 +108,9 @@ export default {
     shell.root.querySelector('.game-meta').textContent = `${rows}×${cols} · ${mines} mines`;
 
     let board = null, gameOver = false, firstClick = true, flags = 0, flagMode = false;
+    function checkpoint() {
+      session?.save({ difficulty: settings.difficulty, board: board.map(c => ({ ...c })), firstClick, flagMode });
+    }
 
     const grid = document.createElement('div');
     grid.className = 'ms-grid';
@@ -109,6 +130,8 @@ export default {
       flagMode = !flagMode;
       flagToggle.textContent = `🚩 Flag mode: ${flagMode ? 'on' : 'off'}`;
       flagToggle.setAttribute('aria-pressed', String(flagMode));
+      checkpoint();
+      updateStatus();
       window.haptics?.select();
     });
 
@@ -153,6 +176,7 @@ export default {
     function onLeft(r, c) {
       if (gameOver) return;
       if (firstClick) {
+        if (board[r * cols + c].flagged) return;
         const flagged = board.map((cell, index) => cell.flagged ? index : -1).filter((index) => index !== -1);
         board = makeBoard(rows, cols, mines, r, c);
         flagged.forEach((index) => { board[index].flagged = true; });
@@ -167,6 +191,7 @@ export default {
         if (audio) { audio.prepare(); audio.buzz(); }
         if (window.haptics) window.haptics.failure();
         status.textContent = '💥 Game Over!';
+        session?.finish();
         return render();
       }
       reveal(board, rows, cols, r, c);
@@ -177,6 +202,9 @@ export default {
         if (audio) { audio.prepare(); audio.chime(); }
         if (window.haptics) window.haptics.success();
         status.textContent = '🎉 You cleared the field!';
+        session?.finish();
+      } else {
+        checkpoint();
       }
       render();
     }
@@ -187,6 +215,7 @@ export default {
       if (b.revealed) return;
       b.flagged = !b.flagged;
       flags += b.flagged ? 1 : -1;
+      checkpoint();
       render();
     }
 
@@ -194,6 +223,7 @@ export default {
       board = emptyBoard(rows, cols); gameOver = false; firstClick = true; flags = 0; flagMode = false;
       flagToggle.textContent = '🚩 Flag mode: off';
       flagToggle.setAttribute('aria-pressed', 'false');
+      checkpoint();
       render();
     }
 
@@ -201,7 +231,14 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
+    if (restored) {
+      board = restored.board.map(c => ({ ...c }));
+      firstClick = restored.firstClick; flagMode = restored.flagMode;
+      flags = board.filter(c => c.flagged).length;
+      flagToggle.textContent = `🚩 Flag mode: ${flagMode ? 'on' : 'off'}`;
+      flagToggle.setAttribute('aria-pressed', String(flagMode));
+      render();
+    } else newGame();
     return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
   },
 };

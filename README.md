@@ -36,13 +36,26 @@ mode, sound, and haptics.
 - **Sound** — synthesized Web Audio (no external assets), works offline.
 - **Haptics** — uses the Vibration API when available and permitted.
 - **Offline-first PWA** — service worker caches the shell and runtime assets.
-- **Personalized** — cookies/web storage retain theme, sound, haptics, active
-  game, player names, high scores, and per-game settings.
+- **Personalized** — local storage retains theme, sound, haptics, high scores,
+  per-game settings and unfinished local rounds.
 - **Setup flow** — every game opens with a lightweight options screen (player
   count, difficulty, mode, timer, etc.) before play starts; choices persist
   per game.
 - **Recently played** — the home screen surfaces your last few games (deduped,
   most-recent-first) above the full catalog for quick re-entry.
+- **Return to play** — opening the arcade starts at home unless the most
+  recently active game has an unfinished saved round. Each game has a
+  pace-appropriate inactivity window: 2–5 minutes for quick and timed games,
+  8–20 minutes for puzzles, cards and physical games, and up to 45 minutes
+  for chess. Once its window expires, its saved round is discarded; setup
+  choices and high scores remain. Remote rooms are tab-bound and do not
+  auto-resume.
+
+The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
+Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
+Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
+**15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
+2048 and Snakes & Ladders; **30 min** for Ludo; and **45 min** for Chess.
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
@@ -107,6 +120,7 @@ arcade/
     haptics.js          # Vibration wrapper + toggle UI
     game-catalog.js     # single source of truth for all games
     router.js           # hash-based router + landing grid
+    game-session.js     # per-game resume windows and local checkpoints
     game-shell.js       # shared chrome for game views
     game-utils.js       # shared board game helpers
     dice.js             # tabletop die animation
@@ -128,17 +142,18 @@ arcade/
 2. Create `games/<game-id>.js` exporting `default { render(el, game) }`.
 3. Add `./games/<game-id>.js` to `STATIC_ASSETS` in `sw.js` and bump the
    cache version so the new game works offline immediately after installation.
-   The landing grid and deep link `#/games/<game-id>` now pick it up.
+   Add a resume window in `js/game-session.js` and checkpoint unfinished
+   gameplay via the `session` argument passed to `render`. The landing grid
+   and in-app route `#/games/<game-id>` now pick it up.
 
 See `CHANGELOG.md` for the full history of decisions and assumptions.
 
 ## Scope notes
 
-- **"Saving game states"** is implemented as per-game settings persistence
-  (mode/difficulty/players remembered across visits) plus the Recently Played
-  list — not full mid-game board resume. Closing mid-game starts a fresh round
-  next time; this was a deliberate scope call rather than adding serialization
-  to every different game.
+- A game link opened in a new tab lands at home unless this browser has an
+  unexpired unfinished local round. Game routes still work during an active
+  visit. This prevents stale bookmarks and completed rounds from dropping
+  the player into a new game without choosing it.
 - **Chess** implements checkmate, stalemate, and insufficient-material draws,
   but not draw-by-repetition or the 50-move rule — a deliberate scope limit
   for a casual pass-and-play/AI opponent experience.

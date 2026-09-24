@@ -9,14 +9,28 @@ const GOAL_LEFT = 195, GOAL_RIGHT = 405;
 const BOUNDS = { left: 23, right: 577, top: -10000, bottom: 10000 };
 const PADDLE_SPEED = 690;
 
+function validCheckpoint(s) {
+  const point = (p, minY, maxY) => p && Number.isFinite(p.x) && p.x >= 60 && p.x <= 540 &&
+    Number.isFinite(p.y) && p.y >= minY && p.y <= maxY;
+  return s && [5, 7, 10].includes(s.target) &&
+    Array.isArray(s.paddles) && s.paddles.length === 2 &&
+    s.paddles.every((p, i) => point(p, i ? 60 : 492, i ? 408 : 840) &&
+      Number.isInteger(p.score) && p.score >= 0 && p.score < s.target) &&
+    s.puck && Number.isFinite(s.puck.x) && s.puck.x >= 0 && s.puck.x <= W &&
+    Number.isFinite(s.puck.y) && s.puck.y >= 0 && s.puck.y <= H &&
+    Number.isFinite(s.puck.vx) && Math.abs(s.puck.vx) <= 1200 &&
+    Number.isFinite(s.puck.vy) && Math.abs(s.puck.vy) <= 1200;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Air Hockey', meta: 'Two players · first to 7' });
     const { stage } = shell;
     shell.root.classList.add('ah-vibe');
     if (navigate) wireBack(shell, navigate);
     const saved = loadJSON(KEYS.SETTINGS + ':air-hockey', { target: '7' });
-    const settings = await renderSetup(stage, {
+    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
+    const settings = checkpoint ? { target: String(checkpoint.target) } : await renderSetup(stage, {
       title: '🏒 Air Hockey',
       subtitle: 'Player 1 defends the bottom; Player 2 defends the top.',
       themeClass: 'ah-theme',
@@ -51,7 +65,16 @@ export default {
     const pointers = [null, null];
     const positions = [null, null];
     const keys = new Set();
-    let winner = null, disposed = false, raf;
+    let winner = null, disposed = false, raf, lastSave = 0;
+
+    function checkpointGame(force = false) {
+      if (!session || winner !== null || (!force && Date.now() - lastSave < 1000)) return;
+      lastSave = Date.now();
+      session.save({
+        target, paddles: paddles.map(({ x, y, score }) => ({ x, y, score })),
+        puck: { x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy },
+      });
+    }
 
     function size() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -79,6 +102,7 @@ export default {
       stepper.reset();
       updateStatus();
       draw();
+      checkpointGame(true);
     }
     function goal(scorer) {
       paddles[scorer].score++;
@@ -90,6 +114,8 @@ export default {
         window.arcadeAudio?.chime();
       } else serve(1 - scorer);
       updateStatus(winner === null ? `Player ${scorer + 1} scores!` : '');
+      if (winner !== null) session?.finish();
+      else checkpointGame(true);
     }
     function movePaddles(dt) {
       paddles.forEach((p, i) => {
@@ -189,6 +215,7 @@ export default {
       if (!shell.root.isConnected) { dispose(); return; }
       stepper.tick(time);
       draw();
+      if (winner === null && !document.hidden) checkpointGame();
       raf = requestAnimationFrame(frame);
     }
     function pointerDown(event) {
@@ -218,7 +245,8 @@ export default {
       keys.add(event.key); event.preventDefault();
     }
     function keyUp(event) { keys.delete(event.key); }
-    function onBlur() { keys.clear(); }
+    function onBlur() { keys.clear(); checkpointGame(true); }
+    function onVisibility() { if (document.hidden) checkpointGame(true); }
     const onReset = () => reset();
     const onResize = () => size();
     const onTheme = () => draw();
@@ -229,15 +257,21 @@ export default {
     window.addEventListener('keydown', keyDown);
     window.addEventListener('keyup', keyUp);
     window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('resize', onResize);
     window.addEventListener('arcade:themechange', onTheme);
     shell.getResetButton().addEventListener('click', onReset);
-    reset();
+    if (checkpoint) {
+      checkpoint.paddles.forEach((p, i) => Object.assign(paddles[i], p));
+      Object.assign(puck, checkpoint.puck);
+      updateStatus();
+    } else reset();
     size();
     raf = requestAnimationFrame(frame);
     function dispose() {
       if (disposed) return;
       disposed = true;
+      checkpointGame(true);
       cancelAnimationFrame(raf);
       canvas.removeEventListener('pointerdown', pointerDown);
       canvas.removeEventListener('pointermove', pointerMove);
@@ -246,6 +280,7 @@ export default {
       window.removeEventListener('keydown', keyDown);
       window.removeEventListener('keyup', keyUp);
       window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('arcade:themechange', onTheme);
       shell.getResetButton().removeEventListener('click', onReset);

@@ -41,14 +41,36 @@ function rack() {
   return balls;
 }
 
+function validCheckpoint(s) {
+  return s && ['1', '2'].includes(s.break) && (s.player === 0 || s.player === 1) &&
+    Array.isArray(s.assignments) && s.assignments.length === 2 &&
+    (s.assignments.every((g) => g === null) ||
+      (s.assignments[0] === 'solids' && s.assignments[1] === 'stripes') ||
+      (s.assignments[0] === 'stripes' && s.assignments[1] === 'solids')) &&
+    Number.isInteger(s.shots) && s.shots >= 0 &&
+    Number.isFinite(s.aim) && Math.abs(s.aim) <= 1000 &&
+    Number.isFinite(s.power) && s.power >= .1 && s.power <= 1 &&
+    Array.isArray(s.balls) && s.balls.length === 16 &&
+    s.balls.every((b) => b && Number.isInteger(b.number) && b.number >= 0 && b.number <= 15 &&
+      Number.isFinite(b.x) && b.x >= (b.pocketed ? 0 : TABLE.left - R) &&
+      b.x <= (b.pocketed ? W : TABLE.right + R) &&
+      Number.isFinite(b.y) && b.y >= (b.pocketed ? 0 : TABLE.top - R) &&
+      b.y <= (b.pocketed ? H : TABLE.bottom + R) &&
+      typeof b.pocketed === 'boolean') &&
+    new Set(s.balls.map((b) => b.number)).size === 16 &&
+    s.balls[0].number === 0 && !s.balls[0].pocketed &&
+    !s.balls.find((b) => b.number === 8).pocketed;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: '8-Ball Pool', meta: 'Two players · local match' });
     const { stage } = shell;
     shell.root.classList.add('pool-vibe');
     if (navigate) wireBack(shell, navigate);
     const saved = loadJSON(KEYS.SETTINGS + ':pool', { break: '1' });
-    const settings = await renderSetup(stage, {
+    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
+    const settings = checkpoint ? { break: checkpoint.break } : await renderSetup(stage, {
       title: '🎱 8-Ball Pool',
       subtitle: 'Clear your group, then sink the 8. Pull back from the cue ball to shoot.',
       themeClass: 'pool-theme',
@@ -84,9 +106,17 @@ export default {
     const powerInput = controls.querySelector('input');
     const powerValue = controls.querySelector('.pool-power-value');
     const shootButton = controls.querySelector('button');
-    let balls, player, assignments, winner, rolling, shot, settle, aim, power, drag, raf;
+    let balls, player, assignments, winner, rolling, shot, settle, aim, power, drag, raf, shots;
     let disposed = false;
     let message = '';
+
+    function checkpointGame() {
+      if (!session || winner !== null || rolling) return;
+      session.save({
+        break: settings.break, player, assignments: [...assignments], shots, aim, power,
+        balls: balls.map(({ number, x, y, pocketed }) => ({ number, x, y, pocketed: !!pocketed })),
+      });
+    }
 
     function size() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -116,12 +146,14 @@ export default {
       settle = 0;
       aim = 0;
       power = 0.45;
+      shots = 0;
       drag = null;
       powerInput.value = '45';
       powerValue.textContent = '45%';
       stepper.reset();
       announce('Break the rack!');
       draw();
+      checkpointGame();
     }
 
     function respot() {
@@ -156,6 +188,7 @@ export default {
         announce(winner === player ? 'Legal 8-ball! Match won.' : 'Early or fouled 8-ball — opponent wins.');
         window.arcadeAudio?.prepare().then(() => window.arcadeAudio?.chime());
         window.haptics?.success();
+        session?.finish();
         return;
       }
       if (!foul && !assigned) {
@@ -172,10 +205,13 @@ export default {
         keep ? 'Pocketed your ball — shoot again!' : 'Turn passes.');
       if (foul) { window.arcadeAudio?.buzz(); window.haptics?.failure(); }
       else if (taken.length) { window.arcadeAudio?.pop(); window.haptics?.select(); }
+      checkpointGame();
     }
 
     function shoot() {
       if (rolling || winner !== null || balls[0].pocketed) return;
+      checkpointGame(); // The last stable table is replayable if the page closes during a shot.
+      shots++;
       const cue = balls[0], speed = 220 + 850 * power;
       cue.vx = Math.cos(aim) * speed;
       cue.vy = Math.sin(aim) * speed;
@@ -330,6 +366,7 @@ export default {
       const fire = distance > 10;
       drag = null;
       if (fire) shoot();
+      else checkpointGame();
     }
     function keyDown(event) {
       if (disposed || !shell.root.isConnected || event.altKey || event.ctrlKey || event.metaKey ||
@@ -343,9 +380,10 @@ export default {
       else return;
       event.preventDefault();
       draw();
+      checkpointGame();
     }
     const onReset = () => reset();
-    const onPower = () => { setPower(Number(powerInput.value) / 100); draw(); };
+    const onPower = () => { setPower(Number(powerInput.value) / 100); draw(); checkpointGame(); };
     const onTheme = () => draw();
     const onResize = () => size();
     canvas.addEventListener('pointerdown', pointerDown);
@@ -359,7 +397,16 @@ export default {
     shell.getResetButton().addEventListener('click', onReset);
     shootButton.addEventListener('click', shoot);
     powerInput.addEventListener('input', onPower);
-    reset();
+    if (checkpoint) {
+      balls = checkpoint.balls.map((b) => ({ ...b, vx: 0, vy: 0, r: R }));
+      player = checkpoint.player;
+      assignments = [...checkpoint.assignments];
+      shots = checkpoint.shots;
+      winner = null; rolling = false; shot = null; settle = 0; drag = null;
+      aim = checkpoint.aim;
+      setPower(checkpoint.power);
+      announce('Match resumed.');
+    } else reset();
     size();
     raf = requestAnimationFrame(frame);
     function dispose() {

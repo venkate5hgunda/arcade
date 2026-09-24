@@ -47,8 +47,25 @@ function cardElement(card, hidden = false) {
   return el;
 }
 
+function validCheckpoint(s) {
+  if (!s || typeof s !== 'object' || !Array.isArray(s.deck) ||
+      !Array.isArray(s.dealer) || !Array.isArray(s.player) ||
+      s.dealer.length !== 2 || s.player.length < 2 || s.player.length > 11 ||
+      s.result !== null || s.doubled !== false ||
+      !Number.isSafeInteger(s.round) || s.round < 1 || !s.record || typeof s.record !== 'object' ||
+      !['wins', 'losses', 'pushes'].every((key) => Number.isSafeInteger(s.record[key]) && s.record[key] >= 0) ||
+      typeof s.record.net !== 'number' || !Number.isFinite(s.record.net) ||
+      s.record.wins + s.record.losses + s.record.pushes > s.round - 1 ||
+      typeof s.message !== 'string' || s.message.length > 160) return false;
+  const cards = [...s.deck, ...s.dealer, ...s.player];
+  return cards.length === 52 && cards.every((card) => card && typeof card === 'object' &&
+    SUITS.includes(card.suit) && RANKS.includes(card.rank)) &&
+    new Set(cards.map((card) => `${card.suit}:${card.rank}`)).size === 52 &&
+    handValue(s.player).total < 21 && handValue(s.dealer).total !== 21;
+}
+
 export default {
-  render(el, game, { navigate } = {}) {
+  render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, {
       title: 'Blackjack', meta: 'Beat the dealer · dealer stands on soft 17', resetLabel: 'New round',
     });
@@ -78,6 +95,11 @@ export default {
     const message = stage.querySelector('.bj-message');
     let deck, dealer, player, result, doubled, round = 0;
     const record = { wins: 0, losses: 0, pushes: 0, net: 0 };
+    function checkpoint() {
+      if (result !== null) session?.finish();
+      else session?.save({ deck, dealer, player, result, doubled, round, record,
+        message: message.textContent });
+    }
 
     function draw(hand) { hand.push(deck.pop()); }
 
@@ -97,6 +119,7 @@ export default {
       }
       message.textContent = description;
       render();
+      checkpoint();
     }
 
     function settle() {
@@ -125,6 +148,7 @@ export default {
       else {
         message.textContent = 'Your move: hit, stand, or double down.';
         render();
+        checkpoint();
       }
     }
 
@@ -141,6 +165,7 @@ export default {
       else {
         message.textContent = `You have ${score}. Hit or stand?`;
         render();
+        checkpoint();
       }
     }
 
@@ -177,7 +202,14 @@ export default {
     }
 
     shell.getResetButton().addEventListener('click', newRound);
-    newRound();
+    if (validCheckpoint(session?.state)) {
+      const saved = session.state;
+      deck = saved.deck; dealer = saved.dealer; player = saved.player;
+      result = saved.result; doubled = saved.doubled; round = saved.round;
+      Object.assign(record, saved.record);
+      message.textContent = saved.message;
+      render();
+    } else newRound();
     return { dispose: () => shell.root.remove() };
   },
 };

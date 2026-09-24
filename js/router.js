@@ -2,8 +2,9 @@
 // On load it reads the URL hash (#/game-id) and mounts the matching game.
 // Pushes/pops state so the back button and deep links work.
 
-import { loadJSON, saveJSON, KEYS } from './storage.js';
-import { loadGameModule, getGame, GAMES, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
+import { loadJSON, remove, saveJSON, KEYS } from './storage.js';
+import { loadGameModule, getGame, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
+import { createGameSession, recentUnfinishedGame } from './game-session.js';
 import { room } from './multiplayer.js';
 
 const STAGE_ID = 'game-stage';
@@ -39,9 +40,13 @@ function syncHash(gameId) {
 // token; only the most recent one is allowed to touch the DOM after an await.
 let navToken = 0;
 let mountedGame = null;
+let mountedSession = null;
 
 export async function navigate(gameId, { pushState = true } = {}) {
   const myToken = ++navToken;
+  if (!mountedSession?.isExpired()) mountedSession?.touch();
+  mountedSession?.stop();
+  mountedSession = null;
   mountedGame?.dispose?.();
   mountedGame = null;
   const game = gameId ? getGame(gameId) : null;
@@ -64,24 +69,26 @@ export async function navigate(gameId, { pushState = true } = {}) {
 
   const module = await loadGameModule(game.id);
   if (myToken !== navToken) return; // a newer navigation has since taken over
-  saveJSON(KEYS.ACTIVE_GAME, game.id);
-
   if (!module || typeof module.render !== 'function') {
     stage.innerHTML = renderComingSoon(game);
     return;
   }
 
   recordRecentlyPlayed(game.id);
+  const session = room.activeGame?.id === game.id ? null : createGameSession(game.id);
 
   try {
     // Pass navigate so games can wire their back buttons
-    const instance = await module.render(stage, game, { navigate, multiplayer: room });
+    const instance = await module.render(stage, game, { navigate, multiplayer: room, session });
     if (myToken !== navToken) {
       instance?.dispose?.();
+      session?.stop();
       return;
     }
     mountedGame = instance;
+    mountedSession = session;
   } catch (err) {
+    session?.stop();
     if (myToken !== navToken) return; // superseded mid-render; newer call owns the stage
     console.error(`Failed to mount game ${game.id}`, err);
     stage.innerHTML = renderError(game, err);
@@ -134,7 +141,7 @@ function wireGrid() {
   }
 
   landing.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-game]');
+    const btn = e.target.closest('.game-card-btn[data-game]');
     if (!btn) return;
     window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
     window.haptics?.select();
@@ -146,7 +153,10 @@ function wireGrid() {
       const btn = e.target.closest('[data-category]');
       if (!btn) return;
       active = btn.dataset.category;
-      tabs.querySelectorAll('[data-category]').forEach((b) => b.classList.toggle('active', b === btn));
+      tabs.querySelectorAll('[data-category]').forEach((b) => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', String(b === btn));
+      });
       window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
       renderGameGrid(grid, active);
     });
@@ -166,7 +176,7 @@ function renderLanding() {
         <div id="recent-grid" class="game-grid recent-grid" role="list"></div>
       </section>
       <div id="category-tabs" class="category-tabs" role="tablist">
-        ${CATEGORIES.map((c) => `<button type="button" class="category-tab${c === 'All' ? ' active' : ''}" data-category="${c}" role="tab">${c}</button>`).join('')}
+        ${CATEGORIES.map((c) => `<button type="button" class="category-tab${c === 'All' ? ' active' : ''}" data-category="${c}" role="tab" aria-selected="${c === 'All'}">${c}</button>`).join('')}
       </div>
       <div id="game-grid" class="game-grid" role="list"></div>
     </div>`;
@@ -216,8 +226,20 @@ export function initRouter() {
     }
   });
 
-  // Restore last active game, else landing.
-  const stored = loadJSON(KEYS.ACTIVE_GAME, null);
-  const initial = parseHash(location.hash) || (stored ? stored : null);
-  navigate(initial);
+  // A bookmarked game route is not an unfinished round. Start at home unless
+  // there is a recent, resumable checkpoint from this browser.
+  remove(KEYS.ACTIVE_GAME);
+  const initial = recentUnfinishedGame();
+  history.replaceState(null, '', `${location.pathname}${location.search}${initial ? `#/games/${initial}` : '#/'}`);
+  navigate(initial, { pushState: false });
+  window.addEventListener('pagehide', () => mountedSession?.touch());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) mountedSession?.touch();
+    else if (mountedSession?.isExpired()) navigate(null);
+  });
+  window.setInterval(() => {
+    const activeExpired = mountedSession?.isExpired();
+    recentUnfinishedGame();
+    if (!document.hidden && activeExpired) navigate(null);
+  }, 15_000);
 }

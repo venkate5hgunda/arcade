@@ -22,6 +22,26 @@ export function penalty(cards) {
     ['J', 'Q', 'K'].includes(card.rank) ? 10 : card.rank === 'A' ? 1 : Number(card.rank)), 0);
 }
 
+function validCheckpoint(s) {
+  if (!s || typeof s !== 'object' || !Array.isArray(s.stock) || !Array.isArray(s.discard) ||
+      s.discard.length < 1 || !Array.isArray(s.hands) || s.hands.length !== 2 ||
+      s.hands.some((hand) => !Array.isArray(hand) || !hand.length) ||
+      !SUITS.includes(s.activeSuit) || !Number.isInteger(s.current) || s.current < 0 || s.current > 1 ||
+      !['handoff', 'play', 'choose'].includes(s.phase) || typeof s.drawn !== 'boolean' ||
+      !Number.isInteger(s.passes) || s.passes < 0 || s.passes > 1 ||
+      !Number.isSafeInteger(s.turn) || s.turn < 1 || s.winner !== null ||
+      typeof s.ending !== 'string' || s.ending !== '' ||
+      !(s.pendingEight === null || (Number.isInteger(s.pendingEight) &&
+        s.pendingEight >= 0 && s.pendingEight < s.hands[s.current].length)) ||
+      (s.phase === 'choose') !== (s.pendingEight !== null) ||
+      s.phase === 'choose' && s.hands[s.current][s.pendingEight].rank !== '8' ||
+      s.phase === 'handoff' && s.drawn) return false;
+  const cards = [...s.stock, ...s.discard, ...s.hands[0], ...s.hands[1]];
+  return cards.length === 52 && cards.every((card) => card && typeof card === 'object' &&
+    SUITS.includes(card.suit) && RANKS.includes(card.rank)) &&
+    new Set(cards.map((card) => `${card.suit}:${card.rank}`)).size === 52;
+}
+
 function sound(kind) {
   const audio = window.arcadeAudio;
   if (audio) void audio.prepare().then(() => audio[kind]()).catch(() => {});
@@ -53,7 +73,7 @@ function cardElement(card, { hidden = false, playable = false, onClick } = {}) {
 }
 
 export default {
-  render(el, game, { navigate } = {}) {
+  render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, {
       title: 'Crazy Eights', meta: 'Two players · pass & play', resetLabel: 'New game',
     });
@@ -66,6 +86,12 @@ export default {
 
     let stock, discard, hands, activeSuit, current, phase, drawn, passes, pendingEight, winner, ending;
     let turn = 1;
+    let resumePhase = null;
+    function checkpoint() {
+      if (phase === 'over') session?.finish();
+      else session?.save({ stock, discard, hands, activeSuit, current, phase: resumePhase || phase,
+        drawn, passes, pendingEight, winner, ending, turn });
+    }
 
     function button(label, handler, quiet = false) {
       const el = document.createElement('button');
@@ -101,7 +127,9 @@ export default {
       winner = null;
       ending = '';
       turn = 1;
+      resumePhase = null;
       render();
+      checkpoint();
     }
 
     function replenish() {
@@ -140,6 +168,7 @@ export default {
         }
       }
       render();
+      checkpoint();
     }
 
     function play(index) {
@@ -148,6 +177,7 @@ export default {
         pendingEight = index;
         phase = 'choose';
         render();
+        checkpoint();
         return;
       }
       const card = hands[current].splice(index, 1)[0];
@@ -177,6 +207,7 @@ export default {
       drawn = true;
       sound('tap');
       render();
+      checkpoint();
     }
 
     function pass() {
@@ -200,8 +231,10 @@ export default {
         curtain.append(
           paragraph(`Player ${current + 1}, it's your turn. Player ${1 - current + 1}, look away!`, 'ce-curtain-instructions'),
           button(`I'm Player ${current + 1} · show my hand`, () => {
-            phase = 'play';
+            phase = resumePhase || 'play';
+            resumePhase = null;
             render();
+            checkpoint();
           }),
           paragraph('Your cards stay hidden until you tap the button.', 'cg-rules'),
         );
@@ -276,7 +309,14 @@ export default {
     }
 
     shell.getResetButton().addEventListener('click', begin);
-    begin();
+    if (validCheckpoint(session?.state)) {
+      const saved = session.state;
+      ({ stock, discard, hands, activeSuit, current, drawn, passes, pendingEight,
+        winner, ending, turn } = saved);
+      resumePhase = saved.phase === 'handoff' ? null : saved.phase;
+      phase = 'handoff';
+      render();
+    } else begin();
     return { dispose: () => shell.root.remove() };
   },
 };

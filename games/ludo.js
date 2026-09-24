@@ -32,14 +32,33 @@ const LANES = [
 ];
 const YARDS = [[1, 1], [1, 10], [10, 10], [10, 1]];
 
+function validCheckpoint(s) {
+  if (!s || typeof s !== 'object' || !Number.isInteger(s.count) || s.count < 2 || s.count > 4 ||
+      !Array.isArray(s.tokens) || s.tokens.length !== s.count ||
+      s.tokens.some((group) => !Array.isArray(group) || group.length !== 4 ||
+        group.some((n) => !Number.isInteger(n) || n < -1 || n > 58)) ||
+      !Number.isInteger(s.current) || s.current < 0 || s.current >= s.count ||
+      !Number.isInteger(s.value) || s.value < 1 || s.value > 6 ||
+      typeof s.awaiting !== 'boolean' || !Array.isArray(s.movable) ||
+      s.movable.some((n) => !Number.isInteger(n) || n < 0 || n > 3) ||
+      s.movable.length !== new Set(s.movable).size ||
+      s.tokens.some((group) => group.every((n) => n === 58)) ||
+      s.winner !== null || typeof s.message !== 'string' || s.message.length > 160) return false;
+  const expected = s.tokens[s.current].flatMap((position, index) =>
+    (position === -1 ? s.value === 6 : position < 58 && position + s.value <= 58) ? [index] : []);
+  return s.awaiting ? expected.length > 0 && expected.length === s.movable.length &&
+    expected.every((n) => s.movable.includes(n)) : s.movable.length === 0;
+}
+
 export default {
-  async render(el, game, { navigate, multiplayer } = {}) {
+  async render(el, game, { navigate, multiplayer, session } = {}) {
     const shell = createShell(el, game, { title: 'Ludo', meta: 'Bring all four tokens home' });
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ld-vibe');
     const match = remoteMatch(multiplayer, game.id);
+    const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':ludo', { players: '4' });
-    const settings = match ? { players: String(match.activeGame.playerIds.length) } : await renderSetup(shell.stage, {
+    const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.count) } : await renderSetup(shell.stage, {
       title: 'Ludo', subtitle: 'Gather around the board.',
       themeClass: 'ld-theme', startLabel: 'Open the Table',
       fields: [{ key: 'players', label: 'Players', default: saved.players,
@@ -49,6 +68,16 @@ export default {
     const count = Number(settings.players);
     const tokens = Array.from({ length: count }, () => Array(4).fill(-1));
     let current = 0, value = 1, awaiting = false, movable = [], winner = null, message = '', rolling = false, pendingMove = null, queuedRoll = null;
+    if (resume) {
+      resume.tokens.forEach((group, p) => tokens[p].splice(0, 4, ...group));
+      current = resume.current; value = resume.value; awaiting = resume.awaiting;
+      movable = resume.movable; message = resume.message;
+    }
+    function checkpoint() {
+      if (match) return;
+      if (winner !== null) session?.finish();
+      else session?.save({ count, tokens, current, value, awaiting, movable, winner, message });
+    }
     let controller = new AbortController();
     const board = document.createElement('div');
     board.className = 'ld-board ld-board-deluxe';
@@ -174,6 +203,7 @@ export default {
       awaiting = false; movable = [];
       if (winner === null && value !== 6 && !captured) current = (current + 1) % count;
       render();
+      checkpoint();
       if (queuedRoll !== null && winner === null) {
         const next = queuedRoll;
         queuedRoll = null;
@@ -197,6 +227,7 @@ export default {
         if (value !== 6) current = (current + 1) % count;
       } else message = '';
       render();
+      checkpoint();
       if (pendingMove !== null) {
         const index = pendingMove;
         pendingMove = null;
@@ -214,6 +245,7 @@ export default {
       tokens.forEach((group) => group.fill(-1));
       current = 0; value = 1; awaiting = false; movable = []; winner = null; message = ''; rolling = false; pendingMove = null; queuedRoll = null;
       render();
+      checkpoint();
     }
     shell.getResetButton().addEventListener('click', () => {
       if (match) {
@@ -240,6 +272,7 @@ export default {
       }
     });
     render();
+    if (!resume) checkpoint();
     return { dispose: () => { controller.abort(); offRoom?.(); } };
   },
 };

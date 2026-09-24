@@ -7,15 +7,40 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const SYMBOLS = ['🍎','🍌','🍇','🍓','🥝','🍋','🥭','🍒','🥥','🍍','🥑','🥕','🌽','🥔','🍅','🥦','🧄','🧅','🥜','🌰','🍞','🥐','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣'];
 
+function validState(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s) ||
+      !['4', '6', '8'].includes(s.size) || !['1', '2'].includes(s.players) ||
+      !Array.isArray(s.cards) || s.cards.length !== Number(s.size) ** 2 ||
+      ![1, 2].includes(s.current) || (s.players === '1' && s.current !== 1) ||
+      !s.scores || typeof s.scores !== 'object' || Array.isArray(s.scores) ||
+      ![1, 2].every(p => Number.isSafeInteger(s.scores[p]) && s.scores[p] >= 0) ||
+      (s.players === '1' && s.scores[2] !== 0) ||
+      (s.firstPick !== null && (!Number.isInteger(s.firstPick) || s.firstPick < 0 || s.firstPick >= s.cards.length))) return false;
+  const counts = new Map();
+  for (let i = 0; i < s.cards.length; i++) {
+    const c = s.cards[i];
+    if (!c || c.index !== i || !SYMBOLS.slice(0, s.cards.length / 2).includes(c.symbol) ||
+        typeof c.revealed !== 'boolean' || typeof c.matched !== 'boolean' ||
+        (c.matched && !c.revealed) || (c.revealed && !c.matched && i !== s.firstPick)) return false;
+    counts.set(c.symbol, (counts.get(c.symbol) || 0) + 1);
+  }
+  return counts.size === s.cards.length / 2 && [...counts.values()].every(n => n === 2) &&
+    s.cards.every(c => s.cards.filter(other => other.symbol === c.symbol).every(other => other.matched === c.matched)) &&
+    (s.firstPick === null || (s.cards[s.firstPick].revealed && !s.cards[s.firstPick].matched)) &&
+    s.cards.filter(c => c.matched).length === 2 * (s.scores[1] + s.scores[2]) &&
+    s.scores[1] + s.scores[2] < s.cards.length / 2;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Memory Match', meta: 'Flip cards, find pairs' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('mem-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':memory', { size: '4', players: '1' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const settings = restored ? { size: restored.size, players: restored.players } : await renderSetup(stage, {
       title: '🧠 Memory Match',
       subtitle: 'Choose your grid and players',
       themeClass: 'mem-theme',
@@ -51,6 +76,12 @@ export default {
 
     let cards = [], firstPick = null, lock = false, gameOver = false;
     let current = 1, scores = { 1: 0, 2: 0 };
+    let disposed = false, mismatchTimer = null, roundId = 0;
+
+    function checkpoint() {
+      session?.save({ size: settings.size, players: settings.players, cards: cards.map(c => ({ ...c })),
+        firstPick, current, scores: { ...scores } });
+    }
 
     const grid = document.createElement('div');
     grid.className = 'mem-grid';
@@ -69,12 +100,15 @@ export default {
     }
 
     function newGame() {
+      roundId++;
+      clearTimeout(mismatchTimer);
       const pairs = total / 2;
       const deck = SYMBOLS.slice(0, pairs).flatMap(s => [s, s]);
       shuffle(deck);
       cards = deck.map((symbol, i) => ({ symbol, revealed: false, matched: false, index: i }));
       firstPick = null; lock = false; gameOver = false;
       current = 1; scores = { 1: 0, 2: 0 };
+      checkpoint();
       render();
     }
 
@@ -105,19 +139,24 @@ export default {
     }
 
     async function onFlip(i) {
-      if (lock || cards[i].revealed || cards[i].matched) return;
+      if (disposed || gameOver || lock || cards[i].revealed || cards[i].matched) return;
+      lock = true;
+      const startedRound = roundId;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      if (disposed || gameOver || startedRound !== roundId) return;
       cards[i].revealed = true;
       if (audio) audio.tap();
-      render();
 
       if (firstPick === null) {
         firstPick = i;
+        lock = false;
+        checkpoint();
+        render();
         return;
       }
 
-      lock = true;
+      render();
       const match = cards[firstPick].symbol === cards[i].symbol;
       if (match) {
         cards[firstPick].matched = cards[i].matched = true;
@@ -126,6 +165,7 @@ export default {
         if (window.haptics) window.haptics.success();
         if (cards.every(c => c.matched)) {
           gameOver = true;
+          session?.finish();
           if (playerCount === 1) {
             status.textContent = `🎉 All pairs found! Mismatches: ${cards.length / 2 - scores[1]}`;
           } else {
@@ -136,12 +176,14 @@ export default {
       } else {
         if (audio) audio.buzz();
         if (window.haptics) window.haptics.failure();
-        await new Promise(r => setTimeout(r, 700));
+        await new Promise(r => { mismatchTimer = setTimeout(r, 700); });
+        if (disposed || gameOver || startedRound !== roundId) return;
         cards[firstPick].revealed = cards[i].revealed = false;
         if (playerCount === 2) current = nextPlayer(current, 2);
       }
       firstPick = null;
       lock = false;
+      if (!gameOver) checkpoint();
       render();
     }
 
@@ -149,7 +191,15 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    if (restored) {
+      cards = restored.cards.map(c => ({ ...c }));
+      firstPick = restored.firstPick; current = restored.current; scores = { ...restored.scores };
+      render();
+    } else newGame();
+    return { dispose: () => {
+      disposed = true;
+      clearTimeout(mismatchTimer);
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };
