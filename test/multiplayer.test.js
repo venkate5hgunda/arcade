@@ -166,6 +166,41 @@ test('UNO requests reach host only; private hands reach only their selected reci
   host.close();
 });
 
+test('Crazy Eights sends requests to the host and only delivers each private hand to its seat', async () => {
+  const host = new MultiplayerRoom();
+  const guests = [new MultiplayerRoom(), new MultiplayerRoom()];
+  const received = guests.map(() => []);
+  host.createHost('Host');
+  for (const [index, guest] of guests.entries()) {
+    guest.on(event => { if (event.type === 'action') received[index].push(event.action); });
+    const invite = await host.createInvite();
+    const answer = await guest.joinInvite(invite, `Guest ${index + 1}`);
+    await host.acceptAnswer(answer);
+    const hp = FakePeer.instances.at(-2);
+    const gp = FakePeer.instances.at(-1);
+    const channel = new FakeChannel('arcade');
+    hp.channel.other = channel;
+    channel.other = hp.channel;
+    gp.ondatachannel({ channel });
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen();
+    channel.onopen();
+  }
+  host.startGame('crazy-eights', [host.peerId, guests[0].peerId]);
+  let request;
+  host.on(event => { if (event.type === 'action') request = event.action; });
+  guests[0].sendAction({ type: 'ce-request', revision: 1, move: { type: 'draw' } });
+  assert.equal(request.type, 'ce-request');
+  assert.deepEqual(received, [[], []], 'requests must never broadcast hidden actions');
+  assert.throws(() => guests[1].sendAction({ type: 'ce-request' }), /not playing/);
+  host.sendPrivateAction(guests[0].peerId, { type: 'ce-state', view: { hand: [{ rank: 'A', suit: '♠' }] } });
+  assert.equal(received[0][0].view.hand[0].rank, 'A');
+  assert.deepEqual(received[1], []);
+  assert.equal(host.peers.get(guests[1].peerId).channel.sent.includes('"hand"'), false);
+  guests.forEach(guest => guest.close());
+  host.close();
+});
+
 test('malformed links, wrong room and oversized links are rejected', async () => {
   const host = new MultiplayerRoom();
   host.createHost('Host');
@@ -202,7 +237,7 @@ test('only supported catalog games can start remotely and room restart resets se
   const guestIds = Array.from({ length: 3 }, () => crypto.randomUUID());
   host.members.push(...guestIds.map((id, index) =>
     ({ id, name: `Guest ${index + 1}`, connected: true, admitted: true })));
-  for (const game of ['tictactoe', 'connect-four', 'chess', 'rps']) {
+  for (const game of ['tictactoe', 'connect-four', 'chess', 'rps', 'crazy-eights']) {
     host.startGame(game, [host.peerId, guestIds[0]]);
     assert.equal(host.activeGame.id, game);
     assert.equal(host.activeGame.playerIds.length, 2);

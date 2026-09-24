@@ -8,8 +8,9 @@ const MAX_MESSAGE = 32000;
 const ICE_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
-const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'uno']);
+const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'uno', 'crazy-eights']);
 const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'uno']);
+const PRIVATE_GAMES = new Set(['uno', 'crazy-eights']);
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
@@ -396,7 +397,7 @@ export class MultiplayerRoom {
           if (!member.connected || !member.admitted || msg.game !== this.activeGame?.id ||
               !this.activeGame?.playerIds.includes(id)) fail('Participant cannot act in this game.');
           this.checkAction(msg.action);
-          if (this.activeGame.id === 'uno') this.emit({ type: 'action', from: id, action: msg.action });
+          if (PRIVATE_GAMES.has(this.activeGame.id)) this.emit({ type: 'action', from: id, action: msg.action });
           else this.broadcastAction(id, msg.action);
         } else fail('Guests cannot change room state.');
       } else if (this.role === 'guest') {
@@ -440,7 +441,7 @@ export class MultiplayerRoom {
           this.lastActionSequence = msg.sequence;
           this.emit({ type: 'action', from: msg.from, action: msg.action, sequence: msg.sequence });
         } else if (msg.kind === 'private-action') {
-          if (this.activeGame?.id !== 'uno' || msg.game !== 'uno' ||
+          if (!PRIVATE_GAMES.has(this.activeGame?.id) || msg.game !== this.activeGame.id ||
               !this.activeGame.playerIds.includes(this.peerId) ||
               !Number.isSafeInteger(msg.sequence) || msg.sequence <= this.lastActionSequence)
             fail('Invalid private game message.');
@@ -466,7 +467,7 @@ export class MultiplayerRoom {
     this.emit({ type: 'action', from, action, sequence });
   }
   sendPrivateAction(recipient, action) {
-    if (this.role !== 'host' || this.activeGame?.id !== 'uno' ||
+    if (this.role !== 'host' || !PRIVATE_GAMES.has(this.activeGame?.id) ||
         !this.activeGame.playerIds.includes(recipient)) fail('Invalid private game recipient.');
     this.checkAction(action);
     if (recipient === this.peerId) {
@@ -578,7 +579,7 @@ export class MultiplayerRoom {
     this.checkAction(action);
     if (!this.activeGame?.playerIds.includes(this.peerId)) fail('You are not playing this game.');
     if (this.role === 'host') {
-      if (this.activeGame.id === 'uno') this.emit({ type: 'action', from: this.peerId, action });
+      if (PRIVATE_GAMES.has(this.activeGame.id)) this.emit({ type: 'action', from: this.peerId, action });
       else this.broadcastAction(this.peerId, action);
     }
     else if (this.role === 'guest') {
@@ -605,6 +606,7 @@ export class MultiplayerRoom {
     this.lastGameGeneration = 0;
     this.stats = emptyStats();
     this.roundKeys.clear();
+    this.preferredGame = null;
     this.state();
   }
   mountLobby(container, catalog, onStart) {
@@ -786,17 +788,12 @@ export class MultiplayerRoom {
         if (!eligibleGuests.length) selection.append(document.createTextNode('Waiting for an admitted guest'));
         root.append(selection);
         const scope = document.createElement('p');
-        scope.textContent = 'Host always plays seat 1 (X / Red / White). Select one guest for Tic-Tac-Toe, Connect Four, Chess, or RPS; select 1–3 guests for Snakes & Ladders or Ludo. All other games are local-only.';
+        scope.textContent = 'Host plays seat 1. Choose one guest for two-player games, or 1–3 guests for Snakes & Ladders, Ludo and UNO-inspired. Each card player sees only their own hand.';
         games.append(scope);
-        for (const game of catalog) {
+        const supported = catalog.filter(game => REMOTE_GAMES.has(game.id));
+        supported.sort((a, b) => Number(b.id === this.preferredGame) - Number(a.id === this.preferredGame));
+        for (const game of supported) {
           if (!GAME_ID.test(game?.id ?? '')) continue;
-          if (!REMOTE_GAMES.has(game.id)) {
-            const local = document.createElement('p');
-            local.className = 'mp-local-only';
-            local.textContent = `${game.name} · Local-only (remote play unavailable)`;
-            games.append(local);
-            continue;
-          }
           const { min, max } = seatLimits(game);
           const start = button(`${game.name} (${min}–${max} players)`, () => {
             const guestIds = [...selection.querySelectorAll('input:checked')].map((input) => input.value);
@@ -807,6 +804,10 @@ export class MultiplayerRoom {
           }, games);
           start.disabled = eligibleGuests.length + 1 < min;
         }
+        const local = document.createElement('p');
+        local.className = 'mp-local-only';
+        local.textContent = 'Other cabinets are local-only. Blackjack is solo against the dealer.';
+        games.append(local);
         root.append(games);
       }
       container.append(root);
@@ -815,10 +816,12 @@ export class MultiplayerRoom {
     render();
     return () => { this.lobbies.delete(render); container.replaceChildren(); };
   }
-  async showLobby() {
+  async showLobby(preferredGame = null) {
     if (typeof document === 'undefined') fail('A browser document is required to show the lobby.');
+    this.preferredGame = preferredGame && REMOTE_GAMES.has(preferredGame) ? preferredGame : null;
     if (this.overlay?.isConnected) {
       this.overlay.hidden = false;
+      for (const render of this.lobbies) render();
       return;
     }
     const { navigate } = await import('./router.js');

@@ -88,15 +88,20 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   captured pieces to their yards. Both boards honor reduced-motion preferences;
   Ludo uses a full 52-square cross
   track and lets the player select which legal token to move.
-- **Cards** — UNO-inspired supports 2–4 players locally (with private
-  pass-the-device hands) or in an online room (private hands delivered only
-  to each player). Matching, skips, reverses, +2/+4 and wild color choices
-  work offline locally. The room host owns the deck and must be trusted.
+- **Cards** — UNO-inspired (2–4 players) and Crazy Eights (2 players) lead
+  with private-room play on separate devices. Only the host holds the deck
+  and sends each guest their own hand and public table state. Optional local
+  pass-and-play uses a covered handoff; Blackjack is solo against the dealer.
+  UNO-inspired supports one-card callouts, +2 catches and +4 bluff challenges
+  as well as wild colors, skips and reverses; drawing penalties do not stack.
+  Both card duels also work offline in local mode. The room host owns the
+  deck and must be trusted.
 - **Room play** — one persistent WebRTC room connects devices for repeated
   games. The host assigns active seats in the lobby; extra guests may watch
   the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games), plus UNO-inspired (2–4 players, host-authoritative private hands).
+  games), plus UNO-inspired (2–4 players) and Crazy Eights (2 players), with
+  host-authoritative private hands.
   The room lobby keeps per-player and per-game wins, losses, draws and rankings
   for the lifetime of the room, including across replays and game changes.
   Other games remain local-only.
@@ -209,6 +214,6 @@ See `CHANGELOG.md` for the full history of decisions and assumptions.
   for a casual pass-and-play/AI opponent experience.
 - **Pool** uses simplified 8-ball house rules; there is no called pocket or
   tournament break requirement.
-- **UNO-inspired** uses a house ruleset: number-only opening card, no
-  draw-card stacking, challenge, UNO call-out penalty or multi-round scoring.
+- **UNO-inspired** uses a single-round house ruleset: number-only opening
+  card and no draw-card stacking or multi-round point scoring.
   If nobody can draw or play, the fewest cards wins (ties remain ties).
