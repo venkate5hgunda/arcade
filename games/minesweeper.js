@@ -89,7 +89,7 @@ export default {
     const { rows, cols, mines } = DIFFICULTIES[settings.difficulty] || DIFFICULTIES.easy;
     shell.root.querySelector('.game-meta').textContent = `${rows}×${cols} · ${mines} mines`;
 
-    let board = null, gameOver = false, firstClick = true, flags = 0;
+    let board = null, gameOver = false, firstClick = true, flags = 0, flagMode = false;
 
     const grid = document.createElement('div');
     grid.className = 'ms-grid';
@@ -99,6 +99,18 @@ export default {
     const status = document.createElement('div');
     status.className = 'ms-status';
     stage.insertBefore(status, grid);
+    const flagToggle = document.createElement('button');
+    flagToggle.type = 'button';
+    flagToggle.className = 'ms-flag-toggle';
+    flagToggle.textContent = '🚩 Flag mode: off';
+    flagToggle.setAttribute('aria-pressed', 'false');
+    stage.insertBefore(flagToggle, grid);
+    flagToggle.addEventListener('click', () => {
+      flagMode = !flagMode;
+      flagToggle.textContent = `🚩 Flag mode: ${flagMode ? 'on' : 'off'}`;
+      flagToggle.setAttribute('aria-pressed', String(flagMode));
+      window.haptics?.select();
+    });
 
     function render() {
       grid.innerHTML = '';
@@ -106,8 +118,8 @@ export default {
         for (let c = 0; c < cols; c++) {
           const cell = document.createElement('button');
           cell.className = 'ms-cell';
-          cell.setAttribute('aria-label', `Row ${r + 1}, Column ${c + 1}`);
           const b = board[r * cols + c];
+          cell.setAttribute('aria-label', `Row ${r + 1}, Column ${c + 1}${b.flagged ? ', flagged' : b.revealed ? b.mine ? ', mine' : `, ${b.count || 'empty'}` : ', hidden'}`);
           if (b.revealed) {
             cell.classList.add('revealed');
             if (b.mine) {
@@ -120,8 +132,11 @@ export default {
           } else if (b.flagged) {
             cell.textContent = '🚩';
           }
-          cell.addEventListener('click', (e) => onLeft(r, c));
+          cell.addEventListener('click', () => flagMode ? onRight(r, c) : onLeft(r, c));
           cell.addEventListener('contextmenu', (e) => { e.preventDefault(); onRight(r, c); });
+          cell.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'f') { e.preventDefault(); onRight(r, c); }
+          });
           grid.appendChild(cell);
         }
       }
@@ -132,13 +147,15 @@ export default {
       if (!board) return;
       const remaining = mines - flags;
       if (gameOver) return;
-      status.textContent = `Mines left: ${remaining}`;
+      status.textContent = `Mines left: ${remaining} · Tap to ${flagMode ? 'flag' : 'reveal'} · right-click or F to flag`;
     }
 
     function onLeft(r, c) {
       if (gameOver) return;
       if (firstClick) {
+        const flagged = board.map((cell, index) => cell.flagged ? index : -1).filter((index) => index !== -1);
         board = makeBoard(rows, cols, mines, r, c);
+        flagged.forEach((index) => { board[index].flagged = true; });
         firstClick = false;
       }
       const b = board[r * cols + c];
@@ -174,7 +191,10 @@ export default {
     }
 
     function newGame() {
-      board = emptyBoard(rows, cols); gameOver = false; firstClick = true; flags = 0; render();
+      board = emptyBoard(rows, cols); gameOver = false; firstClick = true; flags = 0; flagMode = false;
+      flagToggle.textContent = '🚩 Flag mode: off';
+      flagToggle.setAttribute('aria-pressed', 'false');
+      render();
     }
 
     getResetButton().addEventListener('click', newGame);

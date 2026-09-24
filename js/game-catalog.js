@@ -15,6 +15,16 @@ export const GAMES = [
     description: 'Fast two-player air hockey on a glowing table. Slide, shoot, and defend.',
   },
   {
+    id: 'pool',
+    name: '8-Ball Pool',
+    tagline: 'Line up the perfect shot',
+    players: { min: 2, max: 2, type: 'local-multiplayer' },
+    category: 'Action',
+    color: '#14b8a6',
+    icon: '🎱',
+    description: 'Rack the balls, aim the cue and clear your group in a physical two-player match.',
+  },
+  {
     id: 'whack-a-mole',
     name: 'Whack-a-Mole',
     tagline: 'Tap fast, beat the clock',
@@ -83,6 +93,26 @@ export const GAMES = [
     color: '#f43f5e',
     icon: '✊',
     description: 'The timeless hand-game showdown. Play a friend pass-and-play or battle the computer.',
+  },
+  {
+    id: 'blackjack',
+    name: 'Blackjack',
+    tagline: 'Beat the house to 21',
+    players: { min: 1, max: 1, type: 'single' },
+    category: 'Cards',
+    color: '#d4ad63',
+    icon: '♠️',
+    description: 'Hit, stand or double down at the felt table. Closest to 21 beats the dealer.',
+  },
+  {
+    id: 'crazy-eights',
+    name: 'Crazy Eights',
+    tagline: 'Match suits, turn the tables',
+    players: { min: 2, max: 2, type: 'local-multiplayer' },
+    category: 'Cards',
+    color: '#8b5cf6',
+    icon: '🃏',
+    description: 'Pass-and-play card duel. Match the rank or suit, or change the game with a wild eight.',
   },
   {
     id: 'tictactoe',
@@ -166,7 +196,7 @@ export const GAMES = [
   },
 ];
 
-export const CATEGORIES = ['All', 'Action', 'Board', 'Party', 'Puzzle', 'Word'];
+export const CATEGORIES = ['All', 'Action', 'Board', 'Cards', 'Party', 'Puzzle', 'Word'];
 
 export function getGame(id) {
   return GAMES.find((g) => g.id === id);

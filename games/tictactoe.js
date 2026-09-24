@@ -4,6 +4,7 @@
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer, findWin, emptyBoard } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 
 const N = 3;
 
@@ -39,14 +40,15 @@ function aiMove(board, aiToken, humanToken) {
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: 'X' }, 2: { color: '#38bdf8', label: 'O' } };
 
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, multiplayer } = {}) {
     const shell = createShell(el, game, { title: 'Tic-Tac-Toe', meta: 'Classic 3-in-a-row · neon edition' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ttt-vibe');
 
+    const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
-    const settings = await renderSetup(stage, {
+    const settings = match ? { mode: 'pvp' } : await renderSetup(stage, {
       title: '⚡ Ready to play?',
       subtitle: 'Choose your opponent',
       themeClass: 'ttt-theme',
@@ -57,12 +59,13 @@ export default {
       }],
       startLabel: 'Drop In',
     });
-    saveJSON(KEYS.SETTINGS + ':tictactoe', settings);
+    if (!match) saveJSON(KEYS.SETTINGS + ':tictactoe', settings);
     shell.root.querySelector('.game-meta').textContent =
-      settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first';
+      match ? `Online room · you are ${seat(match) === 1 ? 'X' : 'O'}` :
+        settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first';
 
     const board = emptyBoard(N);
-    let current = 1, gameOver = false, winLine = null;
+    let current = 1, gameOver = false, winLine = null, busy = false, aiTimer = null;
 
     const grid = document.createElement('div');
     grid.className = 'ttt-grid';
@@ -85,7 +88,11 @@ export default {
           cell.classList.add('filled');
         }
         if (winLine && winLine.includes(i)) cell.classList.add('win');
-        cell.addEventListener('click', () => onMove(i));
+        cell.disabled = gameOver || board[i] !== 0 || busy || (match && current !== seat(match));
+        cell.addEventListener('click', () => {
+          if (match) match.sendAction({ type: 'move', cell: i });
+          else onMove(i);
+        });
         grid.appendChild(cell);
       }
       updateStatus();
@@ -94,14 +101,18 @@ export default {
     function updateStatus() {
       if (gameOver) return;
       const token = current;
-      status.textContent = `Player ${TOKEN_STYLE[token].label}'s turn`;
+      status.textContent = match
+        ? `${TOKEN_STYLE[token].label} to move · ${current === seat(match) ? 'your turn' : 'waiting for opponent'}`
+        : `Player ${TOKEN_STYLE[token].label}'s turn`;
       status.style.color = TOKEN_STYLE[token].color;
     }
 
     async function onMove(i) {
-      if (gameOver || board[i] !== 0) return;
+      if (gameOver || board[i] !== 0 || busy || !Number.isInteger(i) || i < 0 || i >= board.length) return;
+      busy = true;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      busy = false;
       board[i] = current;
       if (audio) audio.tap();
       const win = findWin(board, N);
@@ -125,7 +136,8 @@ export default {
       // Computer turn
       if (settings.mode === 'ai' && current === 2) {
         status.textContent = 'Computer is thinking…';
-        setTimeout(() => {
+        aiTimer = setTimeout(() => {
+          if (gameOver) return;
           const m = aiMove(board, 2, 1);
           if (m >= 0) {
             board[m] = 2; current = 1;
@@ -139,14 +151,31 @@ export default {
       }
     }
 
-    getResetButton().addEventListener('click', () => {
+    function reset() {
+      clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
-      current = 1; gameOver = false; winLine = null; render();
+      current = 1; gameOver = false; winLine = null; busy = false; render();
+    }
+    getResetButton().addEventListener('click', () => {
+      if (match) {
+        if (match.role === 'host') match.sendAction({ type: 'reset' });
+      } else reset();
+    });
+    if (match && match.role !== 'host') getResetButton().disabled = true;
+    const offRoom = match?.on((event) => {
+      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
+      else if (event.action?.type === 'move' && validTurn(match, current, event.from))
+        onMove(event.action.cell);
     });
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     render();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => {
+      clearTimeout(aiTimer);
+      offRoom?.();
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };

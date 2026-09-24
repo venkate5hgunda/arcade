@@ -10,6 +10,7 @@ mode, sound, and haptics.
 | Game | Players | Category | Status |
 | --- | --- | --- | --- |
 | Air Hockey | 2 | Action | ✅ Implemented |
+| 8-Ball Pool | 2 | Action | ✅ Implemented |
 | Whack-a-Mole | 1 | Action | ✅ Implemented |
 | Snakes & Ladders | 2–4 | Board | ✅ Implemented |
 | Ludo | 2–4 | Board | ✅ Implemented |
@@ -17,6 +18,8 @@ mode, sound, and haptics.
 | Imposter | 3–8 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
 | Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
+| Blackjack | 1 | Cards | ✅ Implemented |
+| Crazy Eights | 2 | Cards | ✅ Implemented |
 | Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
 | Connect Four | 1–2 | Puzzle | ✅ Implemented |
 | Minesweeper | 1 | Puzzle | ✅ Implemented |
@@ -42,6 +45,44 @@ mode, sound, and haptics.
   most-recent-first) above the full catalog for quick re-entry.
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
+- **Arcade-room design** — layered stage lighting, cabinet-like cards and
+  physical board surfaces in both themes, a vivid marquee-style header with
+  distinct room, sound, vibration and theme controls, and reduced-motion support.
+- **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
+  simulation. Pool has rack, collisions, pockets, scratches and house-rule
+  8-ball play; air hockey has moving paddles, puck impacts and goals.
+- **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
+  adapted from Pick's tabletop animation. Snakes & Ladders draws varied
+  snakes and ladders on each new board with square numbers above the artwork;
+  Ludo uses a full 52-square cross
+  track and lets the player select which legal token to move.
+- **Room play** — one persistent WebRTC room connects devices for repeated
+  games. The host assigns active seats in the lobby; extra guests may watch
+  the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
+  Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
+  games). Other games remain local-only.
+
+## Playing together on separate devices
+
+1. Tap **↗** in the header, enter a name and select **Host room**.
+2. Select **Create guest invite** and share its link (Web Share API when
+   supported, or copy/paste). Create a new invite for each additional guest.
+3. A guest opens that link in the arcade, enters a name and selects
+   **Join and create answer**. They share the resulting **answer link back**
+   to the host, who pastes it into **Accept answer** in the **original host
+   tab**. Opening the answer in a new host tab loses that tab's pending
+   connection. Repeat for each guest.
+4. The host admits guests and selects the seats in the lobby, then chooses
+   a supported game. Return to the lobby at any time to start another game
+   over the same connections.
+
+**Constraints shown before starting:** This static-hosted PWA has no
+signaling or TURN server. Both links must be exchanged manually, and some
+messaging apps truncate long SDP links. Direct WebRTC connections usually
+need internet for public STUN discovery and can fail behind restrictive
+firewalls or symmetric NAT. Rooms live only while tabs remain open; remote
+play is not available offline. **Downloaded game assets remain playable
+locally offline** after the service worker has completed its first install.
 
 ## Running locally
 
@@ -68,10 +109,16 @@ arcade/
     router.js           # hash-based router + landing grid
     game-shell.js       # shared chrome for game views
     game-utils.js       # shared board game helpers
+    dice.js             # tabletop die animation
+    disc-physics.js     # fixed-step puck / ball dynamics
+    multiplayer.js      # shared WebRTC room + two-link signaling
+    remote-match.js     # room seat and turn helpers
   games/
     <game-id>.js        # one module per game: default export { render(el, game) }
   assets/
     favicon.svg, logo.svg
+  css/board-games.css, css/physical-games.css, css/card-games.css,
+    css/multiplayer.css
   CHANGELOG.md          # feature + assumption tracker
 ```
 
@@ -79,7 +126,9 @@ arcade/
 
 1. Add an entry to `GAMES` in `js/game-catalog.js` (one shape, no extras).
 2. Create `games/<game-id>.js` exporting `default { render(el, game) }`.
-3. Done — the landing grid and deep link `#/games/<game-id>` pick it up.
+3. Add `./games/<game-id>.js` to `STATIC_ASSETS` in `sw.js` and bump the
+   cache version so the new game works offline immediately after installation.
+   The landing grid and deep link `#/games/<game-id>` now pick it up.
 
 See `CHANGELOG.md` for the full history of decisions and assumptions.
 
@@ -88,8 +137,10 @@ See `CHANGELOG.md` for the full history of decisions and assumptions.
 - **"Saving game states"** is implemented as per-game settings persistence
   (mode/difficulty/players remembered across visits) plus the Recently Played
   list — not full mid-game board resume. Closing mid-game starts a fresh round
-  next time; this was a deliberate scope call to keep every game's state model
-  simple and bug-free rather than adding serialization to 16 different games.
+  next time; this was a deliberate scope call rather than adding serialization
+  to every different game.
 - **Chess** implements checkmate, stalemate, and insufficient-material draws,
   but not draw-by-repetition or the 50-move rule — a deliberate scope limit
   for a casual pass-and-play/AI opponent experience.
+- **Pool** uses simplified 8-ball house rules; there is no called pocket or
+  tournament break requirement.

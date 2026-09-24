@@ -5,6 +5,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 
 const FILES = 'abcdefgh';
 const KNIGHT_OFFSETS = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
@@ -260,14 +261,15 @@ function pickAiMove(state, aiColor) {
 }
 
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, multiplayer } = {}) {
     const shell = createShell(el, game, { title: 'Chess', meta: 'Classic strategy · 64 squares' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('chess-vibe');
 
+    const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':chess', { mode: 'pvp', side: 'w' });
-    const settings = await renderSetup(stage, {
+    const settings = match ? { mode: 'pvp', side: 'w' } : await renderSetup(stage, {
       title: '♟️ Chess',
       subtitle: 'Choose your opponent',
       themeClass: 'chess-theme',
@@ -285,11 +287,13 @@ export default {
       ],
       startLabel: 'Set the Board',
     });
-    saveJSON(KEYS.SETTINGS + ':chess', settings);
+    if (!match) saveJSON(KEYS.SETTINGS + ':chess', settings);
     const aiMode = settings.mode === 'ai';
     const humanSide = settings.side === 'b' ? 'b' : 'w';
     const aiSide = opp(humanSide);
-    shell.root.querySelector('.game-meta').textContent = aiMode
+    shell.root.querySelector('.game-meta').textContent = match
+      ? `Online room · you are ${seat(match) === 1 ? 'White' : 'Black'}`
+      : aiMode
       ? `You (${humanSide === 'w' ? 'White' : 'Black'}) vs Computer`
       : 'Two players · pass the device';
 
@@ -299,6 +303,7 @@ export default {
     let lastMove = null;
     let over = false;
     let pendingPromotion = null; // { from, m }
+    let aiTimer = null, busy = false;
     const captured = { w: [], b: [] };
 
     const board = document.createElement('div');
@@ -314,7 +319,7 @@ export default {
     stage.appendChild(capturedRow);
 
     function boardFlipped() {
-      return aiMode ? humanSide === 'b' : state.turn === 'b';
+      return match ? seat(match) === 2 : aiMode ? humanSide === 'b' : state.turn === 'b';
     }
 
     function render() {
@@ -377,13 +382,16 @@ export default {
       const turnLabel = state.turn === 'w' ? 'White' : 'Black';
       if (pendingPromotion) { status.textContent = 'Choose a piece to promote to…'; return; }
       status.textContent = inCheck ? `Check! ${turnLabel} to move` : `${turnLabel} to move`;
+      if (match) status.textContent += state.turn === (seat(match) === 1 ? 'w' : 'b')
+        ? ' · your turn' : ' · waiting for opponent';
       status.classList.toggle('chess-check', !!inCheck);
       if (aiMode && state.turn === aiSide && !over) status.textContent = 'Computer is thinking…';
     }
 
     function onSquareClick(sq) {
-      if (over || pendingPromotion) return;
+      if (over || pendingPromotion || busy) return;
       if (aiMode && state.turn === aiSide) return;
+      if (match && (state.turn === 'w' ? 1 : 2) !== seat(match)) return;
       const piece = state.board[sq];
       const move = legalFromSelected.find((m) => m.to === sq);
       if (move) { performMove(selected, move); return; }
@@ -399,28 +407,33 @@ export default {
 
     function performMove(from, m) {
       if (m.promotion) { pendingPromotion = { from, m }; selected = null; legalFromSelected = []; render(); return; }
-      finalizeMove(from, m);
+      if (match) match.sendAction({ type: 'move', from, to: m.to });
+      else finalizeMove(from, m);
     }
 
     function resolvePromotion(pieceType) {
       const { from, m } = pendingPromotion;
       pendingPromotion = null;
-      finalizeMove(from, { ...m, promotionPiece: pieceType });
+      if (match) match.sendAction({ type: 'move', from, to: m.to, promotionPiece: pieceType });
+      else finalizeMove(from, { ...m, promotionPiece: pieceType });
     }
 
     async function finalizeMove(from, m) {
+      if (busy) return;
+      busy = true;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
       const capturedPiece = applyMove(state, from, m);
       if (capturedPiece) captured[capturedPiece.color].push(capturedPiece.type);
       lastMove = { from, to: m.to };
+      busy = false;
       selected = null; legalFromSelected = [];
       if (audio) capturedPiece ? audio.pop() : audio.tap();
       window.haptics?.select();
       checkGameEnd();
       render();
       if (!over && aiMode && state.turn === aiSide) {
-        setTimeout(runAiTurn, 500);
+        aiTimer = setTimeout(runAiTurn, 500);
       }
     }
 
@@ -452,18 +465,41 @@ export default {
     }
 
     function newGame() {
+      clearTimeout(aiTimer);
       state = initialState();
-      selected = null; legalFromSelected = []; lastMove = null; over = false; pendingPromotion = null;
+      selected = null; legalFromSelected = []; lastMove = null; over = false; pendingPromotion = null; busy = false;
       captured.w = []; captured.b = [];
       render();
-      if (aiMode && state.turn === aiSide) setTimeout(runAiTurn, 500);
+      if (aiMode && state.turn === aiSide) aiTimer = setTimeout(runAiTurn, 500);
     }
 
-    getResetButton().addEventListener('click', newGame);
+    getResetButton().addEventListener('click', () => {
+      if (match) {
+        if (match.role === 'host') match.sendAction({ type: 'reset' });
+      } else newGame();
+    });
+    if (match && match.role !== 'host') getResetButton().disabled = true;
+    const offRoom = match?.on((event) => {
+      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) {
+        newGame();
+      } else if (event.action?.type === 'move' && !over && validTurn(match, state.turn === 'w' ? 1 : 2, event.from)) {
+        const { from, to, promotionPiece } = event.action;
+        if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 63 || to < 0 || to > 63) return;
+        const move = generateLegalMoves(state, state.turn).find((item) => item.from === from && item.to === to);
+        if (!move || (move.promotion && !PROMO_CHOICES.includes(promotionPiece))) return;
+        pendingPromotion = null;
+        finalizeMove(from, move.promotion ? { ...move, promotionPiece } : move);
+      }
+    });
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => {
+      clearTimeout(aiTimer);
+      offRoom?.();
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };

@@ -4,6 +4,7 @@
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer, emptyBoard } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 
 const ROWS = 6, COLS = 7;
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: '●' }, 2: { color: '#fbbf24', label: '●' } };
@@ -56,14 +57,15 @@ function aiColumn(board, aiToken, humanToken) {
 }
 
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, multiplayer } = {}) {
     const shell = createShell(el, game, { title: 'Connect Four', meta: 'Drop to win · gravity edition' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('c4-vibe');
 
+    const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
-    const settings = await renderSetup(stage, {
+    const settings = match ? { mode: 'pvp' } : await renderSetup(stage, {
       title: '🔴 Drop to Win',
       subtitle: 'Choose your opponent',
       themeClass: 'c4-theme',
@@ -74,12 +76,13 @@ export default {
       }],
       startLabel: 'Drop In',
     });
-    saveJSON(KEYS.SETTINGS + ':connect-four', settings);
+    if (!match) saveJSON(KEYS.SETTINGS + ':connect-four', settings);
     shell.root.querySelector('.game-meta').textContent =
-      settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first';
+      match ? `Online room · you are ${seat(match) === 1 ? 'Red' : 'Yellow'}` :
+        settings.mode === 'ai' ? 'You (Red) vs Computer (Yellow)' : 'Two players · Red goes first';
 
     const board = emptyBoard(ROWS * COLS);
-    let current = 1, gameOver = false, winCells = null;
+    let current = 1, gameOver = false, winCells = null, busy = false, aiTimer = null;
 
     const grid = document.createElement('div');
     grid.className = 'c4-grid';
@@ -116,8 +119,11 @@ export default {
         btn.className = 'c4-col-btn';
         btn.setAttribute('aria-label', `Drop in column ${c + 1}`);
         btn.textContent = '↓';
-        btn.disabled = gameOver || lowestEmptyRow(board, c) === -1;
-        btn.addEventListener('click', () => onDrop(c));
+        btn.disabled = gameOver || busy || lowestEmptyRow(board, c) === -1 || (match && current !== seat(match));
+        btn.addEventListener('click', () => {
+          if (match) match.sendAction({ type: 'drop', column: c });
+          else onDrop(c);
+        });
         colButtons.appendChild(btn);
       }
       updateStatus();
@@ -125,16 +131,20 @@ export default {
 
     function updateStatus() {
       if (gameOver) return;
-      status.textContent = `Player ${TOKEN_STYLE[current].label}'s turn`;
+      status.textContent = match
+        ? `${current === 1 ? 'Red' : 'Yellow'} to move · ${current === seat(match) ? 'your turn' : 'waiting for opponent'}`
+        : `Player ${TOKEN_STYLE[current].label}'s turn`;
       status.style.color = TOKEN_STYLE[current].color;
     }
 
     async function onDrop(col) {
-      if (gameOver) return;
+      if (gameOver || busy || !Number.isInteger(col) || col < 0 || col >= COLS) return;
       const row = lowestEmptyRow(board, col);
       if (row === -1) return;
+      busy = true;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      busy = false;
       board[idx(row, col)] = current;
       if (audio) audio.tap();
       const win = checkWin(board, current);
@@ -158,7 +168,8 @@ export default {
       // Computer turn
       if (settings.mode === 'ai' && current === 2 && !gameOver) {
         status.textContent = 'Computer is thinking…';
-        setTimeout(async () => {
+        aiTimer = setTimeout(async () => {
+          if (gameOver) return;
           const c = aiColumn(board, 2, 1);
           const r = lowestEmptyRow(board, c);
           if (r !== -1) {
@@ -183,14 +194,31 @@ export default {
       }
     }
 
-    getResetButton().addEventListener('click', () => {
+    function reset() {
+      clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
-      current = 1; gameOver = false; winCells = null; render();
+      current = 1; gameOver = false; winCells = null; busy = false; render();
+    }
+    getResetButton().addEventListener('click', () => {
+      if (match) {
+        if (match.role === 'host') match.sendAction({ type: 'reset' });
+      } else reset();
+    });
+    if (match && match.role !== 'host') getResetButton().disabled = true;
+    const offRoom = match?.on((event) => {
+      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
+      else if (event.action?.type === 'drop' && validTurn(match, current, event.from))
+        onDrop(event.action.column);
     });
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     render();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => {
+      clearTimeout(aiTimer);
+      offRoom?.();
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };

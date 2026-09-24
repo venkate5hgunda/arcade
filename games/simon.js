@@ -39,6 +39,7 @@ export default {
     let playerStep = 0;
     let phase = 'idle'; // idle -> playing -> input -> over
     let locked = true;
+    let controller = new AbortController();
 
     const status = document.createElement('div');
     status.className = 'simon-status';
@@ -67,26 +68,38 @@ export default {
       status.innerHTML = `<span>Round: <strong>${sequence.length}</strong></span><span>Best: <strong>${bestScore}</strong></span>`;
     }
 
-    function flashPad(id, duration = stepMs * 0.6) {
+    function pause(ms, signal) {
       return new Promise((resolve) => {
-        const el = padEls[id];
-        el.classList.add('active');
-        const audio = window.arcadeAudio;
-        if (audio) audio.tone(PADS[id].tone, duration / 1000, 'sine', 0.3);
-        setTimeout(() => { el.classList.remove('active'); resolve(); }, duration);
+        if (signal.aborted) { resolve(false); return; }
+        const timer = setTimeout(() => {
+          signal.removeEventListener('abort', cancel);
+          resolve(true);
+        }, ms);
+        function cancel() { clearTimeout(timer); resolve(false); }
+        signal.addEventListener('abort', cancel, { once: true });
       });
     }
 
+    function flashPad(id, duration = stepMs * 0.6) {
+      const signal = controller.signal;
+      const el = padEls[id];
+      el.classList.add('active');
+      window.arcadeAudio?.tone(PADS[id].tone, duration / 1000, 'sine', 0.3);
+      return pause(duration, signal).then((ok) => { el.classList.remove('active'); return ok; });
+    }
+
     async function playSequence() {
+      const signal = controller.signal;
       locked = true;
       padEls.forEach((b) => (b.disabled = true));
       phase = 'playing';
       updateStatus();
-      await new Promise((r) => setTimeout(r, 500));
+      if (!await pause(500, signal)) return;
       for (const id of sequence) {
-        await flashPad(id);
-        await new Promise((r) => setTimeout(r, stepMs * 0.35));
+        if (!await flashPad(id)) return;
+        if (!await pause(stepMs * .35, signal)) return;
       }
+      if (signal.aborted) return;
       phase = 'input';
       playerStep = 0;
       locked = false;
@@ -113,7 +126,8 @@ export default {
           window.haptics?.success();
           message.textContent = 'Nice! Next round…';
           locked = true;
-          setTimeout(nextRound, 900);
+          const signal = controller.signal;
+          pause(900, signal).then((ok) => { if (ok) nextRound(); });
         }
       } else {
         gameOver();
@@ -133,6 +147,9 @@ export default {
     }
 
     function newGame() {
+      controller.abort();
+      controller = new AbortController();
+      padEls.forEach((pad) => pad.classList.remove('active'));
       sequence = [];
       playerStep = 0;
       phase = 'idle';
@@ -143,9 +160,7 @@ export default {
 
     getResetButton().addEventListener('click', newGame);
 
-    const onTheme = () => {};
-    window.addEventListener('arcade:themechange', onTheme);
     newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => controller.abort() };
   },
 };

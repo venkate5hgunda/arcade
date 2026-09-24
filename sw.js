@@ -2,14 +2,18 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v1';
-const RUNTIME_CACHE = 'arcade:runtime:v1';
+const STATIC_CACHE = 'arcade:static:v11';
+const RUNTIME_CACHE = 'arcade:runtime:v11';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './css/board-games.css',
+  './css/physical-games.css',
+  './css/card-games.css',
+  './css/multiplayer.css',
   './js/app.js',
   './js/storage.js',
   './js/theme.js',
@@ -19,6 +23,17 @@ const STATIC_ASSETS = [
   './js/game-catalog.js',
   './js/game-shell.js',
   './js/game-utils.js',
+  './js/dice.js',
+  './js/snakes-board.js',
+  './js/disc-physics.js',
+  './js/remote-match.js',
+  './js/multiplayer.js',
+  ...[
+    '2048', 'air-hockey', 'blackjack', 'chess', 'connect-four', 'crazy-eights',
+    'dumb-charades', 'hangman', 'imposter', 'ludo', 'memory', 'minesweeper',
+    'pool', 'rps', 'simon', 'snakes-ladders', 'tictactoe', 'whack-a-mole',
+    'word-scramble',
+  ].map((id) => `./games/${id}.js`),
   './assets/favicon.svg',
   './assets/logo.svg',
   './assets/icons/icon-192.png',
@@ -60,12 +75,15 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
       return fetch(request)
         .then((response) => {
-          if (!response || response.status !== 200 || response.type === 'opaqueerror') return response;
+          if (!response || !response.ok) return response;
           const clone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+          event.waitUntil(caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone)));
           return response;
         })
-        .catch(() => caches.match(request));
+        .catch((error) => {
+          console.error('Offline asset unavailable:', request.url, error);
+          throw error;
+        });
     })
   );
 });

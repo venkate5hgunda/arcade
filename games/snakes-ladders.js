@@ -2,24 +2,25 @@
 // Pure DOM with animated board. Listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
-import { nextPlayer, diceFaceHTML } from '../js/game-utils.js';
+import { nextPlayer } from '../js/game-utils.js';
+import { dieMarkup, rollDie } from '../js/dice.js';
+import { boardArt, createBoardLayout } from '../js/snakes-board.js';
+import { remoteMatch, seat } from '../js/remote-match.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const BOARD_SIZE = 100;
-const SNAKES = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
-const LADDERS = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100 };
-
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
 
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, multiplayer } = {}) {
     const shell = createShell(el, game, { title: 'Snakes & Ladders', meta: 'Race to square 100' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('sl-vibe');
 
+    const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: '2' });
-    const settings = await renderSetup(stage, {
+    const settings = match ? { players: String(match.activeGame.playerIds.length) } : await renderSetup(stage, {
       title: '🐍 Snakes & Ladders',
       subtitle: 'How many players?',
       themeClass: 'sl-theme',
@@ -34,12 +35,15 @@ export default {
       }],
       startLabel: 'Start Rolling',
     });
-    saveJSON(KEYS.SETTINGS + ':snakes-ladders', settings);
+    if (!match) saveJSON(KEYS.SETTINGS + ':snakes-ladders', settings);
     const playerCount = Math.max(2, Math.min(4, parseInt(settings.players, 10) || 2));
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · Roll to move`;
+    shell.root.querySelector('.game-meta').textContent = match
+      ? `Online room · you are Player ${seat(match)} · ${playerCount} players` : `${playerCount} players · Roll to move`;
 
-    const positions = Array(playerCount).fill(1);
-    let current = 0, gameOver = false, winner = null, rolling = false, lastRoll = 1;
+    const positions = Array(playerCount).fill(0);
+    let layout = createBoardLayout(match?.activeGame.seed);
+    let current = 0, gameOver = false, winner = null, rolling = false, lastRoll = 1, message = '', queuedRoll = null;
+    let rollController = new AbortController();
 
     const board = document.createElement('div');
     board.className = 'sl-board';
@@ -67,11 +71,14 @@ export default {
           const cell = document.createElement('div');
           cell.className = 'sl-cell';
           cell.dataset.num = num;
-          cell.textContent = num;
+          const number = document.createElement('span');
+          number.className = 'sl-number';
+          number.textContent = num;
+          cell.appendChild(number);
 
           // Snake or ladder
-          if (SNAKES[num]) cell.classList.add('snake');
-          if (LADDERS[num]) cell.classList.add('ladder');
+          if (layout.snakes.some((snake) => snake.start === num)) cell.classList.add('snake');
+          if (layout.ladders.some((ladder) => ladder.start === num)) cell.classList.add('ladder');
 
           // Players on this cell
           const playerTokens = document.createElement('div');
@@ -89,13 +96,17 @@ export default {
           board.appendChild(cell);
         }
       }
+      board.insertAdjacentHTML('beforeend', boardArt(layout));
 
       // Dice
       dice.innerHTML = `
-        <button class="sl-roll-btn" ${rolling || gameOver ? 'disabled' : ''} aria-label="Roll dice">
-          <span class="sl-die">${diceFaceHTML(lastRoll)}</span>
+        <button class="sl-roll-btn" ${rolling || gameOver || (match && current !== seat(match) - 1) ? 'disabled' : ''} aria-label="Roll dice">
+          ${dieMarkup(lastRoll)}
         </button>`;
-      dice.querySelector('.sl-roll-btn').addEventListener('click', rollDice);
+      dice.querySelector('.sl-roll-btn').addEventListener('click', () => {
+        if (match) match.sendAction({ type: 'request-roll' });
+        else rollDice();
+      });
 
       // Player info
       playersInfo.innerHTML = '';
@@ -103,7 +114,7 @@ export default {
         const pi = document.createElement('div');
         pi.className = 'sl-player' + (p === current && !gameOver ? ' active' : '');
         pi.style.borderColor = PLAYER_COLORS[p];
-        pi.innerHTML = `<span class="sl-pnum">P${p + 1}</span><span class="sl-ppos">Square ${positions[p]}</span>`;
+        pi.innerHTML = `<span class="sl-pnum">P${p + 1}</span><span class="sl-ppos">${positions[p] ? `Square ${positions[p]}` : 'At start'}</span>`;
         playersInfo.appendChild(pi);
       }
 
@@ -112,45 +123,48 @@ export default {
         status.textContent = `🎉 Player ${winner + 1} wins!`;
         status.style.color = PLAYER_COLORS[winner];
       } else {
-        status.textContent = `Player ${current + 1}'s turn · Tap to roll`;
+        status.textContent = message || `Player ${current + 1}'s turn · ${match && current !== seat(match) - 1 ? 'Waiting for their roll' : 'Tap to roll'}`;
         status.style.color = PLAYER_COLORS[current];
       }
     }
 
-    async function rollDice() {
+    async function rollDice(predeterminedValue = null) {
       if (rolling || gameOver) return;
       rolling = true;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
-
       const btn = dice.querySelector('.sl-roll-btn');
-      const die = dice.querySelector('.sl-die');
-
-      // Animate
-      for (let i = 0; i < 10; i++) {
-        die.innerHTML = diceFaceHTML(Math.floor(Math.random() * 6) + 1);
-        await new Promise(r => setTimeout(r, 60));
+      let roll;
+      try {
+        roll = await rollDie(btn, rollController.signal, predeterminedValue);
+      } catch (error) {
+        if (rollController.signal.aborted) return;
+        throw error;
       }
-
-      const roll = Math.floor(Math.random() * 6) + 1;
+      if (roll === null) return;
       lastRoll = roll;
-      die.innerHTML = diceFaceHTML(roll);
       if (audio) audio.tap();
 
-      // Move player
       let newPos = positions[current] + roll;
-      if (newPos > BOARD_SIZE) newPos = BOARD_SIZE;
-      positions[current] = newPos;
-
-      // Check snake/ladder
-      if (SNAKES[newPos]) {
-        positions[current] = SNAKES[newPos];
-        if (audio) audio.buzz();
-        if (window.haptics) window.haptics.failure();
-      } else if (LADDERS[newPos]) {
-        positions[current] = LADDERS[newPos];
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
+      if (newPos > BOARD_SIZE) {
+        message = `Player ${current + 1} rolled ${roll} · Exact roll needed for 100`;
+      } else {
+        positions[current] = newPos;
+        const snake = layout.snakes.find((item) => item.start === newPos);
+        const ladder = layout.ladders.find((item) => item.start === newPos);
+        if (snake) {
+          positions[current] = snake.end;
+          message = `Oh no! Player ${current + 1} slides from ${newPos} to ${snake.end}`;
+          audio?.buzz();
+          window.haptics?.failure();
+        } else if (ladder) {
+          positions[current] = ladder.end;
+          message = `Climb! Player ${current + 1} leaps from ${newPos} to ${ladder.end}`;
+          audio?.chime();
+          window.haptics?.success();
+        } else {
+          message = `Player ${current + 1} rolled ${roll} · Now on square ${newPos}`;
+        }
       }
 
       // Check win
@@ -164,17 +178,49 @@ export default {
 
       rolling = false;
       render();
+      if (queuedRoll !== null && !gameOver) {
+        const next = queuedRoll;
+        queuedRoll = null;
+        rollDice(next);
+      }
     }
 
-    getResetButton().addEventListener('click', () => {
-      positions.fill(1);
-      current = 0; gameOver = false; winner = null; rolling = false;
+    function reset(seed) {
+      rollController.abort();
+      rollController = new AbortController();
+      layout = createBoardLayout(seed);
+      positions.fill(0);
+      current = 0; gameOver = false; winner = null; rolling = false; lastRoll = 1; message = ''; queuedRoll = null;
       render();
+    }
+    getResetButton().addEventListener('click', () => {
+      if (match) {
+        if (match.role === 'host') match.sendAction({ type: 'new-board', seed: Math.random().toString(36).slice(2) });
+      } else reset();
+    });
+    if (match && match.role !== 'host') getResetButton().disabled = true;
+    const offRoom = match?.on((event) => {
+      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (event.action?.type === 'new-board' && event.from === match.activeGame.playerIds[0] &&
+          typeof event.action.seed === 'string' && event.action.seed.length <= 48) reset(event.action.seed);
+      if (event.action?.type === 'request-roll' && match.role === 'host' &&
+          event.from === match.activeGame.playerIds[current] && !rolling && !gameOver)
+        match.sendAction({ type: 'roll', value: 1 + Math.floor(Math.random() * 6) });
+      if (event.action?.type === 'roll' && event.from === match.activeGame.playerIds[0] &&
+          current < playerCount && Number.isInteger(event.action.value) && event.action.value >= 1 &&
+          event.action.value <= 6 && !gameOver) {
+        if (rolling) queuedRoll = event.action.value;
+        else rollDice(event.action.value);
+      }
     });
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     render();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => {
+      rollController.abort();
+      offRoom?.();
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };

@@ -4,26 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Arcade — Games for Everyone</title>
-  <meta name="description" content="Arcade: a polished, responsive PWA hosting single/double/group games — air hockey, snakes & ladders, ludo, imposter, dumb charades, and more. Light/dark mode, sound, and haptics.">
+  <meta name="description" content="Step into an offline-ready arcade with pool, air hockey, board games, cards, puzzles, and party games. Play together on one device.">
   <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/board-games.css">
+  <link rel="stylesheet" href="css/physical-games.css">
+  <link rel="stylesheet" href="css/card-games.css">
+  <link rel="stylesheet" href="css/multiplayer.css">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand" data-nav="back">
-      <img src="assets/logo.svg" class="brand-icon" alt="" width="32" height="32">
-      <span class="brand-title">Arcade</span>
-    </div>
+    <button class="brand" data-nav="back" type="button" aria-label="Arcade home">
+      <img src="assets/logo.svg" class="brand-icon" alt="" width="42" height="42">
+      <span class="brand-lockup"><span class="brand-kicker">INSERT FUN</span><span class="brand-title">ARCADE<span class="brand-spark">✦</span></span></span>
+    </button>
     <div class="header-actions">
+      <button id="roomToggle" class="icon-btn room-toggle" aria-label="Open multiplayer lobby" title="Multiplayer room" type="button">
+        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 14c-3.9 0-7 2.2-7 5v2h14v-2c0-2.8-3.1-5-7-5zm8.4 0c-.8 0-1.5.1-2.1.3 1.7 1.2 2.7 2.9 2.7 4.7v2h6v-2c0-2.7-2.9-5-6.6-5z"/></svg>
+      </button>
       <button id="soundToggle" class="icon-btn" aria-label="Mute sounds" data-tooltip="Mute sounds" type="button">
         <svg class="icon sound-on-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z"/></svg>
         <svg class="icon sound-off-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M16.5 12a4.5 4.5 0 0 1-2.5 4.03v-8.06A4.5 4.5 0 0 1 16.5 12zM3 9v6h4l5 5V4L7 9H3zm13.8-2.2-14 14 1.4 1.4 14-14z"/></svg>
       </button>
       <button id="hapticsToggle" class="icon-btn" aria-label="Vibration on" data-tooltip="Vibration on" type="button">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v12h12V6H6zm4 2h4v8h-4V8z"/></svg>
+        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 3v14h8V5H8zm3 15h2v1h-2zM2 7h2v10H2zm18 0h2v10h-2z"/></svg>
       </button>
       <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Use dark theme" data-tooltip="Use dark theme" type="button">
         <svg class="icon sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm9-9a1 1 0 1 1 0 2h-2a1 1 0 1 1 0-2zM5 12a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2zm13.07-6.07a1 1 0 0 1 0 1.42l-1.42 1.41a1 1 0 1 1-1.41-1.41l1.41-1.42a1 1 0 0 1 1.42 0zM7.76 16.24a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 1 1-1.41-1.42l1.41-1.41a1 1 0 0 1 1.42 0zM16.24 7.76a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41l-1.41-1.41a1 1 0 0 1 0-1.41zM6.24 6.24a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41L6.24 7.65a1 1 0 0 1 0-1.41z"/></svg>

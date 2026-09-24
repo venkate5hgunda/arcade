@@ -169,3 +169,38 @@ widths and in both themes.
   CSS for all 16 games, recent-games section), `assets/favicon.svg`,
   `assets/logo.svg`, `index.html`, `sw.js`, and every original game module
   (setup flows, vibe theming, bug fixes).
+
+## 2026-09-24 — Arcade room and tabletop pass
+
+- Replaced the flat background with layered ambient lighting, cabinet-like
+  game cards and richer surfaces that work in both themes.
+- Adapted Pick's fixed-step, bouncing, tumbling six-sided die and 3D pip
+  rendering for Ludo and Snakes & Ladders (self-contained, works offline).
+- Snakes & Ladders now illustrates colored snake heads, bodies and tails, and
+  full ladders, with varying endpoints and lengths for each new board. Every
+  number has a high-contrast badge above the artwork, including at phone sizes.
+- Ludo now has a full cross-shaped board, a 52-square shared track, four
+  colored yards and separate home lanes. Players choose among movable tokens,
+  with safe squares, captures, sixes and exact rolls to finish.
+- Added a reusable fixed-step disc simulation with friction, elastic
+  collision resolution, rail rebounds and pocket callbacks. Air Hockey now
+  uses physical paddle–puck collisions and responsive local two-player input.
+  Added an 8-Ball Pool table with cue aiming, power, racking and house rules.
+- Added a Cards category with Blackjack and two-player Crazy Eights, including
+  private pass-the-device handoffs for hidden hands.
+- Rock Paper Scissors now plays a countdown and animated opponent-hand throw
+  before revealing either side, and Minesweeper has mobile flag mode.
+- Reworked the header as an arcade marquee with colored tactile controls,
+  legible connected/off states, keyboard-focus rings and a dedicated room icon;
+  sound and theme now display only the icon for their actual state.
+- Fixed the previously unregistered service worker: `js/app.js` now installs
+  it, and all current game modules, styles and helper modules are precached
+  so games not yet visited still launch offline after installation.
+- Added a persistent WebRTC room with manual invite/answer URLs, Web Share /
+  clipboard fallback, per-guest peer connections, host-controlled admission,
+  seat selection and game switching without rebuilding the room. Remote play
+  currently supports Tic-Tac-Toe, Connect Four, Chess, RPS, Ludo and
+  Snakes & Ladders; the lobby explicitly labels remaining games local-only.
+  Hosts generate dice outcomes; the board layout is seeded and synchronized.
+  Remote networking still needs internet/STUN and may fail without TURN;
+  installed assets remain playable offline in local modes.

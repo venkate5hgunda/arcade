@@ -1,303 +1,255 @@
-// Air Hockey — fast two-player puck battle on a glowing table.
-// Canvas-based for smooth physics. Listens to arcade:themechange.
-
+// Two-player air hockey; fixed world coordinates keep touch, desktop and HiDPI
+// play identical. Both puck and moving paddles use the shared disc solver.
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { canvasPoint, clamp, createFixedStepper, stepDiscs } from '../js/disc-physics.js';
+
+const W = 600, H = 900;
+const GOAL_LEFT = 195, GOAL_RIGHT = 405;
+const BOUNDS = { left: 23, right: 577, top: -10000, bottom: 10000 };
+const PADDLE_SPEED = 690;
 
 export default {
   async render(el, game, { navigate } = {}) {
-    const shell = createShell(el, game, { title: 'Air Hockey', meta: 'Two players · glowing rink' });
-    const { stage, getResetButton } = shell;
-    if (navigate) wireBack(shell, navigate);
+    const shell = createShell(el, game, { title: 'Air Hockey', meta: 'Two players · first to 7' });
+    const { stage } = shell;
     shell.root.classList.add('ah-vibe');
-
+    if (navigate) wireBack(shell, navigate);
     const saved = loadJSON(KEYS.SETTINGS + ':air-hockey', { target: '7' });
     const settings = await renderSetup(stage, {
       title: '🏒 Air Hockey',
-      subtitle: 'First to score wins — pick the target',
+      subtitle: 'Player 1 defends the bottom; Player 2 defends the top.',
       themeClass: 'ah-theme',
       fields: [{
         key: 'target', label: 'Winning score',
-        options: [
-          { value: '5', label: 'First to 5' },
-          { value: '7', label: 'First to 7' },
-          { value: '10', label: 'First to 10' },
-        ],
+        options: [5, 7, 10].map((n) => ({ value: String(n), label: `First to ${n}` })),
         default: saved.target,
       }],
       startLabel: 'Drop the Puck',
     });
     saveJSON(KEYS.SETTINGS + ':air-hockey', settings);
-    const winTarget = parseInt(settings.target, 10) || 7;
-    shell.root.querySelector('.game-meta').textContent = `Two players · First to ${winTarget} wins · P1 ↑↓ · P2 W/S`;
+    const target = Number(settings.target) || 7;
+    shell.root.querySelector('.game-meta').textContent = `First to ${target} · P1 arrows · P2 WASD`;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'ah-canvas';
-    stage.appendChild(canvas);
-
+    canvas.width = W; canvas.height = H;
+    canvas.setAttribute('aria-label', 'Air hockey table: player 1 at bottom, player 2 at top. Touch or drag paddles on your half, or use arrow keys and WASD.');
     const status = document.createElement('div');
     status.className = 'ah-status';
-    stage.appendChild(status);
-
+    status.setAttribute('aria-live', 'polite');
+    const help = document.createElement('p');
+    help.className = 'ah-help';
+    help.textContent = 'P1 (bottom): arrow keys · P2 (top): WASD · Drag each paddle with a finger or mouse.';
+    stage.append(canvas, status, help);
     const ctx = canvas.getContext('2d');
-    let width = 0, height = 0, dpr = 1;
-
-    // Game state
-    const puck = { x: 0, y: 0, vx: 0, vy: 0, r: 0 };
+    const puck = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 17 };
     const paddles = [
-      { x: 0, y: 0, r: 0, vy: 0, score: 0, color: '#ff5a3c' }, // Player 1 (bottom)
-      { x: 0, y: 0, r: 0, vy: 0, score: 0, color: '#38bdf8' }, // Player 2 (top)
+      { x: W / 2, y: 740, vx: 0, vy: 0, r: 37, invMass: 0, score: 0, color: '#ff6747' },
+      { x: W / 2, y: 160, vx: 0, vy: 0, r: 37, invMass: 0, score: 0, color: '#57d4f6' },
     ];
-    const keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
-    let gameOver = false, winner = null, animating = false;
-    let lastTime = 0;
+    const pointers = [null, null];
+    const positions = [null, null];
+    const keys = new Set();
+    let winner = null, disposed = false, raf;
 
-    function resize() {
-      dpr = window.devicePixelRatio || 1;
-      const rect = stage.getBoundingClientRect();
-      width = Math.min(rect.width, 600);
-      height = width * 1.6; // 5:8 aspect ratio
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
+    function size() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = W * dpr; canvas.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // Puck radius ~ 3% of width
-      puck.r = width * 0.03;
-      puck.x = width / 2;
-      puck.y = height / 2;
-
-      // Paddle radius ~ 6% of width
-      const pr = width * 0.06;
-      paddles[0].r = pr; paddles[1].r = pr;
-      paddles[0].x = width / 2; paddles[0].y = height - pr - 10;
-      paddles[1].x = width / 2; paddles[1].y = pr + 10;
-    }
-
-    function resetPuck(toward = 1) {
-      puck.x = width / 2;
-      puck.y = height / 2;
-      const angle = (toward === 1 ? Math.PI : 0) + (Math.random() - 0.5) * 0.5;
-      const speed = width * 0.008;
-      puck.vx = Math.cos(angle) * speed;
-      puck.vy = Math.sin(angle) * speed;
-    }
-
-    function newGame() {
-      paddles[0].score = 0; paddles[1].score = 0;
-      gameOver = false; winner = null;
-      status.textContent = '';
-      resetPuck();
-      render();
-    }
-
-    function draw() {
-      // Clear
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-soft').trim() || '#fff';
-      ctx.fillRect(0, 0, width, height);
-
-      // Center line
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#ddd';
-      ctx.setLineDash([10, 10]);
-      ctx.beginPath();
-      ctx.moveTo(0, height / 2);
-      ctx.lineTo(width, height / 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Center circle
-      ctx.beginPath();
-      ctx.arc(width / 2, height / 2, width * 0.15, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Goals (top and bottom)
-      const goalW = width * 0.4;
-      ctx.fillStyle = 'rgba(255,90,60,0.1)';
-      ctx.fillRect((width - goalW) / 2, 0, goalW, 20);
-      ctx.fillStyle = 'rgba(56,189,248,0.1)';
-      ctx.fillRect((width - goalW) / 2, height - 20, goalW, 20);
-
-      // Paddles
-      for (const p of paddles) {
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-        // Inner highlight
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.beginPath();
-        ctx.arc(p.x - p.r * 0.2, p.y - p.r * 0.2, p.r * 0.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Puck
-      const theme = document.documentElement.getAttribute('data-theme');
-      ctx.fillStyle = theme === 'dark' ? '#eef1f6' : '#1a1d23';
-      ctx.beginPath();
-      ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2);
-      ctx.fill();
-      // Puck highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.beginPath();
-      ctx.arc(puck.x - puck.r * 0.2, puck.y - puck.r * 0.2, puck.r * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Scores
-      ctx.font = `bold ${width * 0.08}px system-ui`;
-      ctx.textAlign = 'center';
-      ctx.fillStyle = paddles[0].color;
-      ctx.fillText(paddles[0].score, width / 2, height * 0.75);
-      ctx.fillStyle = paddles[1].color;
-      ctx.fillText(paddles[1].score, width / 2, height * 0.25);
-    }
-
-    function update(dt) {
-      if (gameOver) return;
-
-      // Paddle movement (keyboard for now)
-      const paddleSpeed = width * 0.015 * dt;
-      if (keys.w) paddles[1].y = Math.max(paddles[1].r + 5, paddles[1].y - paddleSpeed);
-      if (keys.s) paddles[1].y = Math.min(height / 2 - paddles[1].r - 5, paddles[1].y + paddleSpeed);
-      if (keys.ArrowUp) paddles[0].y = Math.max(height / 2 + paddles[0].r + 5, paddles[0].y - paddleSpeed);
-      if (keys.ArrowDown) paddles[0].y = Math.min(height - paddles[0].r - 5, paddles[0].y + paddleSpeed);
-
-      // Puck physics
-      puck.x += puck.vx * dt;
-      puck.y += puck.vy * dt;
-
-      // Wall collisions (left/right)
-      if (puck.x - puck.r < 0) { puck.x = puck.r; puck.vx *= -1; }
-      if (puck.x + puck.r > width) { puck.x = width - puck.r; puck.vx *= -1; }
-
-      // Paddle collisions
-      for (let i = 0; i < 2; i++) {
-        const p = paddles[i];
-        const dx = puck.x - p.x;
-        const dy = puck.y - p.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < puck.r + p.r) {
-          // Push puck out
-          const overlap = puck.r + p.r - dist;
-          const nx = dx / dist || 1;
-          const ny = dy / dist || 0;
-          puck.x += nx * overlap;
-          puck.y += ny * overlap;
-          // Reflect with paddle velocity influence
-          puck.vx = nx * Math.abs(puck.vx) * 1.05;
-          puck.vy = ny * Math.abs(puck.vy) * 1.05 + p.vy * 0.5;
-          // Clamp speed
-          const maxSpeed = width * 0.02;
-          const speed = Math.hypot(puck.vx, puck.vy);
-          if (speed > maxSpeed) { puck.vx = puck.vx / speed * maxSpeed; puck.vy = puck.vy / speed * maxSpeed; }
-        }
-      }
-
-      // Goal detection (top/bottom)
-      const goalW = width * 0.4;
-      const goalLeft = (width - goalW) / 2;
-      const goalRight = goalLeft + goalW;
-
-      if (puck.y - puck.r < 20 && puck.x > goalLeft && puck.x < goalRight) {
-        // Player 1 scores (bottom)
-        paddles[0].score++;
-        if (window.arcadeAudio) { window.arcadeAudio.prepare(); window.arcadeAudio.goal(); }
-        if (window.haptics) window.haptics.success();
-        checkWin();
-      } else if (puck.y + puck.r > height - 20 && puck.x > goalLeft && puck.x < goalRight) {
-        // Player 2 scores (top)
-        paddles[1].score++;
-        if (window.arcadeAudio) { window.arcadeAudio.prepare(); window.arcadeAudio.goal(); }
-        if (window.haptics) window.haptics.success();
-        checkWin();
-      } else if (puck.y - puck.r < 0 || puck.y + puck.r > height) {
-        // Hit post - bounce
-        if (puck.y < 0) { puck.y = puck.r; puck.vy *= -1; }
-        if (puck.y > height) { puck.y = height - puck.r; puck.vy *= -1; }
-      }
-
-      // Friction
-      puck.vx *= 0.998;
-      puck.vy *= 0.998;
-    }
-
-    function checkWin() {
-      if (paddles[0].score >= winTarget) {
-        gameOver = true; winner = 0;
-        status.textContent = '🎉 Player 1 wins!';
-        if (window.arcadeAudio) window.arcadeAudio.chime();
-        if (window.haptics) window.haptics.success();
-      } else if (paddles[1].score >= winTarget) {
-        gameOver = true; winner = 1;
-        status.textContent = '🎉 Player 2 wins!';
-        if (window.arcadeAudio) window.arcadeAudio.chime();
-        if (window.haptics) window.haptics.success();
-      } else { resetPuck(winner === 0 ? 2 : 1); }
-    }
-
-    function loop(time) {
-      if (!animating) return;
-      const dt = Math.min((time - lastTime) / 16, 2); // cap at 2 frames
-      lastTime = time;
-      update(dt);
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    function render() {
       draw();
     }
-
-    // Input
-    window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false; });
-
-    // Touch for mobile
-    let touchId1 = null, touchId2 = null;
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      for (const touch of e.changedTouches) {
-        const y = touch.clientY - canvas.getBoundingClientRect().top;
-        if (y > height / 2) { // Bottom half - player 1
-          touchId1 = touch.identifier;
-        } else { // Top half - player 2
-          touchId2 = touch.identifier;
-        }
+    function serve(toward = 0) {
+      puck.x = W / 2; puck.y = H / 2;
+      puck.vx = (Math.random() - .5) * 160;
+      puck.vy = (toward === 0 ? 1 : -1) * 340;
+    }
+    function updateStatus(text = '') {
+      status.textContent = winner === null
+        ? `P1 ${paddles[0].score} : ${paddles[1].score} P2${text ? ` · ${text}` : ''}`
+        : `🏆 Player ${winner + 1} wins! ${paddles[0].score} – ${paddles[1].score}`;
+    }
+    function reset() {
+      winner = null;
+      for (const [i, p] of paddles.entries()) {
+        p.score = 0; p.x = W / 2; p.y = i ? 160 : 740; p.vx = p.vy = 0;
+        positions[i] = null;
       }
-    }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      for (const touch of e.changedTouches) {
-        const x = touch.clientX - canvas.getBoundingClientRect().left;
-        const y = touch.clientY - canvas.getBoundingClientRect().top;
-        if (touch.identifier === touchId1) {
-          paddles[0].x = Math.max(paddles[0].r, Math.min(width - paddles[0].r, x));
-          paddles[0].y = Math.max(height / 2 + paddles[0].r + 5, Math.min(height - paddles[0].r - 5, y));
-        } else if (touch.identifier === touchId2) {
-          paddles[1].x = Math.max(paddles[1].r, Math.min(width - paddles[1].r, x));
-          paddles[1].y = Math.max(paddles[1].r + 5, Math.min(height / 2 - paddles[1].r - 5, y));
+      serve();
+      stepper.reset();
+      updateStatus();
+      draw();
+    }
+    function goal(scorer) {
+      paddles[scorer].score++;
+      window.arcadeAudio?.prepare().then(() => window.arcadeAudio?.goal());
+      window.haptics?.success();
+      if (paddles[scorer].score >= target) {
+        winner = scorer;
+        puck.vx = puck.vy = 0;
+        window.arcadeAudio?.chime();
+      } else serve(1 - scorer);
+      updateStatus(winner === null ? `Player ${scorer + 1} scores!` : '');
+    }
+    function movePaddles(dt) {
+      paddles.forEach((p, i) => {
+        const dx = (i ? Number(keys.has('d')) - Number(keys.has('a')) :
+          Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft')));
+        const dy = (i ? Number(keys.has('s')) - Number(keys.has('w')) :
+          Number(keys.has('ArrowDown')) - Number(keys.has('ArrowUp')));
+        const direction = Math.hypot(dx, dy) || 1;
+        let x = p.x + dx / direction * PADDLE_SPEED * dt;
+        let y = p.y + dy / direction * PADDLE_SPEED * dt;
+        if (positions[i]) {
+          const remainingX = positions[i].x - p.x, remainingY = positions[i].y - p.y;
+          const distance = Math.hypot(remainingX, remainingY);
+          const fraction = Math.min(1, PADDLE_SPEED * dt / (distance || 1));
+          x = p.x + remainingX * fraction;
+          y = p.y + remainingY * fraction;
         }
+        x = clamp(x, 23 + p.r, 577 - p.r);
+        y = clamp(y, i ? 23 + p.r : H / 2 + p.r + 5,
+          i ? H / 2 - p.r - 5 : 877 - p.r);
+        p.vx = (x - p.x) / dt;
+        p.vy = (y - p.y) / dt;
+        p.x = x; p.y = y;
+      });
+    }
+    const stepper = createFixedStepper((dt) => {
+      if (winner !== null) return;
+      movePaddles(dt);
+      stepDiscs([puck, ...paddles], dt, {
+        bounds: BOUNDS, friction: 13, restitution: .93,
+        onCollision(a, b, force) {
+          if (a === puck || b === puck) {
+            if (force > 80) window.arcadeAudio?.impact(Math.min(force / 650, .7));
+            const speed = Math.hypot(puck.vx, puck.vy);
+            if (speed > 1050) {
+              puck.vx *= 1050 / speed; puck.vy *= 1050 / speed;
+            }
+          }
+        },
+      });
+      if (puck.y - puck.r <= 23) {
+        if (puck.x > GOAL_LEFT && puck.x < GOAL_RIGHT) goal(0);
+        else { puck.y = 23 + puck.r; puck.vy = Math.abs(puck.vy) * .94; }
+      } else if (puck.y + puck.r >= 877) {
+        if (puck.x > GOAL_LEFT && puck.x < GOAL_RIGHT) goal(1);
+        else { puck.y = 877 - puck.r; puck.vy = -Math.abs(puck.vy) * .94; }
       }
-    }, { passive: false });
-    canvas.addEventListener('touchend', (e) => {
-      for (const touch of e.changedTouches) {
-        if (touch.identifier === touchId1) touchId1 = null;
-        if (touch.identifier === touchId2) touchId2 = null;
+      if (winner === null && Math.hypot(puck.vx, puck.vy) < 70) {
+        const length = Math.hypot(puck.vx, puck.vy);
+        if (length) { puck.vx *= 70 / length; puck.vy *= 70 / length; }
+        else { puck.vy = puck.y < H / 2 ? 70 : -70; }
       }
     });
 
-    getResetButton().addEventListener('click', newGame);
-
-    const onTheme = () => { resize(); render(); };
+    function draw() {
+      ctx.fillStyle = '#101b2c'; ctx.fillRect(0, 0, W, H);
+      const ice = ctx.createLinearGradient(0, 23, W, 877);
+      ice.addColorStop(0, '#133750'); ice.addColorStop(.5, '#1a5260'); ice.addColorStop(1, '#18314d');
+      ctx.fillStyle = ice; ctx.fillRect(23, 23, 554, 854);
+      ctx.lineWidth = 4; ctx.strokeStyle = '#8de5e566';
+      ctx.strokeRect(23, 23, 554, 854);
+      ctx.beginPath(); ctx.moveTo(23, H / 2); ctx.lineTo(577, H / 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, 105, 0, Math.PI * 2); ctx.stroke();
+      for (const y of [205, 695]) {
+        ctx.beginPath(); ctx.arc(W / 2, y, 92, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = '#071321';
+      ctx.fillRect(GOAL_LEFT, 0, GOAL_RIGHT - GOAL_LEFT, 30);
+      ctx.fillRect(GOAL_LEFT, 870, GOAL_RIGHT - GOAL_LEFT, 30);
+      ctx.fillStyle = '#57d4f6';
+      ctx.fillRect(GOAL_LEFT, 24, GOAL_RIGHT - GOAL_LEFT, 5);
+      ctx.fillStyle = '#ff6747';
+      ctx.fillRect(GOAL_LEFT, 870, GOAL_RIGHT - GOAL_LEFT, 5);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 64px system-ui';
+      ctx.fillStyle = '#57d4f655'; ctx.fillText(paddles[1].score, W / 2, 327);
+      ctx.fillStyle = '#ff674755'; ctx.fillText(paddles[0].score, W / 2, 585);
+      paddles.forEach((p) => {
+        ctx.shadowBlur = 24; ctx.shadowColor = p.color;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff99'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 21, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffffff66';
+        ctx.beginPath(); ctx.arc(p.x - 9, p.y - 10, 7, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.shadowBlur = 15; ctx.shadowColor = '#f8f3db';
+      ctx.fillStyle = '#f6f2e6';
+      ctx.beginPath(); ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#68778b';
+      ctx.beginPath(); ctx.arc(puck.x, puck.y, 7, 0, Math.PI * 2); ctx.fill();
+    }
+    function frame(time) {
+      if (disposed) return;
+      if (!shell.root.isConnected) { dispose(); return; }
+      stepper.tick(time);
+      draw();
+      raf = requestAnimationFrame(frame);
+    }
+    function pointerDown(event) {
+      const point = canvasPoint(canvas, event, W, H);
+      const i = point.y > H / 2 ? 0 : 1;
+      if (pointers[i] !== null) return;
+      pointers[i] = event.pointerId;
+      positions[i] = point;
+      canvas.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    }
+    function pointerMove(event) {
+      const i = pointers.indexOf(event.pointerId);
+      if (i < 0) return;
+      positions[i] = canvasPoint(canvas, event, W, H);
+      event.preventDefault();
+    }
+    function pointerUp(event) {
+      const i = pointers.indexOf(event.pointerId);
+      if (i < 0) return;
+      pointers[i] = null; positions[i] = null;
+    }
+    function keyDown(event) {
+      if (!shell.root.isConnected || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'w', 'a', 's', 'd'].includes(event.key)) return;
+      if (event.target instanceof HTMLElement && ['INPUT', 'BUTTON'].includes(event.target.tagName)) return;
+      keys.add(event.key); event.preventDefault();
+    }
+    function keyUp(event) { keys.delete(event.key); }
+    function onBlur() { keys.clear(); }
+    const onReset = () => reset();
+    const onResize = () => size();
+    const onTheme = () => draw();
+    canvas.addEventListener('pointerdown', pointerDown);
+    canvas.addEventListener('pointermove', pointerMove);
+    canvas.addEventListener('pointerup', pointerUp);
+    canvas.addEventListener('pointercancel', pointerUp);
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('resize', onResize);
     window.addEventListener('arcade:themechange', onTheme);
-    window.addEventListener('resize', () => { resize(); render(); });
-
-    resize();
-    animating = true;
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-    newGame();
-
-    return { dispose: () => { animating = false; window.removeEventListener('arcade:themechange', onTheme); } };
+    shell.getResetButton().addEventListener('click', onReset);
+    reset();
+    size();
+    raf = requestAnimationFrame(frame);
+    function dispose() {
+      if (disposed) return;
+      disposed = true;
+      cancelAnimationFrame(raf);
+      canvas.removeEventListener('pointerdown', pointerDown);
+      canvas.removeEventListener('pointermove', pointerMove);
+      canvas.removeEventListener('pointerup', pointerUp);
+      canvas.removeEventListener('pointercancel', pointerUp);
+      window.removeEventListener('keydown', keyDown);
+      window.removeEventListener('keyup', keyUp);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('arcade:themechange', onTheme);
+      shell.getResetButton().removeEventListener('click', onReset);
+    }
+    return { dispose };
   },
 };
