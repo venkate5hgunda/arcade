@@ -204,3 +204,19 @@ widths and in both themes.
   Hosts generate dice outcomes; the board layout is seeded and synchronized.
   Remote networking still needs internet/STUN and may fail without TURN;
   installed assets remain playable offline in local modes.
+
+## 2026-09-24 — Intentional return and game-state memory
+
+- Fresh visits and old game bookmarks open the home screen; only a recent
+  unfinished local round automatically resumes. Per-game inactivity limits
+  reflect the pace of play, from short reflex games to longer chess matches.
+  Expired checkpoints are removed without deleting preferences or high scores.
+- Every local game checkpoints its playable state and resumes without replaying
+  setup; completed games no longer trigger automatic navigation on next visit.
+  Online rooms remain ephemeral rather than pretending a closed WebRTC tab
+  can resume its connection.
+- Fixed genre filtering: clicking a category previously bubbled into the card
+  handler, which mistook the stage container for a game card and replaced the
+  filtered grid. Category buttons now update the selected tab and visible games.
+- Chess now uses matching silhouettes for both sets, with contrasting enamel
+  colors and edging so the sides remain distinguishable.

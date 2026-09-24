@@ -11,15 +11,24 @@ const PADS = [
   { id: 3, color: '#22c55e', tone: 262 },
 ];
 
+function validState(s) {
+  return s && typeof s === 'object' && !Array.isArray(s) &&
+    ['slow', 'normal', 'fast'].includes(s.speed) &&
+    Array.isArray(s.sequence) && s.sequence.length > 0 && s.sequence.length <= 10000 &&
+    s.sequence.every(id => Number.isInteger(id) && id >= 0 && id < PADS.length) &&
+    Number.isInteger(s.playerStep) && s.playerStep >= 0 && s.playerStep <= s.sequence.length;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Simon Says', meta: 'Watch, remember, repeat' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('simon-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':simon', { speed: 'normal' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const settings = restored ? { speed: restored.speed } : await renderSetup(stage, {
       title: '🔴 Simon Says',
       subtitle: 'Pick a playback speed',
       themeClass: 'simon-theme',
@@ -40,6 +49,9 @@ export default {
     let phase = 'idle'; // idle -> playing -> input -> over
     let locked = true;
     let controller = new AbortController();
+    function checkpoint() {
+      session?.save({ speed: settings.speed, sequence: sequence.slice(), playerStep });
+    }
 
     const status = document.createElement('div');
     status.className = 'simon-status';
@@ -102,6 +114,7 @@ export default {
       if (signal.aborted) return;
       phase = 'input';
       playerStep = 0;
+      checkpoint();
       locked = false;
       padEls.forEach((b) => (b.disabled = false));
       updateStatus();
@@ -110,6 +123,8 @@ export default {
     function nextRound() {
       sequence.push(Math.floor(Math.random() * PADS.length));
       message.textContent = '';
+      playerStep = 0;
+      checkpoint();
       playSequence();
     }
 
@@ -119,6 +134,7 @@ export default {
       window.haptics?.select();
       if (id === sequence[playerStep]) {
         playerStep++;
+        checkpoint();
         if (playerStep === sequence.length) {
           if (sequence.length > bestScore) { bestScore = sequence.length; saveJSON(KEYS.HIGH_SCORES + ':simon', bestScore); }
           const audio = window.arcadeAudio;
@@ -136,6 +152,7 @@ export default {
 
     function gameOver() {
       phase = 'over';
+      session?.finish();
       locked = true;
       padEls.forEach((b) => (b.disabled = true));
       const audio = window.arcadeAudio;
@@ -160,7 +177,12 @@ export default {
 
     getResetButton().addEventListener('click', newGame);
 
-    newGame();
+    if (restored) {
+      sequence = restored.sequence.slice();
+      playerStep = restored.playerStep;
+      if (playerStep === sequence.length) nextRound();
+      else playSequence();
+    } else newGame();
     return { dispose: () => controller.abort() };
   },
 };

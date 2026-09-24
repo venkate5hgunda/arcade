@@ -27,15 +27,27 @@ const WORD_PAIRS = [
   { word: 'COMPASS', clue: 'Direction finder' },
 ];
 
+function validCheckpoint(s) {
+  return s && Number.isInteger(s.players) && s.players >= 3 && s.players <= 8 &&
+    ['setup', 'reveal', 'discuss', 'vote'].includes(s.phase) &&
+    Number.isInteger(s.currentPlayer) && s.currentPlayer >= 0 && s.currentPlayer < s.players &&
+    Number.isInteger(s.imposterIndex) && s.imposterIndex >= 0 && s.imposterIndex < s.players &&
+    WORD_PAIRS.some((pair) => pair.word === s.word && pair.clue === s.clue) &&
+    Array.isArray(s.votes) && s.votes.length === s.players &&
+    s.votes.every((v, i) => v === null || (Number.isInteger(v) && v >= 0 && v < s.players && v !== i)) &&
+    (s.phase !== 'vote' || s.votes.slice(s.currentPlayer + 1).every((v) => v === null));
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spy' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('imp-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':imposter', { players: '4' });
-    const settings = await renderSetup(stage, {
+    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
+    const settings = checkpoint ? { players: String(checkpoint.players) } : await renderSetup(stage, {
       title: '🕵️ Imposter',
       subtitle: 'How many players are passing the device?',
       themeClass: 'imp-theme',
@@ -55,6 +67,13 @@ export default {
     let imposterIndex = -1;
     let word = '', clue = '';
     let votes = [];
+
+    function checkpointGame() {
+      if (phase === 'result') { session?.finish(); return; }
+      session?.save({
+        players: playerCount, phase, currentPlayer, imposterIndex, word, clue, votes: [...votes],
+      });
+    }
 
     const card = document.createElement('div');
     card.className = 'imp-card';
@@ -111,7 +130,7 @@ export default {
                 </button>
               `).join('')}
             </div>
-            <button class="imp-btn" id="submitVote" ${votes[currentPlayer] === undefined ? 'disabled' : ''}>Submit Vote</button>
+            <button class="imp-btn" id="submitVote" ${votes[currentPlayer] === null ? 'disabled' : ''}>Submit Vote</button>
           </div>`;
         card.querySelectorAll('.imp-vote-btn').forEach(btn => {
           btn.addEventListener('click', () => selectVote(parseInt(btn.dataset.vote)));
@@ -119,7 +138,7 @@ export default {
         card.querySelector('#submitVote').addEventListener('click', submitVote);
       } else if (phase === 'result') {
         const voteCounts = Array(playerCount).fill(0);
-        votes.forEach(v => { if (v !== undefined) voteCounts[v]++; });
+        votes.forEach(v => { if (v !== null) voteCounts[v]++; });
         const maxVotes = Math.max(...voteCounts);
         const votedOut = voteCounts.indexOf(maxVotes);
         const imposterCaught = votedOut === imposterIndex;
@@ -146,7 +165,8 @@ export default {
       imposterIndex = Math.floor(Math.random() * playerCount);
       currentPlayer = 0;
       phase = 'setup';
-      votes = Array(playerCount).fill(undefined);
+      votes = Array(playerCount).fill(null);
+      checkpointGame();
       render();
     }
 
@@ -155,6 +175,7 @@ export default {
       const audio = window.arcadeAudio;
       if (audio) { audio.prepare(); audio.tap(); }
       if (window.haptics) window.haptics.select();
+      // A refresh must always return to the face-down handoff, never expose a role.
       render();
     }
 
@@ -169,6 +190,7 @@ export default {
         phase = 'discuss';
         currentPlayer = 0;
       }
+      checkpointGame();
       render();
     }
 
@@ -177,6 +199,7 @@ export default {
       currentPlayer = 0;
       const audio = window.arcadeAudio;
       if (audio) audio.tap();
+      checkpointGame();
       render();
     }
 
@@ -185,10 +208,12 @@ export default {
       const audio = window.arcadeAudio;
       if (audio) audio.tap();
       if (window.haptics) window.haptics.select();
+      checkpointGame();
       render();
     }
 
     function submitVote() {
+      if (!Number.isInteger(votes[currentPlayer])) return;
       const audio = window.arcadeAudio;
       if (currentPlayer < playerCount - 1) {
         currentPlayer++;
@@ -196,13 +221,14 @@ export default {
       } else {
         phase = 'result';
         const voteCounts = Array(playerCount).fill(0);
-        votes.forEach(v => { if (v !== undefined) voteCounts[v]++; });
+        votes.forEach(v => { if (v !== null) voteCounts[v]++; });
         const maxVotes = Math.max(...voteCounts);
         const votedOut = voteCounts.indexOf(maxVotes);
         const imposterCaught = votedOut === imposterIndex && voteCounts.filter(v => v === maxVotes).length === 1;
         if (audio) imposterCaught ? audio.chime() : audio.buzz();
         if (window.haptics) imposterCaught ? window.haptics.success() : window.haptics.failure();
       }
+      checkpointGame();
       render();
     }
 
@@ -210,7 +236,24 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    if (checkpoint) {
+      currentPlayer = checkpoint.currentPlayer; imposterIndex = checkpoint.imposterIndex;
+      word = checkpoint.word; clue = checkpoint.clue; votes = [...checkpoint.votes];
+      phase = checkpoint.phase === 'reveal' ? 'setup' : checkpoint.phase;
+      checkpointGame();
+      render();
+    } else newGame();
+    const onVisibility = () => {
+      if (document.hidden && phase === 'reveal') {
+        phase = 'setup';
+        checkpointGame();
+        render();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return { dispose: () => {
+      window.removeEventListener('arcade:themechange', onTheme);
+      document.removeEventListener('visibilitychange', onVisibility);
+    } };
   },
 };

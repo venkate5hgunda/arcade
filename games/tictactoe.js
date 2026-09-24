@@ -39,8 +39,17 @@ function aiMove(board, aiToken, humanToken) {
 
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: 'X' }, 2: { color: '#38bdf8', label: 'O' } };
 
+function validState(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s) || !['pvp', 'ai'].includes(s.mode) ||
+      !Array.isArray(s.board) || s.board.length !== 9 ||
+      !s.board.every(v => v === 0 || v === 1 || v === 2) || ![1, 2].includes(s.current)) return false;
+  const x = s.board.filter(v => v === 1).length, o = s.board.filter(v => v === 2).length;
+  return x >= o && x <= o + 1 && s.current === (x === o ? 1 : 2) &&
+    (s.mode !== 'ai' || o <= x) && !findWin(s.board, N) && s.board.includes(0);
+}
+
 export default {
-  async render(el, game, { navigate, multiplayer } = {}) {
+  async render(el, game, { navigate, multiplayer, session } = {}) {
     const shell = createShell(el, game, { title: 'Tic-Tac-Toe', meta: 'Classic 3-in-a-row · neon edition' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
@@ -48,7 +57,8 @@ export default {
 
     const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
-    const settings = match ? { mode: 'pvp' } : await renderSetup(stage, {
+    const restored = !match && validState(session?.state) ? session.state : null;
+    const settings = match ? { mode: 'pvp' } : restored ? { mode: restored.mode } : await renderSetup(stage, {
       title: '⚡ Ready to play?',
       subtitle: 'Choose your opponent',
       themeClass: 'ttt-theme',
@@ -64,8 +74,12 @@ export default {
       match ? `Online room · you are ${seat(match) === 1 ? 'X' : 'O'}` :
         settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first';
 
-    const board = emptyBoard(N);
+    const board = restored ? restored.board.slice() : emptyBoard(N);
     let current = 1, gameOver = false, winLine = null, busy = false, aiTimer = null;
+    if (restored) current = restored.current;
+    let disposed = false, roundId = 0;
+
+    function checkpoint() { if (!match) session?.save({ mode: settings.mode, board: board.slice(), current }); }
 
     const grid = document.createElement('div');
     grid.className = 'ttt-grid';
@@ -88,7 +102,8 @@ export default {
           cell.classList.add('filled');
         }
         if (winLine && winLine.includes(i)) cell.classList.add('win');
-        cell.disabled = gameOver || board[i] !== 0 || busy || (match && current !== seat(match));
+        cell.disabled = gameOver || board[i] !== 0 || busy ||
+          (!match && settings.mode === 'ai' && current === 2) || (match && current !== seat(match));
         cell.addEventListener('click', () => {
           if (match) match.sendAction({ type: 'move', cell: i });
           else onMove(i);
@@ -110,8 +125,10 @@ export default {
     async function onMove(i) {
       if (gameOver || board[i] !== 0 || busy || !Number.isInteger(i) || i < 0 || i >= board.length) return;
       busy = true;
+      const startedRound = roundId;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      if (disposed || startedRound !== roundId || gameOver || board[i] !== 0) return;
       busy = false;
       board[i] = current;
       if (audio) audio.tap();
@@ -122,22 +139,29 @@ export default {
         status.style.color = TOKEN_STYLE[current].color;
         if (audio) audio.chime();
         if (window.haptics) window.haptics.success();
+        session?.finish();
         return render();
       }
       if (board.every((v) => v !== 0)) {
         gameOver = true; status.textContent = "It's a draw!";
         if (audio) audio.buzz();
         if (window.haptics) window.haptics.failure();
+        session?.finish();
         return render();
       }
       current = nextPlayer(current, 2);
+      checkpoint();
       render();
 
       // Computer turn
-      if (settings.mode === 'ai' && current === 2) {
+      scheduleAi();
+    }
+
+    function scheduleAi() {
+      if (settings.mode === 'ai' && current === 2 && !gameOver && !match) {
         status.textContent = 'Computer is thinking…';
         aiTimer = setTimeout(() => {
-          if (gameOver) return;
+          if (gameOver || disposed) return;
           const m = aiMove(board, 2, 1);
           if (m >= 0) {
             board[m] = 2; current = 1;
@@ -146,15 +170,18 @@ export default {
             else if (board.every((v) => v !== 0)) { gameOver = true; status.textContent = "It's a draw!"; if (audio) audio.buzz(); if (window.haptics) window.haptics.failure(); }
             else status.textContent = "Your turn";
           }
+          if (gameOver) session?.finish();
+          else checkpoint();
           render();
         }, 400);
       }
     }
 
     function reset() {
+      roundId++;
       clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
-      current = 1; gameOver = false; winLine = null; busy = false; render();
+      current = 1; gameOver = false; winLine = null; busy = false; checkpoint(); render();
     }
     getResetButton().addEventListener('click', () => {
       if (match) {
@@ -172,7 +199,10 @@ export default {
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     render();
+    if (restored) scheduleAi();
+    else checkpoint();
     return { dispose: () => {
+      disposed = true;
       clearTimeout(aiTimer);
       offRoom?.();
       window.removeEventListener('arcade:themechange', onTheme);

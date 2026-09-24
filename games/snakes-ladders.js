@@ -11,16 +11,28 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 const BOARD_SIZE = 100;
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
 
+function validCheckpoint(s) {
+  return !!s && typeof s === 'object' && Number.isInteger(s.playerCount) &&
+    s.playerCount >= 2 && s.playerCount <= 4 &&
+    typeof s.seed === 'string' && s.seed.length > 0 && s.seed.length <= 48 &&
+    Array.isArray(s.positions) && s.positions.length === s.playerCount &&
+    s.positions.every((n) => Number.isInteger(n) && n >= 0 && n < BOARD_SIZE) &&
+    Number.isInteger(s.current) && s.current >= 0 && s.current < s.playerCount &&
+    Number.isInteger(s.lastRoll) && s.lastRoll >= 1 && s.lastRoll <= 6 &&
+    typeof s.message === 'string' && s.message.length <= 160;
+}
+
 export default {
-  async render(el, game, { navigate, multiplayer } = {}) {
+  async render(el, game, { navigate, multiplayer, session } = {}) {
     const shell = createShell(el, game, { title: 'Snakes & Ladders', meta: 'Race to square 100' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('sl-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: '2' });
-    const settings = match ? { players: String(match.activeGame.playerIds.length) } : await renderSetup(stage, {
+    const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.playerCount) } : await renderSetup(stage, {
       title: '🐍 Snakes & Ladders',
       subtitle: 'How many players?',
       themeClass: 'sl-theme',
@@ -40,9 +52,17 @@ export default {
     shell.root.querySelector('.game-meta').textContent = match
       ? `Online room · you are Player ${seat(match)} · ${playerCount} players` : `${playerCount} players · Roll to move`;
 
-    const positions = Array(playerCount).fill(0);
-    let layout = createBoardLayout(match?.activeGame.seed);
-    let current = 0, gameOver = false, winner = null, rolling = false, lastRoll = 1, message = '', queuedRoll = null;
+    const positions = resume ? [...resume.positions] : Array(playerCount).fill(0);
+    let boardSeed = resume?.seed ?? Math.random().toString(36).slice(2);
+    let layout = createBoardLayout(match ? match.activeGame.seed : boardSeed);
+    let current = resume?.current ?? 0, gameOver = false, winner = null, rolling = false,
+      lastRoll = resume?.lastRoll ?? 1, message = resume?.message ?? '', queuedRoll = null;
+    let generation = 0;
+    function checkpoint() {
+      if (match) return;
+      if (gameOver) session?.finish();
+      else session?.save({ playerCount, seed: boardSeed, positions, current, lastRoll, message });
+    }
     let rollController = new AbortController();
 
     const board = document.createElement('div');
@@ -131,8 +151,10 @@ export default {
     async function rollDice(predeterminedValue = null) {
       if (rolling || gameOver) return;
       rolling = true;
+      const started = generation;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      if (started !== generation) return;
       const btn = dice.querySelector('.sl-roll-btn');
       let roll;
       try {
@@ -178,6 +200,7 @@ export default {
 
       rolling = false;
       render();
+      checkpoint();
       if (queuedRoll !== null && !gameOver) {
         const next = queuedRoll;
         queuedRoll = null;
@@ -186,12 +209,15 @@ export default {
     }
 
     function reset(seed) {
+      generation++;
       rollController.abort();
       rollController = new AbortController();
-      layout = createBoardLayout(seed);
+      if (!match) boardSeed = Math.random().toString(36).slice(2);
+      layout = createBoardLayout(match ? seed : boardSeed);
       positions.fill(0);
       current = 0; gameOver = false; winner = null; rolling = false; lastRoll = 1; message = ''; queuedRoll = null;
       render();
+      checkpoint();
     }
     getResetButton().addEventListener('click', () => {
       if (match) {
@@ -217,7 +243,9 @@ export default {
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     render();
+    if (!resume) checkpoint();
     return { dispose: () => {
+      generation++;
       rollController.abort();
       offRoom?.();
       window.removeEventListener('arcade:themechange', onTheme);

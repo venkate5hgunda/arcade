@@ -20,15 +20,30 @@ const WORDS = [
   'MYSTERY', 'DETECTIVE', 'CLUE', 'EVIDENCE', 'SUSPECT', 'ALIBI', 'CASE',
 ];
 
+function validState(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s) || !['1', '2'].includes(s.players) ||
+      !WORDS.includes(s.word) || !Array.isArray(s.guessed) ||
+      !s.guessed.every(ch => typeof ch === 'string' && /^[A-Z]$/.test(ch)) ||
+      new Set(s.guessed).size !== s.guessed.length ||
+      !Number.isInteger(s.wrong) || s.wrong < 0 || s.wrong >= 6 ||
+      s.wrong !== s.guessed.filter(ch => !s.word.includes(ch)).length ||
+      s.word.split('').every(ch => s.guessed.includes(ch)) ||
+      ![1, 2].includes(s.current) || (s.players === '1' && s.current !== 1) ||
+      !s.scores || typeof s.scores !== 'object' || Array.isArray(s.scores) ||
+      s.scores[1] !== 0 || s.scores[2] !== 0) return false;
+  return true;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Hangman', meta: 'Guess the word, letter by letter' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('hm-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':hangman', { players: '1' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const settings = restored ? { players: restored.players } : await renderSetup(stage, {
       title: '📝 Hangman',
       subtitle: 'Choose your players',
       themeClass: 'hm-theme',
@@ -48,6 +63,10 @@ export default {
 
     let word = '', guessed = new Set(), wrong = 0, maxWrong = 6, gameOver = false;
     let current = 1, scores = { 1: 0, 2: 0 };
+    let busy = false, disposed = false, roundId = 0;
+    function checkpoint() {
+      session?.save({ players: settings.players, word, guessed: [...guessed], wrong, current, scores: { ...scores } });
+    }
 
     const wordEl = document.createElement('div');
     wordEl.className = 'hm-word';
@@ -66,9 +85,12 @@ export default {
     stage.appendChild(status);
 
     function newGame() {
+      roundId++;
+      busy = false;
       word = WORDS[Math.floor(Math.random() * WORDS.length)];
       guessed.clear(); wrong = 0; gameOver = false;
       current = 1; scores = { 1: 0, 2: 0 };
+      checkpoint();
       render();
     }
 
@@ -124,9 +146,13 @@ export default {
     }
 
     async function onGuess(ch) {
-      if (gameOver || guessed.has(ch)) return;
+      if (disposed || busy || gameOver || guessed.has(ch)) return;
+      busy = true;
+      const startedRound = roundId;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
+      if (disposed || gameOver || startedRound !== roundId) return;
+      busy = false;
       guessed.add(ch);
       const correct = word.includes(ch);
       if (audio) audio.tap();
@@ -156,6 +182,8 @@ export default {
       } else if (playerCount === 2) {
         current = nextPlayer(current, 2);
       }
+      if (gameOver) session?.finish();
+      else checkpoint();
       render();
     }
 
@@ -163,7 +191,11 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    if (restored) {
+      word = restored.word; guessed = new Set(restored.guessed);
+      wrong = restored.wrong; current = restored.current; scores = { ...restored.scores };
+      render();
+    } else newGame();
+    return { dispose: () => { disposed = true; window.removeEventListener('arcade:themechange', onTheme); } };
   },
 };

@@ -6,15 +6,30 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const HOLES = 9;
 
+function validState(s) {
+  return s && typeof s === 'object' && !Array.isArray(s) &&
+    ['30', '45', '60'].includes(s.duration) &&
+    Number.isSafeInteger(s.score) && s.score >= 0 &&
+    Number.isSafeInteger(s.misses) && s.misses >= 0 &&
+    Number.isSafeInteger(s.deadline) && s.deadline > 0 &&
+    s.deadline <= Date.now() + Number(s.duration) * 1000;
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Whack-a-Mole', meta: 'Tap fast · beat the clock' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('wam-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':whack-a-mole', { duration: '30' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const expired = restored && restored.deadline <= Date.now();
+    if (expired) {
+      session?.finish();
+      if (navigate) queueMicrotask(() => navigate(null));
+    }
+    const settings = restored ? { duration: restored.duration } : expired ? { duration: '30' } : await renderSetup(stage, {
       title: '🔨 Whack-a-Mole',
       subtitle: 'How long do you want to play?',
       themeClass: 'wam-theme',
@@ -31,9 +46,19 @@ export default {
 
     let bestScore = loadJSON(KEYS.HIGH_SCORES + ':whack-a-mole', 0);
     let score = 0, misses = 0, timeLeft = roundLength;
+    let deadline = 0;
     let activeHole = -1;
     let running = false;
-    let popTimer = null, tickTimer = null, hideTimer = null;
+    let popTimer = null, tickTimer = null, hideTimer = null, hitTimer = null;
+    function checkpoint() { session?.save({ duration: settings.duration, score, misses, deadline }); }
+    function clearTimers() {
+      clearTimeout(popTimer); clearTimeout(hideTimer); clearTimeout(hitTimer); clearInterval(tickTimer);
+    }
+    function syncClock() {
+      timeLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      if (timeLeft === 0) endRound();
+      else updateStatus();
+    }
 
     const status = document.createElement('div');
     status.className = 'wam-status';
@@ -63,6 +88,7 @@ export default {
 
     function popMole() {
       if (!running) return;
+      if (Date.now() >= deadline) { endRound(); return; }
       if (activeHole !== -1) holeEls[activeHole].classList.remove('up');
       activeHole = Math.floor(Math.random() * HOLES);
       holeEls[activeHole].classList.add('up');
@@ -77,12 +103,18 @@ export default {
 
     function whack(i) {
       if (!running) return;
+      if (Date.now() >= deadline) { endRound(); return; }
       const audio = window.arcadeAudio;
       if (i === activeHole) {
         score++;
+        if (score > bestScore) {
+          bestScore = score;
+          saveJSON(KEYS.HIGH_SCORES + ':whack-a-mole', bestScore);
+        }
         holeEls[i].classList.remove('up');
         holeEls[i].classList.add('hit');
-        setTimeout(() => holeEls[i].classList.remove('hit'), 200);
+        clearTimeout(hitTimer);
+        hitTimer = setTimeout(() => holeEls[i].classList.remove('hit'), 200);
         activeHole = -1;
         if (audio) { audio.prepare(); audio.pop(); }
         window.haptics?.select();
@@ -90,25 +122,29 @@ export default {
         misses++;
         if (audio) { audio.prepare(); audio.tap(); }
       }
+      checkpoint();
       updateStatus();
     }
 
     function startRound() {
+      clearTimers();
+      holeEls.forEach(h => h.classList.remove('up', 'hit'));
       running = true;
       score = 0; misses = 0; timeLeft = roundLength; activeHole = -1;
+      deadline = Date.now() + roundLength * 1000;
       message.textContent = '';
+      checkpoint();
       updateStatus();
       popMole();
-      tickTimer = setInterval(() => {
-        timeLeft--;
-        updateStatus();
-        if (timeLeft <= 0) endRound();
-      }, 1000);
+      tickTimer = setInterval(syncClock, 250);
     }
 
     function endRound() {
+      if (!running) return;
       running = false;
-      clearTimeout(popTimer); clearTimeout(hideTimer); clearInterval(tickTimer);
+      clearTimers();
+      timeLeft = 0;
+      session?.finish();
       holeEls.forEach((h) => h.classList.remove('up', 'hit'));
       if (score > bestScore) { bestScore = score; saveJSON(KEYS.HIGH_SCORES + ':whack-a-mole', bestScore); }
       const audio = window.arcadeAudio;
@@ -128,10 +164,22 @@ export default {
 
     const onTheme = () => {};
     window.addEventListener('arcade:themechange', onTheme);
-    startRound();
+    if (restored) {
+      score = restored.score; misses = restored.misses; deadline = restored.deadline;
+      if (expired && score > bestScore) {
+        bestScore = score;
+        saveJSON(KEYS.HIGH_SCORES + ':whack-a-mole', bestScore);
+      }
+      if (!expired) {
+        running = true;
+        syncClock();
+        if (running) { popMole(); tickTimer = setInterval(syncClock, 250); }
+        else if (navigate) queueMicrotask(() => navigate(null));
+      }
+    } else if (!expired) startRound();
     return {
       dispose: () => {
-        clearTimeout(popTimer); clearTimeout(hideTimer); clearInterval(tickTimer);
+        clearTimers();
         window.removeEventListener('arcade:themechange', onTheme);
       },
     };

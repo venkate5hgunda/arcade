@@ -23,15 +23,32 @@ function shuffle(word) {
   return letters;
 }
 
+function validState(s) {
+  return s && typeof s === 'object' && !Array.isArray(s) &&
+    ['5', '8', '12'].includes(s.rounds) && Number.isInteger(s.round) &&
+    s.round >= 1 && s.round <= Number(s.rounds) &&
+    Number.isInteger(s.correctCount) && s.correctCount >= 0 && s.correctCount <= s.round &&
+    Number.isInteger(s.hintsUsed) && s.hintsUsed >= 0 &&
+    typeof s.hinted === 'boolean' && typeof s.solved === 'boolean' &&
+    (!s.solved || s.correctCount > 0) &&
+    WORDS.includes(s.word) && Array.isArray(s.pool) &&
+    s.pool.every(w => WORDS.includes(w)) && new Set(s.pool).size === s.pool.length &&
+    !s.pool.includes(s.word) &&
+    Array.isArray(s.letters) && s.letters.length === s.word.length &&
+    s.letters.every(l => typeof l === 'string' && /^[A-Z]$/.test(l)) &&
+    s.letters.slice().sort().join('') === s.word.split('').sort().join('');
+}
+
 export default {
-  async render(el, game, { navigate } = {}) {
+  async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Word Scramble', meta: 'Unscramble the word' });
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ws-vibe');
 
     const saved = loadJSON(KEYS.SETTINGS + ':word-scramble', { rounds: '8' });
-    const settings = await renderSetup(stage, {
+    const restored = validState(session?.state) ? session.state : null;
+    const settings = restored ? { rounds: restored.rounds } : await renderSetup(stage, {
       title: '🔤 Word Scramble',
       subtitle: 'How many words per game?',
       themeClass: 'ws-theme',
@@ -48,7 +65,15 @@ export default {
 
     let pool = [], word = '', letters = [];
     let round = 0, correctCount = 0, hintsUsed = 0;
-    let solved = false;
+    let solved = false, hinted = false, advanceTimer = null, disposed = false;
+    function checkpoint() {
+      session?.save({ rounds: settings.rounds, pool: pool.slice(), word, letters: letters.slice(),
+        round, correctCount, hintsUsed, hinted, solved });
+    }
+    function scheduleAdvance() {
+      clearTimeout(advanceTimer);
+      advanceTimer = setTimeout(() => { if (!disposed) nextRound(); }, 900);
+    }
 
     const status = document.createElement('div');
     status.className = 'ws-status';
@@ -97,26 +122,33 @@ export default {
       form.addEventListener('submit', (e) => { e.preventDefault(); checkGuess(input.value); });
       card.querySelector('#hintBtn').addEventListener('click', giveHint);
       card.querySelector('#skipBtn').addEventListener('click', () => nextRound());
+      if (solved) card.querySelector('.ws-feedback').textContent = '✅ Correct!';
+      else if (hinted) card.querySelector('.ws-feedback').textContent = `Starts with "${word[0]}"`;
     }
 
     function giveHint() {
+      if (solved) return;
       hintsUsed++;
+      hinted = true;
+      checkpoint();
       const feedback = card.querySelector('.ws-feedback');
       feedback.textContent = `Starts with "${word[0]}"`;
       window.arcadeAudio?.tap();
     }
 
     function checkGuess(value) {
+      if (solved || disposed) return;
       const audio = window.arcadeAudio;
       const feedback = card.querySelector('.ws-feedback');
       if (value.trim().toUpperCase() === word) {
         solved = true;
         correctCount++;
+        checkpoint();
         if (audio) { audio.prepare(); audio.chime(); }
         window.haptics?.success();
         feedback.textContent = '✅ Correct!';
         card.querySelector('.ws-input').disabled = true;
-        setTimeout(() => nextRound(), 900);
+        scheduleAdvance();
       } else {
         if (audio) { audio.prepare(); audio.buzz(); }
         window.haptics?.failure();
@@ -125,9 +157,12 @@ export default {
     }
 
     function nextRound() {
+      clearTimeout(advanceTimer);
       round++;
-      solved = false;
+      solved = false; hinted = false;
       if (round <= totalRounds) pickWord();
+      if (round > totalRounds) session?.finish();
+      else checkpoint();
       render();
     }
 
@@ -138,9 +173,11 @@ export default {
     }
 
     function newGame() {
-      round = 1; correctCount = 0; hintsUsed = 0; solved = false;
+      clearTimeout(advanceTimer);
+      round = 1; correctCount = 0; hintsUsed = 0; solved = false; hinted = false;
       refillPool();
       pickWord();
+      checkpoint();
       render();
     }
 
@@ -148,7 +185,17 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    newGame();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    if (restored) {
+      pool = restored.pool.slice(); word = restored.word; letters = restored.letters.slice();
+      round = restored.round; correctCount = restored.correctCount; hintsUsed = restored.hintsUsed;
+      solved = restored.solved; hinted = restored.hinted;
+      render();
+      if (solved) scheduleAdvance();
+    } else newGame();
+    return { dispose: () => {
+      disposed = true;
+      clearTimeout(advanceTimer);
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };
