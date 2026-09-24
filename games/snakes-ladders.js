@@ -1,8 +1,9 @@
 // Snakes & Ladders — classic board race. 2-4 players.
 // Pure DOM with animated board. Listens to arcade:themechange.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { nextPlayer, loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { nextPlayer, diceFaceHTML } from '../js/game-utils.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const BOARD_SIZE = 100;
 const SNAKES = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
@@ -11,20 +12,34 @@ const LADDERS = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 8
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: 2 });
-    const playerCount = Math.max(2, Math.min(4, settings.players || 2));
-
-    const shell = createShell(el, game, {
-      title: 'Snakes & Ladders',
-      meta: `${playerCount} players · Roll to move`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Snakes & Ladders', meta: 'Race to square 100' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('sl-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: '2' });
+    const settings = await renderSetup(stage, {
+      title: '🐍 Snakes & Ladders',
+      subtitle: 'How many players?',
+      themeClass: 'sl-theme',
+      fields: [{
+        key: 'players', label: 'Players',
+        options: [
+          { value: '2', label: '2 Players' },
+          { value: '3', label: '3 Players' },
+          { value: '4', label: '4 Players' },
+        ],
+        default: saved.players,
+      }],
+      startLabel: 'Start Rolling',
+    });
+    saveJSON(KEYS.SETTINGS + ':snakes-ladders', settings);
+    const playerCount = Math.max(2, Math.min(4, parseInt(settings.players, 10) || 2));
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · Roll to move`;
 
     const positions = Array(playerCount).fill(1);
-    let current = 0, gameOver = false, winner = null, rolling = false;
+    let current = 0, gameOver = false, winner = null, rolling = false, lastRoll = 1;
 
     const board = document.createElement('div');
     board.className = 'sl-board';
@@ -78,7 +93,7 @@ export default {
       // Dice
       dice.innerHTML = `
         <button class="sl-roll-btn" ${rolling || gameOver ? 'disabled' : ''} aria-label="Roll dice">
-          <span class="sl-die">⚀</span>
+          <span class="sl-die">${diceFaceHTML(lastRoll)}</span>
         </button>`;
       dice.querySelector('.sl-roll-btn').addEventListener('click', rollDice);
 
@@ -110,16 +125,16 @@ export default {
 
       const btn = dice.querySelector('.sl-roll-btn');
       const die = dice.querySelector('.sl-die');
-      const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
       // Animate
       for (let i = 0; i < 10; i++) {
-        die.textContent = faces[Math.floor(Math.random() * 6)];
+        die.innerHTML = diceFaceHTML(Math.floor(Math.random() * 6) + 1);
         await new Promise(r => setTimeout(r, 60));
       }
 
       const roll = Math.floor(Math.random() * 6) + 1;
-      die.textContent = faces[roll - 1];
+      lastRoll = roll;
+      die.innerHTML = diceFaceHTML(roll);
       if (audio) audio.tap();
 
       // Move player
@@ -144,7 +159,7 @@ export default {
         if (audio) audio.chime();
         if (window.haptics) window.haptics.success();
       } else {
-        current = nextPlayer(current, playerCount);
+        current = nextPlayer(current, playerCount, 0);
       }
 
       rolling = false;

@@ -1,8 +1,8 @@
 // Imposter — find the spy among you. 3-8 players.
 // Pure DOM; listens to arcade:themechange.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const WORD_PAIRS = [
   { word: 'COFFEE', clue: 'Hot drink' },
@@ -28,17 +28,27 @@ const WORD_PAIRS = [
 ];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':imposter', { players: 4 });
-    const playerCount = Math.max(3, Math.min(8, settings.players || 4));
-
-    const shell = createShell(el, game, {
-      title: 'Imposter',
-      meta: `${playerCount} players · Pass device · One spy`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spy' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('imp-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':imposter', { players: '4' });
+    const settings = await renderSetup(stage, {
+      title: '🕵️ Imposter',
+      subtitle: 'How many players are passing the device?',
+      themeClass: 'imp-theme',
+      fields: [{
+        key: 'players', label: 'Players',
+        options: Array.from({ length: 6 }, (_, i) => ({ value: String(i + 3), label: `${i + 3} Players` })),
+        default: saved.players,
+      }],
+      startLabel: 'Deal the Cards',
+    });
+    saveJSON(KEYS.SETTINGS + ':imposter', settings);
+    const playerCount = Math.max(3, Math.min(8, parseInt(settings.players, 10) || 4));
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · Pass device · One spy`;
 
     let phase = 'setup'; // setup -> reveal -> discuss -> vote -> result
     let currentPlayer = 0;
@@ -142,10 +152,16 @@ export default {
 
     function showCard() {
       phase = 'reveal';
+      const audio = window.arcadeAudio;
+      if (audio) { audio.prepare(); audio.tap(); }
+      if (window.haptics) window.haptics.select();
       render();
     }
 
     function nextPlayerReveal() {
+      const audio = window.arcadeAudio;
+      if (audio) audio.tap();
+      if (window.haptics) window.haptics.select();
       if (currentPlayer < playerCount - 1) {
         currentPlayer++;
         phase = 'setup';
@@ -159,19 +175,33 @@ export default {
     function startVote() {
       phase = 'vote';
       currentPlayer = 0;
+      const audio = window.arcadeAudio;
+      if (audio) audio.tap();
       render();
     }
 
     function selectVote(vote) {
       votes[currentPlayer] = vote;
+      const audio = window.arcadeAudio;
+      if (audio) audio.tap();
+      if (window.haptics) window.haptics.select();
       render();
     }
 
     function submitVote() {
+      const audio = window.arcadeAudio;
       if (currentPlayer < playerCount - 1) {
         currentPlayer++;
+        if (audio) audio.tap();
       } else {
         phase = 'result';
+        const voteCounts = Array(playerCount).fill(0);
+        votes.forEach(v => { if (v !== undefined) voteCounts[v]++; });
+        const maxVotes = Math.max(...voteCounts);
+        const votedOut = voteCounts.indexOf(maxVotes);
+        const imposterCaught = votedOut === imposterIndex && voteCounts.filter(v => v === maxVotes).length === 1;
+        if (audio) imposterCaught ? audio.chime() : audio.buzz();
+        if (window.haptics) imposterCaught ? window.haptics.success() : window.haptics.failure();
       }
       render();
     }

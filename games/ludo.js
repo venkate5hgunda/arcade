@@ -1,24 +1,39 @@
 // Ludo — classic race game. 2-4 players.
 // Pure DOM with animated tokens. Listens to arcade:themechange.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { nextPlayer, loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { nextPlayer, diceFaceHTML } from '../js/game-utils.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
 const HOME_STRETCH = 6; // steps from entrance to center
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':ludo', { players: 4 });
-    const playerCount = Math.max(2, Math.min(4, settings.players || 4));
-
-    const shell = createShell(el, game, {
-      title: 'Ludo',
-      meta: `${playerCount} players · Roll 6 to enter`,
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Ludo', meta: 'Race your tokens home' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('ld-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':ludo', { players: '4' });
+    const settings = await renderSetup(stage, {
+      title: '🎲 Ludo',
+      subtitle: 'How many players?',
+      themeClass: 'ld-theme',
+      fields: [{
+        key: 'players', label: 'Players',
+        options: [
+          { value: '2', label: '2 Players' },
+          { value: '3', label: '3 Players' },
+          { value: '4', label: '4 Players' },
+        ],
+        default: saved.players,
+      }],
+      startLabel: 'Start Rolling',
+    });
+    saveJSON(KEYS.SETTINGS + ':ludo', settings);
+    const playerCount = Math.max(2, Math.min(4, parseInt(settings.players, 10) || 4));
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · Roll 6 to enter`;
 
     // Each player has 4 tokens: position -1 = in yard, 0-51 = main track, 52-57 = home stretch, 58 = finished
     const tokens = Array.from({ length: playerCount }, () => Array(4).fill(-1));
@@ -142,7 +157,7 @@ export default {
       // Dice
       dice.innerHTML = `
         <button class="ld-roll-btn" ${rolling || gameOver ? 'disabled' : ''} aria-label="Roll dice">
-          <span class="ld-die">⚀</span>
+          <span class="ld-die">${diceFaceHTML(rolledValue || 1)}</span>
         </button>`;
       dice.querySelector('.ld-roll-btn').addEventListener('click', rollDice);
 
@@ -178,15 +193,14 @@ export default {
 
       const btn = dice.querySelector('.ld-roll-btn');
       const die = dice.querySelector('.ld-die');
-      const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
       for (let i = 0; i < 10; i++) {
-        die.textContent = faces[Math.floor(Math.random() * 6)];
+        die.innerHTML = diceFaceHTML(Math.floor(Math.random() * 6) + 1);
         await new Promise(r => setTimeout(r, 60));
       }
 
       rolledValue = Math.floor(Math.random() * 6) + 1;
-      die.textContent = faces[rolledValue - 1];
+      die.innerHTML = diceFaceHTML(rolledValue);
       if (audio) audio.tap();
 
       // Find movable tokens
@@ -206,7 +220,7 @@ export default {
       if (movable.length === 0) {
         // No valid moves
         if (rolledValue !== 6) {
-          current = nextPlayer(current, playerCount);
+          current = nextPlayer(current, playerCount, 0);
         } else {
           mustRollAgain = true;
         }
@@ -251,7 +265,7 @@ export default {
       }
 
       mustRollAgain = rolledValue === 6;
-      if (!mustRollAgain) current = nextPlayer(current, playerCount);
+      if (!mustRollAgain) current = nextPlayer(current, playerCount, 0);
 
       rolling = false;
       render();

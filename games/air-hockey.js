@@ -1,22 +1,43 @@
 // Air Hockey — fast two-player puck battle on a glowing table.
 // Canvas-based for smooth physics. Listens to arcade:themechange.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const shell = createShell(el, game, {
-      title: 'Air Hockey',
-      meta: 'Two players · First to 7 wins',
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Air Hockey', meta: 'Two players · glowing rink' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('ah-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':air-hockey', { target: '7' });
+    const settings = await renderSetup(stage, {
+      title: '🏒 Air Hockey',
+      subtitle: 'First to score wins — pick the target',
+      themeClass: 'ah-theme',
+      fields: [{
+        key: 'target', label: 'Winning score',
+        options: [
+          { value: '5', label: 'First to 5' },
+          { value: '7', label: 'First to 7' },
+          { value: '10', label: 'First to 10' },
+        ],
+        default: saved.target,
+      }],
+      startLabel: 'Drop the Puck',
+    });
+    saveJSON(KEYS.SETTINGS + ':air-hockey', settings);
+    const winTarget = parseInt(settings.target, 10) || 7;
+    shell.root.querySelector('.game-meta').textContent = `Two players · First to ${winTarget} wins · P1 ↑↓ · P2 W/S`;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'ah-canvas';
     stage.appendChild(canvas);
+
+    const status = document.createElement('div');
+    status.className = 'ah-status';
+    stage.appendChild(status);
 
     const ctx = canvas.getContext('2d');
     let width = 0, height = 0, dpr = 1;
@@ -40,7 +61,7 @@ export default {
       canvas.height = height * dpr;
       canvas.style.width = width + 'px';
       canvas.style.height = height + 'px';
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Puck radius ~ 3% of width
       puck.r = width * 0.03;
@@ -66,6 +87,7 @@ export default {
     function newGame() {
       paddles[0].score = 0; paddles[1].score = 0;
       gameOver = false; winner = null;
+      status.textContent = '';
       resetPuck();
       render();
     }
@@ -200,9 +222,17 @@ export default {
     }
 
     function checkWin() {
-      if (paddles[0].score >= 7) { gameOver = true; winner = 0; }
-      else if (paddles[1].score >= 7) { gameOver = true; winner = 1; }
-      else { resetPuck(winner === 0 ? 2 : 1); }
+      if (paddles[0].score >= winTarget) {
+        gameOver = true; winner = 0;
+        status.textContent = '🎉 Player 1 wins!';
+        if (window.arcadeAudio) window.arcadeAudio.chime();
+        if (window.haptics) window.haptics.success();
+      } else if (paddles[1].score >= winTarget) {
+        gameOver = true; winner = 1;
+        status.textContent = '🎉 Player 2 wins!';
+        if (window.arcadeAudio) window.arcadeAudio.chime();
+        if (window.haptics) window.haptics.success();
+      } else { resetPuck(winner === 0 ? 2 : 1); }
     }
 
     function loop(time) {
@@ -227,8 +257,7 @@ export default {
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       for (const touch of e.changedTouches) {
-        const x = touch.clientX * dpr - canvas.getBoundingClientRect().left * dpr;
-        const y = touch.clientY * dpr - canvas.getBoundingClientRect().top * dpr;
+        const y = touch.clientY - canvas.getBoundingClientRect().top;
         if (y > height / 2) { // Bottom half - player 1
           touchId1 = touch.identifier;
         } else { // Top half - player 2
@@ -239,8 +268,8 @@ export default {
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
       for (const touch of e.changedTouches) {
-        const x = touch.clientX * dpr - canvas.getBoundingClientRect().left * dpr;
-        const y = touch.clientY * dpr - canvas.getBoundingClientRect().top * dpr;
+        const x = touch.clientX - canvas.getBoundingClientRect().left;
+        const y = touch.clientY - canvas.getBoundingClientRect().top;
         if (touch.identifier === touchId1) {
           paddles[0].x = Math.max(paddles[0].r, Math.min(width - paddles[0].r, x));
           paddles[0].y = Math.max(height / 2 + paddles[0].r + 5, Math.min(height - paddles[0].r - 5, y));

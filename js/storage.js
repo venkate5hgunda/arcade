@@ -35,6 +35,7 @@ export const KEYS = {
   SOUND_ENABLED: 'ui.soundEnabled',
   HAPTICS_ENABLED: 'ui.hapticsEnabled',
   ACTIVE_GAME: 'ui.activeGame',
+  RECENT_GAMES: 'ui.recentGames', // [{ id, at }] most-recent-first, capped list
   PLAYER_NAMES: 'players.names',
   HIGH_SCORES: 'scores.highScores', // { [gameId]: { [playerId]: number } }
   SETTINGS: 'game.settings', // per-game settings (e.g. board size, difficulty)

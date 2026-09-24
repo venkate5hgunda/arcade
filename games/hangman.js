@@ -1,8 +1,9 @@
 // Hangman — guess the word. 1-2 players.
 // Pure DOM; listens to arcade:themechange to repaint accents.
 
-import { createShell, wireBack } from '../js/game-shell.js';
-import { nextPlayer, loadJSON, KEYS } from '../js/storage.js';
+import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { nextPlayer } from '../js/game-utils.js';
+import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const WORDS = [
   'ARCADE', 'PUZZLE', 'GAME', 'PLAYER', 'WINNER', 'CHAMPION', 'VICTORY', 'CHALLENGE',
@@ -20,17 +21,30 @@ const WORDS = [
 ];
 
 export default {
-  render(el, game, { navigate } = {}) {
-    const settings = loadJSON(KEYS.SETTINGS + ':hangman', { mode: 'pvp' });
-    const playerCount = settings.mode === 'ai' ? 1 : 2;
-
-    const shell = createShell(el, game, {
-      title: 'Hangman',
-      meta: playerCount === 2 ? 'Two players · Take turns guessing' : 'Single player · Guess the word',
-    });
-    const { stage, getResetButton, getBackButton } = shell;
-
+  async render(el, game, { navigate } = {}) {
+    const shell = createShell(el, game, { title: 'Hangman', meta: 'Guess the word, letter by letter' });
+    const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
+    shell.root.classList.add('hm-vibe');
+
+    const saved = loadJSON(KEYS.SETTINGS + ':hangman', { players: '1' });
+    const settings = await renderSetup(stage, {
+      title: '📝 Hangman',
+      subtitle: 'Choose your players',
+      themeClass: 'hm-theme',
+      fields: [{
+        key: 'players', label: 'Players',
+        options: [
+          { value: '1', label: 'Solo' },
+          { value: '2', label: '2 Players' },
+        ],
+        default: saved.players,
+      }],
+      startLabel: 'Start Guessing',
+    });
+    saveJSON(KEYS.SETTINGS + ':hangman', settings);
+    const playerCount = settings.players === '2' ? 2 : 1;
+    shell.root.querySelector('.game-meta').textContent = playerCount === 2 ? 'Two players · Take turns guessing' : 'Single player · Guess the word';
 
     let word = '', guessed = new Set(), wrong = 0, maxWrong = 6, gameOver = false;
     let current = 1, scores = { 1: 0, 2: 0 };
