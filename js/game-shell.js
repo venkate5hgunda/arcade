@@ -34,7 +34,10 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
 export function wireBack(shell, navigate) {
   const root = shell instanceof Element ? shell : shell.root;
   const btn = root.querySelector('[data-nav="back"]');
-  if (btn) btn.addEventListener('click', () => navigate(null));
+  if (btn) btn.addEventListener('click', (event) => {
+    event.preventDefault();
+    navigate(null);
+  });
 }
 
 // Reusable pre-game setup step. Every game can call this to gather choices
@@ -77,7 +80,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           btn.textContent = opt.label;
           btn.addEventListener('click', () => {
             values[f.key] = opt.value;
-            window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
+            window.arcadeAudio?.prepare();
+            window.arcadeAudio?.tap();
             window.haptics?.select();
             renderFields();
           });
@@ -89,8 +93,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
 
     renderFields();
 
-    card.querySelector('.setup-start-btn').addEventListener('click', async () => {
-      await window.arcadeAudio?.prepare();
+    card.querySelector('.setup-start-btn').addEventListener('click', () => {
+      window.arcadeAudio?.prepare();
       window.arcadeAudio?.chime();
       window.haptics?.medium();
       card.remove();

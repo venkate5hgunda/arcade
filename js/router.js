@@ -41,6 +41,7 @@ function syncHash(gameId) {
 let navToken = 0;
 let mountedGame = null;
 let mountedSession = null;
+let activeRoute = null;
 
 export async function navigate(gameId, { pushState = true } = {}) {
   const myToken = ++navToken;
@@ -50,6 +51,7 @@ export async function navigate(gameId, { pushState = true } = {}) {
   mountedGame?.dispose?.();
   mountedGame = null;
   const game = gameId ? getGame(gameId) : null;
+  activeRoute = game?.id ?? null;
   const stage = document.getElementById(STAGE_ID);
   if (!stage) return;
 
@@ -143,7 +145,8 @@ function wireGrid() {
   landing.addEventListener('click', (e) => {
     const btn = e.target.closest('.game-card-btn[data-game]');
     if (!btn) return;
-    window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
+    window.arcadeAudio?.prepare();
+    window.arcadeAudio?.tap();
     window.haptics?.select();
     navigate(btn.dataset.game);
   });
@@ -157,7 +160,8 @@ function wireGrid() {
         b.classList.toggle('active', b === btn);
         b.setAttribute('aria-selected', String(b === btn));
       });
-      window.arcadeAudio?.prepare().then(() => window.arcadeAudio.tap());
+      window.arcadeAudio?.prepare();
+      window.arcadeAudio?.tap();
       renderGameGrid(grid, active);
     });
   }
@@ -214,11 +218,13 @@ function renderError(game, err) {
 export function initRouter() {
   window.addEventListener('hashchange', () => {
     const id = parseHash(location.hash);
+    if (id === activeRoute) return;
     navigate(id, { pushState: false });
   });
 
   // Wire up back buttons rendered by router templates.
   document.addEventListener('click', (e) => {
+    if (e.defaultPrevented) return;
     const btn = e.target.closest('[data-nav="back"]');
     if (btn) {
       e.preventDefault();

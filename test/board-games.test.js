@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TRACK } from '../games/ludo.js';
+import { TRACK, legalMoves } from '../games/ludo.js';
 import { createBoardLayout, squareCenter, boardArt } from '../js/snakes-board.js';
 import { dieMarkup } from '../js/dice.js';
 
@@ -13,6 +13,13 @@ test('ludo track is a continuous 52-square circuit with quarter-turn starts', ()
       `path break after ${index}`);
   });
   assert.deepEqual([TRACK[0], TRACK[13], TRACK[26], TRACK[39]], [[6, 1], [1, 8], [8, 13], [13, 6]]);
+});
+
+test('ludo identifies forced moves without changing multiple or no-move rolls', () => {
+  assert.deepEqual(legalMoves([-1, 55, 58, 58], 3), [1]);
+  assert.deepEqual(legalMoves([-1, 55, 58, 58], 2), [1]);
+  assert.deepEqual(legalMoves([-1, 58, 58, 58], 4), []);
+  assert.deepEqual(legalMoves([-1, -1, 58, 58], 6), [0, 1]);
 });
 
 test('snakes and ladders vary but never overlap or reverse direction', () => {

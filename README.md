@@ -20,6 +20,7 @@ mode, sound, and haptics.
 | Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
 | Blackjack | 1 | Cards | ✅ Implemented |
 | Crazy Eights | 2 | Cards | ✅ Implemented |
+| UNO-inspired | 2–4 | Cards | ✅ Implemented |
 | Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
 | Connect Four | 1–2 | Puzzle | ✅ Implemented |
 | Minesweeper | 1 | Puzzle | ✅ Implemented |
@@ -34,7 +35,11 @@ mode, sound, and haptics.
 - **Responsive** — mobile, tablet, desktop. Flexible grid + fluid game stages.
 - **Light / dark mode** — persists in `localStorage` and can follow the OS.
 - **Sound** — synthesized Web Audio (no external assets), works offline.
-- **Haptics** — uses the Vibration API when available and permitted.
+- **Touch feedback** — immediate light press sounds and haptics on game controls,
+  with distinct game sounds for goals, collisions, dice and wins. Buttons
+  bypass double-tap delay; Air Hockey pointer targets use a faster, fixed-step
+  paddle path. Vibration requires browser/device support (not available in
+  every mobile browser) and respects the header toggles.
 - **Offline-first PWA** — service worker caches the shell and runtime assets.
 - **Personalized** — local storage retains theme, sound, haptics, high scores,
   per-game settings and unfinished local rounds.
@@ -55,7 +60,7 @@ The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
 Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
 Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
 **15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
-2048 and Snakes & Ladders; **30 min** for Ludo; and **45 min** for Chess.
+2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; and **45 min** for Chess.
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
@@ -63,17 +68,44 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   distinct room, sound, vibration and theme controls, and reduced-motion support.
 - **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
   simulation. Pool has rack, collisions, pockets, scratches and house-rule
-  8-ball play; air hockey has moving paddles, puck impacts and goals.
+  8-ball play; air hockey has moving paddles, puck impacts and goals. After
+  a goal, the puck rests on the non-scoring player's half until they strike it.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
   adapted from Pick's tabletop animation. Snakes & Ladders draws varied
   snakes and ladders on each new board with square numbers above the artwork;
   Ludo uses a full 52-square cross
   track and lets the player select which legal token to move.
+- **Cards** — UNO-inspired supports 2–4 players locally (with private
+  pass-the-device hands) or in an online room (private hands delivered only
+  to each player). Matching, skips, reverses, +2/+4 and wild color choices
+  work offline locally. The room host owns the deck and must be trusted.
 - **Room play** — one persistent WebRTC room connects devices for repeated
   games. The host assigns active seats in the lobby; extra guests may watch
   the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games). Other games remain local-only.
+  games), plus UNO-inspired (2–4 players, host-authoritative private hands).
+  Other games remain local-only.
+
+### Telugu movie catalogue
+
+Dumb Charades and Imposter offer **Telugu movies** alongside their existing
+prompt categories. The current offline starter set contains four verified
+films since 2000. Year, principal cast and a short original storyline appear
+after the round, never on a face-down handoff or the imposter's hidden card.
+
+Expanding this into a comprehensive catalogue needs an editorial/data pass,
+not generated guesses: define whether "Telugu movie" includes bilingual,
+dubbed, direct-to-streaming and unreleased titles; obtain a year-by-year film
+index; ingest **CC0 structured facts** (e.g. [Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing))
+with stable identifiers, original language, release date, cast and source
+provenance; then manually reconcile missing and duplicate entries against
+release sources. Write original short storylines, review names and Telugu
+transliterations, and flag missing fields rather than filling them in. Measure
+coverage and missing metadata by release year, check duplicates, validate
+source/license provenance and spot-check a sample of each year's entries
+before publishing versioned, offline-friendly chunks. Avoid bulk copying
+third-party synopses or bundling restricted API datasets (see
+[TMDb API terms](https://www.themoviedb.org/api-terms-of-use)).
 
 ## Playing together on separate devices
 
@@ -159,3 +191,6 @@ See `CHANGELOG.md` for the full history of decisions and assumptions.
   for a casual pass-and-play/AI opponent experience.
 - **Pool** uses simplified 8-ball house rules; there is no called pocket or
   tournament break requirement.
+- **UNO-inspired** uses a house ruleset: number-only opening card, no
+  draw-card stacking, challenge, UNO call-out penalty or multi-round scoring.
+  If nobody can draw or play, the fewest cards wins (ties remain ties).

@@ -8,6 +8,28 @@ const W = 600, H = 900;
 const GOAL_LEFT = 195, GOAL_RIGHT = 405;
 const BOUNDS = { left: 23, right: 577, top: -10000, bottom: 10000 };
 const PADDLE_SPEED = 690;
+const DRAG_SPEED = 2400;
+
+export function parkPuck(puck, receiver) {
+  puck.x = W / 2;
+  puck.y = receiver === 0 ? 610 : 290;
+  puck.vx = puck.vy = 0;
+}
+
+export function strikeParkedPuck(puck, paddle, receiver) {
+  if (Math.hypot(puck.x - paddle.x, puck.y - paddle.y) > puck.r + paddle.r) return false;
+  puck.vx = clamp((puck.x - paddle.x) * 12 + paddle.vx * .25, -900, 900);
+  puck.vy = (receiver === 0 ? -1 : 1) * Math.max(320, Math.abs(paddle.vy) * .9);
+  return true;
+}
+
+export function keepPuckMoving(puck, waitingFor) {
+  if (waitingFor !== null) return;
+  const speed = Math.hypot(puck.vx, puck.vy);
+  if (speed >= 70) return;
+  if (speed) { puck.vx *= 70 / speed; puck.vy *= 70 / speed; }
+  else puck.vy = puck.y < H / 2 ? 70 : -70;
+}
 
 function validCheckpoint(s) {
   const point = (p, minY, maxY) => p && Number.isFinite(p.x) && p.x >= 60 && p.x <= 540 &&
@@ -19,7 +41,11 @@ function validCheckpoint(s) {
     s.puck && Number.isFinite(s.puck.x) && s.puck.x >= 0 && s.puck.x <= W &&
     Number.isFinite(s.puck.y) && s.puck.y >= 0 && s.puck.y <= H &&
     Number.isFinite(s.puck.vx) && Math.abs(s.puck.vx) <= 1200 &&
-    Number.isFinite(s.puck.vy) && Math.abs(s.puck.vy) <= 1200;
+    Number.isFinite(s.puck.vy) && Math.abs(s.puck.vy) <= 1200 &&
+    (s.waitingFor === undefined || s.waitingFor === null || s.waitingFor === 0 || s.waitingFor === 1) &&
+    (s.waitingFor == null || (s.puck.x === W / 2 &&
+      s.puck.y === (s.waitingFor === 0 ? 610 : 290) &&
+      s.puck.vx === 0 && s.puck.vy === 0));
 }
 
 export default {
@@ -54,7 +80,7 @@ export default {
     status.setAttribute('aria-live', 'polite');
     const help = document.createElement('p');
     help.className = 'ah-help';
-    help.textContent = 'P1 (bottom): arrow keys · P2 (top): WASD · Drag each paddle with a finger or mouse.';
+    help.textContent = 'P1 (bottom): arrow keys · P2 (top): WASD · Drag a paddle to strike. After a goal, the other player serves.';
     stage.append(canvas, status, help);
     const ctx = canvas.getContext('2d');
     const puck = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 17 };
@@ -65,14 +91,14 @@ export default {
     const pointers = [null, null];
     const positions = [null, null];
     const keys = new Set();
-    let winner = null, disposed = false, raf, lastSave = 0;
+    let winner = null, waitingFor = null, disposed = false, raf, lastSave = 0, lastImpact = 0;
 
     function checkpointGame(force = false) {
       if (!session || winner !== null || (!force && Date.now() - lastSave < 1000)) return;
       lastSave = Date.now();
       session.save({
         target, paddles: paddles.map(({ x, y, score }) => ({ x, y, score })),
-        puck: { x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy },
+        puck: { x: puck.x, y: puck.y, vx: puck.vx, vy: puck.vy }, waitingFor,
       });
     }
 
@@ -98,6 +124,7 @@ export default {
         p.score = 0; p.x = W / 2; p.y = i ? 160 : 740; p.vx = p.vy = 0;
         positions[i] = null;
       }
+      waitingFor = null;
       serve();
       stepper.reset();
       updateStatus();
@@ -106,14 +133,17 @@ export default {
     }
     function goal(scorer) {
       paddles[scorer].score++;
-      window.arcadeAudio?.prepare().then(() => window.arcadeAudio?.goal());
+      window.arcadeAudio?.goal();
       window.haptics?.success();
       if (paddles[scorer].score >= target) {
         winner = scorer;
         puck.vx = puck.vy = 0;
         window.arcadeAudio?.chime();
-      } else serve(1 - scorer);
-      updateStatus(winner === null ? `Player ${scorer + 1} scores!` : '');
+      } else {
+        waitingFor = 1 - scorer;
+        parkPuck(puck, waitingFor);
+      }
+      updateStatus(winner === null ? `Player ${scorer + 1} scores! · P${waitingFor + 1} serves` : '');
       if (winner !== null) session?.finish();
       else checkpointGame(true);
     }
@@ -129,7 +159,7 @@ export default {
         if (positions[i]) {
           const remainingX = positions[i].x - p.x, remainingY = positions[i].y - p.y;
           const distance = Math.hypot(remainingX, remainingY);
-          const fraction = Math.min(1, PADDLE_SPEED * dt / (distance || 1));
+          const fraction = Math.min(1, DRAG_SPEED * dt / (distance || 1));
           x = p.x + remainingX * fraction;
           y = p.y + remainingY * fraction;
         }
@@ -144,11 +174,22 @@ export default {
     const stepper = createFixedStepper((dt) => {
       if (winner !== null) return;
       movePaddles(dt);
+      if (waitingFor !== null) {
+        if (!strikeParkedPuck(puck, paddles[waitingFor], waitingFor)) return;
+        waitingFor = null;
+        updateStatus();
+        window.arcadeAudio?.impact(.55);
+        window.haptics?.select();
+      }
       stepDiscs([puck, ...paddles], dt, {
         bounds: BOUNDS, friction: 13, restitution: .93,
         onCollision(a, b, force) {
           if (a === puck || b === puck) {
-            if (force > 80) window.arcadeAudio?.impact(Math.min(force / 650, .7));
+            if (force > 80 && performance.now() - lastImpact > 70) {
+              lastImpact = performance.now();
+              window.arcadeAudio?.impact(Math.min(force / 650, .7));
+              window.haptics?.light();
+            }
             const speed = Math.hypot(puck.vx, puck.vy);
             if (speed > 1050) {
               puck.vx *= 1050 / speed; puck.vy *= 1050 / speed;
@@ -163,11 +204,7 @@ export default {
         if (puck.x > GOAL_LEFT && puck.x < GOAL_RIGHT) goal(1);
         else { puck.y = 877 - puck.r; puck.vy = -Math.abs(puck.vy) * .94; }
       }
-      if (winner === null && Math.hypot(puck.vx, puck.vy) < 70) {
-        const length = Math.hypot(puck.vx, puck.vy);
-        if (length) { puck.vx *= 70 / length; puck.vy *= 70 / length; }
-        else { puck.vy = puck.y < H / 2 ? 70 : -70; }
-      }
+      if (winner === null) keepPuckMoving(puck, waitingFor);
     });
 
     function draw() {
@@ -219,18 +256,25 @@ export default {
       raf = requestAnimationFrame(frame);
     }
     function pointerDown(event) {
+      if (winner !== null) return;
       const point = canvasPoint(canvas, event, W, H);
       const i = point.y > H / 2 ? 0 : 1;
       if (pointers[i] !== null) return;
       pointers[i] = event.pointerId;
       positions[i] = point;
       canvas.setPointerCapture(event.pointerId);
+      window.arcadeAudio?.prepare();
+      window.arcadeAudio?.tap();
+      window.haptics?.select();
       event.preventDefault();
     }
     function pointerMove(event) {
       const i = pointers.indexOf(event.pointerId);
       if (i < 0) return;
       positions[i] = canvasPoint(canvas, event, W, H);
+      if (document.hidden) return;
+      stepper.tick(performance.now());
+      draw();
       event.preventDefault();
     }
     function pointerUp(event) {
@@ -264,7 +308,8 @@ export default {
     if (checkpoint) {
       checkpoint.paddles.forEach((p, i) => Object.assign(paddles[i], p));
       Object.assign(puck, checkpoint.puck);
-      updateStatus();
+      waitingFor = checkpoint.waitingFor ?? null;
+      updateStatus(waitingFor === null ? '' : `P${waitingFor + 1} serves`);
     } else reset();
     size();
     raf = requestAnimationFrame(frame);

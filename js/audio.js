@@ -15,13 +15,12 @@ export class ArcadeAudio {
     this.context = null;
     this.master = null;
     this.silenced = false;
+    this.impactBuffer = null;
   }
 
   setEnabled(enabled) {
     this.enabled = enabled;
-    if (!enabled && this.master) {
-      try { this.master.gain.value = 0; } catch {}
-    }
+    if (this.master) this.master.gain.value = enabled ? 0.35 : 0;
   }
 
   async prepare() {
@@ -35,7 +34,8 @@ export class ArcadeAudio {
       this.master.connect(this.context.destination);
     }
     if (this.context.state === 'suspended') {
-      try { await this.context.resume(); } catch {}
+      try { await this.context.resume(); }
+      catch (error) { console.warn('Arcade audio could not resume:', error); }
     }
   }
 
@@ -84,10 +84,12 @@ export class ArcadeAudio {
     if (!this.enabled || this.silenced || !this.context) return;
     const now = this.context.currentTime;
     const noise = this.context.createBufferSource();
-    const buffer = this.context.createBuffer(1, this.context.sampleRate * 0.08, this.context.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
-    noise.buffer = buffer;
+    if (!this.impactBuffer) {
+      this.impactBuffer = this.context.createBuffer(1, this.context.sampleRate * 0.08, this.context.sampleRate);
+      const data = this.impactBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    }
+    noise.buffer = this.impactBuffer;
     const filter = this.context.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 900;
