@@ -133,16 +133,17 @@ third-party synopses or bundling restricted API datasets (see
 ## Playing together on separate devices
 
 1. Tap **↗** in the header, enter a name and select **Host room**.
-2. Select **Create guest invite** and share its link (Web Share API when
-   supported, or copy/paste). Create a new invite for each additional guest.
-3. A guest opens that link in the arcade, enters a name and selects
-   **Join and create answer**. They share the resulting **answer link back**
-   to the host, who pastes it into **Accept answer** in the **original host
-   tab**. Opening the answer in a new host tab loses that tab's pending
-   connection. Repeat for each guest.
-4. The host admits guests and selects the seats in the lobby, then chooses
-   a supported game. Return to the lobby at any time to start another game
-   over the same connections.
+2. Select **Create guest invite**; send its URL using **Share link** or
+   **Copy link**, or display **Show QR** for the guest to scan. Make a separate
+   invite for each guest.
+3. The guest opens the invite URL or uses **Scan invite QR** in the lobby,
+   enters a name, and selects **Join and create answer**. They send the answer
+   URL or show its QR to the host.
+4. In the **original host tab**, paste the answer URL or use **Scan answer QR**,
+   then select **Accept answer**. Opening it in a new host tab will not work.
+   Acceptance admits the guest; wait until the lobby says **connected**
+   before selecting their seat and starting a game. Return to the lobby to
+   play another game over the same connection.
 
 **Constraints shown before starting:** This static-hosted PWA has no
 signaling or TURN server. Both links must be exchanged manually, and some
@@ -151,6 +152,11 @@ need internet for public STUN discovery and can fail behind restrictive
 firewalls or symmetric NAT. Rooms live only while tabs remain open; remote
 play is not available offline. **Downloaded game assets remain playable
 locally offline** after the service worker has completed its first install.
+QR codes are generated locally; no invite or answer is sent to a QR service.
+Camera scanning requires browser QR detection and camera permission; copy/paste
+works otherwise. If a URL exceeds QR capacity, use the URL instead. Each
+device reports a lost or stalled direct connection; such a warning indicates
+a possible network restriction, not proof of a particular firewall or NAT.
 
 ## Running locally
 

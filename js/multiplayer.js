@@ -1,11 +1,13 @@
 // Static-site multiplayer: signaling is exchanged as two URLs, never sent to a server.
 import { GAMES, getGame } from './game-catalog.js';
+import { roomQrDataUrl } from './room-qr.js';
 
 const VERSION = 1;
 const MAX_URL = 16000;
 const MAX_PAYLOAD = 120000;
 const MAX_MESSAGE = 32000;
 const ICE_TIMEOUT = 20000;
+const CONNECT_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'uno', 'crazy-eights']);
@@ -204,6 +206,7 @@ export class MultiplayerRoom {
     this.lastGameGeneration = 0;
     this.stats = emptyStats();
     this.roundKeys = new Set();
+    this.connectionIssue = '';
   }
   on(listener) {
     if (typeof listener !== 'function') fail('Listener must be a function.');
@@ -219,6 +222,23 @@ export class MultiplayerRoom {
   state() { this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })),
     activeGame: this.activeGame, stats: structuredClone(this.stats) }); }
   error(error) { this.emit({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
+  connectionProblem(message) {
+    this.connectionIssue = message;
+    this.state();
+    this.error(new Error(message));
+  }
+  watchConnection(peer, id) {
+    clearTimeout(peer.connectTimer);
+    peer.connectTimer = setTimeout(() => {
+      if (this.peers.get(id) !== peer) return;
+      const connected = this.role === 'host'
+        ? this.members.find(member => member.id === id)?.connected
+        : this.members.find(member => member.id === this.peerId)?.connected;
+      if (!connected) this.connectionProblem(this.role === 'guest'
+        ? 'Still waiting for the host. Ask them to accept your answer in their original tab. If they already did, a direct connection may be blocked by this network; try another network.'
+        : 'Guest admitted, but no direct connection yet. Ask them to keep the original guest tab open; this network may block WebRTC (NAT, firewall or STUN). Try another network. No TURN relay is available.');
+    }, this.role === 'guest' ? CONNECT_TIMEOUT * 3 : CONNECT_TIMEOUT);
+  }
   createHost(name) {
     const localName = nameOf(name);
     this.close();
@@ -240,10 +260,11 @@ export class MultiplayerRoom {
     };
     channel.onmessage = (event) => this.receive(peer, id, event.data);
     channel.onclose = () => this.disconnected(peer, id);
-    channel.onerror = () => this.error(new Error('Data channel error.'));
+    channel.onerror = () => this.connectionProblem('Direct data channel error on this device. Check the connection and try a new invite if it does not recover.');
   }
   disconnected(peer, id) {
     if (this.peers.get(id) !== peer) return;
+    clearTimeout(peer.connectTimer);
     const member = this.members.find((person) => person.id === id);
     if (member) member.connected = false;
     if (this.role === 'host') {
@@ -257,7 +278,9 @@ export class MultiplayerRoom {
         this.emit({ type: 'game', game: null, spectating: false });
       }
     }
-    this.state();
+    this.connectionProblem(navigator.onLine === false
+      ? 'This device is offline. Remote rooms need an internet connection; local games still work offline.'
+      : 'The direct connection was lost or failed. Check both tabs and try a new invite and answer; this network may block WebRTC.');
   }
   watch(peer, id) {
     peer.pc.onconnectionstatechange = () => {
@@ -318,6 +341,7 @@ export class MultiplayerRoom {
       await peer.pc.setLocalDescription(await peer.pc.createAnswer());
       await gathered(peer.pc);
       if (this.peers.get(offer.host) !== peer) fail('Invitation was cancelled.');
+      this.watchConnection(peer, offer.host);
       return link('answer', await encode({
         v: VERSION, kind: 'answer', room: offer.room, host: offer.host, guest: offer.guest,
         name: localName, sdp: description(peer.pc.localDescription, 'answer'),
@@ -335,12 +359,19 @@ export class MultiplayerRoom {
     const peer = this.peers.get(answer.guest);
     if (!peer || peer.pc.signalingState !== 'have-local-offer' || peer.accepting) fail('No pending invitation for this guest.');
     peer.accepting = true;
+    const member = { id: answer.guest, name: nameOf(answer.name), connected: false, admitted: true };
+    this.members.push(member);
+    this.state();
     try {
       await peer.pc.setRemoteDescription(description(answer.sdp, 'answer'));
-      this.members.push({ id: answer.guest, name: nameOf(answer.name), connected: false, admitted: true });
-      this.state();
+      if (!member.connected) this.watchConnection(peer, answer.guest);
     } catch (error) {
+      this.members.splice(this.members.indexOf(member), 1);
+      this.peers.delete(answer.guest);
+      peer.pc.close();
       peer.accepting = false;
+      this.publish();
+      this.state();
       this.error(error);
       throw error;
     }
@@ -391,6 +422,8 @@ export class MultiplayerRoom {
         if (msg.kind === 'hello') {
           if (nameOf(msg.name) !== member.name) fail('Participant name mismatch.');
           member.connected = true;
+          clearTimeout(peer.connectTimer);
+          this.connectionIssue = '';
           this.publish();
           this.state();
         } else if (msg.kind === 'action') {
@@ -420,6 +453,10 @@ export class MultiplayerRoom {
           const newGeneration = msg.gameGeneration !== this.lastGameGeneration;
           this.members = msg.members.map(({ id: memberId, name, connected, admitted }) =>
             ({ id: memberId, name, connected, admitted }));
+          if (this.members.find(person => person.id === this.peerId)?.connected) {
+            clearTimeout(peer.connectTimer);
+            this.connectionIssue = '';
+          }
           this.stats = structuredClone(msg.stats);
           this.activeGame = msg.activeGame ? {
             id: msg.activeGame.id, playerIds: [...msg.activeGame.playerIds], seed: msg.activeGame.seed,
@@ -606,6 +643,8 @@ export class MultiplayerRoom {
     this.lastGameGeneration = 0;
     this.stats = emptyStats();
     this.roundKeys.clear();
+    for (const peer of peers) clearTimeout(peer.connectTimer);
+    this.connectionIssue = '';
     this.preferredGame = null;
     this.state();
   }
@@ -615,9 +654,77 @@ export class MultiplayerRoom {
     const draft = {
       name: '',
       invite: new URL(location.href).searchParams.has('invite') ? location.href : '',
-      answer: '', output: '', message: '',
+      answer: '', output: '', outputKind: '', qrVisible: false, message: '',
+    };
+    let scanning = null;
+    const stopScan = () => {
+      const current = scanning;
+      scanning = null;
+      if (!current) return;
+      clearTimeout(current.frame);
+      current.stream?.getTracks().forEach(track => track.stop());
+      current.node.remove();
+    };
+    const scanInto = async (key, input) => {
+      if (typeof BarcodeDetector === 'undefined' || !navigator.mediaDevices?.getUserMedia)
+        fail('QR scanning is unavailable in this browser. Paste the link instead.');
+      stopScan();
+      const scanner = document.createElement('div');
+      scanner.className = 'mp-scanner';
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      const feedback = document.createElement('p');
+      feedback.textContent = `Point your camera at the ${key} QR code.`;
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.textContent = 'Cancel scan';
+      cancel.addEventListener('click', stopScan);
+      scanner.append(video, feedback, cancel);
+      container.querySelector('.mp-controls').append(scanner);
+      const current = { node: scanner, frame: 0, stream: null };
+      scanning = current;
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        if (scanning !== current) { stream.getTracks().forEach(track => track.stop()); return; }
+        current.stream = stream;
+        video.srcObject = stream;
+        await video.play();
+        if (scanning !== current) return;
+        const detect = async () => {
+          if (scanning !== current) return;
+          try {
+            for (const code of await detector.detect(video)) {
+              if (scanning !== current) return;
+              try {
+                parseLink(code.rawValue, key);
+                draft[key] = code.rawValue;
+                input.value = code.rawValue;
+                stopScan();
+                draft.message = `${key === 'answer' ? 'Answer' : 'Invite'} scanned. ${key === 'answer' ? 'Accept answer' : 'Join and create answer'} to continue.`;
+                container.querySelector('[role="status"]').textContent = draft.message;
+                return;
+              } catch (error) { feedback.textContent = error.message; }
+            }
+          } catch (error) {
+            stopScan();
+            this.error(error);
+            draft.message = `Could not scan QR: ${error.message}. Paste the link instead.`;
+            container.querySelector('[role="status"]').textContent = draft.message;
+            return;
+          }
+          if (scanning === current) current.frame = setTimeout(detect, 180);
+        };
+        current.frame = setTimeout(detect, 180);
+      } catch (error) {
+        if (scanning === current) stopScan();
+        throw new Error(`Camera unavailable: ${error.message}. Paste the link instead.`, { cause: error });
+      }
     };
     const render = () => {
+      stopScan();
       container.replaceChildren();
       const root = document.createElement('section');
       root.className = 'mp-lobby';
@@ -626,19 +733,36 @@ export class MultiplayerRoom {
       root.append(title);
       const notice = document.createElement('p');
       notice.className = 'mp-notice';
-      notice.textContent = 'No signaling server: exchange two links manually (invite to guest, answer back to host). Remote peers need internet/STUN; NAT/firewalls may block direct connections (no TURN). Long links may be truncated by messaging apps. Installed game assets work offline; remote connections do not.';
+      notice.textContent = 'Connect in two steps: send the invite to your guest, then have them send their answer back to the original host tab. Share either link by QR or URL. Remote play needs internet and a direct WebRTC connection; some networks block it (no relay).';
       root.append(notice);
+      const steps = document.createElement('p');
+      steps.className = 'mp-steps';
+      steps.textContent = !this.role
+        ? 'Host: enter your name and create a room. Guest: enter your name, paste or scan the invite, then create an answer.'
+        : this.role === 'host'
+          ? '1. Create an invite and share its URL or QR. 2. Paste or scan the guest’s answer here in this same tab. 3. Wait for “connected,” then choose their seat.'
+          : '1. Share your answer URL or QR with the host. 2. Wait for the host to accept it in their original tab. You are ready when your status says “connected.”';
+      root.append(steps);
       const status = document.createElement('p');
       status.setAttribute('role', 'status');
+      status.className = 'mp-status';
       status.textContent = draft.message;
       if (this.role === 'host' && draft.message.startsWith('Answer accepted.') &&
           this.members.some((member) => member.id !== this.peerId && member.connected)) {
         status.textContent = 'Guest connected. Select seats and start a game.';
-      } else if (this.role === 'guest' && draft.message.startsWith('Send this answer link back') &&
+      } else if (this.role === 'guest' &&
           this.members.find((member) => member.id === this.peerId)?.connected) {
-        status.textContent = 'Connected to host. Waiting for the host to start a game.';
+        status.textContent = this.activeGame ? 'Connected to host.' :
+          'Connected to host. Waiting for the host to start a game.';
       }
       root.append(status);
+      if (this.connectionIssue) {
+        const warning = document.createElement('p');
+        warning.className = 'mp-status mp-status-error';
+        warning.setAttribute('role', 'alert');
+        warning.textContent = this.connectionIssue;
+        root.append(warning);
+      }
       const controls = document.createElement('div');
       controls.className = 'mp-controls';
       root.append(controls);
@@ -670,35 +794,37 @@ export class MultiplayerRoom {
       output.setAttribute('aria-label', 'Link to copy and send');
       output.className = 'mp-link';
       output.value = draft.output;
-      const display = (url, prompt) => {
+      const display = (url, prompt, kind) => {
         draft.output = url;
+        draft.outputKind = kind;
+        draft.qrVisible = false;
         draft.message = prompt + (url.length > 4000 ? ' Warning: long links may be truncated; use copy/paste without shortening.' : '');
-        const current = container.querySelector('.mp-link');
-        if (current) current.value = url;
-        container.querySelector('[role="status"]')?.replaceChildren(document.createTextNode(draft.message));
+        render();
       };
       if (!this.role) {
         const name = field('Your name', 'name');
         button('Host room', () => this.createHost(name.value));
         const invite = field('Paste invite URL', 'invite');
+        button('Scan invite QR', () => scanInto('invite', invite));
         button('Join and create answer', async () => {
           const answer = await this.joinInvite(invite.value, name.value);
-          display(answer, 'Send this answer link back to the host. The connection is not complete until the host accepts it.');
+          display(answer, 'Send this answer back to the original host tab. Admission is not connection.', 'answer');
         });
       } else if (this.role === 'host') {
         button('Create guest invite', async () => {
-          display(await this.createInvite(), 'Send this invite to one guest, then ask them to send their answer link back.');
+          display(await this.createInvite(), 'Send this invite to one guest; have them return their answer here.', 'invite');
         });
         const answer = field('Paste guest answer URL', 'answer');
+        button('Scan answer QR', () => scanInto('answer', answer));
         button('Accept answer', async () => {
           await this.acceptAnswer(answer.value);
           draft.message = 'Answer accepted. Waiting for a direct connection; this may fail behind a NAT or firewall.';
-          container.querySelector('[role="status"]')?.replaceChildren(document.createTextNode(draft.message));
+          render();
         });
-      } else if (!draft.message) status.textContent = this.members.find((member) => member.id === this.peerId)?.connected
-        ? 'Connected to host.' : 'Waiting for the host to accept your answer link.';
+      } else if (!draft.message && !this.members.find((member) => member.id === this.peerId)?.connected)
+        status.textContent = 'Waiting for the host to accept your answer link.';
       if (this.role) {
-        button('Share / copy link', async () => {
+        button('Share link', async () => {
           if (!draft.output) fail('Create a link first.');
           const result = await this.share(draft.output);
           draft.message = result.method === 'cancelled' ? 'Sharing cancelled; the link is still below.' :
@@ -707,9 +833,53 @@ export class MultiplayerRoom {
                 ? 'The guest must send their answer link back to this tab.' : 'The host must paste your answer link into their original tab.'}`;
           container.querySelector('[role="status"]')?.replaceChildren(document.createTextNode(draft.message));
         });
+        button('Copy link', async () => {
+          if (!draft.output) fail('Create a link first.');
+          if (!navigator.clipboard?.writeText) {
+            output.focus();
+            output.select();
+            draft.message = 'Clipboard unavailable. Copy the selected URL manually.';
+          } else {
+            try {
+              await navigator.clipboard.writeText(draft.output);
+              draft.message = 'Link copied. Share it with the other player.';
+            } catch (error) {
+              console.warn('Clipboard unavailable', error);
+              output.focus();
+              output.select();
+              draft.message = 'Clipboard unavailable. Copy the selected URL manually.';
+            }
+          }
+          container.querySelector('[role="status"]').textContent = draft.message;
+        });
         button('Leave room', () => this.close());
       }
-      root.append(output);
+      if (draft.output && this.role === (draft.outputKind === 'invite' ? 'host' : 'guest')) {
+        const sharePanel = document.createElement('div');
+        sharePanel.className = 'mp-share-panel';
+        const label = document.createElement('h3');
+        label.textContent = `${draft.outputKind === 'invite' ? 'Invite for guest' : 'Answer for host'}`;
+        sharePanel.append(label, output);
+        button(draft.qrVisible ? 'Hide QR' : 'Show QR', () => {
+          draft.qrVisible = !draft.qrVisible;
+          render();
+        }, sharePanel);
+        if (draft.qrVisible) {
+          try {
+            const qr = document.createElement('img');
+            qr.className = 'mp-qr';
+            qr.alt = `QR code for ${draft.outputKind} link`;
+            qr.src = roomQrDataUrl(draft.output);
+            sharePanel.append(qr);
+          } catch (error) {
+            if (!(error instanceof RangeError)) throw error;
+            const fallback = document.createElement('p');
+            fallback.textContent = error.message;
+            sharePanel.append(fallback);
+          }
+        }
+        root.append(sharePanel);
+      }
       const roster = document.createElement('ul');
       roster.className = 'mp-members';
       for (const member of this.members) {
@@ -812,9 +982,16 @@ export class MultiplayerRoom {
       }
       container.append(root);
     };
+    render.stopScan = stopScan;
+    if (typeof window !== 'undefined') window.addEventListener('pagehide', stopScan);
     this.lobbies.add(render);
     render();
-    return () => { this.lobbies.delete(render); container.replaceChildren(); };
+    return () => {
+      stopScan();
+      if (typeof window !== 'undefined') window.removeEventListener('pagehide', stopScan);
+      this.lobbies.delete(render);
+      container.replaceChildren();
+    };
   }
   async showLobby(preferredGame = null) {
     if (typeof document === 'undefined') fail('A browser document is required to show the lobby.');
@@ -840,7 +1017,10 @@ export class MultiplayerRoom {
     hide.type = 'button';
     hide.className = 'mp-hide';
     hide.textContent = 'Hide lobby';
-    hide.addEventListener('click', () => { overlay.hidden = true; });
+    hide.addEventListener('click', () => {
+      for (const render of this.lobbies) render.stopScan?.();
+      overlay.hidden = true;
+    });
     const content = document.createElement('div');
     overlay.append(hide, content);
     document.body.append(overlay);

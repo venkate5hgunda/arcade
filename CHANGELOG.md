@@ -3,6 +3,16 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-24 — Room invitations and QR sharing
+
+- Register guests before applying an answer so an early WebRTC hello cannot
+  be rejected. Distinguish admission from connection and warn on either device
+  when a direct connection fails, drops or remains unestablished.
+- Both invite and answer URLs can be shared as locally generated QR codes or
+  copied as links. Optional camera scanning fills either link in the lobby;
+  the host scans answers in the original tab. QR capacity, camera permission
+  and browser support failures retain a copy/paste path. Offline cache v29.
+
 ## 2026-09-24 — Live card tables and private rooms
 
 - UNO-inspired and Crazy Eights now open with a private-room invitation

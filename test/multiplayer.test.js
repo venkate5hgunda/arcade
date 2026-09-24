@@ -126,6 +126,79 @@ test('offline invite and answer require a second exchange; several sequential gu
   host.close();
 });
 
+test('guest admission survives the data channel opening during answer acceptance', async () => {
+  const host = new MultiplayerRoom();
+  const guest = new MultiplayerRoom();
+  const errors = [];
+  host.on(event => { if (event.type === 'error') errors.push(event.message); });
+  guest.on(event => { if (event.type === 'error') errors.push(event.message); });
+  host.createHost('Host');
+  const answer = await guest.joinInvite(await host.createInvite(), 'Guest');
+  const hp = FakePeer.instances.at(-2);
+  const gp = FakePeer.instances.at(-1);
+  const channel = new FakeChannel('arcade');
+  hp.channel.other = channel;
+  channel.other = hp.channel;
+  gp.ondatachannel({ channel });
+  hp.setRemoteDescription = async (value) => {
+    hp.remoteDescription = value;
+    hp.signalingState = 'stable';
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen();
+    channel.onopen();
+  };
+  await host.acceptAnswer(answer);
+  assert.deepEqual(errors, []);
+  assert.equal(host.members[1].connected, true);
+  assert.equal(host.members[1].admitted, true);
+  assert.equal(guest.members.find(member => member.id === guest.peerId).connected, true);
+  assert.equal(guest.members.find(member => member.id === guest.peerId).admitted, true);
+  host.startGame('crazy-eights', [host.peerId, guest.peerId]);
+  assert.equal(guest.activeGame.id, 'crazy-eights');
+  guest.close();
+  host.close();
+});
+
+test('answer acceptance stays pending until hello and reports an unestablished connection on both devices', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const host = new MultiplayerRoom();
+  const guest = new MultiplayerRoom();
+  try {
+    host.createHost('Host');
+    const answer = await guest.joinInvite(await host.createInvite(), 'Guest');
+    await host.acceptAnswer(answer);
+    assert.equal(host.members[1].admitted, true);
+    assert.equal(host.members[1].connected, false);
+    t.mock.timers.tick(20000);
+    assert.match(host.connectionIssue, /Guest admitted, but no direct connection/);
+    assert.equal(guest.connectionIssue, '');
+    t.mock.timers.tick(40000);
+    assert.match(guest.connectionIssue, /Ask them to accept your answer in their original tab/);
+    const hp = FakePeer.instances.at(-2);
+    const gp = FakePeer.instances.at(-1);
+    const channel = new FakeChannel('arcade');
+    hp.channel.other = channel;
+    channel.other = hp.channel;
+    gp.ondatachannel({ channel });
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen();
+    channel.onopen();
+    assert.equal(host.connectionIssue, '');
+    assert.equal(guest.connectionIssue, '');
+    assert.equal(host.members[1].connected, true);
+    channel.onerror();
+    assert.match(guest.connectionIssue, /Direct data channel error on this device/);
+    gp.connectionState = 'failed';
+    gp.onconnectionstatechange();
+    assert.match(guest.connectionIssue, /offline/);
+    assert.equal(guest.members.find(member => member.id === guest.peerId).connected, false);
+  } finally {
+    host.close();
+    guest.close();
+    t.mock.timers.reset();
+  }
+});
+
 test('UNO requests reach host only; private hands reach only their selected recipient', async () => {
   const host = new MultiplayerRoom();
   const guests = [new MultiplayerRoom(), new MultiplayerRoom(), new MultiplayerRoom()];
@@ -484,7 +557,11 @@ test('leaderboard orders ties by losses, draws, name then peer ID; lobby renders
     const guestContainer = new ElementStub();
     const unmountGuest = guest.mountLobby(guestContainer, [{ id: 'ludo', name: 'Ludo' }], () => {});
     assert.match(text(guestContainer), /Room standings/);
+    assert.match(text(guestContainer), /Connected to host\./);
     assert.match(text(guestContainer), /Amy · 1 W \/ 0 L \/ 1 D/);
+    guest.connectionIssue = 'Direct connection lost on this device.';
+    guest.state();
+    assert.match(text(guestContainer), /Direct connection lost on this device/);
     unmountGuest();
     guest.close();
   } finally {
