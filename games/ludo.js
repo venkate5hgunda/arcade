@@ -1,298 +1,245 @@
-// Ludo — classic race game. 2-4 players.
-// Pure DOM with animated tokens. Listens to arcade:themechange.
-
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
-import { nextPlayer, diceFaceHTML } from '../js/game-utils.js';
+import { dieMarkup, rollDie } from '../js/dice.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { remoteMatch, seat } from '../js/remote-match.js';
 
-const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
-const HOME_STRETCH = 6; // steps from entrance to center
+const COLORS = ['#ff6558', '#60baf0', '#56cf9a', '#f2be59'];
+const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+
+function buildTrack() {
+  const cells = [], add = (row, col) => cells.push([row, col]);
+  for (let col = 1; col <= 5; col++) add(6, col);
+  for (let row = 5; row >= 0; row--) add(row, 6);
+  add(0, 7); add(0, 8);
+  for (let row = 1; row <= 5; row++) add(row, 8);
+  for (let col = 9; col <= 14; col++) add(6, col);
+  add(7, 14); add(8, 14);
+  for (let col = 13; col >= 9; col--) add(8, col);
+  for (let row = 9; row <= 14; row++) add(row, 8);
+  add(14, 7); add(14, 6);
+  for (let row = 13; row >= 9; row--) add(row, 6);
+  for (let col = 5; col >= 0; col--) add(8, col);
+  add(7, 0); add(6, 0);
+  return cells;
+}
+
+export const TRACK = buildTrack();
+const LANES = [
+  Array.from({ length: 6 }, (_, i) => [7, 1 + i]),
+  Array.from({ length: 6 }, (_, i) => [1 + i, 7]),
+  Array.from({ length: 6 }, (_, i) => [7, 13 - i]),
+  Array.from({ length: 6 }, (_, i) => [13 - i, 7]),
+];
+const YARDS = [[1, 1], [1, 10], [10, 10], [10, 1]];
 
 export default {
-  async render(el, game, { navigate } = {}) {
-    const shell = createShell(el, game, { title: 'Ludo', meta: 'Race your tokens home' });
-    const { stage, getResetButton } = shell;
+  async render(el, game, { navigate, multiplayer } = {}) {
+    const shell = createShell(el, game, { title: 'Ludo', meta: 'Bring all four tokens home' });
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ld-vibe');
-
+    const match = remoteMatch(multiplayer, game.id);
     const saved = loadJSON(KEYS.SETTINGS + ':ludo', { players: '4' });
-    const settings = await renderSetup(stage, {
-      title: '🎲 Ludo',
-      subtitle: 'How many players?',
-      themeClass: 'ld-theme',
-      fields: [{
-        key: 'players', label: 'Players',
-        options: [
-          { value: '2', label: '2 Players' },
-          { value: '3', label: '3 Players' },
-          { value: '4', label: '4 Players' },
-        ],
-        default: saved.players,
-      }],
-      startLabel: 'Start Rolling',
+    const settings = match ? { players: String(match.activeGame.playerIds.length) } : await renderSetup(shell.stage, {
+      title: 'Ludo', subtitle: 'Gather around the board.',
+      themeClass: 'ld-theme', startLabel: 'Open the Table',
+      fields: [{ key: 'players', label: 'Players', default: saved.players,
+        options: [2, 3, 4].map((n) => ({ value: String(n), label: `${n} Players` })) }],
     });
-    saveJSON(KEYS.SETTINGS + ':ludo', settings);
-    const playerCount = Math.max(2, Math.min(4, parseInt(settings.players, 10) || 4));
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · Roll 6 to enter`;
-
-    // Each player has 4 tokens: position -1 = in yard, 0-51 = main track, 52-57 = home stretch, 58 = finished
-    const tokens = Array.from({ length: playerCount }, () => Array(4).fill(-1));
-    let current = 0, gameOver = false, winner = null, rolling = false, rolledValue = 0, mustRollAgain = false;
-
+    if (!match) saveJSON(KEYS.SETTINGS + ':ludo', settings);
+    const count = Number(settings.players);
+    const tokens = Array.from({ length: count }, () => Array(4).fill(-1));
+    let current = 0, value = 1, awaiting = false, movable = [], winner = null, message = '', rolling = false, pendingMove = null, queuedRoll = null;
+    let controller = new AbortController();
     const board = document.createElement('div');
-    board.className = 'ld-board';
-    stage.appendChild(board);
-
-    const dice = document.createElement('div');
-    dice.className = 'ld-dice';
-    stage.appendChild(dice);
-
-    const status = document.createElement('div');
+    board.className = 'ld-board ld-board-deluxe';
+    const info = document.createElement('div');
+    info.className = 'ld-players';
+    const rollArea = document.createElement('div');
+    rollArea.className = 'ld-dice';
+    const status = document.createElement('p');
     status.className = 'ld-status';
-    stage.appendChild(status);
+    status.setAttribute('role', 'status');
+    shell.stage.append(info, board, rollArea, status);
+    shell.root.querySelector('.game-meta').textContent = match
+      ? `Online room · you are Player ${seat(match)} · ${count} players`
+      : `${count} players · choose your token after rolling`;
 
-    const playersInfo = document.createElement('div');
-    playersInfo.className = 'ld-players';
-    stage.insertBefore(playersInfo, board);
+    function tokenButton(player, index) {
+      const selected = player === current && movable.includes(index) && (!match || seat(match) === current + 1);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `ld-piece${selected ? ' ld-piece-ready' : ''}`;
+      button.style.setProperty('--piece-color', COLORS[player]);
+      button.textContent = index + 1;
+      button.setAttribute('aria-label', `Player ${player + 1}, token ${index + 1}${selected ? ', move token' : ''}`);
+      button.disabled = !selected;
+      if (selected) button.addEventListener('click', () => {
+        if (match) match.sendAction({ type: 'move', index });
+        else move(index);
+      });
+      return button;
+    }
 
-    // Board layout: 52 main squares + 4 home stretches (6 each) + 4 yards
-    // We'll render a cross-shaped board
     function render() {
-      board.innerHTML = '';
-      // For simplicity, render a linear track visualization
-      // In a full implementation this would be a cross-shaped board
-      
-      // Player yards
-      for (let p = 0; p < playerCount; p++) {
+      board.replaceChildren();
+      const players = document.createDocumentFragment();
+      for (let p = 0; p < 4; p++) {
         const yard = document.createElement('div');
-        yard.className = 'ld-yard';
-        yard.style.borderColor = PLAYER_COLORS[p];
-        yard.innerHTML = `<span class="ld-yard-label">P${p + 1}</span>`;
-        const yardTokens = document.createElement('div');
-        yardTokens.className = 'ld-yard-tokens';
-        for (let t = 0; t < 4; t++) {
-          if (tokens[p][t] === -1) {
-            const tok = document.createElement('span');
-            tok.className = 'ld-token';
-            tok.style.background = PLAYER_COLORS[p];
-            tok.textContent = t + 1;
-            yardTokens.appendChild(tok);
+        yard.className = `ld-home-yard ${p >= count ? 'ld-unused-yard' : ''}`;
+        yard.style.setProperty('--piece-color', COLORS[p]);
+        yard.style.gridArea = `${YARDS[p][0]} / ${YARDS[p][1]} / span 5 / span 5`;
+        yard.innerHTML = `<span class="ld-yard-label">PLAYER ${p + 1}</span>`;
+        if (p < count) {
+          for (let t = 0; t < 4; t++) {
+            if (tokens[p][t] === -1) yard.appendChild(tokenButton(p, t));
           }
         }
-        yard.appendChild(yardTokens);
-        board.appendChild(yard);
+        players.appendChild(yard);
       }
-
-      // Main track (simplified as a ring)
-      const track = document.createElement('div');
-      track.className = 'ld-track';
-      for (let i = 0; i < 52; i++) {
+      board.appendChild(players);
+      const at = (row, col, klass, color) => {
         const cell = document.createElement('div');
-        cell.className = 'ld-cell';
-        cell.dataset.pos = i;
-        // Mark special positions
-        if ([0, 13, 26, 39].includes(i)) cell.classList.add('start');
-        if ([8, 21, 34, 47].includes(i)) cell.classList.add('safe');
-        // Tokens on this cell
-        const cellTokens = document.createElement('div');
-        cellTokens.className = 'ld-cell-tokens';
-        for (let p = 0; p < playerCount; p++) {
-          for (let t = 0; t < 4; t++) {
-            if (tokens[p][t] === i) {
-              const tok = document.createElement('span');
-              tok.className = 'ld-token';
-              tok.style.background = PLAYER_COLORS[p];
-              tok.textContent = t + 1;
-              cellTokens.appendChild(tok);
-            }
+        cell.className = `ld-square ${klass}`;
+        cell.style.gridArea = `${row + 1} / ${col + 1}`;
+        if (color) cell.style.setProperty('--piece-color', color);
+        board.appendChild(cell);
+        return cell;
+      };
+      TRACK.forEach(([row, col], position) => {
+        const starter = position % 13 === 0 ? position / 13 : -1;
+        const cell = at(row, col, `ld-track-square${SAFE.has(position) ? ' ld-safe-square' : ''}${starter >= 0 ? ' ld-start-square' : ''}`,
+          starter >= 0 ? COLORS[starter] : '');
+        if (SAFE.has(position)) cell.insertAdjacentHTML('afterbegin', '<span class="ld-star" aria-hidden="true">✦</span>');
+        for (let p = 0; p < count; p++) {
+          tokens[p].forEach((progress, t) => {
+            if (progress >= 0 && progress <= 51 && (p * 13 + progress) % 52 === position)
+              cell.appendChild(tokenButton(p, t));
+          });
+        }
+      });
+      LANES.forEach((lane, p) => lane.forEach(([row, col], i) => {
+        const cell = at(row, col, 'ld-lane-square', COLORS[p]);
+        if (p < count) tokens[p].forEach((progress, t) => {
+          if (progress === 52 + i) cell.appendChild(tokenButton(p, t));
+        });
+      }));
+      const center = at(7, 7, 'ld-finish-square');
+      center.textContent = '★';
+      for (let p = 0; p < count; p++) tokens[p].forEach((progress, t) => {
+        if (progress === 58) center.appendChild(tokenButton(p, t));
+      });
+      info.replaceChildren();
+      for (let p = 0; p < count; p++) {
+        const item = document.createElement('div');
+        item.className = `ld-player${p === current && winner === null ? ' active' : ''}`;
+        item.style.setProperty('--piece-color', COLORS[p]);
+        item.innerHTML = `<span class="ld-pnum">P${p + 1}</span><span class="ld-pfin">${tokens[p].filter((n) => n === 58).length}/4 home</span>`;
+        info.appendChild(item);
+      }
+      rollArea.innerHTML = `<button class="ld-roll-btn" type="button" aria-label="Player ${current + 1}, roll dice" ${awaiting || rolling || winner !== null || (match && seat(match) !== current + 1) ? 'disabled' : ''}>${dieMarkup(value)}</button>`;
+      rollArea.querySelector('button').addEventListener('click', () => {
+        if (match) match.sendAction({ type: 'request-roll' });
+        else roll();
+      });
+      status.textContent = winner === null
+        ? message || (rolling ? 'Die in motion…' : awaiting ? `Player ${current + 1}: choose a glowing token` :
+          match && seat(match) !== current + 1 ? `Waiting for Player ${current + 1} to roll` : `Player ${current + 1}: roll the die`)
+        : `Player ${winner + 1} wins the table!`;
+      status.style.color = COLORS[winner ?? current];
+    }
+
+    function move(index) {
+      if (!awaiting || !movable.includes(index)) return;
+      const old = tokens[current][index];
+      const next = old === -1 ? 0 : old + value;
+      tokens[current][index] = next;
+      let captured = false;
+      if (next < 52) {
+        const absolute = (current * 13 + next) % 52;
+        if (!SAFE.has(absolute)) {
+          for (let p = 0; p < count; p++) if (p !== current) {
+            tokens[p].forEach((progress, t) => {
+              if (progress >= 0 && progress < 52 && (p * 13 + progress) % 52 === absolute) {
+                tokens[p][t] = -1; captured = true;
+              }
+            });
           }
         }
-        cell.appendChild(cellTokens);
-        track.appendChild(cell);
       }
-      board.appendChild(track);
-
-      // Home stretches
-      for (let p = 0; p < playerCount; p++) {
-        const stretch = document.createElement('div');
-        stretch.className = 'ld-stretch';
-        stretch.style.borderColor = PLAYER_COLORS[p];
-        for (let s = 0; s < HOME_STRETCH; s++) {
-          const cell = document.createElement('div');
-          cell.className = 'ld-stretch-cell';
-          const cellTokens = document.createElement('div');
-          cellTokens.className = 'ld-cell-tokens';
-          for (let t = 0; t < 4; t++) {
-            if (tokens[p][t] === 52 + s) {
-              const tok = document.createElement('span');
-              tok.className = 'ld-token';
-              tok.style.background = PLAYER_COLORS[p];
-              tok.textContent = t + 1;
-              cellTokens.appendChild(tok);
-            }
-          }
-          cell.appendChild(cellTokens);
-          stretch.appendChild(cell);
-        }
-        // Center
-        const center = document.createElement('div');
-        center.className = 'ld-center';
-        center.style.background = PLAYER_COLORS[p];
-        const centerTokens = document.createElement('div');
-        centerTokens.className = 'ld-cell-tokens';
-        for (let t = 0; t < 4; t++) {
-          if (tokens[p][t] === 58) {
-            const tok = document.createElement('span');
-            tok.className = 'ld-token';
-            tok.style.background = '#fff';
-            tok.textContent = t + 1;
-            centerTokens.appendChild(tok);
-          }
-        }
-        center.appendChild(centerTokens);
-        stretch.appendChild(center);
-        board.appendChild(stretch);
-      }
-
-      // Dice
-      dice.innerHTML = `
-        <button class="ld-roll-btn" ${rolling || gameOver ? 'disabled' : ''} aria-label="Roll dice">
-          <span class="ld-die">${diceFaceHTML(rolledValue || 1)}</span>
-        </button>`;
-      dice.querySelector('.ld-roll-btn').addEventListener('click', rollDice);
-
-      // Player info
-      playersInfo.innerHTML = '';
-      for (let p = 0; p < playerCount; p++) {
-        const finished = tokens[p].filter(t => t === 58).length;
-        const pi = document.createElement('div');
-        pi.className = 'ld-player' + (p === current && !gameOver ? ' active' : '');
-        pi.style.borderColor = PLAYER_COLORS[p];
-        pi.innerHTML = `<span class="ld-pnum">P${p + 1}</span><span class="ld-pfin">${finished}/4 home</span>`;
-        playersInfo.appendChild(pi);
-      }
-
-      // Status
-      if (gameOver) {
-        status.textContent = `🎉 Player ${winner + 1} wins!`;
-        status.style.color = PLAYER_COLORS[winner];
-      } else if (mustRollAgain) {
-        status.textContent = `Player ${current + 1} rolled ${rolledValue} · Roll again!`;
-        status.style.color = PLAYER_COLORS[current];
-      } else {
-        status.textContent = `Player ${current + 1}'s turn · Tap to roll`;
-        status.style.color = PLAYER_COLORS[current];
+      if (tokens[current].every((n) => n === 58)) winner = current;
+      message = captured ? `Player ${current + 1} captured a token! Roll again.` :
+        next === 58 ? `Player ${current + 1} brought a token home!` : '';
+      window.arcadeAudio?.[captured || next === 58 ? 'chime' : 'tap']();
+      window.haptics?.[captured ? 'success' : 'select']();
+      awaiting = false; movable = [];
+      if (winner === null && value !== 6 && !captured) current = (current + 1) % count;
+      render();
+      if (queuedRoll !== null && winner === null) {
+        const next = queuedRoll;
+        queuedRoll = null;
+        roll(next);
       }
     }
 
-    async function rollDice() {
-      if (rolling || gameOver) return;
+    async function roll(predeterminedValue = null) {
+      if (rolling || awaiting || winner !== null ||
+          (!match && rollArea.querySelector('button').disabled)) return;
       rolling = true;
-      const audio = window.arcadeAudio;
-      if (audio) await audio.prepare();
-
-      const btn = dice.querySelector('.ld-roll-btn');
-      const die = dice.querySelector('.ld-die');
-
-      for (let i = 0; i < 10; i++) {
-        die.innerHTML = diceFaceHTML(Math.floor(Math.random() * 6) + 1);
-        await new Promise(r => setTimeout(r, 60));
-      }
-
-      rolledValue = Math.floor(Math.random() * 6) + 1;
-      die.innerHTML = diceFaceHTML(rolledValue);
-      if (audio) audio.tap();
-
-      // Find movable tokens
-      const movable = [];
-      for (let t = 0; t < 4; t++) {
-        const pos = tokens[current][t];
-        if (pos === -1) {
-          if (rolledValue === 6) movable.push(t); // Can enter from yard
-        } else if (pos < 52) {
-          if (pos + rolledValue <= 51) movable.push(t); // On main track
-          else if (pos + rolledValue === 52) movable.push(t); // Enter home stretch
-        } else if (pos < 58) {
-          if (pos + rolledValue <= 58) movable.push(t); // On home stretch
-        }
-      }
-
-      if (movable.length === 0) {
-        // No valid moves
-        if (rolledValue !== 6) {
-          current = nextPlayer(current, playerCount, 0);
-        } else {
-          mustRollAgain = true;
-        }
-        rolling = false;
-        render();
-        return;
-      }
-
-      // Auto-move first valid token (in a real game, player would choose)
-      const tokenIdx = movable[0];
-      let pos = tokens[current][tokenIdx];
-
-      if (pos === -1) {
-        // Enter from yard
-        tokens[current][tokenIdx] = (current * 13) % 52; // Start position
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
-      } else if (pos < 52) {
-        const newPos = pos + rolledValue;
-        if (newPos <= 51) {
-          tokens[current][tokenIdx] = newPos;
-          // Check capture
-          captureToken(newPos, current);
-        } else if (newPos === 52) {
-          tokens[current][tokenIdx] = 52; // Enter home stretch
-        }
-        if (audio) audio.tap();
-      } else if (pos < 58) {
-        const newPos = pos + rolledValue;
-        if (newPos <= 58) tokens[current][tokenIdx] = newPos;
-        if (newPos === 58) {
-          if (audio) audio.chime();
-          if (window.haptics) window.haptics.success();
-        }
-      }
-
-      // Check win
-      if (tokens[current].every(t => t === 58)) {
-        gameOver = true; winner = current;
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
-      }
-
-      mustRollAgain = rolledValue === 6;
-      if (!mustRollAgain) current = nextPlayer(current, playerCount, 0);
-
+      const result = await rollDie(rollArea.querySelector('button'), controller.signal, predeterminedValue);
+      if (result === null) return;
       rolling = false;
+      value = result;
+      movable = tokens[current].flatMap((position, index) =>
+        (position === -1 ? value === 6 : position < 58 && position + value <= 58) ? [index] : []);
+      awaiting = movable.length > 0;
+      if (!awaiting) {
+        message = `Player ${current + 1} rolled ${value} — no legal moves`;
+        if (value !== 6) current = (current + 1) % count;
+      } else message = '';
       render();
-    }
-
-    function captureToken(pos, byPlayer) {
-      for (let p = 0; p < playerCount; p++) {
-        if (p === byPlayer) continue;
-        for (let t = 0; t < 4; t++) {
-          if (tokens[p][t] === pos && ![0, 8, 13, 21, 26, 34, 39, 47].includes(pos)) {
-            tokens[p][t] = -1; // Send back to yard
-            if (window.arcadeAudio) { window.arcadeAudio.prepare(); window.arcadeAudio.buzz(); }
-            if (window.haptics) window.haptics.failure();
-          }
-        }
+      if (pendingMove !== null) {
+        const index = pendingMove;
+        pendingMove = null;
+        move(index);
+      }
+      if (queuedRoll !== null && !awaiting && winner === null) {
+        const next = queuedRoll;
+        queuedRoll = null;
+        roll(next);
       }
     }
 
-    getResetButton().addEventListener('click', () => {
-      for (let p = 0; p < playerCount; p++) tokens[p].fill(-1);
-      current = 0; gameOver = false; winner = null; rolling = false; mustRollAgain = false;
+    function reset() {
+      controller.abort(); controller = new AbortController();
+      tokens.forEach((group) => group.fill(-1));
+      current = 0; value = 1; awaiting = false; movable = []; winner = null; message = ''; rolling = false; pendingMove = null; queuedRoll = null;
       render();
+    }
+    shell.getResetButton().addEventListener('click', () => {
+      if (match) {
+        if (match.role === 'host') match.sendAction({ type: 'reset' });
+      } else reset();
     });
-
-    const onTheme = () => render();
-    window.addEventListener('arcade:themechange', onTheme);
+    if (match && match.role !== 'host') shell.getResetButton().disabled = true;
+    const offRoom = match?.on((event) => {
+      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
+      if (event.action?.type === 'request-roll' && match.role === 'host' &&
+          event.from === match.activeGame.playerIds[current] && !rolling && !awaiting && winner === null)
+        match.sendAction({ type: 'roll', value: 1 + Math.floor(Math.random() * 6) });
+      if (event.action?.type === 'roll' && event.from === match.activeGame.playerIds[0] &&
+          Number.isInteger(event.action.value) && event.action.value >= 1 && event.action.value <= 6 &&
+          winner === null) {
+        if (rolling || awaiting) queuedRoll = event.action.value;
+        else roll(event.action.value);
+      }
+      if (event.action?.type === 'move' && event.from === match.activeGame.playerIds[current] &&
+          Number.isInteger(event.action.index) && event.action.index >= 0 && event.action.index < 4) {
+        if (rolling) pendingMove = event.action.index;
+        else move(event.action.index);
+      }
+    });
     render();
-    return { dispose: () => window.removeEventListener('arcade:themechange', onTheme) };
+    return { dispose: () => { controller.abort(); offRoom?.(); } };
   },
 };

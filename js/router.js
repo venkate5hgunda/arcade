@@ -4,6 +4,7 @@
 
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 import { loadGameModule, getGame, GAMES, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
+import { room } from './multiplayer.js';
 
 const STAGE_ID = 'game-stage';
 const MAX_RECENT = 6;
@@ -37,9 +38,12 @@ function syncHash(gameId) {
 // otherwise render into the stage and double-mount the game. Each call gets a
 // token; only the most recent one is allowed to touch the DOM after an await.
 let navToken = 0;
+let mountedGame = null;
 
 export async function navigate(gameId, { pushState = true } = {}) {
   const myToken = ++navToken;
+  mountedGame?.dispose?.();
+  mountedGame = null;
   const game = gameId ? getGame(gameId) : null;
   const stage = document.getElementById(STAGE_ID);
   if (!stage) return;
@@ -71,7 +75,12 @@ export async function navigate(gameId, { pushState = true } = {}) {
 
   try {
     // Pass navigate so games can wire their back buttons
-    await module.render(stage, game, { navigate });
+    const instance = await module.render(stage, game, { navigate, multiplayer: room });
+    if (myToken !== navToken) {
+      instance?.dispose?.();
+      return;
+    }
+    mountedGame = instance;
   } catch (err) {
     if (myToken !== navToken) return; // superseded mid-render; newer call owns the stage
     console.error(`Failed to mount game ${game.id}`, err);

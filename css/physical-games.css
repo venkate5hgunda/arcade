@@ -1,0 +1,100 @@
+/* Pool and air-hockey-only presentation; this file is loaded by the host page. */
+.pool-vibe .game-stage {
+  gap: 12px;
+  padding: 18px 10px 22px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 20%, #176d6340, transparent 70%);
+}
+.pool-board {
+  width: min(100%, 960px);
+  border: 5px solid #744520;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 35px #0005, inset 0 0 0 2px #c48b4a;
+}
+.pool-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1000 / 540;
+  touch-action: none;
+  cursor: crosshair;
+}
+.pool-canvas:focus-visible, .ah-canvas:focus-visible {
+  outline: 3px solid #f8d670;
+  outline-offset: 3px;
+}
+.pool-hud {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  flex-wrap: wrap;
+  text-align: center;
+  color: var(--text);
+  font-weight: 700;
+  min-height: 36px;
+}
+.pool-badge {
+  padding: 7px 13px;
+  border-radius: 24px;
+  color: #fff;
+  background: #176e63;
+}
+.pool-result { color: var(--text-soft); font-size: .9rem; }
+.pool-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 18px;
+  color: var(--text);
+  font-weight: 700;
+}
+.pool-controls input { width: clamp(120px, 22vw, 240px); accent-color: #148678; }
+.pool-shoot {
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 12px;
+  background: #176e63;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.pool-shoot:disabled { opacity: .5; cursor: not-allowed; }
+.pool-help, .ah-help {
+  margin: 0;
+  color: var(--text-soft);
+  text-align: center;
+  font-size: .85rem;
+  line-height: 1.5;
+}
+.pool-theme.setup-card { border-color: #176e63; }
+.ah-vibe .game-stage {
+  gap: 10px;
+  padding: 14px;
+  background: radial-gradient(circle, #194b6540, transparent 72%);
+}
+.ah-canvas {
+  display: block;
+  width: min(100%, 490px);
+  height: auto;
+  aspect-ratio: 2 / 3;
+  margin: 0 auto;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px #0005, 0 0 24px #38bdf855;
+  touch-action: none;
+}
+.ah-status {
+  min-height: 1.4em;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+@media (max-width: 560px) {
+  .pool-vibe .game-stage { padding: 12px 4px; }
+  .pool-board { border-width: 3px; border-radius: 9px; }
+  .pool-hud { font-size: .85rem; }
+  .pool-help, .ah-help { font-size: .78rem; }
+}
