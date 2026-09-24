@@ -115,6 +115,16 @@ export const GAMES = [
     description: 'Pass-and-play card duel. Match the rank or suit, or change the game with a wild eight.',
   },
   {
+    id: 'uno',
+    name: 'UNO-inspired',
+    tagline: 'Match colors, change direction',
+    players: { min: 2, max: 4, type: 'local-multiplayer' },
+    category: 'Cards',
+    color: '#ef4444',
+    icon: '🌈',
+    description: 'Play locally or in a private room. Match colors and numbers, skip, reverse, and go wild.',
+  },
+  {
     id: 'tictactoe',
     name: 'Tic-Tac-Toe',
     tagline: 'Three in a row',

@@ -220,3 +220,21 @@ widths and in both themes.
   filtered grid. Category buttons now update the selected tab and visible games.
 - Chess now uses matching silhouettes for both sets, with contrasting enamel
   colors and edging so the sides remain distinguishable.
+
+## 2026-09-24 — Faster physical play, party prompts and cards
+
+- Air Hockey now parks the puck on the side opposite the scorer until that
+  player strikes it. The speed floor no longer restarts a parked puck. Touch
+  dragging has a faster paddle path while keyboard speed stays predictable.
+- Game buttons provide immediate press feedback; collision and goal haptics,
+  reused impact audio buffers, and a corrected sound-toggle volume reduce
+  latency and keep effects working after unmuting. Ludo automatically moves a
+  token when a roll leaves only one legal choice, locally and in rooms.
+- Dumb Charades and Imposter now choose between their original prompts and
+  Telugu movies. Four sourced post-2000 films provide original short
+  storylines, year and cast after the reveal; expanding to all Telugu releases
+  needs the provenance, coverage and editorial review described in README.
+- Added offline local and host-authoritative room play for UNO-inspired cards.
+  Remote guests see only their own hands; the host validates actions and
+  distributes private updates. The simplified house rules are documented.
+- Bumped the offline cache to v15 for new modules and refreshed game assets.

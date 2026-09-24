@@ -32,6 +32,11 @@ const LANES = [
 ];
 const YARDS = [[1, 1], [1, 10], [10, 10], [10, 1]];
 
+export function legalMoves(positions, roll) {
+  return positions.flatMap((position, index) =>
+    (position === -1 ? roll === 6 : position < 58 && position + roll <= 58) ? [index] : []);
+}
+
 function validCheckpoint(s) {
   if (!s || typeof s !== 'object' || !Number.isInteger(s.count) || s.count < 2 || s.count > 4 ||
       !Array.isArray(s.tokens) || s.tokens.length !== s.count ||
@@ -44,8 +49,7 @@ function validCheckpoint(s) {
       s.movable.length !== new Set(s.movable).size ||
       s.tokens.some((group) => group.every((n) => n === 58)) ||
       s.winner !== null || typeof s.message !== 'string' || s.message.length > 160) return false;
-  const expected = s.tokens[s.current].flatMap((position, index) =>
-    (position === -1 ? s.value === 6 : position < 58 && position + s.value <= 58) ? [index] : []);
+  const expected = legalMoves(s.tokens[s.current], s.value);
   return s.awaiting ? expected.length > 0 && expected.length === s.movable.length &&
     expected.every((n) => s.movable.includes(n)) : s.movable.length === 0;
 }
@@ -91,7 +95,7 @@ export default {
     shell.stage.append(info, board, rollArea, status);
     shell.root.querySelector('.game-meta').textContent = match
       ? `Online room · you are Player ${seat(match)} · ${count} players`
-      : `${count} players · choose your token after rolling`;
+      : `${count} players · roll to move your tokens`;
 
     function tokenButton(player, index) {
       const selected = player === current && movable.includes(index) && (!match || seat(match) === current + 1);
@@ -219,8 +223,7 @@ export default {
       if (result === null) return;
       rolling = false;
       value = result;
-      movable = tokens[current].flatMap((position, index) =>
-        (position === -1 ? value === 6 : position < 58 && position + value <= 58) ? [index] : []);
+      movable = legalMoves(tokens[current], value);
       awaiting = movable.length > 0;
       if (!awaiting) {
         message = `Player ${current + 1} rolled ${value} — no legal moves`;
@@ -228,6 +231,11 @@ export default {
       } else message = '';
       render();
       checkpoint();
+      if (movable.length === 1) {
+        pendingMove = null;
+        move(movable[0]);
+        return;
+      }
       if (pendingMove !== null) {
         const index = pendingMove;
         pendingMove = null;
@@ -245,6 +253,7 @@ export default {
       tokens.forEach((group) => group.fill(-1));
       current = 0; value = 1; awaiting = false; movable = []; winner = null; message = ''; rolling = false; pendingMove = null; queuedRoll = null;
       render();
+      if (resume && movable.length === 1) move(movable[0]);
       checkpoint();
     }
     shell.getResetButton().addEventListener('click', () => {

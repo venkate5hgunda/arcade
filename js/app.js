@@ -16,6 +16,7 @@ window.haptics = haptics;
 
 initHapticsUI(audio);
 initSoundControl(audio);
+initGameTouchFeedback(audio);
 initRouter();
 const roomToggle = document.getElementById('roomToggle');
 roomToggle?.addEventListener('click', () => {
@@ -62,4 +63,21 @@ function initSoundControl(audio) {
   });
 
   refresh();
+}
+
+function initGameTouchFeedback(audio) {
+  const control = (target) => target instanceof Element
+    ? target.closest('.game-shell button:not(:disabled)') : null;
+  document.addEventListener('pointerdown', (event) => {
+    const button = control(event.target);
+    if (!button || button.closest('.setup-card')) return;
+    audio.prepare();
+    audio.tone(720, 0.025, 'sine', 0.07);
+    if (event.pointerType !== 'mouse') haptics.light();
+  }, { passive: true });
+  document.addEventListener('keydown', (event) => {
+    if (event.repeat || !['Enter', ' '].includes(event.key) || !control(event.target)) return;
+    audio.prepare();
+    audio.tone(720, 0.025, 'sine', 0.07);
+  });
 }

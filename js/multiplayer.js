@@ -8,8 +8,8 @@ const MAX_MESSAGE = 12000;
 const ICE_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
-const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo']);
-const GROUP_GAMES = new Set(['snakes-ladders', 'ludo']);
+const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'uno']);
+const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'uno']);
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
@@ -353,7 +353,8 @@ export class MultiplayerRoom {
           if (!member.connected || !member.admitted || msg.game !== this.activeGame?.id ||
               !this.activeGame?.playerIds.includes(id)) fail('Participant cannot act in this game.');
           this.checkAction(msg.action);
-          this.broadcastAction(id, msg.action);
+          if (this.activeGame.id === 'uno') this.emit({ type: 'action', from: id, action: msg.action });
+          else this.broadcastAction(id, msg.action);
         } else fail('Guests cannot change room state.');
       } else if (this.role === 'guest') {
         if (msg.kind === 'state') {
@@ -393,6 +394,14 @@ export class MultiplayerRoom {
           this.checkAction(msg.action);
           this.lastActionSequence = msg.sequence;
           this.emit({ type: 'action', from: msg.from, action: msg.action, sequence: msg.sequence });
+        } else if (msg.kind === 'private-action') {
+          if (this.activeGame?.id !== 'uno' || msg.game !== 'uno' ||
+              !this.activeGame.playerIds.includes(this.peerId) ||
+              !Number.isSafeInteger(msg.sequence) || msg.sequence <= this.lastActionSequence)
+            fail('Invalid private game message.');
+          this.checkAction(msg.action);
+          this.lastActionSequence = msg.sequence;
+          this.emit({ type: 'action', from: id, action: msg.action, sequence: msg.sequence });
         } else fail('Unknown host message.');
       }
       peer.lastRequest = requestNumber;
@@ -410,6 +419,19 @@ export class MultiplayerRoom {
         this.send(peer.channel, 'action', { from, action, sequence });
     }
     this.emit({ type: 'action', from, action, sequence });
+  }
+  sendPrivateAction(recipient, action) {
+    if (this.role !== 'host' || this.activeGame?.id !== 'uno' ||
+        !this.activeGame.playerIds.includes(recipient)) fail('Invalid private game recipient.');
+    this.checkAction(action);
+    if (recipient === this.peerId) {
+      this.emit({ type: 'action', from: this.peerId, action });
+      return;
+    }
+    const peer = this.peers.get(recipient);
+    if (!peer || !this.send(peer.channel, 'private-action', {
+      action, sequence: ++this.actionSequence,
+    })) fail('Player is not connected.');
   }
   startGame(gameId, playerIds) {
     if (this.role !== 'host') fail('Only the host can start games.');
@@ -450,7 +472,10 @@ export class MultiplayerRoom {
   sendAction(action) {
     this.checkAction(action);
     if (!this.activeGame?.playerIds.includes(this.peerId)) fail('You are not playing this game.');
-    if (this.role === 'host') this.broadcastAction(this.peerId, action);
+    if (this.role === 'host') {
+      if (this.activeGame.id === 'uno') this.emit({ type: 'action', from: this.peerId, action });
+      else this.broadcastAction(this.peerId, action);
+    }
     else if (this.role === 'guest') {
       if (!this.members.find((member) => member.id === this.peerId)?.admitted) fail('You are spectating.');
       if (!this.send(this.peers.values().next().value?.channel, 'action', { action })) fail('Host is not connected.');

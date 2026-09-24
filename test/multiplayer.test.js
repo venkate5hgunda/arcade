@@ -101,6 +101,7 @@ test('offline invite and answer require a second exchange; several sequential gu
     v: 1, room: host.roomId, id: guest.peerId, request: `${guest.peerId}:999`,
     kind: 'action', game: 'connect-four', action: { type: 'move' },
   });
+
   guestChannel.send(wrongGame);
   assert.equal(actions.length, priorActions, 'host rejects actions for a different active game');
   guestChannel.send(JSON.stringify({
@@ -122,6 +123,46 @@ test('offline invite and answer require a second exchange; several sequential gu
   assert.equal(host.members.length, 2);
   assert.ok(events.some((event) => event.type === 'game'));
   guest.close();
+  host.close();
+});
+
+test('UNO requests reach host only; private hands reach only their selected recipient', async () => {
+  const host = new MultiplayerRoom();
+  const guests = [new MultiplayerRoom(), new MultiplayerRoom(), new MultiplayerRoom()];
+  const seen = guests.map(() => []);
+  host.createHost('Host');
+  for (const [index, guest] of guests.entries()) {
+    guest.on(event => { if (event.type === 'action') seen[index].push(event); });
+    const invite = await host.createInvite();
+    const answer = await guest.joinInvite(invite, `Guest ${index + 1}`);
+    await host.acceptAnswer(answer);
+    const hp = FakePeer.instances.at(-2);
+    const gp = FakePeer.instances.at(-1);
+    const channel = new FakeChannel('arcade');
+    hp.channel.other = channel;
+    channel.other = hp.channel;
+    gp.ondatachannel({ channel });
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen();
+    channel.onopen();
+  }
+  host.startGame('uno', [host.peerId, guests[0].peerId, guests[1].peerId]);
+  let request;
+  host.on(event => { if (event.type === 'action') request = event; });
+  guests[0].sendAction({ type: 'uno-request', move: { type: 'draw' } });
+  assert.equal(request.from, guests[0].peerId);
+  assert.equal(request.action.move.type, 'draw');
+  assert.deepEqual(seen.map(events => events.length), [0, 0, 0]);
+  const card = { id: 5, color: 'red', value: '3' };
+  host.sendPrivateAction(guests[0].peerId, {
+    type: 'uno-state', revision: 1, view: { hand: [card], counts: [7, 1, 7] },
+  });
+  assert.deepEqual(seen.map(events => events.length), [1, 0, 0]);
+  assert.deepEqual(seen[0][0].action.view.hand, [card]);
+  assert.equal(host.peers.get(guests[1].peerId).channel.sent.includes('"hand"'), false);
+  assert.equal(host.peers.get(guests[2].peerId).channel.sent.includes('"hand"'), false);
+  assert.throws(() => host.sendPrivateAction(guests[2].peerId, { type: 'uno-state' }), /recipient/);
+  guests.forEach(guest => guest.close());
   host.close();
 });
 
@@ -167,7 +208,7 @@ test('only supported catalog games can start remotely and room restart resets se
     assert.equal(host.activeGame.playerIds.length, 2);
     assert.throws(() => host.startGame(game, [host.peerId, ...guestIds]), /player count/);
   }
-  for (const game of ['snakes-ladders', 'ludo']) {
+  for (const game of ['snakes-ladders', 'ludo', 'uno']) {
     for (const count of [2, 3, 4]) {
       host.startGame(game, [host.peerId, ...guestIds.slice(0, count - 1)]);
       assert.equal(host.activeGame.playerIds.length, count);
@@ -178,6 +219,7 @@ test('only supported catalog games can start remotely and room restart resets se
   for (const game of ['minesweeper', 'blackjack']) {
     assert.throws(() => host.startGame(game, [host.peerId]), /local-only/);
   }
+  host.startGame('ludo', [host.peerId, guestIds[0]]);
   host.sendAction({ type: 'move' });
   assert.equal(host.actionSequence, 1);
   host.close();

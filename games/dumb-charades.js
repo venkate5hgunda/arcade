@@ -3,6 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { TELUGU_MOVIES } from '../js/party-prompts.js';
 
 const WORDS = [
   'MOVIE', 'BRUSH TEETH', 'ELEPHANT', 'SWIMMING', 'COOKING', 'DRIVING',
@@ -19,14 +20,26 @@ const WORDS = [
   'ACTING', 'DIRECTING', 'FILMING', 'EDITING', 'WRITING SCRIPT',
 ];
 
-function validCheckpoint(s) {
-  return s && [2, 4, 6, 8].includes(s.players) && [30, 45, 60, 90].includes(s.duration) &&
+const CATEGORIES = ['classic', 'telugu-movies'];
+const promptsFor = (category) => category === 'telugu-movies' ? TELUGU_MOVIES.map(movie => movie.title) : WORDS;
+const movieFor = (category, title) => category === 'telugu-movies' ? TELUGU_MOVIES.find(movie => movie.title === title) : null;
+
+export function validCheckpoint(s) {
+  if (!s || !CATEGORIES.includes(s.category ?? 'classic')) return false;
+  const prompts = promptsFor(s.category ?? 'classic');
+  return [2, 4, 6, 8].includes(s.players) && [30, 45, 60, 90].includes(s.duration) &&
     ['setup', 'acting', 'scoring'].includes(s.phase) &&
     (s.team === 0 || s.team === 1) &&
     Number.isInteger(s.actor) && s.actor >= 0 && s.actor < s.players / 2 &&
     Array.isArray(s.score) && s.score.length === 2 &&
     s.score.every((n) => Number.isInteger(n) && n >= 0 && n <= 10) &&
-    (s.phase === 'setup' ? s.word === '' : WORDS.includes(s.word));
+    (s.phase === 'setup' ? s.word === '' : prompts.includes(s.word)) &&
+    Array.isArray(s.wordsUsed) && s.wordsUsed.length <= prompts.length &&
+    s.wordsUsed.every((word) => prompts.includes(word)) &&
+    typeof s.guessedCorrect === 'boolean' &&
+    Number.isFinite(s.deadline) && s.deadline >= 0 &&
+    (s.phase !== 'acting' || s.deadline > 0) &&
+    (s.phase === 'setup' || s.wordsUsed.includes(s.word));
 }
 
 export default {
@@ -36,16 +49,9 @@ export default {
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('dc-vibe');
 
-    const saved = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: '4', timer: '60' });
-    const candidate = session?.state;
-    const checkpoint = validCheckpoint(candidate) &&
-      Array.isArray(candidate.wordsUsed) && candidate.wordsUsed.length <= WORDS.length &&
-      candidate.wordsUsed.every((w) => WORDS.includes(w)) &&
-      typeof candidate.guessedCorrect === 'boolean' &&
-      Number.isFinite(candidate.deadline) && candidate.deadline >= 0 &&
-      (candidate.phase !== 'acting' || candidate.deadline > 0) &&
-      (candidate.phase === 'setup' || candidate.word !== '') ? candidate : null;
-    const settings = checkpoint ? { players: String(checkpoint.players), timer: String(checkpoint.duration) } : await renderSetup(stage, {
+    const saved = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: '4', timer: '60', category: 'classic' });
+    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
+    const settings = checkpoint ? { players: String(checkpoint.players), timer: String(checkpoint.duration), category: checkpoint.category ?? 'classic' } : await renderSetup(stage, {
       title: '🎭 Dumb Charades',
       subtitle: 'Set your team size and turn timer',
       themeClass: 'dc-theme',
@@ -60,13 +66,20 @@ export default {
           options: [30, 45, 60, 90].map(n => ({ value: String(n), label: `${n}s` })),
           default: saved.timer,
         },
+        {
+          key: 'category', label: 'Category',
+          options: [{ value: 'classic', label: 'Classic prompts' }, { value: 'telugu-movies', label: 'Telugu movies' }],
+          default: CATEGORIES.includes(saved.category) ? saved.category : 'classic',
+        },
       ],
       startLabel: 'Start Acting',
     });
     saveJSON(KEYS.SETTINGS + ':dumb-charades', settings);
     const playerCount = Math.max(2, Math.min(8, parseInt(settings.players, 10) || 4));
     const timerDuration = parseInt(settings.timer, 10) || 60;
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn`;
+    const category = settings.category;
+    const prompts = promptsFor(category);
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn · ${category === 'telugu-movies' ? 'Telugu movies' : 'Classic prompts'}`;
 
     let phase = 'setup'; // setup -> acting -> scoring -> next
     let currentTeam = 0, currentActor = 0;
@@ -77,7 +90,7 @@ export default {
     function checkpointGame() {
       if (phase === 'gameover') { session?.finish(); return; }
       session?.save({
-        players: playerCount, duration: timerDuration, phase, team: currentTeam,
+        players: playerCount, duration: timerDuration, category, phase, team: currentTeam,
         actor: currentActor, score: [score[0], score[1]], word: currentWord,
         wordsUsed: [...wordsUsed], guessedCorrect, deadline,
       });
@@ -115,10 +128,12 @@ export default {
         card.querySelector('#guessed').addEventListener('click', () => guessed(true));
         card.querySelector('#skip').addEventListener('click', () => guessed(false));
       } else if (phase === 'scoring') {
+        const movie = movieFor(category, currentWord);
         card.innerHTML = `
           <div class="dc-scoring">
             <h3>${guessedCorrect ? '✅ Correct!' : '❌ Skipped'}</h3>
             <p>The word was: <strong>${currentWord}</strong></p>
+            ${movie ? `<p>${movie.year} · ${movie.cast}</p><p>${movie.story}</p>` : ''}
             <p>Team ${currentTeam + 1} score: ${score[currentTeam]}</p>
             <button class="dc-btn" id="nextTurn">${currentTeam === 1 ? 'Next Round' : 'Switch Teams'}</button>
           </div>`;
@@ -147,9 +162,9 @@ export default {
     }
 
     function getRandomWord() {
-      const available = WORDS.filter(w => !wordsUsed.includes(w));
+      const available = prompts.filter(w => !wordsUsed.includes(w));
       if (available.length === 0) wordsUsed = [];
-      const choices = available.length ? available : WORDS;
+      const choices = available.length ? available : prompts;
       const w = choices[Math.floor(Math.random() * choices.length)];
       wordsUsed.push(w);
       return w;

@@ -19,6 +19,7 @@ export const RESUME_MINUTES = Object.freeze({
   simon: 5,
   'snakes-ladders': 20,
   tictactoe: 8,
+  uno: 20,
   'whack-a-mole': 2,
   'word-scramble': 10,
 });

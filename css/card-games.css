@@ -1,11 +1,11 @@
-/* Shared playing-card kit for Blackjack and Crazy Eights. */
-:is(.bj-vibe, .ce-vibe) .game-stage {
+/* Shared playing-card kit. */
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .game-stage {
   padding: 12px;
   border-radius: 24px;
   background: radial-gradient(circle at 50% 0%, #e8be7226, transparent 65%), #10291f;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-table {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table {
   box-sizing: border-box;
   position: relative;
   isolation: isolate;
@@ -20,7 +20,7 @@
   box-shadow: inset 0 0 0 6px #ffffff0b, inset 0 0 70px #02160e99, 0 24px 45px #0004;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-table::before {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table::before {
   content: '';
   pointer-events: none;
   position: absolute;
@@ -30,7 +30,7 @@
   border-radius: 19px;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-table-heading {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -42,20 +42,20 @@
   color: #f3d998;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-table-heading strong {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table-heading strong {
   font-size: clamp(1.2rem, 3vw, 1.8rem);
   font-weight: 900;
   letter-spacing: .13em;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-eyebrow {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-eyebrow {
   font-size: .72rem;
   font-weight: 800;
   letter-spacing: .18em;
   color: #edd39e;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card-row {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -66,7 +66,7 @@
   scrollbar-color: #d9ba76a1 transparent;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card {
   box-sizing: border-box;
   position: relative;
   display: flex;
@@ -84,9 +84,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--red { color: #b42337; }
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--red { color: #b42337; }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--back {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--back {
   border: 5px solid #fffdf3;
   background:
     repeating-linear-gradient(45deg, #ffffff20 0 2px, transparent 2px 8px),
@@ -96,12 +96,12 @@
   outline-offset: -11px;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card-back-mark {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-back-mark {
   font-size: 2.7rem;
   text-shadow: 0 0 12px #fff9;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card-corner {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-corner {
   position: absolute;
   top: 7px;
   left: 8px;
@@ -110,32 +110,32 @@
   line-height: 1;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card-center {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-center {
   font-size: 3.8rem;
   line-height: 1;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--button {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--button {
   cursor: pointer;
   font-family: inherit;
   transition: transform .15s ease, box-shadow .15s ease;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--button:not(:disabled):hover {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--button:not(:disabled):hover {
   transform: translateY(-9px);
   box-shadow: 1px 3px 0 #a8a697, 2px 15px 18px #04170f99;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--button:disabled {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--button:disabled {
   cursor: not-allowed;
   opacity: .64;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-card--button:not(:disabled) {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card--button:not(:disabled) {
   border-color: #f6cb7b;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-actions {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -143,7 +143,7 @@
   margin: 18px auto 8px;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-button {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-button {
   min-width: 105px;
   min-height: 48px;
   border: 1px solid #f7db9c;
@@ -157,28 +157,28 @@
   transition: transform .12s ease, box-shadow .12s ease;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-button--quiet {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-button--quiet {
   color: #fff4d9;
   background: #ffffff19;
   border-color: #ffe3aa78;
   box-shadow: 0 4px 0 #0a241f;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-button:hover {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-button:hover {
   transform: translateY(-2px);
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-button:active {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-button:active {
   transform: translateY(3px);
   box-shadow: none;
 }
 
-:is(.bj-vibe, .ce-vibe) :is(.cg-button, .cg-card--button, .reset-btn, .back-btn):focus-visible {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) :is(.cg-button, .cg-card--button, .reset-btn, .back-btn):focus-visible {
   outline: 3px solid #ffe18f;
   outline-offset: 4px;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-message {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-message {
   min-height: 1.5em;
   margin: 6px 0;
   color: #fff0c6;
@@ -187,7 +187,7 @@
   text-align: center;
 }
 
-:is(.bj-vibe, .ce-vibe) .cg-rules {
+:is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-rules {
   max-width: 550px;
   margin: 18px auto 0;
   color: #dbebddba;
@@ -313,14 +313,14 @@
 .ce-hand-cards { min-height: 132px; }
 
 @media (max-width: 520px) {
-  :is(.bj-vibe, .ce-vibe) .game-stage { padding: 4px; }
-  :is(.bj-vibe, .ce-vibe) .cg-table { padding: 17px 14px; border-radius: 18px; }
-  :is(.bj-vibe, .ce-vibe) .cg-table::before { inset: 7px; border-radius: 13px; }
-  :is(.bj-vibe, .ce-vibe) .cg-card { width: 64px; height: 89px; }
-  :is(.bj-vibe, .ce-vibe) .cg-card-row { min-height: 98px; }
-  :is(.bj-vibe, .ce-vibe) .cg-card-center { font-size: 2.8rem; }
-  :is(.bj-vibe, .ce-vibe) .cg-card-corner { font-size: .95rem; }
-  :is(.bj-vibe, .ce-vibe) .cg-button { min-width: 88px; padding: 9px 11px; font-size: .84rem; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .game-stage { padding: 4px; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table { padding: 17px 14px; border-radius: 18px; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-table::before { inset: 7px; border-radius: 13px; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card { width: 64px; height: 89px; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-row { min-height: 98px; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-center { font-size: 2.8rem; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-card-corner { font-size: .95rem; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) .cg-button { min-width: 88px; padding: 9px 11px; font-size: .84rem; }
   .ce-opponent .cg-card { width: 37px; height: 54px; margin-right: -20px; }
   .ce-opponent .cg-card-row { min-height: 65px; }
   .ce-hand-cards { min-height: 100px; }
@@ -328,5 +328,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(.bj-vibe, .ce-vibe) :is(.cg-card--button, .cg-button) { transition: none; }
+  :is(.bj-vibe, .ce-vibe, .uno-vibe) :is(.cg-card--button, .cg-button) { transition: none; }
 }
+
+.uno-table { min-height: 610px; }
+.uno-curtain { min-height: 450px; }
+.uno-players { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.uno-player { padding: 8px 14px; border: 1px solid #e6cd9570; border-radius: 12px; color: #f7e0a3; }
+.uno-player--current { background: #ffffff24; border-color: #f7e0a3; }
+.uno-middle { text-align: center; border-block: 1px solid #e6cd9540; padding: 12px; }
+.uno-pile { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.uno-vibe .uno-card { color: var(--uno-ink, #fff); background: var(--uno-color, #222); border-color: #fff; }
+.uno-vibe .uno-card.cg-card--back { background: repeating-linear-gradient(45deg, #ffffff20 0 3px, transparent 3px 9px), #283c85; }
+.uno-hand { min-width: 0; }
+.uno-hand h3 { color: #fff0c6; }
+.uno-vibe .uno-card.cg-card--button:disabled { opacity: .56; }
