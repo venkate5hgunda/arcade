@@ -2,6 +2,8 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
+import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
@@ -46,6 +48,7 @@ export function validCheckpoint(s) {
 export default {
   async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Dumb Charades', meta: 'Act it out · guess it fast' });
+    const showTurn = createTurnIndicator(shell.root);
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('dc-vibe');
@@ -106,6 +109,9 @@ export default {
     stage.appendChild(status);
 
     function render() {
+      const actor = currentTeam * (playerCount / 2) + currentActor;
+      showTurn(actor, phase === 'setup' || phase === 'acting',
+        `Team ${currentTeam + 1} · ${playerName(actor)}`);
       card.innerHTML = '';
       status.textContent = phase === 'gameover' ? '' : `Team 1: ${score[0]} · Team 2: ${score[1]}`;
       if (phase === 'setup') {

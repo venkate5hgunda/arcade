@@ -3,6 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
@@ -61,6 +62,7 @@ export default {
     });
     saveJSON(KEYS.SETTINGS + ':hangman', settings);
     const playerCount = settings.players === '2' ? 2 : 1;
+    const showTurn = createTurnIndicator(shell.root);
     shell.root.querySelector('.game-meta').textContent = playerCount === 2 ? 'Two players · Take turns guessing' : 'Single player · Guess the word';
 
     let word = '', guessed = new Set(), wrong = 0, maxWrong = 6, gameOver = false;
@@ -127,6 +129,7 @@ export default {
         const p = playerCount === 2 ? ` · P${current}'s turn` : '';
         status.textContent = `Wrong guesses: ${wrong}/${maxWrong}${p}`;
       }
+      if (playerCount === 2) showTurn(current - 1, !gameOver);
     }
 
     function drawFigure() {

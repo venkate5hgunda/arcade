@@ -56,9 +56,11 @@ function withDOM() {
     const children = [];
     const handlers = new Map();
     const element = {
-      children, handlers, style: { setProperty() {} }, classList: { add() {} },
+      children, handlers, style: { setProperty() {} }, classList: { add() {}, toggle() {} },
       innerHTML: '', textContent: '',
       appendChild(child) { children.push(child); },
+      after() {},
+      setAttribute() {},
       addEventListener(event, handler) { handlers.set(event, handler); },
       querySelector(selector) {
         if (!this.controls) this.controls = new Map();

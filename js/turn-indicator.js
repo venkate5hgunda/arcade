@@ -10,7 +10,7 @@ export function createTurnIndicator(root, match = null) {
   root.querySelector('.game-head').after(banner);
   let previous;
 
-  return (current, active = true) => {
+  return (current, active = true, label = null) => {
     if (!active || !Number.isInteger(current) || current < 0) {
       banner.hidden = true;
       previous = null;
@@ -22,7 +22,7 @@ export function createTurnIndicator(root, match = null) {
     banner.textContent = match
       ? mine ? `Your turn · ${playerName(current, match)}` :
         `${playerName(current, match)}'s turn · Waiting for your turn`
-      : `${playerName(current)}'s turn`;
+      : `${label ?? playerName(current)}'s turn`;
     if (previous !== undefined && previous !== current && mine) {
       window.arcadeAudio?.chime();
       window.haptics?.select();
