@@ -3,6 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
@@ -74,6 +75,7 @@ export default {
     if (total0 % 2 !== 0) size++;
     const total = size * size;
     const playerCount = settings.players === '2' ? 2 : 1;
+    const showTurn = createTurnIndicator(shell.root);
     shell.root.querySelector('.game-meta').textContent = `${size}×${size} grid · ${total / 2} pairs · ${playerCount === 2 ? '2 players' : 'solo'}`;
 
     let cards = [], firstPick = null, lock = false, gameOver = false, recentFlip = -1;
@@ -135,6 +137,7 @@ export default {
         grid.appendChild(btn);
       }
       updateStatus();
+      if (playerCount === 2) showTurn(current - 1, !gameOver);
       recentFlip = -1;
     }
 

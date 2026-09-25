@@ -2,6 +2,7 @@
 // of canvas CSS size and device pixel ratio.
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { canvasPoint, clamp, createFixedStepper, stepDiscs } from '../js/disc-physics.js';
@@ -67,6 +68,7 @@ function validCheckpoint(s) {
 export default {
   async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: '8-Ball Pool', meta: 'Two players · local match' });
+    const showTurn = createTurnIndicator(shell.root);
     const { stage } = shell;
     shell.root.classList.add('pool-vibe');
     if (navigate) wireBack(shell, navigate);
@@ -130,6 +132,7 @@ export default {
 
     function announce(text) {
       message = text;
+      showTurn(player, winner === null);
       const who = winner !== null ? `${playerName(winner)} wins!` : `${playerName(player)}'s turn`;
       const g = assignments[player];
       const left = g ? balls.filter((b) => !b.pocketed && group(b.number) === g).length : 0;

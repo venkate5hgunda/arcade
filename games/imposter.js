@@ -2,6 +2,7 @@
 // Pure DOM; listens to arcade:themechange.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
@@ -49,6 +50,7 @@ export function validCheckpoint(s) {
 export default {
   async render(el, game, { navigate, session } = {}) {
     const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spy' });
+    const showTurn = createTurnIndicator(shell.root);
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('imp-vibe');
@@ -100,6 +102,7 @@ export default {
     stage.appendChild(status);
 
     function render() {
+      showTurn(currentPlayer, phase === 'setup' || phase === 'reveal' || phase === 'vote');
       card.innerHTML = '';
       if (phase === 'setup') {
         card.innerHTML = `
