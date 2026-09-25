@@ -85,6 +85,11 @@ Chess; and **120 min** for Island Charter.
   strikes carry, collisions, rebounds and goals. After
   the opening faceoff, the puck rests at center until either player strikes it.
   After a goal, it rests on the non-scoring player's half until they strike it.
+- **Island Charter** — a 3–4-player hex-settlement strategy game with an
+  illustrated SVG island, distinct buildings, resource and dice artwork,
+  production, trading, harbors, discoveries and ten-point victory. Play by
+  private handoff or in a room; the original art and wording avoid commercial
+  board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
   adapted from Pick's tabletop animation. Snakes & Ladders draws varied
   non-intersecting snakes and ladders on each new board with square numbers above
