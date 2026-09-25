@@ -121,7 +121,7 @@ export default {
       for (const card of cards) {
         const btn = document.createElement('button');
         btn.className = 'mem-card';
-        btn.setAttribute('aria-label', `Card ${card.index + 1}`);
+        btn.setAttribute('aria-label', `${card.revealed || card.matched ? 'Revealed' : 'Flip'} card ${card.index + 1}`);
         if (card.revealed || card.matched) {
           btn.classList.add('revealed');
           if (card.index === recentFlip) btn.classList.add('just-flipped');

@@ -6,10 +6,10 @@ import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 
 const PADS = [
-  { id: 0, color: '#ef4444', tone: 330 },
-  { id: 1, color: '#3b82f6', tone: 415 },
-  { id: 2, color: '#eab308', tone: 494 },
-  { id: 3, color: '#22c55e', tone: 262 },
+  { id: 0, name: 'Red', color: '#ef4444', tone: 330 },
+  { id: 1, name: 'Blue', color: '#3b82f6', tone: 415 },
+  { id: 2, name: 'Yellow', color: '#eab308', tone: 494 },
+  { id: 3, name: 'Green', color: '#22c55e', tone: 262 },
 ];
 
 function validState(s) {
@@ -67,6 +67,7 @@ export default {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'simon-pad';
+      btn.setAttribute('aria-label', `Play ${p.name} pad`);
       btn.style.setProperty('--pad-color', p.color);
       btn.disabled = true;
       btn.addEventListener('click', () => onPadClick(p.id));

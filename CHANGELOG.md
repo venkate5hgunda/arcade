@@ -3,6 +3,16 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-24 — Labeled header and feedback settings
+
+- Replaced separate header sound and vibration buttons with a single labeled
+  Sound & feel control. Its pop-up keeps both saved preferences independent
+  and explains vibration support on the current device.
+- Theme now defaults to Auto (device preference) and cycles Auto → Light →
+  Dark → Auto, displaying the active choice instead of only the next action.
+  Clarified labels for icon-only game controls and added hover explanations.
+  Refined phone-width header and pop-up layout. Offline cache v31.
+
 ## 2026-09-24 — Room invitations and QR sharing
 
 - Register guests before applying an answer so an early WebRTC hello cannot

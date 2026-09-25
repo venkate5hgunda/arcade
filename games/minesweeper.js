@@ -143,7 +143,7 @@ export default {
           const cell = document.createElement('button');
           cell.className = 'ms-cell';
           const b = board[r * cols + c];
-          cell.setAttribute('aria-label', `Row ${r + 1}, Column ${c + 1}${b.flagged ? ', flagged' : b.revealed ? b.mine ? ', mine' : `, ${b.count || 'empty'}` : ', hidden'}`);
+          cell.setAttribute('aria-label', `${b.revealed ? 'Revealed' : b.flagged ? 'Flagged' : 'Reveal or flag'} row ${r + 1}, column ${c + 1}${b.revealed ? b.mine ? ', mine' : `, ${b.count || 'empty'}` : ''}`);
           if (b.revealed) {
             cell.classList.add('revealed');
             if (b.mine) {
