@@ -6,6 +6,7 @@ import {
   canRoad, canSettle, longestRoad, points, tradeRate, catanView, applyRemoteCatanAction,
   validCatanCheckpoint, VERTEX_TOUCH_RADIUS,
 } from '../games/catan.js';
+import { terrainArt, goodIcon, buildingArt, dieFace, discoveryIcon } from '../games/catan-art.js';
 
 function rng(seed = 517) {
   return () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
@@ -47,6 +48,39 @@ test('phone chart scrolls at playable scale with usable junction and path target
     'junction touch target must be at least 44px on a phone');
   assert.ok(edgeStroke * boardWidth / 760 >= 44,
     'path touch target must be at least 44px across on a phone');
+});
+
+test('island terrain, supplies, buildings, discoveries and die faces have distinct vector art', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElementNS(namespace, tag) {
+      assert.equal(namespace, 'http://www.w3.org/2000/svg');
+      return {
+        tag, attributes: {}, children: [],
+        setAttribute(name, value) { this.attributes[name] = String(value); },
+        append(...nodes) { this.children.push(...nodes); },
+      };
+    },
+  };
+  try {
+    for (const terrain of ['forest', 'hills', 'fields', 'pasture', 'mountains', 'desert']) {
+      const art = terrainArt(terrain);
+      assert.ok(art.children.length > 1, `${terrain} needs illustrated scenery`);
+      assert.equal(art.attributes['aria-hidden'], 'true');
+    }
+    for (const good of GOODS) assert.ok(goodIcon(good).children.length);
+    assert.notDeepEqual(buildingArt(false), buildingArt(true));
+    for (const discovery of ['knight', 'victory', 'roads', 'plenty', 'monopoly'])
+      assert.equal(discoveryIcon(discovery).children[0].tag, 'path');
+    for (let n = 1; n <= 6; n++) {
+      const die = dieFace(n);
+      assert.equal(die.children.filter(child => child.tag === 'circle').length, n);
+      assert.equal(die.attributes['aria-hidden'], 'true');
+    }
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
 });
 
 test('dice reject array-like objects and malformed rolls without throwing or mutating state', () => {

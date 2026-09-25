@@ -3,6 +3,14 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-25 — Illustrated island table
+
+- Island Charter now uses original SVG terrain scenes, coastal harbor badges,
+  distinct outpost/city pieces, production tokens with probability pips, resource
+  icons and illustrated dice and discovery cards instead of text symbols on the
+  board. Building costs are shown as resource icons. Three- and four-player
+  local and private-room rules remain unchanged; cache v39 ships the artwork.
+
 ## 2026-09-25 — Heftier Air Hockey shots
 
 - Increased puck drag on the table and reduced paddle response to short

@@ -3,6 +3,7 @@ import { remoteMatch, seat } from '../js/remote-match.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
+import { svg, terrainArt, goodIcon, buildingArt, dieFace, discoveryIcon } from './catan-art.js';
 
 export const GOODS = ['timber', 'clay', 'grain', 'wool', 'ore'];
 export const VERTEX_TOUCH_RADIUS = 22;
@@ -532,31 +533,39 @@ export function catanView(state, player) {
   };
 }
 
-const NS = 'http://www.w3.org/2000/svg';
 const TERRAIN_LABEL = {
   forest: 'Grove', hills: 'Ridge', fields: 'Meadow', pasture: 'Heath',
   mountains: 'Peak', desert: 'Wastes',
-};
-const TERRAIN_ICON = {
-  forest: '♣', hills: '▲', fields: '✿', pasture: '✧', mountains: '◆', desert: '☼',
 };
 const GOOD_LABEL = { timber: 'Timber', clay: 'Clay', grain: 'Grain', wool: 'Wool', ore: 'Ore' };
 const CARD_LABEL = { knight: 'Ranger', victory: 'Legacy', roads: 'Trailblazer',
   plenty: 'Windfall', monopoly: 'Market Sweep' };
 const pieceLabel = (v, state, room) => state.buildings[v] ?
   `${playerName(state.buildings[v].owner, room)} ${state.buildings[v].city ? 'city' : 'outpost'}` : `Junction ${v + 1}`;
-const svg = (tag, attrs = {}, text) => {
-  const node = document.createElementNS(NS, tag);
-  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
-  if (text !== undefined) node.textContent = text;
-  return node;
-};
 const button = (label, onClick, disabled = false, className = '') => {
   const el = document.createElement('button');
   el.type = 'button'; el.className = `ct-btn ${className}`;
   el.textContent = label; el.disabled = disabled;
   el.addEventListener('click', onClick);
   return el;
+};
+const costIcons = cost => {
+  const row = document.createElement('span');
+  row.className = 'ct-cost';
+  for (const good of GOODS) {
+    if (!cost[good]) continue;
+    const item = document.createElement('span');
+    item.className = 'ct-cost-item';
+    item.title = `${cost[good]} ${GOOD_LABEL[good]}`;
+    item.append(goodIcon(good));
+    if (cost[good] > 1) {
+      const amount = document.createElement('b');
+      amount.textContent = cost[good];
+      item.append(amount);
+    }
+    row.append(item);
+  }
+  return row;
 };
 const select = (values, label, selected = values[0][0]) => {
   const wrapper = document.createElement('label');
@@ -715,6 +724,11 @@ export default {
     function boardNode(data, canAct) {
       const chart = svg('svg', { viewBox: '0 0 760 700', class: 'ct-chart',
         role: 'group', 'aria-label': 'Island chart. Select marked land, paths or junctions to act.' });
+      const waves = svg('g', { class: 'ct-waves', 'aria-hidden': 'true', 'pointer-events': 'none' });
+      for (let y = 54; y < 700; y += 55)
+        for (const x of [37, 722])
+          waves.append(svg('path', { d: `M${x - 18} ${y}q9 -6 18 0t18 0` }));
+      chart.append(waves);
       const board = data.board;
       const legalEdge = id => canAct && (data.phase === 'setup-road' ?
         canRoad(data, data.current, id, true) :
@@ -739,20 +753,40 @@ export default {
         };
         center.x /= 2; center.y /= 2;
         const group = svg('g', { class: `ct-hex ct-hex--${tile.terrain} ${id === data.robber ? 'ct-hex--blocked' : ''}` });
+        const points = tile.vertices.map(v => `${board.vertices[v].x.toFixed(2)},${board.vertices[v].y.toFixed(2)}`).join(' ');
         const poly = svg('polygon', {
-          points: tile.vertices.map(v => `${board.vertices[v].x.toFixed(2)},${board.vertices[v].y.toFixed(2)}`).join(' '),
+          points, class: 'ct-ground',
           'data-tile': id, role: 'button', tabindex: canAct && data.phase === 'robber' ? '0' : '-1',
           'aria-label': `${TERRAIN_LABEL[tile.terrain]}${tile.number ? `, number ${tile.number}` : ''}${id === data.robber ? ', blocked' : ''}`,
         });
-        group.append(poly, svg('text', { x: center.x, y: center.y - 14, class: 'ct-terrain-symbol', 'pointer-events': 'none' },
-          TERRAIN_ICON[tile.terrain]));
-        group.append(svg('text', { x: center.x, y: center.y + 15, class: 'ct-terrain-name', 'pointer-events': 'none' },
-          TERRAIN_LABEL[tile.terrain]));
-        if (tile.number) group.append(svg('text', { x: center.x, y: center.y + 37,
-          class: `ct-token ${[6, 8].includes(tile.number) ? 'ct-token--hot' : ''}`, 'pointer-events': 'none' }, tile.number));
-        if (id === data.robber)
-          group.append(svg('text', { x: center.x + 33, y: center.y - 29,
-            class: 'ct-raider', 'pointer-events': 'none' }, '✦'));
+        group.append(poly, svg('polygon', {
+          points: tile.vertices.map(v => {
+            const p = board.vertices[v];
+            return `${(center.x + (p.x - center.x) * .91).toFixed(2)},${(center.y + (p.y - center.y) * .91).toFixed(2)}`;
+          }).join(' '), class: 'ct-hex-inset', 'pointer-events': 'none',
+        }), terrainArt(tile.terrain, center.x, center.y - 14));
+        if (tile.number) {
+          const token = svg('g', { class: `ct-number${[6, 8].includes(tile.number) ? ' ct-number--hot' : ''}`,
+            transform: `translate(${center.x} ${center.y + 36})`,
+            'aria-hidden': 'true', 'pointer-events': 'none' });
+          token.append(svg('circle', { r: 21, class: 'ct-number-rim' }),
+            svg('circle', { r: 18, class: 'ct-number-face' }),
+            svg('text', { y: 4, class: 'ct-number-value' }, tile.number));
+          const dots = 6 - Math.abs(7 - tile.number);
+          for (let n = 0; n < dots; n++)
+            token.append(svg('circle', {
+              cx: (n - (dots - 1) / 2) * 5.2, cy: 12.5, r: 1.3, class: 'ct-number-dot',
+            }));
+          group.append(token);
+        }
+        if (id === data.robber) {
+          const raider = svg('g', { class: 'ct-raider',
+            transform: `translate(${center.x + 30} ${center.y - 28})`,
+            'aria-hidden': 'true', 'pointer-events': 'none' });
+          raider.append(svg('circle', { cy: -8, r: 6 }),
+            svg('path', { d: 'M-7 1Q0 -2 7 1l5 18h-24Z' }));
+          group.append(raider);
+        }
         chart.append(group);
       });
       board.edges.forEach((edge, id) => {
@@ -772,24 +806,34 @@ export default {
         if (edge.port) {
           const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
           const dx = x - 380, dy = y - 350, length = Math.hypot(dx, dy);
-          const mark = svg('text', { x: x + dx / length * 28, y: y + dy / length * 28 + 4,
-            class: 'ct-harbor', 'pointer-events': 'none' },
-          edge.port === 'any' ? '3:1' : `${GOOD_LABEL[edge.port].slice(0, 1)} 2:1`);
+          const mark = svg('g', { class: 'ct-harbor',
+            transform: `translate(${x + dx / length * 34} ${y + dy / length * 34})`,
+            role: 'img', 'aria-label': `${edge.port === 'any' ? 'Any resource' : GOOD_LABEL[edge.port]} harbor, ${edge.port === 'any' ? '3:1' : '2:1'} exchange`,
+            'pointer-events': 'none' });
+          mark.append(svg('circle', { r: 21, class: 'ct-harbor-disc' }));
+          if (edge.port === 'any') mark.append(svg('path', {
+            d: 'M-10 -6q5-4 10 0t10 0M-10 0q5-4 10 0t10 0', class: 'ct-harbor-wave',
+          }));
+          else mark.append(terrainArt({
+            timber: 'forest', clay: 'hills', grain: 'fields', wool: 'pasture', ore: 'mountains',
+          }[edge.port], 0, -7, .3));
+          mark.append(svg('text', { y: 14, class: 'ct-harbor-rate' }, edge.port === 'any' ? '3:1' : '2:1'));
           chart.append(mark);
         }
       });
       board.vertices.forEach((vertex, id) => {
         const owned = data.buildings[id];
         const group = svg('g', { class: 'ct-vertex-group' });
-        const mark = svg('circle', { cx: vertex.x, cy: vertex.y,
-          r: owned ? owned.city ? 11 : 9 : 5,
-          class: `ct-junction ${owned ? 'ct-junction--owned' : 'ct-junction--empty'}${legalVertex(id) ? ' ct-clickable' : ''}`,
-          'pointer-events': 'none' });
+        const mark = svg('g', { class: `ct-junction ${owned ? 'ct-junction--owned' : 'ct-junction--empty'}${legalVertex(id) ? ' ct-clickable' : ''}`,
+          transform: `translate(${vertex.x} ${vertex.y})`, 'pointer-events': 'none' });
+        if (owned) {
+          mark.style.setProperty('--ct-owner', COLORS[owned.owner]);
+          mark.append(buildingArt(owned.city));
+        } else mark.append(svg('circle', { r: legalVertex(id) ? 10 : 5 }));
         const hit = svg('circle', { cx: vertex.x, cy: vertex.y, r: VERTEX_TOUCH_RADIUS,
           class: 'ct-vertex-hit', 'pointer-events': legalVertex(id) ? 'all' : 'none',
           'data-vertex': id, role: 'button', tabindex: legalVertex(id) ? '0' : '-1',
           'aria-label': `${pieceLabel(id, data, room)}${vertex.port ? `, harbor ${vertex.port}` : ''}` });
-        if (owned) mark.style.setProperty('--ct-owner', COLORS[owned.owner]);
         group.append(mark, hit);
         chart.append(group);
       });
@@ -895,7 +939,10 @@ export default {
         row.className = `ct-player${i === data.current ? ' ct-player--active' : ''}`;
         row.style.setProperty('--ct-owner', COLORS[i]);
         const name = document.createElement('strong');
-        name.textContent = playerName(i, room);
+        const pawn = document.createElement('span');
+        pawn.className = 'ct-player-pawn';
+        pawn.setAttribute('aria-hidden', 'true');
+        name.append(pawn, document.createTextNode(playerName(i, room)));
         const details = document.createElement('span');
         details.textContent = `${p.goods} cargo · ${p.dev} discoveries · ${p.knights} rangers`;
         const score = document.createElement('b');
@@ -918,7 +965,7 @@ export default {
       GOODS.forEach(g => {
         const token = document.createElement('div');
         token.className = `ct-good ct-good--${g}`;
-        token.innerHTML = `<span class="ct-good-icon" aria-hidden="true">${({ timber: '♣', clay: '⬟', grain: '✿', wool: '✧', ore: '◆' })[g]}</span>`;
+        token.append(goodIcon(g));
         const name = document.createElement('span');
         name.textContent = GOOD_LABEL[g];
         const amount = document.createElement('b');
@@ -931,7 +978,7 @@ export default {
       data.dev.forEach(card => {
         const tag = document.createElement('span');
         tag.className = 'ct-card';
-        tag.textContent = CARD_LABEL[card.type];
+        tag.append(discoveryIcon(card.type), document.createTextNode(CARD_LABEL[card.type]));
         cards.append(tag);
       });
       if (!cards.childNodes.length) cards.textContent = 'No discoveries yet.';
@@ -1001,7 +1048,9 @@ export default {
         actions.append(note); return;
       }
       if (data.phase === 'roll') {
-        actions.append(button('⚄  Roll two dice', () => dispatch({ type: 'roll' }), false, 'ct-primary'));
+        const rollButton = button('Roll two dice', () => dispatch({ type: 'roll' }), false, 'ct-primary ct-roll-button');
+        rollButton.prepend(dieFace(3), dieFace(5));
+        actions.append(rollButton);
       }
       if (data.phase === 'robber') {
         const note = document.createElement('p');
@@ -1035,9 +1084,14 @@ export default {
         return;
       }
       if (data.rolled) {
-        const dice = document.createElement('p');
+        const dice = document.createElement('div');
         dice.className = 'ct-dice';
-        dice.textContent = `DICE  ${data.rolled[0]} + ${data.rolled[1]} = ${data.rolled[0] + data.rolled[1]}`;
+        dice.setAttribute('role', 'img');
+        dice.setAttribute('aria-label', `Dice: ${data.rolled[0]} plus ${data.rolled[1]} equals ${data.rolled[0] + data.rolled[1]}`);
+        dice.append(dieFace(data.rolled[0]), dieFace(data.rolled[1]));
+        const total = document.createElement('strong');
+        total.textContent = `= ${data.rolled[0] + data.rolled[1]}`;
+        dice.append(total);
         actions.append(dice);
       }
       const tabs = document.createElement('div');
@@ -1054,10 +1108,12 @@ export default {
       } else if (panel === 'build') {
         const tools = document.createElement('div');
         tools.className = 'ct-tools';
-        [['road', 'Path · timber + clay'], ['settlement', 'Outpost · 4 supplies'],
-          ['city', 'City · 2 grain + 3 ore']].forEach(([id, label]) =>
-          tools.append(button(label, () => { tool = id; render(); },
-            false, tool === id ? 'ct-tool--active' : '')));
+        [['road', 'Path'], ['settlement', 'Outpost'], ['city', 'City']].forEach(([id, label]) => {
+          const action = button(label, () => { tool = id; render(); },
+            false, `ct-build-button${tool === id ? ' ct-tool--active' : ''}`);
+          action.append(costIcons(COSTS[id]));
+          tools.append(action);
+        });
         actions.append(tools);
         const hint = document.createElement('p');
         hint.className = 'ct-hint';
@@ -1065,9 +1121,11 @@ export default {
           tool === 'settlement' ? 'Tap an open junction on your network, away from other buildings.' :
             'Tap one of your outposts to upgrade it.';
         actions.append(hint);
-        actions.append(button(`Buy discovery · grain + wool + ore (${data.deckCount} left)`,
+        const buy = button(`Buy discovery (${data.deckCount} left)`,
           () => dispatch({ type: 'buy-dev' }), !data.deckCount ||
-            !GOODS.every(g => data.goods[g] >= (COSTS.development[g] || 0))));
+            !GOODS.every(g => data.goods[g] >= (COSTS.development[g] || 0)), 'ct-buy-button');
+        buy.append(costIcons(COSTS.development));
+        actions.append(buy);
       } else if (panel === 'trade') {
         const bankTitle = document.createElement('h4');
         bankTitle.textContent = 'Harbor exchange';
