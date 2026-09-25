@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v32';
-const RUNTIME_CACHE = 'arcade:runtime:v32';
+const STATIC_CACHE = 'arcade:static:v33';
+const RUNTIME_CACHE = 'arcade:runtime:v33';
 
 const STATIC_ASSETS = [
   './',

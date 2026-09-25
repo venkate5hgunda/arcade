@@ -621,6 +621,107 @@ test('leaderboard orders ties by losses, draws, name then peer ID; lobby renders
   }
 });
 
+test('lobby progressively reveals only the chosen flow and connected room controls', async () => {
+  const previousDocument = globalThis.document;
+  const previousElement = globalThis.Element;
+  const previousLocation = globalThis.location;
+  class ElementStub {
+    constructor(tag = 'div') {
+      this.tag = tag;
+      this.children = [];
+      this.attributes = {};
+      this.textContent = '';
+      this.listeners = {};
+    }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children = [...nodes]; }
+    setAttribute(key, value) { this.attributes[key] = value; }
+    addEventListener(event, handler) { this.listeners[event] = handler; }
+    querySelector(selector) {
+      return descendants(this).find((node) => selector === '.mp-controls'
+        ? node.className === 'mp-controls' : node.attributes.role === 'status') ?? null;
+    }
+    querySelectorAll(selector) {
+      return descendants(this).filter((node) => selector === 'input:checked' && node.tag === 'input' && node.checked);
+    }
+  }
+  const descendants = (node) => [node, ...node.children.flatMap((child) =>
+    child instanceof ElementStub ? descendants(child) : [])];
+  const visible = (node) => descendants(node).map((child) => child.textContent).join(' ');
+  const button = (node, label) => {
+    const found = descendants(node).find((child) => child.tag === 'button' && child.textContent === label);
+    assert.ok(found, `${label} should be visible`);
+    return found;
+  };
+  const field = (node, label) => {
+    const found = descendants(node).find((child) => child.tag === 'label' &&
+      child.children.some((part) => part.textContent === label));
+    assert.ok(found, `${label} should be visible`);
+    return found.children.find((child) => child.tag === 'input');
+  };
+  const host = new MultiplayerRoom();
+  const guest = new MultiplayerRoom();
+  try {
+    globalThis.Element = ElementStub;
+    globalThis.document = {
+      createElement: (tag) => new ElementStub(tag),
+      createTextNode: (value) => Object.assign(new ElementStub('#text'), { textContent: value }),
+    };
+    const catalog = [{ id: 'chess', name: 'Chess', players: { min: 2, max: 2 } }];
+    const hostView = new ElementStub();
+    const unmountHost = host.mountLobby(hostView, catalog, () => {});
+    button(hostView, 'Create a room');
+    button(hostView, 'Join a room');
+    assert.doesNotMatch(visible(hostView), /Paste invite URL|Paste guest answer URL|Room standings|Create guest invite/);
+    await button(hostView, 'Create a room').listeners.click();
+    assert.doesNotMatch(visible(hostView), /Scan invite QR|Accept answer/);
+    field(hostView, 'Your name').value = 'Host';
+    await button(hostView, 'Create room').listeners.click();
+    assert.doesNotMatch(visible(hostView), /Paste guest answer URL|Chess \(2–2 players\)|Room standings|Copy link/);
+    await button(hostView, 'Create guest invite').listeners.click();
+    button(hostView, 'Scan answer QR');
+    button(hostView, 'Copy link');
+    button(hostView, 'Show QR');
+    const invite = descendants(hostView).find((node) => node.tag === 'textarea').value;
+    globalThis.location = new URL(invite);
+    const guestView = new ElementStub();
+    const unmountGuest = guest.mountLobby(guestView, catalog, () => {});
+    button(guestView, 'Join and create answer');
+    assert.doesNotMatch(visible(guestView), /Create a room|Paste guest answer URL|Room standings/);
+    field(guestView, 'Your name').value = 'Guest';
+    await button(guestView, 'Join and create answer').listeners.click();
+    const answer = descendants(guestView).find((node) => node.tag === 'textarea').value;
+    button(guestView, 'Copy link');
+    field(hostView, 'Paste guest answer URL').value = answer;
+    await button(hostView, 'Accept answer').listeners.click();
+    assert.doesNotMatch(visible(hostView), /Paste guest answer URL|Room standings|Chess \(2–2 players\)/);
+    const hp = FakePeer.instances.at(-2);
+    const gp = FakePeer.instances.at(-1);
+    const guestChannel = new FakeChannel('arcade');
+    hp.channel.other = guestChannel;
+    guestChannel.other = hp.channel;
+    gp.ondatachannel({ channel: guestChannel });
+    hp.channel.readyState = guestChannel.readyState = 'open';
+    hp.channel.onopen();
+    guestChannel.onopen();
+    button(hostView, 'Chess (2–2 players)');
+    assert.doesNotMatch(visible(guestView), /Answer for host|Copy link/);
+    assert.doesNotMatch(visible(hostView), /Room standings/);
+    await button(hostView, 'Create guest invite').listeners.click();
+    button(hostView, 'Accept answer');
+    button(hostView, 'Chess (2–2 players)');
+    assert.equal(host.members.find((member) => member.id === guest.peerId).connected, true);
+    unmountGuest();
+    unmountHost();
+  } finally {
+    host.close();
+    guest.close();
+    globalThis.document = previousDocument;
+    globalThis.Element = previousElement;
+    globalThis.location = previousLocation;
+  }
+});
+
 test('leaderboard prioritizes wins, then fewer losses, then more draws', () => {
   const room = new MultiplayerRoom();
   room.createHost('One');

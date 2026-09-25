@@ -134,12 +134,15 @@ third-party synopses or bundling restricted API datasets (see
 
 ## Playing together on separate devices
 
-1. Tap **Room** in the header, enter a name and select **Host room**.
-2. Select **Create guest invite**; send its URL using **Share link** or
+1. Tap **Room** in the header and choose **Create a room** or **Join a room**.
+   Opening an invite URL selects **Join a room** automatically. Enter your name
+   and select **Create room** if hosting.
+2. The host selects **Create guest invite**; send its URL using **Share link** or
    **Copy link**, or display **Show QR** for the guest to scan. Make a separate
    invite for each guest.
-3. The guest opens the invite URL or uses **Scan invite QR** in the lobby,
-   enters a name, and selects **Join and create answer**. They send the answer
+3. The guest opens the invite URL or chooses **Join a room** and uses
+   **Scan invite QR** (or pastes the URL), enters a name, and selects
+   **Join and create answer**. They send the answer
    URL or show its QR to the host.
 4. In the **original host tab**, paste the answer URL or use **Scan answer QR**,
    then select **Accept answer**. Opening it in a new host tab will not work.
