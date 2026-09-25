@@ -77,6 +77,7 @@ export default {
       const hole = document.createElement('button');
       hole.type = 'button';
       hole.className = 'wam-hole';
+      hole.setAttribute('aria-label', `Whack mole in hole ${i + 1}`);
       hole.innerHTML = '<span class="wam-mole">🐹</span>';
       hole.addEventListener('click', () => whack(i));
       grid.appendChild(hole);

@@ -33,13 +33,15 @@ mode, sound, and haptics.
 ## Features
 
 - **Responsive** — mobile, tablet, desktop. Flexible grid + fluid game stages.
-- **Light / dark mode** — persists in `localStorage` and can follow the OS.
+- **Theme** — header control cycles Auto → Light → Dark; Auto is the default
+  and follows the device. Your choice persists in `localStorage`.
 - **Sound** — synthesized Web Audio (no external assets), works offline.
 - **Touch feedback** — immediate light press sounds and haptics on game controls,
   with distinct game sounds for goals, collisions, dice and wins. Buttons
   bypass double-tap delay; Air Hockey pointer targets use a faster, fixed-step
   paddle path. Vibration requires browser/device support (not available in
-  every mobile browser) and respects the header toggles.
+  every mobile browser). Open **Sound & feel** in the header to control game
+  sounds and vibration separately; unavailable vibration is labeled.
 - **Offline-first PWA** — service worker caches the shell and runtime assets.
 - **Personalized** — local storage retains theme, sound, haptics, high scores,
   per-game settings and unfinished local rounds.
@@ -72,7 +74,7 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
   physical board surfaces in both themes, a vivid marquee-style header with
-  distinct room, sound, vibration and theme controls, and reduced-motion support.
+  labeled room, Sound & feel and theme controls, and reduced-motion support.
 - **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
   simulation. Pool has rack, collisions, pockets, scratches and house-rule
   8-ball play; air hockey has acceleration-limited paddles, impact-dependent
@@ -169,7 +171,7 @@ python3 -m http.server 8000
 
 ```
 arcade/
-  index.html            # shell: header, theme/sound/haptics toggles, game stage
+  index.html            # shell: header, theme cycle and sound/feel panel, game stage
   manifest.json         # PWA manifest
   sw.js                 # service worker (offline caching)
   css/styles.css        # theme tokens + component styles
@@ -178,7 +180,7 @@ arcade/
     storage.js          # localStorage wrapper + KEYS
     theme.js            # light/dark/auto
     audio.js            # Web Audio synthesis
-    haptics.js          # Vibration wrapper + toggle UI
+    haptics.js          # Vibration wrapper and saved preference
     game-catalog.js     # single source of truth for all games
     router.js           # hash-based router + landing grid
     game-session.js     # per-game resume windows and local checkpoints

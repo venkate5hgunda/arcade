@@ -4,37 +4,40 @@
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 
 const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const MODES = ['auto', 'light', 'dark'];
+let mode = 'auto';
 
-function apply(theme) {
+function apply() {
+  const theme = mode === 'auto' ? (media?.matches ? 'dark' : 'light') : mode;
   document.documentElement.setAttribute('data-theme', theme);
   window.dispatchEvent(new CustomEvent('arcade:themechange', { detail: theme }));
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
-    toggle.dataset.mode = theme;
-    const label = theme === 'dark' ? 'Use light theme' : 'Use dark theme';
+    toggle.dataset.mode = mode;
+    const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+    const shown = mode[0].toUpperCase() + mode.slice(1);
+    const label = `Theme: ${shown}${mode === 'auto' ? ' (follows your device)' : ''}. Select ${next[0].toUpperCase() + next.slice(1)}`;
     toggle.setAttribute('aria-label', label);
-    toggle.dataset.tooltip = label;
+    toggle.title = label;
+    document.getElementById('themeMode').textContent = shown;
   }
 }
 
 export function initTheme() {
-  const stored = loadJSON(KEYS.THEME, null); // 'light' | 'dark' | null (auto)
-  apply(stored || (media && media.matches ? 'dark' : 'light'));
+  const stored = loadJSON(KEYS.THEME, 'auto');
+  mode = MODES.includes(stored) ? stored : 'auto';
+  apply();
 
   if (media) {
-    media.addEventListener('change', (e) => {
-      // Only follow the OS if the user never explicitly overrode it.
-      if (loadJSON(KEYS.THEME, null) === null) apply(e.matches ? 'dark' : 'light');
-    });
+    media.addEventListener('change', () => { if (mode === 'auto') apply(); });
   }
 
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
     toggle.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      saveJSON(KEYS.THEME, next);
-      apply(next);
+      mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+      saveJSON(KEYS.THEME, mode);
+      apply();
     });
   }
 }

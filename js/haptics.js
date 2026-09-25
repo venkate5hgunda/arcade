@@ -45,26 +45,3 @@ export const haptics = {
   failure: () => vibrate('failure'),
   select: () => vibrate('selection'),
 };
-
-// UI wiring for the haptics toggle button (rendered in the header).
-export function initHapticsUI(audio) {
-  const toggle = document.getElementById('hapticsToggle');
-  if (!toggle) return;
-
-  const refresh = () => {
-    const on = isEnabled();
-    toggle.dataset.on = String(on);
-    toggle.setAttribute('aria-label', on ? 'Vibration on' : 'Vibration off');
-    toggle.dataset.tooltip = on ? 'Vibration on' : 'Vibration off';
-  };
-
-  toggle.addEventListener('click', async () => {
-    await audio.prepare();
-    const next = !isEnabled();
-    setEnabled(next);
-    refresh();
-    if (next) vibrate('light');
-  });
-
-  refresh();
-}

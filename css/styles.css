@@ -808,13 +808,19 @@ body {
 .app-header .icon-btn {
   --button-color: #f7ba69;
   position: relative;
-  width: 44px;
+  width: auto;
+  min-width: 44px;
   height: 44px;
-  flex: 0 0 44px;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 0 12px;
   border: 2px solid color-mix(in srgb, var(--button-color) 65%, white);
   border-radius: 13px;
   background: linear-gradient(145deg, color-mix(in srgb, var(--button-color) 42%, #2d304f), #22263e);
   color: #fff;
+  font-size: .82rem;
+  font-weight: 850;
+  white-space: nowrap;
   box-shadow: 0 4px 0 color-mix(in srgb, var(--button-color) 55%, #091226),
     inset 0 1px 0 #ffffff55, 0 0 17px color-mix(in srgb, var(--button-color) 30%, transparent);
 }
@@ -830,8 +836,45 @@ body {
   outline-offset: 4px;
 }
 .app-header .room-toggle { --button-color: #fb728b; }
-.app-header #hapticsToggle { --button-color: #59deb6; }
+.app-header #feedbackToggle { --button-color: #59deb6; }
 .app-header #themeToggle { --button-color: #9db6ff; }
+.header-setting { position: relative; }
+.feedback-panel[hidden] { display: none; }
+.feedback-panel {
+  position: absolute;
+  z-index: 70;
+  top: calc(100% + 18px);
+  right: 0;
+  width: min(320px, calc(100vw - 24px));
+  padding: 18px;
+  border: 2px solid #59deb6;
+  border-radius: 18px;
+  background: #1a2940;
+  color: #f4f6ff;
+  box-shadow: 0 10px 0 #091526, 0 20px 40px #0009;
+}
+.feedback-panel h2 { margin: 0 0 6px; font-size: 1.15rem; color: #bafae4; }
+.feedback-panel p { margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: #d6e2ee; }
+.feedback-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid #8498aa;
+  border-radius: 12px;
+  background: #233550;
+  color: #fff;
+  font: inherit;
+  font-weight: 750;
+  text-align: left;
+}
+.feedback-option:not(:disabled):hover { border-color: #59deb6; background: #2b4760; }
+.feedback-option:focus-visible { outline: 3px solid #fff3a7; outline-offset: 2px; }
+.feedback-option:disabled { opacity: .65; cursor: not-allowed; }
+.feedback-value { min-width: 76px; padding: 5px 8px; border-radius: 20px; background: #43536c; text-align: center; font-size: .82rem; }
+.feedback-option[aria-pressed="true"] .feedback-value { background: #268c6c; color: #fff; }
 .app-header .room-toggle.is-connected {
   --button-color: #59eab3;
   color: #fff;
@@ -848,18 +891,25 @@ body {
   border-radius: 50%;
   background: #67fac0;
 }
-.app-header #soundToggle[data-on="false"],
-.app-header #hapticsToggle[data-on="false"] { opacity: .62; }
-.app-header .sound-off-icon,
 .app-header .moon-icon { display: none; }
-.app-header #soundToggle[data-on="false"] .sound-on-icon,
 .app-header #themeToggle[data-mode="dark"] .sun-icon { display: none; }
-.app-header #soundToggle[data-on="false"] .sound-off-icon,
 .app-header #themeToggle[data-mode="dark"] .moon-icon { display: block; }
+@media (max-width: 680px) {
+  .feedback-label-extra, .theme-label { display: none; }
+}
+@media (max-width: 480px) {
+  .app-header { padding-inline: 12px; }
+  .app-header .icon-btn { min-width: 52px; padding-inline: 8px; font-size: .78rem; }
+  .app-header .icon-btn svg { display: none; }
+  .app-header #themeToggle[data-mode="dark"] .moon-icon { display: none; }
+  .app-header .header-actions { gap: 5px; }
+  .feedback-panel { position: fixed; top: 66px; right: 12px; }
+}
 @media (max-width: 390px) {
-  .app-header .brand-icon { width: 34px; height: 34px; }
+  .app-header .brand { gap: 6px; }
+  .app-header .brand-icon { width: 28px; height: 28px; }
+  .app-header .brand-title { font-size: 1rem; }
   .brand-kicker, .brand-spark { display: none; }
-  .app-header .icon-btn { width: 40px; height: 40px; flex-basis: 40px; }
 }
 .landing-hero {
   max-width: 770px;

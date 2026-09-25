@@ -4,7 +4,7 @@
 import { initTheme } from './theme.js';
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 import { ArcadeAudio } from './audio.js';
-import { initHapticsUI, haptics } from './haptics.js';
+import { haptics, isEnabled, isSupported, setEnabled } from './haptics.js';
 import { initRouter } from './router.js';
 import { room } from './multiplayer.js';
 
@@ -14,9 +14,9 @@ const audio = new ArcadeAudio(loadJSON(KEYS.SOUND_ENABLED, true));
 window.arcadeAudio = audio;
 window.haptics = haptics;
 
-initHapticsUI(audio);
-initSoundControl(audio);
+initFeedbackControl(audio);
 initGameTouchFeedback(audio);
+initControlHints();
 initRouter();
 const roomToggle = document.getElementById('roomToggle');
 roomToggle?.addEventListener('click', () => {
@@ -28,6 +28,7 @@ room.on((event) => {
   roomToggle.classList.toggle('is-connected', connected > 1);
   roomToggle.setAttribute('aria-label', room.role
     ? `Open multiplayer lobby, ${connected} connected` : 'Open multiplayer lobby');
+  roomToggle.title = room.role ? `Open room · ${connected} connected` : 'Open multiplayer room';
 });
 if (new URL(location.href).searchParams.has('invite') ||
     new URL(location.href).searchParams.has('answer')) {
@@ -41,27 +42,59 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Sound toggle button wiring (rendered in the header).
-function initSoundControl(audio) {
-  const toggle = document.getElementById('soundToggle');
-  if (!toggle) return;
+function initFeedbackControl(audio) {
+  const trigger = document.getElementById('feedbackToggle');
+  const panel = document.getElementById('feedbackPanel');
+  const sound = document.getElementById('soundToggle');
+  const vibration = document.getElementById('hapticsToggle');
+  if (!trigger || !panel || !sound || !vibration) return;
 
   const refresh = () => {
-    const on = audio.enabled;
-    toggle.dataset.on = String(on);
-    toggle.setAttribute('aria-label', on ? 'Mute sounds' : 'Unmute sounds');
-    toggle.dataset.tooltip = on ? 'Mute sounds' : 'Unmute sounds';
+    sound.setAttribute('aria-pressed', String(audio.enabled));
+    sound.querySelector('.feedback-value').textContent = audio.enabled ? 'On' : 'Off';
+    vibration.disabled = !isSupported();
+    vibration.setAttribute('aria-pressed', String(isEnabled()));
+    vibration.querySelector('.feedback-value').textContent = !isSupported()
+      ? 'Unavailable' : isEnabled() ? 'On' : 'Off';
+    vibration.title = isSupported() ? 'Turn vibration on or off' : 'Vibration is unavailable on this device';
   };
-
-  toggle.addEventListener('click', async () => {
-    await audio.prepare();
+  const close = () => {
+    if (panel.hidden) return;
+    panel.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+  };
+  trigger.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    trigger.setAttribute('aria-expanded', String(!panel.hidden));
+    if (!panel.hidden) sound.focus();
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!panel.hidden && !trigger.parentElement.contains(event.target)) close();
+  });
+  document.addEventListener('focusin', (event) => {
+    if (!panel.hidden && !trigger.parentElement.contains(event.target)) close();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || panel.hidden) return;
+    close();
+    trigger.focus();
+  });
+  sound.addEventListener('click', async () => {
     const next = !audio.enabled;
     audio.setEnabled(next);
     saveJSON(KEYS.SOUND_ENABLED, next);
     refresh();
-    if (next) audio.tap();
+    if (next) {
+      await audio.prepare();
+      audio.tap();
+    }
   });
-
+  vibration.addEventListener('click', () => {
+    const next = !isEnabled();
+    setEnabled(next);
+    refresh();
+    if (next) haptics.light();
+  });
   refresh();
 }
 
@@ -80,4 +113,25 @@ function initGameTouchFeedback(audio) {
     audio.prepare();
     audio.tone(720, 0.025, 'sine', 0.07);
   });
+}
+
+function initControlHints() {
+  const selector = 'button[aria-label], [role="button"][aria-label], canvas[aria-label]';
+  const update = (node) => {
+    if (!(node instanceof Element)) return;
+    const label = (element) => {
+      if (!element.matches(selector) || (element.title && element.dataset.autoHint !== 'true')) return;
+      element.title = element.getAttribute('aria-label');
+      element.dataset.autoHint = 'true';
+    };
+    label(node);
+    node.querySelectorAll(selector).forEach(label);
+  };
+  update(document.body);
+  new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === 'attributes') update(record.target);
+      else record.addedNodes.forEach(update);
+    }
+  }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-label'] });
 }

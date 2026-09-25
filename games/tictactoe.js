@@ -96,8 +96,8 @@ export default {
       for (let i = 0; i < board.length; i++) {
         const cell = document.createElement('button');
         cell.className = 'ttt-cell';
-        cell.setAttribute('aria-label', `Cell ${Math.floor(i / 3) + 1},${(i % 3) + 1}`);
         const token = board[i];
+        cell.setAttribute('aria-label', `${token ? 'Occupied' : 'Place mark'} at row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}`);
         if (token) {
           cell.textContent = TOKEN_STYLE[token].label;
           cell.style.color = TOKEN_STYLE[token].color;
