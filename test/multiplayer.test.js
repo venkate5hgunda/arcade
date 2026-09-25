@@ -422,6 +422,56 @@ async function connectGuest(host, name) {
   return { guest, hostChannel: hp.channel, guestChannel: channel };
 }
 
+test('a recovering first guest stays usable when a second guest is being invited', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  const first = await connectGuest(host, 'First');
+  let second;
+  try {
+    const firstPeer = host.peers.get(first.guest.peerId).pc;
+    firstPeer.connectionState = 'disconnected';
+    firstPeer.onconnectionstatechange();
+    t.mock.timers.tick(7000);
+    firstPeer.connectionState = 'connected';
+    firstPeer.onconnectionstatechange();
+    assert.equal(host.members.find(member => member.id === first.guest.peerId).connected, true,
+      'short interruption does not mark a validated guest offline');
+    firstPeer.connectionState = 'disconnected';
+    firstPeer.onconnectionstatechange();
+    t.mock.timers.tick(8000);
+    assert.equal(host.members.find(member => member.id === first.guest.peerId).connected, false);
+    second = await connectGuest(host, 'Second');
+    const secondPeer = host.peers.get(second.guest.peerId).pc;
+    assert.equal(host.members.length, 3);
+    assert.equal(host.members.find(member => member.id === second.guest.peerId).connected, true);
+    assert.equal(host.connectionIssuePeer, first.guest.peerId, 'second guest does not clear first guest warning');
+    assert.equal(secondPeer.connectionState, 'new');
+    firstPeer.connectionState = 'connected';
+    firstPeer.onconnectionstatechange();
+    assert.equal(host.members.find(member => member.id === first.guest.peerId).connected, true);
+    assert.equal(host.connectionIssue, '');
+    assert.equal(first.guest.members.find(member => member.id === first.guest.peerId).connected, true);
+    const firstGuestPeer = first.guest.peers.get(host.peerId).pc;
+    firstGuestPeer.connectionState = 'disconnected';
+    firstGuestPeer.onconnectionstatechange();
+    t.mock.timers.tick(8000);
+    assert.equal(first.guest.members.find(member => member.id === first.guest.peerId).connected, false);
+    firstGuestPeer.connectionState = 'connected';
+    firstGuestPeer.onconnectionstatechange();
+    assert.equal(first.guest.members.find(member => member.id === first.guest.peerId).connected, true);
+    assert.equal(first.guest.connectionIssue, '');
+    host.startGame('ludo', [host.peerId, first.guest.peerId, second.guest.peerId]);
+    assert.equal(first.guest.activeGame.id, 'ludo');
+    assert.equal(second.guest.activeGame.id, 'ludo');
+  } finally {
+    first.guest.close();
+    second?.guest.close();
+    host.close();
+    t.mock.timers.reset();
+  }
+});
+
 test('host records each round once, retains results across games, and resets on a new room', () => {
   const host = new MultiplayerRoom();
   host.createHost('Host');

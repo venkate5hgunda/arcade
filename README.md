@@ -134,7 +134,7 @@ third-party synopses or bundling restricted API datasets (see
 
 ## Playing together on separate devices
 
-1. Tap **↗** in the header, enter a name and select **Host room**.
+1. Tap **Room** in the header, enter a name and select **Host room**.
 2. Select **Create guest invite**; send its URL using **Share link** or
    **Copy link**, or display **Show QR** for the guest to scan. Make a separate
    invite for each guest.
@@ -155,10 +155,18 @@ firewalls or symmetric NAT. Rooms live only while tabs remain open; remote
 play is not available offline. **Downloaded game assets remain playable
 locally offline** after the service worker has completed its first install.
 QR codes are generated locally; no invite or answer is sent to a QR service.
-Camera scanning requires browser QR detection and camera permission; copy/paste
-works otherwise. If a URL exceeds QR capacity, use the URL instead. Each
-device reports a lost or stalled direct connection; such a warning indicates
-a possible network restriction, not proof of a particular firewall or NAT.
+Camera scanning uses a locally hosted decoder on browsers without
+`BarcodeDetector`, including Safari and Chrome on iOS. On phones, open the
+arcade via **HTTPS** (not plain HTTP over a LAN IP) and allow camera access;
+`localhost` also works when testing on the same device. If camera access is
+denied or a long, dense QR is hard to read, paste the URL instead. QR codes
+that exceed capacity also fall back to the URL. The decoder and its worker
+are vendored from `qr-scanner` 1.4.2 under the MIT license in
+`js/vendor/LICENSE-qr-scanner`. Each device reports a lost or stalled direct
+connection; a warning indicates a possible network restriction, not proof
+of a particular firewall or NAT. Transient connections can recover when the
+underlying WebRTC channel reconnects; blocked networks may still require a
+new invite or a different network because there is no TURN relay.
 
 ## Running locally
 
