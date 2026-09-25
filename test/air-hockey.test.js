@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { acceleratePaddle, parkOpeningPuck, parkPuck, strikeParkedPuck } from '../games/air-hockey.js';
+import { acceleratePaddle, parkOpeningPuck, parkPuck, strikeParkedPuck, PUCK_FRICTION } from '../games/air-hockey.js';
 import { stepDiscs } from '../js/disc-physics.js';
 
 test('opening faceoff stays at rest until either player approaches the puck', () => {
@@ -39,6 +39,20 @@ test('a harder or angled impact transfers proportionally more momentum', () => {
   assert.ok(Math.hypot(puck.vx, puck.vy) <= 1050, 'extreme inputs remain playable');
 });
 
+test('table drag stops gentle taps quickly but allows committed strikes to travel', () => {
+  function travel(paddleSpeed) {
+    const puck = { x: 300, y: 450, vx: 0, vy: 0, r: 17 };
+    assert.equal(strikeParkedPuck(puck, { x: 300, y: 492, vx: 0, vy: -paddleSpeed, r: 37 }), true);
+    const initialSpeed = Math.hypot(puck.vx, puck.vy);
+    for (let i = 0; i < 240; i++) stepDiscs([puck], 1 / 120, { friction: PUCK_FRICTION });
+    return { distance: 450 - puck.y, speed: Math.hypot(puck.vx, puck.vy), initialSpeed };
+  }
+  const gentle = travel(80), hard = travel(400);
+  assert.ok(gentle.distance < 75 && gentle.speed === 0, `gentle tap traveled ${gentle.distance}`);
+  assert.ok(hard.initialSpeed > gentle.initialSpeed * 4 && hard.distance > 850,
+    `hard hit traveled ${hard.distance} versus ${gentle.distance}`);
+});
+
 test('paddles accelerate toward input and stop at their half-table boundary', () => {
   const paddle = { x: 300, y: 740, vx: 0, vy: 0 };
   const bounds = { left: 60, right: 540, top: 492, bottom: 840 };
@@ -69,7 +83,7 @@ for (const [scorer, receiver, y] of [[0, 1, 290], [1, 0, 610]]) {
     assert.equal(strikeParkedPuck(puck, receiverPaddle), true);
     assert.ok(receiver === 0 ? puck.vy < 0 : puck.vy > 0);
     const speed = Math.hypot(puck.vx, puck.vy);
-    stepDiscs([puck], 1 / 120, { friction: 40 });
+    stepDiscs([puck], 1 / 120, { friction: PUCK_FRICTION });
     assert.ok(Math.hypot(puck.vx, puck.vy) < speed, 'surface friction slows the puck');
   });
 }

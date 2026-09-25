@@ -10,9 +10,9 @@ const ICE_TIMEOUT = 20000;
 const CONNECT_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
-const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'uno', 'crazy-eights']);
-const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'uno']);
-const PRIVATE_GAMES = new Set(['uno', 'crazy-eights']);
+const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'catan', 'uno', 'crazy-eights']);
+const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'catan', 'uno']);
+const PRIVATE_GAMES = new Set(['catan', 'uno', 'crazy-eights']);
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 

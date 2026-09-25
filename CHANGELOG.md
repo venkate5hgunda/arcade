@@ -3,6 +3,22 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-25 — Heftier Air Hockey shots
+
+- Increased puck drag on the table and reduced paddle response to short
+  pointer movements. Light hits settle quickly; committed strokes still
+  drive the puck across the rink. Offline cache v38 includes the updated game.
+
+## 2026-09-25 — Island Charter
+
+- Added a 3–4 player original island strategy board with 19 hexes, opening
+  placement, resource production, raider, construction, ports, trading,
+  discoveries, awards and ten-point victory. Supports local private handoffs
+  and host-authoritative rooms with private player cargo.
+- New board art, responsive layout, turn cues and local session recovery;
+  offline cache v38 precaches the game and its styles. No licensed Catan
+  artwork, text, cards or branding is reproduced.
+
 ## 2026-09-25 — Multiplayer turn cues and mobile sound
 
 - Turn-based multiplayer games show a prominent, named turn banner; a new

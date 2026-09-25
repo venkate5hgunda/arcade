@@ -549,6 +549,7 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
   background: color-mix(in srgb, var(--accent) 16%, var(--bg-soft));
 }
 .arcade-turn[hidden] { display: none; }
+.ct-vibe .game-head { color: var(--text); }
 .ttt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;aspect-ratio:1;width:min(360px,80vw);max-width:360px}
 .ttt-cell{aspect-ratio:1;border-radius:14px;border:2px solid var(--border);background:var(--bg-soft);font-size:clamp(1.5rem,6vw,2.6rem);font-weight:900;color:var(--text);transition:transform .12s ease,border-color .15s ease,background .15s ease}
 .ttt-cell:hover{border-color:var(--accent);transform:scale(1.03)}.ttt-cell:active{transform:scale(0.96)}.ttt-cell.filled{animation:pop .18s ease}@keyframes pop{0%{transform:scale(0.5);opacity:0}100%{transform:scale(1);opacity:1}}.ttt-cell.win{border-color:#34d399;background:rgba(52,211,153,.12);animation:winPulse .6s ease infinite alternate}@keyframes winPulse{from{background:rgba(52,211,153,.12)}to{background:rgba(52,211,153,.28)}}.ttt-status{text-align:center;font-size:1.1rem;font-weight:700;margin-top:16px;min-height:1.4em}

@@ -10,9 +10,10 @@ const W = 600, H = 900;
 const GOAL_LEFT = 195, GOAL_RIGHT = 405;
 const BOUNDS = { left: 23, right: 577, top: -10000, bottom: 10000 };
 const PADDLE_SPEED = 690;
-const DRAG_SPEED = 1250;
-const PADDLE_ACCEL = 28000;
+const DRAG_SPEED = 950;
+const PADDLE_ACCEL = 22000;
 const PUCK_SPEED_LIMIT = 1050;
+export const PUCK_FRICTION = 190;
 const RESTITUTION = .93;
 
 export function parkPuck(puck, receiver) {
@@ -184,7 +185,7 @@ export default {
         if (positions[i]) {
           const remainingX = positions[i].x - p.x, remainingY = positions[i].y - p.y;
           const distance = Math.hypot(remainingX, remainingY);
-          const response = Math.min(24, DRAG_SPEED / (distance || 1));
+          const response = Math.min(16, DRAG_SPEED / (distance || 1));
           desiredVx = remainingX * response;
           desiredVy = remainingY * response;
         }
@@ -214,7 +215,7 @@ export default {
         window.haptics?.select();
       }
       stepDiscs([puck, ...paddles], dt, {
-        bounds: BOUNDS, friction: 40, restitution: RESTITUTION,
+        bounds: BOUNDS, friction: PUCK_FRICTION, restitution: RESTITUTION,
         onCollision(a, b, force) {
           if (a === puck || b === puck) {
             if (force > 80 && performance.now() - lastImpact > 70) {

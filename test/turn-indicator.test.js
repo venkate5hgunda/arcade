@@ -38,6 +38,11 @@ test('room turns name the active player and alert only on a newly acquired turn'
     assert.equal(calls.length, 2, 're-rendering a turn does not replay the cue');
     showTurn(1, false);
     assert.equal(banner.hidden, true);
+    const local = createTurnIndicator(root);
+    local(0, true, 'Team 1 · Maya');
+    assert.equal(banner.textContent, "Team 1 · Maya's turn");
+    local(1, true, 'Team 2 · Ravi');
+    assert.deepEqual(calls, ['sound', 'haptic', 'sound', 'haptic']);
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;

@@ -5,6 +5,7 @@ export const RESUME_MINUTES = Object.freeze({
   '2048': 20,
   'air-hockey': 10,
   blackjack: 5,
+  catan: 120,
   chess: 45,
   'connect-four': 12,
   'crazy-eights': 15,
