@@ -6,6 +6,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const CHOICES = [
   { id: 'rock', label: 'Rock', icon: '✊', beats: 'scissors' },
@@ -44,6 +45,7 @@ export default {
     shell.root.classList.add('rps-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':rps', { mode: 'ai', target: '3' });
     const checkpoint = !match && validCheckpoint(session?.state) ? session.state : null;
     const settings = match ? { mode: 'pvp', target: '3' } : checkpoint ?
@@ -99,6 +101,7 @@ export default {
     stage.appendChild(status);
 
     function render() {
+      if (match || !aiMode) showTurn(phase === 'p1pick' ? 0 : phase === 'p2pick' ? 1 : null, !over);
       status.textContent = over ? '' : `Score — ${aiMode ? 'You' : 'P1'}: ${score.p1} · ${aiMode ? 'Computer' : 'P2'}: ${score.p2}`;
       card.innerHTML = '';
       if (phase === 'p1pick') {

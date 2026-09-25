@@ -3,6 +3,18 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-25 — Multiplayer turn cues and mobile sound
+
+- Turn-based multiplayer games show a prominent, named turn banner; a new
+  local turn plays a sound and selection haptic where supported. Align
+  Connect Four drop arrows to the centers of their columns at phone and
+  desktop widths.
+- Unlock Web Audio on touch/pointer/keyboard gestures, recover interrupted
+  mobile audio contexts and add a sample-sound control with troubleshooting
+  feedback. No hidden iOS switch haptics: programmatic clicks stopped
+  producing reliable feedback on recent iOS versions. Offline cache v34
+  includes the turn indicator and updated sound controls.
+
 ## 2026-09-25 — Step-by-step room lobby
 
 - Open with a Create / Join choice; invitation links take guests straight to

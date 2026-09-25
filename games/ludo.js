@@ -5,6 +5,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 import { boardCellPoint, decorateBoardToken, travelBoardToken } from '../js/board-tokens.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const COLORS = ['#ff6558', '#60baf0', '#56cf9a', '#f2be59'];
 const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
@@ -63,6 +64,7 @@ export default {
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ld-vibe');
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':ludo', { players: '4' });
     const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.count) } : await renderSetup(shell.stage, {
@@ -193,6 +195,7 @@ export default {
         ? message || (moving ? `${playerName(current, match)}'s token is traveling…` : rolling ? 'Die in motion…' : awaiting ? `${playerName(current, match)}: choose a glowing token` :
           match && seat(match) !== current + 1 ? `Waiting for Player ${current + 1} to roll` : `Player ${current + 1}: roll the die`)
         : `${playerName(winner, match)} wins the table!`;
+      showTurn(current, winner === null);
       status.style.color = COLORS[winner ?? current];
     }
 

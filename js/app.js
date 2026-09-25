@@ -46,12 +46,15 @@ function initFeedbackControl(audio) {
   const trigger = document.getElementById('feedbackToggle');
   const panel = document.getElementById('feedbackPanel');
   const sound = document.getElementById('soundToggle');
+  const soundTest = document.getElementById('soundTest');
+  const soundStatus = document.getElementById('soundStatus');
   const vibration = document.getElementById('hapticsToggle');
-  if (!trigger || !panel || !sound || !vibration) return;
+  if (!trigger || !panel || !sound || !soundTest || !soundStatus || !vibration) return;
 
   const refresh = () => {
     sound.setAttribute('aria-pressed', String(audio.enabled));
     sound.querySelector('.feedback-value').textContent = audio.enabled ? 'On' : 'Off';
+    soundTest.disabled = !audio.enabled;
     vibration.disabled = !isSupported();
     vibration.setAttribute('aria-pressed', String(isEnabled()));
     vibration.querySelector('.feedback-value').textContent = !isSupported()
@@ -85,8 +88,16 @@ function initFeedbackControl(audio) {
     saveJSON(KEYS.SOUND_ENABLED, next);
     refresh();
     if (next) {
-      await audio.prepare();
-      audio.tap();
+      if (await audio.prepare()) audio.tap();
+      else soundStatus.textContent = 'Could not start audio. Try Test sound after interacting with the page.';
+    }
+  });
+  soundTest.addEventListener('click', async () => {
+    if (await audio.prepare()) {
+      audio.chime();
+      soundStatus.textContent = 'Sound played. If you cannot hear it, check your device mute setting and audio output.';
+    } else {
+      soundStatus.textContent = 'Audio is blocked or unavailable. Try again after tapping the page or check browser audio settings.';
     }
   });
   vibration.addEventListener('click', () => {
@@ -99,6 +110,12 @@ function initFeedbackControl(audio) {
 }
 
 function initGameTouchFeedback(audio) {
+  const unlock = () => { if (audio.enabled) void audio.prepare(); };
+  document.addEventListener('pointerdown', unlock, { capture: true, passive: true });
+  document.addEventListener('touchstart', unlock, { capture: true, passive: true });
+  document.addEventListener('keydown', (event) => {
+    if (!event.repeat && ['Enter', ' '].includes(event.key)) unlock();
+  }, { capture: true });
   const control = (target) => target instanceof Element
     ? target.closest('.game-shell button:not(:disabled)') : null;
   document.addEventListener('pointerdown', (event) => {

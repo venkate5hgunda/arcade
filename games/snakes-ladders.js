@@ -10,6 +10,7 @@ import { remoteMatch, seat } from '../js/remote-match.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const BOARD_SIZE = 100;
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
@@ -33,6 +34,7 @@ export default {
     shell.root.classList.add('sl-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: '2' });
     const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.playerCount) } : await renderSetup(stage, {
@@ -182,6 +184,7 @@ export default {
         status.textContent = message || `${playerName(current, match)}'s turn · ${match && current !== seat(match) - 1 ? 'Waiting for their roll' : 'Tap to roll'}`;
         status.style.color = PLAYER_COLORS[current];
       }
+      showTurn(current, !gameOver);
     }
 
     async function rollDice(predeterminedValue = null) {
