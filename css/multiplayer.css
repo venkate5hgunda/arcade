@@ -41,8 +41,17 @@
 .mp-notice { line-height: 1.55; color: #bfcde0; max-width: 720px; }
 .mp-steps { line-height: 1.5; padding: 14px 18px; border-radius: 12px; background: #122d41; border: 1px solid #67ccc584; }
 .mp-status { min-height: 1.5em; line-height: 1.45; }
+.mp-status:empty { display: none; }
 .mp-status-error { padding: 12px 16px; border: 2px solid #ffb676; border-radius: 12px; background: #54223d; color: #fff2db; }
+.mp-help { color: #bfcde0; margin: 12px 0; }
+.mp-help summary { width: fit-content; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.mp-help p { max-width: 650px; line-height: 1.5; }
 .mp-controls, .mp-games, .mp-selection { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; align-items: center; }
+.mp-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; width: 100%; }
+.mp-choices button { min-height: 90px; font-size: 1.2rem; }
+.mp-choices button:last-child { background: linear-gradient(150deg, #216b81, #3444a4); border-color: #8acaff; box-shadow: 0 3px 0 #172963; }
+.mp-choices button:last-child:hover { box-shadow: 0 5px 0 #172963; }
+.mp-field { display: grid; gap: 6px; width: 100%; max-width: 310px; font-weight: 700; }
 .mp-lobby input:not([type="checkbox"]), .mp-link {
   box-sizing: border-box;
   width: 100%;
@@ -73,7 +82,7 @@
 }
 .mp-lobby button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 0 #731a4a; }
 .mp-lobby button:disabled { opacity: .45; cursor: not-allowed; }
-.mp-lobby button:focus-visible, .mp-lobby input:focus-visible, .mp-link:focus-visible { outline: 3px solid #8acaff; outline-offset: 2px; }
+.mp-lobby button:focus-visible, .mp-lobby input:focus-visible, .mp-link:focus-visible, .mp-help summary:focus-visible { outline: 3px solid #8acaff; outline-offset: 2px; }
 .mp-members { padding: 0; list-style: none; display: grid; gap: 10px; }
 .mp-members li { padding: 12px; background: #333f5a; border: 1px solid #7283a850; border-radius: 12px; }
 .mp-members button { margin-left: 10px; }
@@ -90,8 +99,10 @@
 .mp-standings-games { border-top: 1px solid #7ba1a452; padding-top: 10px; }
 .mp-standings-games ul { padding-left: 20px; font-size: .9rem; color: #bfcde0; }
 @media (max-width: 560px) {
-  .mp-lobby input:not([type="checkbox"]) { max-width: 100%; }
+  .mp-field, .mp-lobby input:not([type="checkbox"]) { max-width: 100%; }
   .mp-controls button { width: 100%; }
+  .mp-choices { grid-template-columns: 1fr; }
+  .mp-choices button { min-height: 76px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mp-lobby button { transition: none; }

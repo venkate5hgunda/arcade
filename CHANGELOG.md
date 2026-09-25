@@ -3,6 +3,15 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-25 — Step-by-step room lobby
+
+- Open with a Create / Join choice; invitation links take guests straight to
+  the join form. Show only the fields and instructions for the selected role.
+- Reveal answer controls while the host has pending invites, game seats after
+  a guest connects, and standings after a result exists. Show sharing controls
+  only for a current invite or answer; keep both QR and URL options. Offline
+  cache v33 includes the lobby update.
+
 ## 2026-09-25 — Multi-guest connection recovery and mobile QR scanning
 
 - Keep independently connected guests in the room while adding another peer.

@@ -681,7 +681,9 @@ export class MultiplayerRoom {
     const draft = {
       name: '',
       invite: new URL(location.href).searchParams.has('invite') ? location.href : '',
-      answer: '', output: '', outputKind: '', qrVisible: false, message: '',
+      answer: new URL(location.href).searchParams.has('answer') ? location.href : '',
+      mode: new URL(location.href).searchParams.has('invite') ? 'join' : null,
+      output: '', outputKind: '', qrVisible: false, message: '', seats: null,
     };
     let scanning = null;
     const stopScan = () => {
@@ -760,31 +762,39 @@ export class MultiplayerRoom {
       const root = document.createElement('section');
       root.className = 'mp-lobby';
       const title = document.createElement('h2');
-      title.textContent = 'Multiplayer room';
+      title.textContent = this.role === 'host' ? 'Your room' :
+        this.role === 'guest' ? 'Joining the room' :
+          draft.mode === 'create' ? 'Create a room' : draft.mode === 'join' ? 'Join a room' : 'Play together';
       root.append(title);
-      const notice = document.createElement('p');
-      notice.className = 'mp-notice';
-      notice.textContent = 'Connect in two steps: send the invite to your guest, then have them send their answer back to the original host tab. Share either link by QR or URL. Camera scanning on phones requires HTTPS. Remote play needs internet and a direct WebRTC connection; some networks block it (no relay).';
-      root.append(notice);
       const steps = document.createElement('p');
       steps.className = 'mp-steps';
-      steps.textContent = !this.role
-        ? 'Host: enter your name and create a room. Guest: enter your name, paste or scan the invite, then create an answer.'
-        : this.role === 'host'
-          ? '1. Create a separate invite for each guest and share its URL or QR. 2. Paste or scan each answer here in this same tab. 3. Wait for “connected,” then choose seats.'
-          : '1. Share your answer URL or QR with the host. 2. Wait for the host to accept it in their original tab. You are ready when your status says “connected.”';
+      const pending = this.role === 'host' && [...this.peers.values()].some(
+        (peer) => peer.pc.signalingState === 'have-local-offer' && !peer.accepting);
+      const connectedGuests = this.role === 'host' && this.members.some(
+        (member) => member.id !== this.peerId && member.connected && member.admitted);
+      const guestConnected = this.role === 'guest' &&
+        this.members.find((member) => member.id === this.peerId)?.connected;
+      steps.textContent = this.role === 'host'
+        ? pending ? 'Send the invite, then accept the guest’s answer in this original tab.' :
+          connectedGuests ? 'Choose connected guests and start a game, or invite another player.' :
+            'Create an invite for each guest, then accept their answer here.'
+        : this.role === 'guest'
+          ? guestConnected ? 'You’re connected. The host will choose the next game.' :
+            'Send your answer to the host. Keep this tab open while they accept it.'
+          : draft.mode === 'create' ? 'Give yourself a name to open a room.' :
+            draft.mode === 'join' ? 'Paste or scan the invite you received, then send your answer back.' :
+              'Make a room for friends, or join one with an invite.';
       root.append(steps);
       const status = document.createElement('p');
       status.setAttribute('role', 'status');
       status.className = 'mp-status';
       status.textContent = draft.message;
-      if (this.role === 'host' && draft.message.startsWith('Answer accepted.') &&
-          this.members.some((member) => member.id !== this.peerId && member.connected)) {
+      if (this.role === 'host' && draft.message.startsWith('Answer accepted.') && connectedGuests) {
         status.textContent = 'Guest connected. Select seats and start a game.';
-      } else if (this.role === 'guest' &&
-          this.members.find((member) => member.id === this.peerId)?.connected) {
+      } else if (guestConnected) {
         status.textContent = this.activeGame ? 'Connected to host.' :
           'Connected to host. Waiting for the host to start a game.';
+        if (draft.outputKind === 'answer') draft.output = '';
       }
       root.append(status);
       if (this.connectionIssue) {
@@ -794,16 +804,28 @@ export class MultiplayerRoom {
         warning.textContent = this.connectionIssue;
         root.append(warning);
       }
+      const help = document.createElement('details');
+      help.className = 'mp-help';
+      const summary = document.createElement('summary');
+      summary.textContent = 'How does connecting work?';
+      const explanation = document.createElement('p');
+      explanation.textContent = 'Each guest gets a separate invite URL or QR and sends an answer URL or QR back. The host accepts it in the original tab. Keep both tabs open. Camera scanning requires HTTPS; direct play needs internet and may be blocked by some networks (no TURN relay).';
+      help.append(summary, explanation);
+      root.append(help);
       const controls = document.createElement('div');
       controls.className = 'mp-controls';
       root.append(controls);
       const field = (placeholder, key) => {
+        const label = document.createElement('label');
+        label.className = 'mp-field';
+        const caption = document.createElement('span');
+        caption.textContent = placeholder;
         const input = document.createElement('input');
         input.placeholder = placeholder;
-        input.setAttribute('aria-label', placeholder);
         input.value = draft[key];
         input.addEventListener('input', () => { draft[key] = input.value; });
-        controls.append(input);
+        label.append(caption, input);
+        controls.append(label);
         return input;
       };
       const button = (text, handler, parent = controls) => {
@@ -833,39 +855,73 @@ export class MultiplayerRoom {
         render();
       };
       if (!this.role) {
-        const name = field('Your name', 'name');
-        button('Host room', () => this.createHost(name.value));
-        const invite = field('Paste invite URL', 'invite');
-        button('Scan invite QR', () => scanInto('invite', invite));
-        button('Join and create answer', async () => {
-          const answer = await this.joinInvite(invite.value, name.value);
-          display(answer, 'Send this answer back to the original host tab. Admission is not connection.', 'answer');
-        });
+        if (draft.answer) {
+          const hint = document.createElement('p');
+          hint.className = 'mp-notice';
+          hint.textContent = 'This is an answer link. Paste or scan it in the original host tab, where the invite was created.';
+          root.append(hint);
+        }
+        if (!draft.mode) {
+          const choices = document.createElement('div');
+          choices.className = 'mp-choices';
+          button('Create a room', () => { draft.mode = 'create'; render(); }, choices);
+          button('Join a room', () => { draft.mode = 'join'; render(); }, choices);
+          controls.append(choices);
+        } else {
+          const name = field('Your name', 'name');
+          if (draft.mode === 'create') {
+            button('Create room', () => this.createHost(name.value));
+          } else {
+            const invite = field('Paste invite URL', 'invite');
+            button('Scan invite QR', () => scanInto('invite', invite));
+            button('Join and create answer', async () => {
+              const answer = await this.joinInvite(invite.value, name.value);
+              display(answer, 'Send this answer to the original host tab. Wait until connected before playing.', 'answer');
+            });
+          }
+          button('Back to choices', () => { draft.mode = null; draft.message = ''; render(); });
+        }
       } else if (this.role === 'host') {
         button('Create guest invite', async () => {
           display(await this.createInvite(), 'Send this invite to one guest; have them return their answer here.', 'invite');
         });
-        const answer = field('Paste guest answer URL', 'answer');
-        button('Scan answer QR', () => scanInto('answer', answer));
-        button('Accept answer', async () => {
-          await this.acceptAnswer(answer.value);
-          draft.message = 'Answer accepted. Waiting for a direct connection; this may fail behind a NAT or firewall.';
-          render();
-        });
-      } else if (!draft.message && !this.members.find((member) => member.id === this.peerId)?.connected)
+        if (pending) {
+          const answer = field('Paste guest answer URL', 'answer');
+          button('Scan answer QR', () => scanInto('answer', answer));
+          button('Accept answer', async () => {
+            await this.acceptAnswer(answer.value);
+            draft.answer = '';
+            draft.message = 'Answer accepted. Waiting for a direct connection; this may fail behind a NAT or firewall.';
+            render();
+          });
+        }
+      } else if (!draft.message && !guestConnected)
         status.textContent = 'Waiting for the host to accept your answer link.';
       if (this.role) {
+        button('Leave room', () => {
+          draft.mode = null;
+          draft.output = '';
+          draft.message = '';
+          draft.seats = null;
+          this.close();
+        });
+      }
+      if (draft.output && (this.role === 'host' && draft.outputKind === 'invite' && pending ||
+          this.role === 'guest' && draft.outputKind === 'answer' && !guestConnected)) {
+        const sharePanel = document.createElement('div');
+        sharePanel.className = 'mp-share-panel';
+        const label = document.createElement('h3');
+        label.textContent = `${draft.outputKind === 'invite' ? 'Invite for guest' : 'Answer for host'}`;
+        sharePanel.append(label, output);
         button('Share link', async () => {
-          if (!draft.output) fail('Create a link first.');
           const result = await this.share(draft.output);
           draft.message = result.method === 'cancelled' ? 'Sharing cancelled; the link is still below.' :
             result.method === 'manual' ? 'Select and copy the link below manually.' :
               `Link ${result.method === 'share' ? 'shared' : 'copied'}. ${this.role === 'host'
                 ? 'The guest must send their answer link back to this tab.' : 'The host must paste your answer link into their original tab.'}`;
           container.querySelector('[role="status"]')?.replaceChildren(document.createTextNode(draft.message));
-        });
+        }, sharePanel);
         button('Copy link', async () => {
-          if (!draft.output) fail('Create a link first.');
           if (!navigator.clipboard?.writeText) {
             output.focus();
             output.select();
@@ -882,15 +938,7 @@ export class MultiplayerRoom {
             }
           }
           container.querySelector('[role="status"]').textContent = draft.message;
-        });
-        button('Leave room', () => this.close());
-      }
-      if (draft.output && this.role === (draft.outputKind === 'invite' ? 'host' : 'guest')) {
-        const sharePanel = document.createElement('div');
-        sharePanel.className = 'mp-share-panel';
-        const label = document.createElement('h3');
-        label.textContent = `${draft.outputKind === 'invite' ? 'Invite for guest' : 'Answer for host'}`;
-        sharePanel.append(label, output);
+        }, sharePanel);
         button(draft.qrVisible ? 'Hide QR' : 'Show QR', () => {
           draft.qrVisible = !draft.qrVisible;
           render();
@@ -921,8 +969,12 @@ export class MultiplayerRoom {
         }
         roster.append(row);
       }
-      root.append(roster);
-      if (this.role) {
+      if (this.role && (this.members.length > 1 || this.role === 'guest' && guestConnected)) {
+        const heading = document.createElement('h3');
+        heading.textContent = 'Players';
+        root.append(heading, roster);
+      }
+      if (this.role && this.stats.games.length) {
         const standings = document.createElement('section');
         standings.className = 'mp-standings';
         const heading = document.createElement('h3');
@@ -968,7 +1020,7 @@ export class MultiplayerRoom {
         root.append(current);
         if (this.role === 'host') button('Return everyone to lobby', () => this.returnLobby(), root);
       }
-      if (this.role === 'host') {
+      if (this.role === 'host' && connectedGuests) {
         const games = document.createElement('div');
         games.className = 'mp-games';
         const selection = document.createElement('div');
@@ -982,7 +1034,10 @@ export class MultiplayerRoom {
           const check = document.createElement('input');
           check.type = 'checkbox';
           check.value = member.id;
-          check.checked = index === 0;
+          check.checked = draft.seats === null ? index === 0 : draft.seats.includes(member.id);
+          check.addEventListener('change', () => {
+            draft.seats = [...selection.querySelectorAll('input:checked')].map((input) => input.value);
+          });
           label.append(check, document.createTextNode(member.name));
           selection.append(label);
         }
