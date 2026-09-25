@@ -422,6 +422,31 @@ async function connectGuest(host, name) {
   return { guest, hostChannel: hp.channel, guestChannel: channel };
 }
 
+test('island game requires three seats and keeps each room hand private', async () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  const first = await connectGuest(host, 'First');
+  const second = await connectGuest(host, 'Second');
+  const seen = [[], []];
+  first.guest.on(event => { if (event.type === 'action') seen[0].push(event.action); });
+  second.guest.on(event => { if (event.type === 'action') seen[1].push(event.action); });
+  try {
+    assert.throws(() => host.startGame('catan', [host.peerId, first.guest.peerId]), /player count/);
+    host.startGame('catan', [host.peerId, first.guest.peerId, second.guest.peerId]);
+    assert.equal(first.guest.activeGame.id, 'catan');
+    host.sendPrivateAction(first.guest.peerId, {
+      type: 'ct-state', revision: 1, view: { goods: { timber: 3 }, dev: [{ type: 'victory' }] },
+    });
+    assert.equal(seen[0].at(-1).view.goods.timber, 3);
+    assert.equal(seen[1].length, 0);
+    assert.equal(second.hostChannel.sent.includes('"victory"'), false);
+  } finally {
+    first.guest.close();
+    second.guest.close();
+    host.close();
+  }
+});
+
 test('a recovering first guest stays usable when a second guest is being invited', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const host = new MultiplayerRoom();

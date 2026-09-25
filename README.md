@@ -14,6 +14,7 @@ mode, sound, and haptics.
 | Whack-a-Mole | 1 | Action | ✅ Implemented |
 | Snakes & Ladders | 2–4 | Board | ✅ Implemented |
 | Ludo | 2–4 | Board | ✅ Implemented |
+| Island Charter | 3–4 | Board | ✅ Implemented |
 | Chess | 1–2 | Board | ✅ Implemented |
 | Imposter | 3–8 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
@@ -61,15 +62,17 @@ mode, sound, and haptics.
   recently active game has an unfinished saved round. Each game has a
   pace-appropriate inactivity window: 2–5 minutes for quick and timed games,
   8–20 minutes for puzzles, cards and physical games, and up to 45 minutes
-  for chess. Once its window expires, its saved round is discarded; setup
-  choices and high scores remain. Remote rooms are tab-bound and do not
+  for chess, or two hours for Island Charter. Once its window expires, its
+  saved round is discarded; setup choices and high scores remain. Remote
+  rooms are tab-bound and do not
   auto-resume.
 
 The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
 Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
 Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
 **15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
-2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; and **45 min** for Chess.
+2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; **45 min** for
+Chess; and **120 min** for Island Charter.
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
@@ -78,7 +81,8 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
 - **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
   simulation. Pool has rack, collisions, pockets, scratches and house-rule
   8-ball play; air hockey has acceleration-limited paddles, impact-dependent
-  puck velocity, low-friction travel, collisions, rebounds and goals. After
+  puck velocity, grippier table drag that checks gentle taps while firm
+  strikes carry, collisions, rebounds and goals. After
   the opening faceoff, the puck rests at center until either player strikes it.
   After a goal, it rests on the non-scoring player's half until they strike it.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
@@ -90,6 +94,13 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   captured pieces to their yards. Both boards honor reduced-motion preferences;
   Ludo uses a full 52-square cross
   track and lets the player select which legal token to move.
+- **Island Charter** — original presentation of classic hex-settlement rules
+  for 3–4 players: snake-order opening placements, resource production,
+  blocking raider and seven-card discards, distance and road-building rules,
+  bank/harbor and player trading, development cards and ten-point victory.
+  Local players pass the device before revealing private cargo; in a room,
+  only the host holds the deck and sends each guest a private view. No
+  commercial game's illustrations, cards, rulebook text, or branding are used.
 - **Cards** — UNO-inspired (2–4 players) and Crazy Eights (2 players) lead
   with private-room play on separate devices. Only the host holds the deck
   and sends each guest their own hand and public table state. Optional local
@@ -102,8 +113,8 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
   games. The host assigns active seats in the lobby; extra guests may watch
   the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games), plus UNO-inspired (2–4 players) and Crazy Eights (2 players), with
-  host-authoritative private hands.
+  games), Island Charter (3–4 players), plus UNO-inspired (2–4 players) and
+  Crazy Eights (2 players), with host-authoritative private hands.
   The room lobby keeps per-player and per-game wins, losses, draws and rankings
   for the lifetime of the room, including across replays and game changes.
   Other games remain local-only.

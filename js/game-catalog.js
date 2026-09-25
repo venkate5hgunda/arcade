@@ -55,6 +55,16 @@ export const GAMES = [
     description: 'The beloved family board game. Roll, race, and knock opponents back to start.',
   },
   {
+    id: 'catan',
+    name: 'Island Charter',
+    tagline: 'Settle, trade, and build',
+    players: { min: 3, max: 4, type: 'local-multiplayer' },
+    category: 'Board',
+    color: '#14b8a6',
+    icon: '🏝️',
+    description: 'A hex-island strategy game: gather resources, build roads and settlements, trade, and race to ten points.',
+  },
+  {
     id: 'chess',
     name: 'Chess',
     tagline: 'The ultimate strategy game',
