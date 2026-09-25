@@ -4,6 +4,7 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { chooseCardTable } from '../js/card-room-entry.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 export const COLORS = ['red', 'yellow', 'green', 'blue'];
 const INK = { red: '#e24458', yellow: '#eeb744', green: '#31a77d', blue: '#4385df', wild: '#272a4e' };
@@ -268,6 +269,7 @@ export default {
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('uno-vibe');
     const room = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, room);
     const restored = !room && validUnoCheckpoint(session?.state) ? session.state : null;
     if (!room && !restored && !await chooseCardTable(shell.stage, multiplayer, game))
       return { dispose: () => shell.root.remove() };
@@ -426,6 +428,7 @@ export default {
       heading.append(eyebrow, label);
       table.append(heading);
       if (!view && room) {
+        showTurn(null);
         const waiting = document.createElement('p');
         waiting.className = 'cg-message';
         waiting.textContent = 'Waiting for the host to deal…';
@@ -433,6 +436,7 @@ export default {
         return;
       }
       const data = room ? view : unoView(state, state.current);
+      showTurn(data.current, data.winner === null && (!covered || !!room));
       if (covered) {
         const curtain = document.createElement('div');
         curtain.className = 'ce-curtain uno-curtain';

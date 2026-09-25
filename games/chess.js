@@ -6,6 +6,7 @@
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 
@@ -347,6 +348,7 @@ export default {
     shell.root.classList.add('chess-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
     const saved = loadJSON(KEYS.SETTINGS + ':chess', { mode: 'pvp', side: 'w' });
     const settings = match ? { mode: 'pvp', side: 'w' } : resume ? { mode: resume.mode, side: resume.side } : await renderSetup(stage, {
@@ -438,6 +440,7 @@ export default {
       renderCaptured();
       renderPromotionPicker();
       updateStatus();
+      if (match || !aiMode) showTurn(state.turn === 'w' ? 0 : 1, !over);
     }
 
     function renderCaptured() {

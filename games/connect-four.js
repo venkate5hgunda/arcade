@@ -7,6 +7,7 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const ROWS = 6, COLS = 7;
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: '●' }, 2: { color: '#fbbf24', label: '●' } };
@@ -78,6 +79,7 @@ export default {
     shell.root.classList.add('c4-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
     const restored = !match && validState(session?.state) ? session.state : null;
     const settings = match ? { mode: 'pvp' } : restored ? { mode: restored.mode } : await renderSetup(stage, {
@@ -103,9 +105,12 @@ export default {
 
     function checkpoint() { if (!match) session?.save({ mode: settings.mode, board: board.slice(), current }); }
 
+    const boardArea = document.createElement('div');
+    boardArea.className = 'c4-board';
+    stage.appendChild(boardArea);
     const grid = document.createElement('div');
     grid.className = 'c4-grid';
-    stage.appendChild(grid);
+    boardArea.appendChild(grid);
 
     const status = document.createElement('div');
     status.className = 'c4-status';
@@ -113,7 +118,7 @@ export default {
 
     const colButtons = document.createElement('div');
     colButtons.className = 'c4-col-btns';
-    stage.insertBefore(colButtons, grid);
+    boardArea.insertBefore(colButtons, grid);
 
     function render() {
       grid.innerHTML = '';
@@ -148,6 +153,7 @@ export default {
         colButtons.appendChild(btn);
       }
       updateStatus();
+      if (match || settings.mode === 'pvp') showTurn(current - 1, !gameOver);
       recentDrop = -1;
     }
 

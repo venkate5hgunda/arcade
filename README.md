@@ -171,6 +171,12 @@ of a particular firewall or NAT. Transient connections can recover when the
 underlying WebRTC channel reconnects; blocked networks may still require a
 new invite or a different network because there is no TURN relay.
 
+Sound starts on your first tap and can be checked with **Sound & feel → Test
+sound**. On iPhone or iPad, check the device mute setting and audio output if
+the test reports playing but you hear nothing. Safari does not expose the Web
+Vibration API, so gameplay haptics are unavailable on iOS; the hidden-switch
+workaround is not used because it is unreliable on recent iOS versions.
+
 ## Running locally
 
 ```bash

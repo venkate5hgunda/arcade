@@ -7,6 +7,7 @@ import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { remoteMatch, seat, validTurn } from '../js/remote-match.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const N = 3;
 
@@ -58,6 +59,7 @@ export default {
     shell.root.classList.add('ttt-vibe');
 
     const match = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
     const restored = !match && validState(session?.state) ? session.state : null;
     const settings = match ? { mode: 'pvp' } : restored ? { mode: restored.mode } : await renderSetup(stage, {
@@ -114,6 +116,7 @@ export default {
         grid.appendChild(cell);
       }
       updateStatus();
+      if (match || settings.mode === 'pvp') showTurn(current - 1, !gameOver);
       recentMark = -1;
     }
 

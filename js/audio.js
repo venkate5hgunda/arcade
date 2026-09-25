@@ -16,6 +16,7 @@ export class ArcadeAudio {
     this.master = null;
     this.silenced = false;
     this.impactBuffer = null;
+    this.warnedUnsupported = false;
   }
 
   setEnabled(enabled) {
@@ -24,24 +25,42 @@ export class ArcadeAudio {
   }
 
   async prepare() {
-    if (!this.enabled) return;
+    if (!this.enabled) return false;
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    if (!this.context) {
-      this.context = new AudioContext();
-      this.master = this.context.createGain();
-      this.master.gain.value = this.enabled ? 0.35 : 0;
-      this.master.connect(this.context.destination);
+    if (!AudioContext) {
+      if (!this.warnedUnsupported) console.warn('Web Audio is unavailable in this browser.');
+      this.warnedUnsupported = true;
+      return false;
     }
-    if (this.context.state === 'suspended') {
-      try { await this.context.resume(); }
-      catch (error) { console.warn('Arcade audio could not resume:', error); }
+    try {
+      if (!this.context || this.context.state === 'closed') {
+        this.context = new AudioContext();
+        this.master = this.context.createGain();
+        this.master.gain.value = this.enabled ? 0.35 : 0;
+        this.master.connect(this.context.destination);
+        this.impactBuffer = null;
+        const unlock = this.context.createOscillator();
+        const silent = this.context.createGain();
+        silent.gain.value = 0;
+        unlock.connect(silent).connect(this.master);
+        unlock.start();
+        unlock.stop(this.context.currentTime + 0.001);
+      }
+      if (this.context.state !== 'running') await this.context.resume();
+      return this.context.state === 'running';
+    } catch (error) {
+      console.warn('Arcade audio could not start; try tapping Sound & feel again:', error);
+      return false;
     }
   }
 
   // Low-level: schedule a tone. `freq` in Hz, `duration` in seconds.
   tone(freq, duration = 0.08, type = 'sine', volume = 0.5) {
-    if (!this.enabled || this.silenced || !this.context) return;
+    if (!this.enabled || this.silenced) return;
+    if (!this.context || this.context.state !== 'running') {
+      void this.prepare().then((ready) => { if (ready) this.tone(freq, duration, type, volume); });
+      return;
+    }
     const now = this.context.currentTime;
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();

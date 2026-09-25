@@ -3,6 +3,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 import { chooseCardTable } from '../js/card-room-entry.js';
+import { createTurnIndicator } from '../js/turn-indicator.js';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const SUIT_NAMES = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
@@ -244,6 +245,7 @@ export default {
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('ce-vibe');
     const room = remoteMatch(multiplayer, game.id);
+    const showTurn = createTurnIndicator(shell.root, room);
     const saved = !room && validCrazyEightsCheckpoint(session?.state) ? session.state : null;
     if (!room && !saved && !await chooseCardTable(shell.stage, multiplayer, game)) {
       shell.root.remove();
@@ -367,10 +369,12 @@ export default {
       heading.innerHTML = `<span class="cg-eyebrow">${room ? 'PRIVATE ROOM · LIVE TABLE' : 'LOCAL TABLE · PASS & PLAY'}</span><strong>EIGHTS AFTER DARK <span aria-hidden="true">✦</span></strong>`;
       table.appendChild(heading);
       if (room && !view) {
+        showTurn(null);
         table.appendChild(paragraph('Waiting for the host to deal…', 'cg-message'));
         return;
       }
       const data = room ? view : crazyEightsView(state, state.current);
+      showTurn(data.current, data.phase !== 'over' && (!covered || !!room));
       const visibleSeat = room ? mySeat : state.current;
       if (covered) {
         const curtain = document.createElement('div');
