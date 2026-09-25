@@ -3,6 +3,18 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-09-25 — Multi-guest connection recovery and mobile QR scanning
+
+- Keep independently connected guests in the room while adding another peer.
+  If a previously validated WebRTC channel temporarily disconnects and then
+  reconnects, restore the guest's connected status and resync the roster.
+  Connection warnings now track the affected peer rather than clearing when
+  an unrelated guest joins.
+- QR scanning now has an offline, locally hosted decoder fallback for Safari
+  and Chrome on iOS, where the native `BarcodeDetector` is unavailable. Camera
+  errors explain the HTTPS and permissions requirement; copy/paste remains
+  available. Offline cache v32 precaches the decoder and worker.
+
 ## 2026-09-24 — Labeled header and feedback settings
 
 - Replaced separate header sound and vibration buttons with a single labeled

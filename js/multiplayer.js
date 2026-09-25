@@ -207,6 +207,7 @@ export class MultiplayerRoom {
     this.stats = emptyStats();
     this.roundKeys = new Set();
     this.connectionIssue = '';
+    this.connectionIssuePeer = null;
   }
   on(listener) {
     if (typeof listener !== 'function') fail('Listener must be a function.');
@@ -222,10 +223,16 @@ export class MultiplayerRoom {
   state() { this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })),
     activeGame: this.activeGame, stats: structuredClone(this.stats) }); }
   error(error) { this.emit({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
-  connectionProblem(message) {
+  connectionProblem(message, id) {
     this.connectionIssue = message;
+    this.connectionIssuePeer = id;
     this.state();
     this.error(new Error(message));
+  }
+  clearConnectionProblem(id) {
+    if (this.connectionIssuePeer !== id) return;
+    this.connectionIssue = '';
+    this.connectionIssuePeer = null;
   }
   watchConnection(peer, id) {
     clearTimeout(peer.connectTimer);
@@ -236,7 +243,7 @@ export class MultiplayerRoom {
         : this.members.find(member => member.id === this.peerId)?.connected;
       if (!connected) this.connectionProblem(this.role === 'guest'
         ? 'Still waiting for the host. Ask them to accept your answer in their original tab. If they already did, a direct connection may be blocked by this network; try another network.'
-        : 'Guest admitted, but no direct connection yet. Ask them to keep the original guest tab open; this network may block WebRTC (NAT, firewall or STUN). Try another network. No TURN relay is available.');
+        : `${this.members.find(member => member.id === id)?.name ?? 'Guest'} admitted, but no direct connection yet. Ask them to keep the original guest tab open; this network may block WebRTC (NAT, firewall or STUN). Try another network. No TURN relay is available.`, id);
     }, this.role === 'guest' ? CONNECT_TIMEOUT * 3 : CONNECT_TIMEOUT);
   }
   createHost(name) {
@@ -260,10 +267,11 @@ export class MultiplayerRoom {
     };
     channel.onmessage = (event) => this.receive(peer, id, event.data);
     channel.onclose = () => this.disconnected(peer, id);
-    channel.onerror = () => this.connectionProblem('Direct data channel error on this device. Check the connection and try a new invite if it does not recover.');
+    channel.onerror = () => this.connectionProblem('Direct data channel error on this device. Check the connection and try a new invite if it does not recover.', id);
   }
   disconnected(peer, id) {
-    if (this.peers.get(id) !== peer) return;
+    if (this.peers.get(id) !== peer || peer.connectionLost) return;
+    peer.connectionLost = true;
     clearTimeout(peer.connectTimer);
     const member = this.members.find((person) => person.id === id);
     if (member) member.connected = false;
@@ -280,12 +288,13 @@ export class MultiplayerRoom {
     }
     this.connectionProblem(navigator.onLine === false
       ? 'This device is offline. Remote rooms need an internet connection; local games still work offline.'
-      : 'The direct connection was lost or failed. Check both tabs and try a new invite and answer; this network may block WebRTC.');
+      : `${member?.name ?? 'Pending guest'} lost the direct connection. Keep both tabs open; if it does not recover, exchange a new invite and answer. This network may block WebRTC.`, id);
   }
   watch(peer, id) {
     peer.pc.onconnectionstatechange = () => {
       const state = peer.pc.connectionState;
       if (state === 'disconnected') {
+        peer.wasDisconnected = true;
         if (!peer.disconnectTimer) peer.disconnectTimer = setTimeout(() => {
           peer.disconnectTimer = null;
           if (peer.pc.connectionState === 'disconnected') this.disconnected(peer, id);
@@ -294,6 +303,21 @@ export class MultiplayerRoom {
         clearTimeout(peer.disconnectTimer);
         peer.disconnectTimer = null;
         if (state === 'failed' || state === 'closed') this.disconnected(peer, id);
+        else if (state === 'connected' && peer.wasDisconnected && peer.channel?.readyState === 'open') {
+          peer.wasDisconnected = false;
+          peer.connectionLost = false;
+          if (this.role === 'host') {
+            const member = this.members.find(person => person.id === id);
+            if (member?.connected === false && peer.verifiedHello) member.connected = true;
+            this.clearConnectionProblem(id);
+            this.publish();
+            this.state();
+          } else if (this.role === 'guest') {
+            this.send(peer.channel, 'hello', {
+              name: this.members.find(person => person.id === this.peerId)?.name,
+            });
+          }
+        }
       }
     };
   }
@@ -422,8 +446,10 @@ export class MultiplayerRoom {
         if (msg.kind === 'hello') {
           if (nameOf(msg.name) !== member.name) fail('Participant name mismatch.');
           member.connected = true;
+          peer.verifiedHello = true;
+          peer.connectionLost = false;
           clearTimeout(peer.connectTimer);
-          this.connectionIssue = '';
+          this.clearConnectionProblem(id);
           this.publish();
           this.state();
         } else if (msg.kind === 'action') {
@@ -455,7 +481,7 @@ export class MultiplayerRoom {
             ({ id: memberId, name, connected, admitted }));
           if (this.members.find(person => person.id === this.peerId)?.connected) {
             clearTimeout(peer.connectTimer);
-            this.connectionIssue = '';
+            this.clearConnectionProblem(id);
           }
           this.stats = structuredClone(msg.stats);
           this.activeGame = msg.activeGame ? {
@@ -645,6 +671,7 @@ export class MultiplayerRoom {
     this.roundKeys.clear();
     for (const peer of peers) clearTimeout(peer.connectTimer);
     this.connectionIssue = '';
+    this.connectionIssuePeer = null;
     this.preferredGame = null;
     this.state();
   }
@@ -661,13 +688,12 @@ export class MultiplayerRoom {
       const current = scanning;
       scanning = null;
       if (!current) return;
-      clearTimeout(current.frame);
-      current.stream?.getTracks().forEach(track => track.stop());
+      current.scanner?.destroy();
       current.node.remove();
     };
     const scanInto = async (key, input) => {
-      if (typeof BarcodeDetector === 'undefined' || !navigator.mediaDevices?.getUserMedia)
-        fail('QR scanning is unavailable in this browser. Paste the link instead.');
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)
+        fail('Camera scanning requires HTTPS (or localhost) and camera access. Open the arcade securely, or paste the link instead.');
       stopScan();
       const scanner = document.createElement('div');
       scanner.className = 'mp-scanner';
@@ -676,51 +702,56 @@ export class MultiplayerRoom {
       video.muted = true;
       video.playsInline = true;
       const feedback = document.createElement('p');
-      feedback.textContent = `Point your camera at the ${key} QR code.`;
+      feedback.textContent = `Fit the entire ${key} QR code inside the camera view.`;
       const cancel = document.createElement('button');
       cancel.type = 'button';
       cancel.textContent = 'Cancel scan';
       cancel.addEventListener('click', stopScan);
       scanner.append(video, feedback, cancel);
       container.querySelector('.mp-controls').append(scanner);
-      const current = { node: scanner, frame: 0, stream: null };
+      const current = { node: scanner, scanner: null };
       scanning = current;
       try {
-        const detector = new BarcodeDetector({ formats: ['qr_code'] });
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        if (scanning !== current) { stream.getTracks().forEach(track => track.stop()); return; }
-        current.stream = stream;
-        video.srcObject = stream;
-        await video.play();
+        const { default: QrScanner } = await import('./vendor/qr-scanner.min.js');
         if (scanning !== current) return;
-        const detect = async () => {
+        current.scanner = new QrScanner(video, ({ data }) => {
           if (scanning !== current) return;
           try {
-            for (const code of await detector.detect(video)) {
-              if (scanning !== current) return;
-              try {
-                parseLink(code.rawValue, key);
-                draft[key] = code.rawValue;
-                input.value = code.rawValue;
-                stopScan();
-                draft.message = `${key === 'answer' ? 'Answer' : 'Invite'} scanned. ${key === 'answer' ? 'Accept answer' : 'Join and create answer'} to continue.`;
-                container.querySelector('[role="status"]').textContent = draft.message;
-                return;
-              } catch (error) { feedback.textContent = error.message; }
-            }
-          } catch (error) {
+            parseLink(data, key);
+            draft[key] = data;
+            input.value = data;
             stopScan();
-            this.error(error);
-            draft.message = `Could not scan QR: ${error.message}. Paste the link instead.`;
+            draft.message = `${key === 'answer' ? 'Answer' : 'Invite'} scanned. ${key === 'answer' ? 'Accept answer' : 'Join and create answer'} to continue.`;
             container.querySelector('[role="status"]').textContent = draft.message;
-            return;
+          } catch (error) {
+            feedback.textContent = error.message;
           }
-          if (scanning === current) current.frame = setTimeout(detect, 180);
-        };
-        current.frame = setTimeout(detect, 180);
+        }, {
+          preferredCamera: 'environment',
+          maxScansPerSecond: 10,
+          returnDetailedScanResult: true,
+          calculateScanRegion: (source) => {
+            const size = Math.min(source.videoWidth, source.videoHeight);
+            const resolution = Math.min(size, 600);
+            return {
+              x: (source.videoWidth - size) / 2,
+              y: (source.videoHeight - size) / 2,
+              width: size,
+              height: size,
+              downScaledWidth: resolution,
+              downScaledHeight: resolution,
+            };
+          },
+          onDecodeError: (error) => {
+            if (error !== QrScanner.NO_QR_CODE_FOUND && scanning === current)
+              feedback.textContent = `Could not read QR: ${error.message ?? error}. Try better lighting or paste the link.`;
+          },
+        });
+        await current.scanner.start();
       } catch (error) {
         if (scanning === current) stopScan();
-        throw new Error(`Camera unavailable: ${error.message}. Paste the link instead.`, { cause: error });
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(`Camera scanning failed: ${detail} Check camera permission, or paste the link instead.`, { cause: error });
       }
     };
     const render = () => {
@@ -733,14 +764,14 @@ export class MultiplayerRoom {
       root.append(title);
       const notice = document.createElement('p');
       notice.className = 'mp-notice';
-      notice.textContent = 'Connect in two steps: send the invite to your guest, then have them send their answer back to the original host tab. Share either link by QR or URL. Remote play needs internet and a direct WebRTC connection; some networks block it (no relay).';
+      notice.textContent = 'Connect in two steps: send the invite to your guest, then have them send their answer back to the original host tab. Share either link by QR or URL. Camera scanning on phones requires HTTPS. Remote play needs internet and a direct WebRTC connection; some networks block it (no relay).';
       root.append(notice);
       const steps = document.createElement('p');
       steps.className = 'mp-steps';
       steps.textContent = !this.role
         ? 'Host: enter your name and create a room. Guest: enter your name, paste or scan the invite, then create an answer.'
         : this.role === 'host'
-          ? '1. Create an invite and share its URL or QR. 2. Paste or scan the guest’s answer here in this same tab. 3. Wait for “connected,” then choose their seat.'
+          ? '1. Create a separate invite for each guest and share its URL or QR. 2. Paste or scan each answer here in this same tab. 3. Wait for “connected,” then choose seats.'
           : '1. Share your answer URL or QR with the host. 2. Wait for the host to accept it in their original tab. You are ready when your status says “connected.”';
       root.append(steps);
       const status = document.createElement('p');
