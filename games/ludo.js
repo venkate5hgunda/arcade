@@ -41,7 +41,7 @@ export function legalMoves(positions, roll) {
     (position === -1 ? roll === 6 : position < 58 && position + roll <= 58) ? [index] : []);
 }
 
-function validCheckpoint(s) {
+function validCheckpoint(s, allowFinished = false) {
   if (!s || typeof s !== 'object' || !Number.isInteger(s.count) || s.count < 2 || s.count > 4 ||
       !Array.isArray(s.tokens) || s.tokens.length !== s.count ||
       s.tokens.some((group) => !Array.isArray(group) || group.length !== 4 ||
@@ -51,8 +51,12 @@ function validCheckpoint(s) {
       typeof s.awaiting !== 'boolean' || !Array.isArray(s.movable) ||
       s.movable.some((n) => !Number.isInteger(n) || n < 0 || n > 3) ||
       s.movable.length !== new Set(s.movable).size ||
-      s.tokens.some((group) => group.every((n) => n === 58)) ||
-      s.winner !== null || typeof s.message !== 'string' || s.message.length > 160) return false;
+      (!allowFinished && s.tokens.some((group) => group.every((n) => n === 58))) ||
+      !(s.winner === null && !s.tokens.some(group => group.every(n => n === 58)) ||
+        allowFinished && Number.isInteger(s.winner) && s.winner >= 0 &&
+        s.winner < s.count && s.tokens[s.winner].every(n => n === 58)) ||
+      typeof s.message !== 'string' || s.message.length > 160) return false;
+  if (s.winner !== null) return !s.awaiting && s.movable.length === 0;
   const expected = legalMoves(s.tokens[s.current], s.value);
   return s.awaiting ? expected.length > 0 && expected.length === s.movable.length &&
     expected.every((n) => s.movable.includes(n)) : s.movable.length === 0;
@@ -66,6 +70,11 @@ export default {
     const match = remoteMatch(multiplayer, game.id);
     const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && (!validCheckpoint(roomSave, true) ||
+        roomSave.count !== match.activeGame.playerIds.length ||
+        !Number.isSafeInteger(roomSave.roundId) || roomSave.roundId < 0))
+      throw new Error('Saved Ludo room state is invalid.');
     const saved = loadJSON(KEYS.SETTINGS + ':ludo', { players: '4' });
     const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.count) } : await renderSetup(shell.stage, {
       title: 'Ludo', subtitle: 'Gather around the board.',
@@ -76,16 +85,22 @@ export default {
     if (!match) saveJSON(KEYS.SETTINGS + ':ludo', settings);
     const count = Number(settings.players);
     const tokens = Array.from({ length: count }, () => Array(4).fill(-1));
-    let current = 0, value = 1, awaiting = false, movable = [], winner = null, message = '', rolling = false, moving = false, pendingMove = null, queuedRoll = null, roundId = 0;
-    if (resume) {
-      resume.tokens.forEach((group, p) => tokens[p].splice(0, 4, ...group));
-      current = resume.current; value = resume.value; awaiting = resume.awaiting;
-      movable = resume.movable; message = resume.message;
+    let current = 0, value = 1, awaiting = false, movable = [], winner = null, message = '', rolling = false, moving = false, pendingMove = null, queuedRoll = null, roundId = roomSave?.roundId ?? 0;
+    if (roomSave || resume) {
+      const savedBoard = roomSave || resume;
+      savedBoard.tokens.forEach((group, p) => tokens[p].splice(0, 4, ...group));
+      current = savedBoard.current; value = savedBoard.value; awaiting = savedBoard.awaiting;
+      movable = [...savedBoard.movable]; message = savedBoard.message;
+      winner = savedBoard.winner;
     }
     function checkpoint() {
+      const snapshot = { count, tokens, current, value, awaiting, movable, winner, message };
+      if (match?.role === 'host') {
+        match.saveGame(game.id, { ...snapshot, roundId }); return;
+      }
       if (match) return;
       if (winner !== null) session?.finish();
-      else session?.save({ count, tokens, current, value, awaiting, movable, winner, message });
+      else session?.save(snapshot);
     }
     let controller = new AbortController();
     const board = document.createElement('div');
@@ -325,7 +340,32 @@ export default {
     });
     if (match && match.role !== 'host') shell.getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
+      if (event.action?.type === 'room-state' && match.role === 'guest') {
+        const snapshot = event.action.state;
+        if (!validCheckpoint(snapshot, true) || snapshot.count !== count ||
+            !Number.isSafeInteger(snapshot.roundId) || snapshot.roundId < 0) {
+          match.error(new Error('Invalid Ludo room state.')); return;
+        }
+        controller.abort(); controller = new AbortController();
+        roundId = snapshot.roundId;
+        snapshot.tokens.forEach((group, p) => tokens[p].splice(0, 4, ...group));
+        current = snapshot.current; value = snapshot.value; awaiting = snapshot.awaiting;
+        movable = [...snapshot.movable]; winner = snapshot.winner; message = snapshot.message;
+        rolling = false; moving = false; pendingMove = null; queuedRoll = null;
+        render();
+        if (awaiting && movable.length === 1) {
+          const started = roundId;
+          pauseAfterRoll(controller.signal).then(ready => {
+            if (ready && started === roundId) move(movable[0]);
+          });
+        }
+        return;
+      }
       if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
       if (event.action?.type === 'request-roll' && match.role === 'host' &&
           event.from === match.activeGame.playerIds[current] && !rolling && !awaiting && winner === null)
@@ -343,13 +383,14 @@ export default {
       }
     });
     render();
-    if (resume && awaiting && movable.length === 1) {
+    if ((resume || roomSave) && awaiting && movable.length === 1) {
       const started = roundId;
       pauseAfterRoll(controller.signal).then((ready) => {
         if (ready && started === roundId) move(movable[0]);
       });
     }
     else if (!resume) checkpoint();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => { controller.abort(); offRoom?.(); } };
   },
 };

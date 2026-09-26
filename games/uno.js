@@ -178,13 +178,16 @@ export function applyRemoteUnoAction(state, request, revision, from, playerIds) 
     actUno(state, request.move, Math.random, playerIds.indexOf(from));
 }
 
-export function validUnoCheckpoint(s) {
+export function validUnoCheckpoint(s, allowFinished = false) {
   if (!s || typeof s !== 'object' || !Array.isArray(s.hands) ||
       s.hands.length < 2 || s.hands.length > 4 || s.hands.some((hand, index) =>
-        !Array.isArray(hand) || !hand.length && s.challenge?.offender !== index) ||
+        !Array.isArray(hand) || !hand.length && s.challenge?.offender !== index &&
+          !(allowFinished && s.winner === index)) ||
       !Array.isArray(s.stock) || !Array.isArray(s.discard) || !s.discard.length ||
       !COLORS.includes(s.color) || !Number.isInteger(s.current) || s.current < 0 || s.current >= s.hands.length ||
-      ![-1, 1].includes(s.direction) || s.winner !== null ||
+      ![-1, 1].includes(s.direction) ||
+      !(s.winner === null || allowFinished && Number.isInteger(s.winner) &&
+        s.winner >= -1 && s.winner < s.hands.length) ||
       !Number.isInteger(s.turn) || s.turn < 1 || !Number.isInteger(s.passes) ||
       s.passes < 0 || s.passes >= s.hands.length ||
       (s.discard.at(-1)?.color !== 'wild' && s.color !== s.discard.at(-1)?.color) ||
@@ -284,15 +287,22 @@ export default {
     if (!room) saveJSON(KEYS.SETTINGS + ':uno', settings);
     const count = Number(settings.count);
     const mySeat = room ? seat(room) - 1 : null;
+    const roomSave = room?.role === 'host' ? room.savedGame : null;
+    if (roomSave && (!validUnoCheckpoint(roomSave.state, true) ||
+        roomSave.state.hands.length !== count ||
+        !Number.isSafeInteger(roomSave.round) || roomSave.round < 0))
+      throw new Error('Saved UNO room state is invalid.');
     shell.root.querySelector('.game-meta').textContent = room
       ? `Private room · Player ${mySeat + 1} · ${count} players`
       : `${count} players · local pass & play`;
-    let state = room ? room.role === 'host' ? newUnoGame(count) : null :
+    let state = room ? room.role === 'host' ? roomSave ?
+      structuredClone(roomSave.state) : newUnoGame(count) : null :
       restored ? { ...restored, challenge: restored.challenge ?? null,
         unoPending: restored.unoPending ?? null, unoDeclared: restored.unoDeclared ?? null } : newUnoGame(count);
     let view = room ? room.role === 'host' ? unoView(state, mySeat) : null : null;
     let covered = !room && state.winner === null;
-    let pending = null, disposed = false, revision = 0, lastRevision = -1, gameRound = 0;
+    let pending = null, disposed = false, revision = 0, lastRevision = -1,
+      gameRound = roomSave?.round ?? 0;
     const deckById = unoDeck();
     const table = document.createElement('div');
     table.className = 'cg-table uno-table';
@@ -316,10 +326,12 @@ export default {
     }
     function publish() {
       if (!room || room.role !== 'host') return;
+      room.saveGame(game.id, { state, round: gameRound });
       revision++;
       view = unoView(state, mySeat);
       for (let i = 1; i < count; i++)
-        room.sendPrivateAction(room.activeGame.playerIds[i], { type: 'uno-state', revision, view: unoView(state, i) });
+        if (room.members.some(member => member.id === room.activeGame.playerIds[i] && member.connected))
+          room.sendPrivateAction(room.activeGame.playerIds[i], { type: 'uno-state', revision, view: unoView(state, i) });
     }
     function request(action, actor = state?.current) {
       if (room) room.sendAction({ type: 'uno-request',
@@ -342,7 +354,11 @@ export default {
       request(action, actor);
     }
     const offRoom = room?.on(event => {
-      if (disposed || event.type !== 'action' || room.activeGame?.id !== game.id) return;
+      if (disposed || room.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && room.role === 'guest') {
+        room.sendAction({ type: 'uno-sync' }); return;
+      }
+      if (event.type !== 'action') return;
       if (room.role === 'host') {
         if (event.action?.type === 'uno-sync') {
           const index = room.activeGame.playerIds.indexOf(event.from);

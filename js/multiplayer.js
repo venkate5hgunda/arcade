@@ -15,6 +15,8 @@ const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'catan', 'uno', 'crazy-eights']);
 const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'catan', 'uno']);
 const PRIVATE_GAMES = new Set(['catan', 'uno', 'crazy-eights']);
+const PUBLIC_GAMES = new Set([...REMOTE_GAMES].filter(id => !PRIVATE_GAMES.has(id)));
+const HOST_BACKUP_KEY = 'arcade:room:host:v1';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
@@ -133,11 +135,12 @@ function connection() {
     iceServers: typeof navigator !== 'undefined' && navigator.onLine === false ? [] : [{ urls: 'stun:stun.l.google.com:19302' }],
   });
 }
-function validPlayers(ids, members) {
+function validPlayers(ids, members, requireConnected = true) {
   return Array.isArray(ids) && ids.length > 0 && ids.length <= 32 &&
     ids.every((id) => typeof id === 'string' && ID.test(id)) &&
     new Set(ids).size === ids.length &&
-    ids.every((id) => members.some((member) => member.id === id && member.connected && member.admitted));
+    ids.every((id) => members.some((member) => member.id === id &&
+      (!requireConnected || member.connected) && member.admitted));
 }
 function seatLimits(game) {
   return GROUP_GAMES.has(game.id) ? game.players : { min: 2, max: 2 };
@@ -148,7 +151,7 @@ function validGame(value, members, hostId) {
   const { min, max } = seatLimits(game);
   return Array.isArray(value.playerIds) &&
     value.playerIds.length >= min && value.playerIds.length <= max &&
-    value.playerIds[0] === hostId && validPlayers(value.playerIds, members) &&
+    value.playerIds[0] === hostId && validPlayers(value.playerIds, members, false) &&
     Number.isInteger(value.seed) && value.seed >= 0 && value.seed <= 0xffffffff;
 }
 
@@ -210,7 +213,86 @@ export class MultiplayerRoom {
     this.roundKeys = new Set();
     this.connectionIssue = '';
     this.connectionIssuePeer = null;
+    this.isRestored = false;
+    this.savedCatan = null;
+    this.savedGame = null;
+    this.pendingSync = new Set();
+    this.readyGameId = null;
+    this.restoreHost();
   }
+  restoreHost() {
+    if (typeof sessionStorage === 'undefined') return;
+    let backup;
+    try {
+      const raw = sessionStorage.getItem(HOST_BACKUP_KEY);
+      if (!raw) return;
+      backup = JSON.parse(raw);
+    } catch (error) {
+      console.warn('Could not read the room checkpoint', error);
+      return;
+    }
+    if (![1, 2].includes(backup?.version) || !ID.test(backup.roomId ?? '') ||
+        !ID.test(backup.peerId ?? '') || !Array.isArray(backup.members) ||
+        backup.members.length < 1 || backup.members.length > 32 ||
+        backup.members[0]?.id !== backup.peerId ||
+        !backup.members.every(member => ID.test(member?.id ?? '') &&
+          typeof member.name === 'string' && member.name.trim() &&
+          member.name.length <= 40 && typeof member.admitted === 'boolean') ||
+        new Set(backup.members.map(member => member.id)).size !== backup.members.length ||
+        (backup.activeGame !== null && !validGame(backup.activeGame, backup.members, backup.peerId)) ||
+        !Number.isSafeInteger(backup.generation) || backup.generation < 0 ||
+        !validStats(backup.stats, backup.members)) {
+      console.warn('Stored room checkpoint is invalid; start a new room.');
+      return;
+    }
+    this.role = 'host';
+    this.roomId = backup.roomId;
+    this.peerId = backup.peerId;
+    this.members = backup.members.map(member => ({
+      id: member.id, name: member.name, admitted: member.admitted,
+      connected: member.id === backup.peerId,
+    }));
+    this.stats = backup.stats;
+    const gameState = backup.version === 1 ? backup.catanState : backup.gameState;
+    this.activeGame = backup.activeGame && gameState ? backup.activeGame : null;
+    this.savedGame = this.activeGame ? gameState : null;
+    this.savedCatan = this.activeGame?.id === 'catan' ? gameState : null;
+    this.gameGeneration = backup.generation;
+    this.isRestored = true;
+    this.connectionIssue = 'Room restored on this device. Direct connections do not survive a tab reload: send each guest a new invite using Reconnect below.';
+  }
+  saveHost() {
+    if (typeof sessionStorage === 'undefined' || this.role !== 'host') return;
+    const activeGame = this.savedGame ? this.activeGame : null;
+    try {
+      sessionStorage.setItem(HOST_BACKUP_KEY, JSON.stringify({
+        version: 2, roomId: this.roomId, peerId: this.peerId,
+        members: this.members.map(({ id, name, admitted }) => ({ id, name, admitted })),
+        activeGame, gameState: activeGame ? this.savedGame : null,
+        generation: this.gameGeneration, stats: this.stats,
+      }));
+    } catch (error) {
+      console.warn('Could not save the room checkpoint; keep this tab open.', error);
+      this.error(new Error('Room recovery storage is unavailable. Keep this tab open.'));
+    }
+  }
+  saveGame(gameId, state) {
+    if (this.role !== 'host' || this.activeGame?.id !== gameId ||
+        !REMOTE_GAMES.has(gameId) || !state || typeof state !== 'object' ||
+        JSON.stringify(state).length > MAX_MESSAGE)
+      fail('Invalid host game checkpoint.');
+    this.savedGame = structuredClone(state);
+    this.savedCatan = gameId === 'catan' ? this.savedGame : null;
+    this.saveHost();
+    if (PUBLIC_GAMES.has(gameId)) {
+      for (const id of this.pendingSync) {
+        if (this.members.some(member => member.id === id && member.connected))
+          this.sendRoomState(id);
+      }
+      this.pendingSync.clear();
+    }
+  }
+  saveCatan(state) { this.saveGame('catan', state); }
   on(listener) {
     if (typeof listener !== 'function') fail('Listener must be a function.');
     this.listeners.add(listener);
@@ -222,7 +304,7 @@ export class MultiplayerRoom {
     }
     if (event.type === 'state' || event.type === 'game') for (const render of this.lobbies) render();
   }
-  state() { this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })),
+  state() { this.saveHost(); this.emit({ type: 'state', members: this.members.map((member) => ({ ...member })),
     activeGame: this.activeGame, stats: structuredClone(this.stats) }); }
   error(error) { this.emit({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
   connectionProblem(message, id) {
@@ -255,6 +337,7 @@ export class MultiplayerRoom {
     this.peerId = crypto.randomUUID();
     this.roomId = crypto.randomUUID();
     this.members = [{ id: this.peerId, name: localName, connected: true, admitted: true }];
+    this.isRestored = false;
     this.state();
   }
   attach(peer, id, channel) {
@@ -278,15 +361,10 @@ export class MultiplayerRoom {
     const member = this.members.find((person) => person.id === id);
     if (member) member.connected = false;
     if (this.role === 'host') {
-      if (this.activeGame?.playerIds.includes(id)) this.returnLobby();
       this.publish();
     } else if (this.role === 'guest') {
       const self = this.members.find((person) => person.id === this.peerId);
       if (self) self.connected = false;
-      if (this.activeGame) {
-        this.activeGame = null;
-        this.emit({ type: 'game', game: null, spectating: false });
-      }
     }
     this.connectionProblem(navigator.onLine === false
       ? 'This device is offline. Remote rooms need an internet connection; local games still work offline.'
@@ -323,12 +401,23 @@ export class MultiplayerRoom {
       }
     };
   }
-  async createInvite() {
+  async createInvite(reconnectingId = null) {
     if (this.role !== 'host') fail('Create a room before inviting guests.');
-    if (this.peers.size >= 31) fail('Room is full (32 participants maximum).');
-    const guest = crypto.randomUUID();
+    const existing = reconnectingId === null ? null :
+      this.members.find(member => member.id === reconnectingId && member.id !== this.peerId);
+    if (reconnectingId !== null && (!existing || existing.connected))
+      fail('Only a disconnected guest can be re-invited.');
+    if (reconnectingId === null && this.members.length >= 32) fail('Room is full (32 participants maximum).');
+    const guest = reconnectingId ?? crypto.randomUUID();
     const peer = { pc: connection(), channel: null, lastRequest: 0 };
+    const old = this.peers.get(guest);
     this.peers.set(guest, peer);
+    if (old) {
+      clearTimeout(old.connectTimer);
+      clearTimeout(old.disconnectTimer);
+      old.channel?.close();
+      old.pc.close();
+    }
     this.watch(peer, guest);
     try {
       this.attach(peer, guest, peer.pc.createDataChannel('arcade', { ordered: true }));
@@ -385,14 +474,17 @@ export class MultiplayerRoom {
     const peer = this.peers.get(answer.guest);
     if (!peer || peer.pc.signalingState !== 'have-local-offer' || peer.accepting) fail('No pending invitation for this guest.');
     peer.accepting = true;
-    const member = { id: answer.guest, name: nameOf(answer.name), connected: false, admitted: true };
-    this.members.push(member);
+    const member = this.members.find(person => person.id === answer.guest);
+    if (member && (member.connected || member.name !== nameOf(answer.name)))
+      fail('Reconnect with the same guest name in the original room.');
+    const admitted = member ?? { id: answer.guest, name: nameOf(answer.name), connected: false, admitted: true };
+    if (!member) this.members.push(admitted);
     this.state();
     try {
       await peer.pc.setRemoteDescription(description(answer.sdp, 'answer'));
-      if (!member.connected) this.watchConnection(peer, answer.guest);
+      if (!admitted.connected) this.watchConnection(peer, answer.guest);
     } catch (error) {
-      this.members.splice(this.members.indexOf(member), 1);
+      if (!member) this.members.splice(this.members.indexOf(admitted), 1);
       this.peers.delete(answer.guest);
       peer.pc.close();
       peer.accepting = false;
@@ -458,11 +550,23 @@ export class MultiplayerRoom {
           if (!member.connected || !member.admitted || msg.game !== this.activeGame?.id ||
               !this.activeGame?.playerIds.includes(id)) fail('Participant cannot act in this game.');
           this.checkAction(msg.action);
-          if (PRIVATE_GAMES.has(this.activeGame.id)) this.emit({ type: 'action', from: id, action: msg.action });
+          if (msg.action.type === 'room-state') fail('Only the host can send game state.');
+          if (this.isRestored && this.readyGameId !== this.activeGame.id &&
+              !['ct-sync', 'uno-sync', 'crazy-eights-sync', 'room-sync'].includes(msg.action.type)) {
+            this.send(peer.channel, 'error', { message: 'The host must resume the saved game before play continues.' });
+          } else if (msg.action.type === 'room-sync' && PUBLIC_GAMES.has(this.activeGame.id)) {
+            if (this.savedGame) this.sendRoomState(id);
+            else this.pendingSync.add(id);
+          } else if (PRIVATE_GAMES.has(this.activeGame.id)) this.emit({ type: 'action', from: id, action: msg.action });
           else this.broadcastAction(id, msg.action);
         } else fail('Guests cannot change room state.');
       } else if (this.role === 'guest') {
-        if (msg.kind === 'state') {
+        if (msg.kind === 'error') {
+          if (msg.game !== this.activeGame?.id ||
+              msg.message !== 'The host must resume the saved game before play continues.')
+            fail('Invalid host error.');
+          this.error(new Error(msg.message));
+        } else if (msg.kind === 'state') {
           if (!Array.isArray(msg.members) || msg.members.length > 32 ||
               !msg.members.some((person) => person.id === this.peerId) ||
               !msg.members.some((person) => person.id === id) ||
@@ -477,6 +581,7 @@ export class MultiplayerRoom {
               !Number.isSafeInteger(msg.gameGeneration) ||
               msg.gameGeneration < this.lastGameGeneration) fail('Invalid game identifier.');
           const wasPlaying = this.activeGame?.playerIds.includes(this.peerId);
+          const wasConnected = this.members.find(person => person.id === this.peerId)?.connected;
           const previous = JSON.stringify(this.activeGame);
           const newGeneration = msg.gameGeneration !== this.lastGameGeneration;
           this.members = msg.members.map(({ id: memberId, name, connected, admitted }) =>
@@ -491,6 +596,8 @@ export class MultiplayerRoom {
           } : null;
           this.lastGameGeneration = msg.gameGeneration;
           this.state();
+          if (!wasConnected && this.members.find(person => person.id === this.peerId)?.connected)
+            this.emit({ type: 'reconnected' });
           if (this.activeGame?.playerIds.includes(this.peerId) &&
               (newGeneration || JSON.stringify(this.activeGame) !== previous)) {
             this.emit({ type: 'game', game: this.activeGame, spectating: false });
@@ -506,8 +613,10 @@ export class MultiplayerRoom {
           this.lastActionSequence = msg.sequence;
           this.emit({ type: 'action', from: msg.from, action: msg.action, sequence: msg.sequence });
         } else if (msg.kind === 'private-action') {
-          if (!PRIVATE_GAMES.has(this.activeGame?.id) || msg.game !== this.activeGame.id ||
+          if (!this.activeGame || msg.game !== this.activeGame.id ||
               !this.activeGame.playerIds.includes(this.peerId) ||
+              !(PRIVATE_GAMES.has(this.activeGame.id) ||
+                PUBLIC_GAMES.has(this.activeGame.id) && msg.action?.type === 'room-state') ||
               !Number.isSafeInteger(msg.sequence) || msg.sequence <= this.lastActionSequence)
             fail('Invalid private game message.');
           this.checkAction(msg.action, this.activeGame.id === 'catan');
@@ -545,6 +654,17 @@ export class MultiplayerRoom {
       action, sequence: ++this.actionSequence,
     })) fail('Player is not connected.');
   }
+  sendRoomState(recipient) {
+    if (this.role !== 'host' || !PUBLIC_GAMES.has(this.activeGame?.id) ||
+        !this.activeGame.playerIds.includes(recipient) || !this.savedGame)
+      fail('Invalid game state recipient.');
+    const action = { type: 'room-state', state: this.savedGame };
+    this.checkAction(action);
+    const peer = this.peers.get(recipient);
+    if (!peer || !this.send(peer.channel, 'private-action', {
+      action, sequence: ++this.actionSequence,
+    })) fail('Player is not connected.');
+  }
   startGame(gameId, playerIds) {
     if (this.role !== 'host') fail('Only the host can start games.');
     const game = getGame(gameId);
@@ -561,6 +681,10 @@ export class MultiplayerRoom {
       id: gameId, playerIds: [...playerIds], seed: crypto.getRandomValues(new Uint32Array(1))[0],
     };
     this.gameGeneration++;
+    this.savedCatan = null;
+    this.savedGame = null;
+    this.pendingSync.clear();
+    this.readyGameId = null;
     this.roundKeys.clear();
     this.publish();
     this.state();
@@ -628,6 +752,10 @@ export class MultiplayerRoom {
   returnLobby() {
     if (this.role !== 'host') fail('Only the host can return the room to the lobby.');
     this.activeGame = null;
+    this.savedCatan = null;
+    this.savedGame = null;
+    this.pendingSync.clear();
+    this.readyGameId = null;
     this.publish();
     this.state();
     this.emit({ type: 'game', game: null, spectating: false });
@@ -644,6 +772,9 @@ export class MultiplayerRoom {
   sendAction(action) {
     this.checkAction(action);
     if (!this.activeGame?.playerIds.includes(this.peerId)) fail('You are not playing this game.');
+    if (!['ct-sync', 'uno-sync', 'crazy-eights-sync', 'room-sync'].includes(action.type) &&
+        this.activeGame.playerIds.some(id => !this.members.find(member => member.id === id)?.connected))
+      fail('A player is disconnected. Wait for them to reconnect before continuing.');
     if (this.role === 'host') {
       if (PRIVATE_GAMES.has(this.activeGame.id)) this.emit({ type: 'action', from: this.peerId, action });
       else this.broadcastAction(this.peerId, action);
@@ -662,6 +793,15 @@ export class MultiplayerRoom {
       peer.pc.close();
     }
     this.role = null;
+    this.savedCatan = null;
+    this.savedGame = null;
+    this.pendingSync.clear();
+    this.readyGameId = null;
+    this.isRestored = false;
+    if (typeof sessionStorage !== 'undefined') {
+      try { sessionStorage.removeItem(HOST_BACKUP_KEY); }
+      catch (error) { console.warn('Could not remove the room checkpoint', error); }
+    }
     this.peerId = null;
     this.roomId = null;
     this.members = [];
@@ -781,6 +921,9 @@ export class MultiplayerRoom {
       steps.textContent = this.role === 'host'
         ? draft.creatingInvite ? 'Preparing a unique invite for your guest…' :
           pending ? '1. Share this guest’s invite QR or link. 2. Scan or paste their answer below in this same tab.' :
+          this.activeGame && this.activeGame.playerIds.some(id =>
+            !this.members.find(member => member.id === id)?.connected)
+            ? 'Game paused. Reconnect each offline player to their original seat; play resumes when everyone is connected.' :
           connectedGuests ? 'Everyone connected is selected to play. Choose a game below, or invite another friend.' :
             'Create an invite for each guest, then scan or paste their answer in this tab.'
         : this.role === 'guest'
@@ -859,11 +1002,11 @@ export class MultiplayerRoom {
         draft.message = prompt + (url.length > 4000 ? ' Warning: long links may be truncated; use copy/paste without shortening.' : '');
         render();
       };
-      const makeInvite = async (prompt) => {
+      const makeInvite = async (prompt, reconnectingId = null) => {
         draft.creatingInvite = true;
         render();
         try {
-          const url = await this.createInvite();
+          const url = await this.createInvite(reconnectingId);
           draft.creatingInvite = false;
           display(url, prompt, 'invite');
         } catch (error) {
@@ -903,9 +1046,15 @@ export class MultiplayerRoom {
           button('Back to choices', () => { draft.mode = null; draft.message = ''; render(); });
         }
       } else if (this.role === 'host') {
-        if (!pending && !draft.creatingInvite)
+        if (!pending && !draft.creatingInvite && !this.activeGame)
           button('Invite another guest', () =>
             makeInvite('Share this invite with your next guest. Have them send their answer here.'));
+        if (!pending && !draft.creatingInvite)
+          for (const member of this.members.filter(person =>
+            person.id !== this.peerId && !person.connected && person.admitted))
+            button(`Reconnect ${member.name}`, () => makeInvite(
+              `Send this new invite to ${member.name}. They can rejoin with the same name and keep their seat.`,
+              member.id));
         if (pending) {
           const answer = field('Paste guest answer URL', 'answer');
           button('Scan answer QR', () => scanInto('answer', answer));
@@ -1051,6 +1200,10 @@ export class MultiplayerRoom {
           (this.activeGame.playerIds.includes(this.peerId) ? '' : ' · Spectating in lobby');
         root.append(current);
         if (this.role === 'host') button('Return everyone to lobby', () => this.returnLobby(), root);
+        if (this.role === 'host' && this.isRestored)
+          button(`Resume saved ${catalog.find(game => game.id === this.activeGame.id)?.name ?? 'game'}`, () => {
+            this.emit({ type: 'game', game: this.activeGame, spectating: false });
+          }, root);
       }
       if (this.role === 'host' && connectedGuests && !this.activeGame) {
         const games = document.createElement('div');
@@ -1185,6 +1338,8 @@ export class MultiplayerRoom {
     this.overlay = overlay;
     this.mountLobby(content, GAMES, () => {});
     this.on((event) => {
+      if (event.type === 'state' && this.connectionIssue && this.activeGame && overlay.isConnected)
+        overlay.hidden = false;
       if (event.type !== 'game' || !overlay.isConnected) return;
       if (!event.game || event.spectating) {
         overlay.hidden = false;

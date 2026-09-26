@@ -1,22 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Arcade">
   <defs>
     <linearGradient id="stick" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff9a4a"/>
-      <stop offset="1" stop-color="#ff2e88"/>
+      <stop offset="0" stop-color="#fff1a2"/>
+      <stop offset="0.5" stop-color="#ff7a55"/>
+      <stop offset="1" stop-color="#d52ce3"/>
     </linearGradient>
     <radialGradient id="ball" cx="0.35" cy="0.3" r="0.85">
-      <stop offset="0" stop-color="#ffd9a8"/>
-      <stop offset="0.45" stop-color="#ff7a18"/>
-      <stop offset="1" stop-color="#ff2e88"/>
+      <stop offset="0" stop-color="#fff9c2"/>
+      <stop offset="0.38" stop-color="#ffb63e"/>
+      <stop offset="0.72" stop-color="#ff4f83"/>
+      <stop offset="1" stop-color="#bb32e4"/>
     </radialGradient>
     <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#333c4f"/>
-      <stop offset="1" stop-color="#1c212c"/>
+      <stop offset="0" stop-color="#6444bd"/>
+      <stop offset="0.48" stop-color="#3c328c"/>
+      <stop offset="1" stop-color="#24245d"/>
     </linearGradient>
     <radialGradient id="badgeBg" cx="0.5" cy="0.4" r="0.7">
-      <stop offset="0" stop-color="#181c26"/>
-      <stop offset="1" stop-color="#0a0c11"/>
+      <stop offset="0" stop-color="#364390"/>
+      <stop offset="0.58" stop-color="#26276b"/>
+      <stop offset="1" stop-color="#151839"/>
     </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd470"/>
+      <stop offset="0.28" stop-color="#ff598e"/>
+      <stop offset="0.55" stop-color="#b367f5"/>
+      <stop offset="0.8" stop-color="#47d7e8"/>
+      <stop offset="1" stop-color="#82f4aa"/>
+    </linearGradient>
     <filter id="dropShadow" x="-40%" y="-40%" width="180%" height="180%">
       <feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#05060a" flood-opacity="0.55"/>
     </filter>
@@ -31,7 +42,7 @@
     <circle cx="32" cy="32" r="29" fill="url(#badgeBg)"/>
 
     <!-- Sunburst rays, clipped to the badge interior -->
-    <g clip-path="url(#badgeClip)" opacity="0.55">
+    <g clip-path="url(#badgeClip)" opacity="0.85">
       <path d="M46.96 30.90 L59.00 32.00 L46.96 33.10 Z" fill="#ff2e88"/>
       <path d="M46.24 36.71 L56.94 42.33 L45.40 38.74 Z" fill="#ff7a18"/>
       <path d="M43.35 41.80 L51.09 51.09 L41.80 43.35 Z" fill="#fbbf24"/>
@@ -48,26 +59,26 @@
       <path d="M36.71 17.76 L42.33 7.06 L38.74 18.60 Z" fill="#ff7a18"/>
       <path d="M41.80 20.65 L51.09 12.91 L43.35 22.20 Z" fill="#fbbf24"/>
       <path d="M45.40 25.26 L56.94 21.67 L46.24 27.29 Z" fill="#34d399"/>
-      <circle cx="32" cy="32" r="27.5" fill="#0a0c11" opacity="0.35"/>
+      <circle cx="32" cy="32" r="27.5" fill="#161445" opacity="0.12"/>
     </g>
 
     <!-- Bold outline ring, echoes the arcade badge family look -->
-    <circle cx="32" cy="32" r="27.5" fill="none" stroke="#f5f3ff" stroke-width="1.4" opacity="0.14"/>
-    <circle cx="32" cy="32" r="29" fill="none" stroke="#05060a" stroke-width="2"/>
+    <circle cx="32" cy="32" r="26" fill="none" stroke="#e6fcff" stroke-width="0.8" opacity="0.6"/>
+    <circle cx="32" cy="32" r="29" fill="none" stroke="url(#rim)" stroke-width="3"/>
 
     <!-- Soft glow behind the ball -->
     <circle cx="32" cy="26" r="12" fill="url(#ball)" opacity="0.4" filter="url(#glow)"/>
 
     <!-- Control-panel base plate -->
-    <rect x="13" y="42" width="38" height="15" rx="7.5" fill="url(#base)" stroke="#05060a" stroke-width="1.6"/>
+    <rect x="13" y="42" width="38" height="15" rx="7.5" fill="url(#base)" stroke="#9b86ff" stroke-width="1.6"/>
     <rect x="13" y="42" width="38" height="5" rx="2.5" fill="#ffffff" opacity="0.07"/>
     <!-- corner rivets -->
     <circle cx="17.5" cy="49.5" r="1.3" fill="#05060a" opacity="0.6"/>
     <circle cx="46.5" cy="49.5" r="1.3" fill="#05060a" opacity="0.6"/>
     <!-- buttons -->
     <circle cx="24" cy="49.5" r="3.4" fill="#38bdf8" stroke="#05060a" stroke-width="1.2"/>
-    <circle cx="32" cy="49.5" r="3.4" fill="#34d399" stroke="#05060a" stroke-width="1.2"/>
-    <circle cx="40" cy="49.5" r="3.4" fill="#fbbf24" stroke="#05060a" stroke-width="1.2"/>
+    <circle cx="32" cy="49.5" r="3.4" fill="#66efbd" stroke="#05060a" stroke-width="1.2"/>
+    <circle cx="40" cy="49.5" r="3.4" fill="#ffdf64" stroke="#05060a" stroke-width="1.2"/>
     <circle cx="23" cy="48.4" r="1" fill="#ffffff" opacity="0.5"/>
     <circle cx="31" cy="48.4" r="1" fill="#ffffff" opacity="0.5"/>
     <circle cx="39" cy="48.4" r="1" fill="#ffffff" opacity="0.5"/>

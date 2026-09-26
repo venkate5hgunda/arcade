@@ -819,28 +819,23 @@ body {
   color: #fff;
 }
 .app-header .brand-icon {
-  width: 42px;
-  height: 42px;
-  filter: drop-shadow(0 3px 2px #0009);
-}
-.brand-lockup { display: flex; flex-direction: column; }
-.brand-kicker {
-  color: #f4bd72;
-  font-size: .58rem;
-  font-weight: 900;
-  letter-spacing: .28em;
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 0 8px #fd5fbe80) drop-shadow(0 4px 3px #0009);
 }
 .app-header .brand-title {
-  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
   line-height: 1;
-  letter-spacing: .065em;
-  background: linear-gradient(180deg, #fff9e6 15%, #f5b970);
+  letter-spacing: .045em;
+  background: linear-gradient(95deg, #fff9e6 5%, #ffe48d 28%, #ff9fba 57%, #8ceaff 90%);
   background-clip: text;
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 2px #100d33);
 }
 .brand-spark {
-  color: #5be3c8;
-  -webkit-text-fill-color: #5be3c8;
+  color: #72f5d1;
+  -webkit-text-fill-color: #72f5d1;
   margin-left: 2px;
   font-size: .8em;
 }
@@ -951,7 +946,7 @@ body {
   .app-header .brand { gap: 6px; }
   .app-header .brand-icon { width: 28px; height: 28px; }
   .app-header .brand-title { font-size: 1rem; }
-  .brand-kicker, .brand-spark { display: none; }
+  .brand-spark { display: none; }
 }
 .landing-hero {
   max-width: 770px;

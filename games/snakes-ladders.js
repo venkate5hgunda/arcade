@@ -15,15 +15,20 @@ import { createTurnIndicator } from '../js/turn-indicator.js';
 const BOARD_SIZE = 100;
 const PLAYER_COLORS = ['#ff5a3c', '#38bdf8', '#34d399', '#fbbf24'];
 
-function validCheckpoint(s) {
+function validCheckpoint(s, allowFinished = false) {
   return !!s && typeof s === 'object' && Number.isInteger(s.playerCount) &&
     s.playerCount >= 2 && s.playerCount <= 4 &&
     typeof s.seed === 'string' && s.seed.length > 0 && s.seed.length <= 48 &&
     Array.isArray(s.positions) && s.positions.length === s.playerCount &&
-    s.positions.every((n) => Number.isInteger(n) && n >= 0 && n < BOARD_SIZE) &&
+    s.positions.every((n) => Number.isInteger(n) && n >= 0 && n <= BOARD_SIZE) &&
     Number.isInteger(s.current) && s.current >= 0 && s.current < s.playerCount &&
     Number.isInteger(s.lastRoll) && s.lastRoll >= 1 && s.lastRoll <= 6 &&
-    typeof s.message === 'string' && s.message.length <= 160;
+    typeof s.message === 'string' && s.message.length <= 160 &&
+    (s.positions.includes(BOARD_SIZE)
+      ? allowFinished && Number.isInteger(s.winner) &&
+        s.positions[s.winner] === BOARD_SIZE &&
+        s.positions.filter(n => n === BOARD_SIZE).length === 1
+      : s.winner == null);
 }
 
 export default {
@@ -36,6 +41,11 @@ export default {
     const match = remoteMatch(multiplayer, game.id);
     const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && (!validCheckpoint(roomSave, true) ||
+        roomSave.playerCount !== match.activeGame.playerIds.length ||
+        !Number.isSafeInteger(roomSave.generation) || roomSave.generation < 0))
+      throw new Error('Saved Snakes & Ladders room state is invalid.');
     const saved = loadJSON(KEYS.SETTINGS + ':snakes-ladders', { players: '2' });
     const settings = match ? { players: String(match.activeGame.playerIds.length) } : resume ? { players: String(resume.playerCount) } : await renderSetup(stage, {
       title: '🐍 Snakes & Ladders',
@@ -57,16 +67,22 @@ export default {
     shell.root.querySelector('.game-meta').textContent = match
       ? `Online room · you are Player ${seat(match)} · ${playerCount} players` : `${playerCount} players · Roll to move`;
 
-    const positions = resume ? [...resume.positions] : Array(playerCount).fill(0);
-    let boardSeed = resume?.seed ?? Math.random().toString(36).slice(2);
-    let layout = createBoardLayout(match ? match.activeGame.seed : boardSeed);
-    let current = resume?.current ?? 0, gameOver = false, winner = null, rolling = false,
-      lastRoll = resume?.lastRoll ?? 1, message = resume?.message ?? '', queuedRoll = null;
-    let generation = 0;
+    const savedBoard = roomSave || resume;
+    const positions = savedBoard ? [...savedBoard.positions] : Array(playerCount).fill(0);
+    let boardSeed = savedBoard?.seed ?? (match ? String(match.activeGame.seed) : Math.random().toString(36).slice(2));
+    let layout = createBoardLayout(boardSeed);
+    let current = savedBoard?.current ?? 0, gameOver = roomSave?.winner != null,
+      winner = roomSave?.winner ?? null, rolling = false,
+      lastRoll = savedBoard?.lastRoll ?? 1, message = savedBoard?.message ?? '', queuedRoll = null;
+    let generation = roomSave?.generation ?? 0, stateEpoch = 0;
     function checkpoint() {
+      const snapshot = { playerCount, seed: boardSeed, positions, current, lastRoll, message };
+      if (match?.role === 'host') {
+        match.saveGame(game.id, { ...snapshot, winner, generation }); return;
+      }
       if (match) return;
       if (gameOver) session?.finish();
-      else session?.save({ playerCount, seed: boardSeed, positions, current, lastRoll, message });
+      else session?.save(snapshot);
     }
     let rollController = new AbortController();
 
@@ -190,10 +206,10 @@ export default {
     async function rollDice(predeterminedValue = null) {
       if (rolling || gameOver) return;
       rolling = true;
-      const started = generation;
+      const started = generation, startedEpoch = stateEpoch;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
-      if (started !== generation) return;
+      if (started !== generation || startedEpoch !== stateEpoch) return;
       const btn = dice.querySelector('.sl-roll-btn');
       let roll;
       try {
@@ -292,11 +308,12 @@ export default {
 
     function reset(seed) {
       generation++;
+      stateEpoch++;
       shell.root.querySelector('.arcade-victory')?.remove();
       rollController.abort();
       rollController = new AbortController();
-      if (!match) boardSeed = Math.random().toString(36).slice(2);
-      layout = createBoardLayout(match ? seed : boardSeed);
+      boardSeed = match ? seed : Math.random().toString(36).slice(2);
+      layout = createBoardLayout(boardSeed);
       positions.fill(0);
       current = 0; gameOver = false; winner = null; rolling = false; lastRoll = 1; message = ''; queuedRoll = null;
       render();
@@ -309,7 +326,26 @@ export default {
     });
     if (match && match.role !== 'host') getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
+      if (event.action?.type === 'room-state' && match.role === 'guest') {
+        const snapshot = event.action.state;
+        if (!validCheckpoint(snapshot, true) || snapshot.playerCount !== playerCount ||
+            !Number.isSafeInteger(snapshot.generation) || snapshot.generation < 0) {
+          match.error(new Error('Invalid Snakes & Ladders room state.')); return;
+        }
+        rollController.abort(); rollController = new AbortController();
+        generation = snapshot.generation;
+        stateEpoch++;
+        boardSeed = snapshot.seed; layout = createBoardLayout(boardSeed);
+        positions.splice(0, positions.length, ...snapshot.positions);
+        current = snapshot.current; lastRoll = snapshot.lastRoll; message = snapshot.message;
+        winner = snapshot.winner; gameOver = winner !== null;
+        rolling = false; queuedRoll = null; render(); return;
+      }
       if (event.action?.type === 'new-board' && event.from === match.activeGame.playerIds[0] &&
           typeof event.action.seed === 'string' && event.action.seed.length <= 48) reset(event.action.seed);
       if (event.action?.type === 'request-roll' && match.role === 'host' &&
@@ -327,6 +363,7 @@ export default {
     window.addEventListener('arcade:themechange', onTheme);
     render();
     if (!resume) checkpoint();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => {
       generation++;
       rollController.abort();

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { MultiplayerRoom } from '../js/multiplayer.js';
-import { newCatan, catanView } from '../games/catan.js';
+import { newCatan, catanView, validCatanCheckpoint } from '../games/catan.js';
 
 globalThis.crypto ??= webcrypto;
 globalThis.location = new URL('https://example.test/arcade/index.html#/');
@@ -407,9 +407,9 @@ test('raw fallback remains readable and malformed compressed payloads fail safel
   }
 });
 
-async function connectGuest(host, name) {
+async function connectGuest(host, name, reconnectingId = null) {
   const guest = new MultiplayerRoom();
-  const answer = await guest.joinInvite(await host.createInvite(), name);
+  const answer = await guest.joinInvite(await host.createInvite(reconnectingId), name);
   await host.acceptAnswer(answer);
   const hp = FakePeer.instances.at(-2);
   const gp = FakePeer.instances.at(-1);
@@ -448,6 +448,7 @@ test('island game requires three seats and keeps each room hand private', async 
     host.sendPrivateAction(first.guest.peerId, {
       type: 'ct-state', revision: 2, view: { goods: { timber: 3 }, dev: [{ type: 'victory' }] },
     });
+
     assert.equal(seen[0].at(-1).view.goods.timber, 3);
     assert.equal(seen[1].length, 0);
     assert.equal(second.hostChannel.sent.includes('"victory"'), false);
@@ -462,6 +463,217 @@ test('island game requires three seats and keeps each room hand private', async 
     second.guest.close();
     third.guest.close();
     host.close();
+  }
+});
+
+test('an interrupted guest keeps their seat and island when re-invited, even with another player offline', async () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  const first = await connectGuest(host, 'First');
+  const second = await connectGuest(host, 'Second');
+  try {
+    host.startGame('catan', [host.peerId, first.guest.peerId, second.guest.peerId]);
+    second.hostChannel.close(); second.guestChannel.close();
+    first.hostChannel.close(); first.guestChannel.close();
+    assert.equal(host.activeGame.id, 'catan');
+    assert.equal(first.guest.activeGame.id, 'catan');
+    assert.equal(host.members.length, 3);
+    assert.throws(() => host.sendAction({ type: 'ct-request' }), /disconnected/);
+    const answer = await first.guest.joinInvite(await host.createInvite(first.guest.peerId), 'First');
+    await host.acceptAnswer(answer);
+    const hp = FakePeer.instances.at(-2);
+    const gp = FakePeer.instances.at(-1);
+    const channel = new FakeChannel('arcade');
+    hp.channel.other = channel;
+    channel.other = hp.channel;
+    gp.ondatachannel({ channel });
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen(); channel.onopen();
+    assert.equal(host.members.length, 3, 'rejoining does not create a fourth seat');
+    assert.equal(first.guest.activeGame.id, 'catan', 'the island reaches a rejoined guest');
+    assert.deepEqual(first.guest.activeGame.playerIds, host.activeGame.playerIds);
+    assert.equal(first.guest.members.find(member => member.id === second.guest.peerId).connected, false);
+    assert.doesNotThrow(() => first.guest.sendAction({ type: 'ct-sync' }));
+    assert.throws(() => first.guest.sendAction({ type: 'ct-request' }), /disconnected/);
+  } finally {
+    first.guest.close();
+    second.guest.close();
+    host.close();
+  }
+});
+
+test('host tab checkpoint preserves the Catan island, roster and standings without treating guests as connected', async () => {
+  const previous = globalThis.sessionStorage;
+  const saved = new Map();
+  globalThis.sessionStorage = {
+    setItem(key, value) { saved.set(key, value); },
+    getItem(key) { return saved.get(key) ?? null; },
+    removeItem(key) { saved.delete(key); },
+  };
+  const host = new MultiplayerRoom();
+  let recovered;
+  try {
+    host.createHost('Host');
+    const ids = [crypto.randomUUID(), crypto.randomUUID()];
+    host.members.push(...ids.map((id, i) => ({
+      id, name: `Guest ${i + 1}`, connected: true, admitted: true,
+    })));
+    host.startGame('catan', [host.peerId, ...ids]);
+    const island = newCatan(3);
+    host.saveCatan(island);
+    const [key, raw] = [...saved.entries()][0];
+    const old = JSON.parse(raw);
+    saved.set(key, JSON.stringify({
+      ...old, version: 1, catanState: old.gameState, gameState: undefined,
+    }));
+    recovered = new MultiplayerRoom();
+    assert.equal(recovered.isRestored, true);
+    assert.equal(recovered.activeGame.id, 'catan');
+    assert.deepEqual(recovered.activeGame.playerIds, [host.peerId, ...ids]);
+    assert.equal(recovered.members[0].connected, true);
+    assert.ok(recovered.members.slice(1).every(member => !member.connected));
+    assert.equal(validCatanCheckpoint(recovered.savedCatan), true);
+    assert.deepEqual(recovered.savedCatan, island);
+    assert.equal(recovered.roomId, host.roomId);
+  } finally {
+    recovered?.close();
+    host.close();
+    if (previous === undefined) delete globalThis.sessionStorage;
+    else globalThis.sessionStorage = previous;
+  }
+});
+
+test('a restored host re-invites every original island seat after a tab reload', async () => {
+  const previous = globalThis.sessionStorage;
+  const saved = new Map();
+  globalThis.sessionStorage = {
+    setItem(key, value) { saved.set(key, value); },
+    getItem(key) { return saved.get(key) ?? null; },
+    removeItem(key) { saved.delete(key); },
+  };
+  const original = new MultiplayerRoom();
+  let recovered, first, second, rejoinedFirst, rejoinedSecond;
+  try {
+    original.createHost('Host');
+    first = await connectGuest(original, 'First');
+    second = await connectGuest(original, 'Second');
+    original.startGame('catan', [original.peerId, first.guest.peerId, second.guest.peerId]);
+    const island = newCatan(3);
+    island.message = 'Island saved during opening.';
+    original.saveCatan(island);
+    recovered = new MultiplayerRoom();
+    assert.equal(recovered.isRestored, true);
+    assert.equal(recovered.members.filter(member => member.connected).length, 1);
+    rejoinedFirst = await connectGuest(recovered, 'First', first.guest.peerId);
+    assert.equal(recovered.activeGame.id, 'catan');
+    assert.equal(rejoinedFirst.guest.activeGame.id, 'catan');
+    assert.equal(rejoinedFirst.guest.members.find(member => member.id === second.guest.peerId).connected, false);
+    rejoinedSecond = await connectGuest(recovered, 'Second', second.guest.peerId);
+    assert.deepEqual(recovered.savedCatan, island);
+    assert.deepEqual(recovered.activeGame.playerIds, original.activeGame.playerIds);
+    assert.equal(recovered.members.length, 3);
+    assert.ok(recovered.members.every(member => member.connected));
+    assert.deepEqual(rejoinedSecond.guest.activeGame.playerIds, original.activeGame.playerIds);
+    assert.doesNotThrow(() => recovered.sendAction({ type: 'ct-sync' }));
+    island.winner = 0;
+    assert.equal(validCatanCheckpoint(island), false, 'finished local sessions are not resumed');
+    assert.equal(validCatanCheckpoint(island, true), true, 'finished room islands remain recoverable');
+  } finally {
+    rejoinedFirst?.guest.close();
+    rejoinedSecond?.guest.close();
+    first?.guest.close();
+    second?.guest.close();
+    recovered?.close();
+    original.close();
+    if (previous === undefined) delete globalThis.sessionStorage;
+    else globalThis.sessionStorage = previous;
+  }
+});
+
+test('every public room game restores a host snapshot and resyncs a returning seat', async () => {
+  const previous = globalThis.sessionStorage;
+  const saved = new Map();
+  globalThis.sessionStorage = {
+    setItem(key, value) { saved.set(key, value); },
+    getItem(key) { return saved.get(key) ?? null; },
+    removeItem(key) { saved.delete(key); },
+  };
+  try {
+    for (const id of ['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo']) {
+      const host = new MultiplayerRoom();
+      let original, recovered, returning;
+      try {
+        host.createHost('Host');
+        original = await connectGuest(host, 'Guest');
+        host.startGame(id, [host.peerId, original.guest.peerId]);
+        const snapshot = { round: 3, marker: id };
+        host.saveGame(id, snapshot);
+        recovered = new MultiplayerRoom();
+        assert.equal(recovered.activeGame.id, id);
+        assert.deepEqual(recovered.savedGame, snapshot);
+        assert.equal(recovered.members[1].connected, false);
+        returning = await connectGuest(recovered, 'Guest', original.guest.peerId);
+        const received = [];
+        const guestErrors = [];
+        returning.guest.on(event => {
+          if (event.type === 'action') received.push(event.action);
+          if (event.type === 'error') guestErrors.push(event.message);
+        });
+        returning.guest.sendAction({ type: 'move', cell: 0 });
+        assert.match(guestErrors.at(-1), /host must resume the saved game/);
+        returning.guest.sendAction({ type: 'room-sync' });
+        assert.deepEqual(received.at(-1), { type: 'room-state', state: snapshot });
+        assert.equal(recovered.activeGame.playerIds[1], returning.guest.peerId);
+        const errors = [];
+        recovered.on(event => { if (event.type === 'error') errors.push(event.message); });
+        returning.guest.sendAction({ type: 'room-state', state: { marker: 'forged' } });
+        assert.match(errors.at(-1), /Only the host/);
+        assert.deepEqual(recovered.savedGame, snapshot);
+      } finally {
+        returning?.guest.close();
+        original?.guest.close();
+        recovered?.close();
+        host.close();
+      }
+    }
+  } finally {
+    if (previous === undefined) delete globalThis.sessionStorage;
+    else globalThis.sessionStorage = previous;
+  }
+});
+
+test('private card game checkpoints remain on the host and never use public state sync', async () => {
+  const previous = globalThis.sessionStorage;
+  const saved = new Map();
+  globalThis.sessionStorage = {
+    setItem(key, value) { saved.set(key, value); },
+    getItem(key) { return saved.get(key) ?? null; },
+    removeItem(key) { saved.delete(key); },
+  };
+  try {
+    for (const id of ['uno', 'crazy-eights']) {
+      const host = new MultiplayerRoom();
+      let original, recovered, returning;
+      try {
+        host.createHost('Host');
+        original = await connectGuest(host, 'Guest');
+        host.startGame(id, [host.peerId, original.guest.peerId]);
+        host.saveGame(id, { state: { secret: `host-only-${id}` }, round: 1 });
+        recovered = new MultiplayerRoom();
+        assert.equal(recovered.activeGame.id, id);
+        returning = await connectGuest(recovered, 'Guest', original.guest.peerId);
+        assert.equal(returning.hostChannel.sent.includes('host-only'), false);
+        assert.throws(() => recovered.sendRoomState(returning.guest.peerId), /Invalid game state recipient/);
+      } finally {
+        returning?.guest.close();
+        original?.guest.close();
+        recovered?.close();
+        host.close();
+      }
+    }
+  } finally {
+    if (previous === undefined) delete globalThis.sessionStorage;
+    else globalThis.sessionStorage = previous;
   }
 });
 

@@ -37,8 +37,8 @@ Game artwork from [Game Icons](https://game-icons.net/) by Lorc, Delapouite,
 Skoll and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 UI icons from [Tabler Icons](https://tabler.io/icons) by Paweł Kuna, licensed
 under [MIT](https://github.com/tabler/tabler-icons/blob/master/LICENSE).
-Both sets are served locally via [Iconify](https://iconify.design/); the
-downloaded icons are unmodified.
+Both sets are served locally via [Iconify](https://iconify.design/). The
+Island Charter resource icons use color-tinted Game Icons silhouettes.
 
 ## Features
 
@@ -102,7 +102,7 @@ Chess; and **120 min** for Island Charter.
   the opening faceoff, the puck rests at center until either player strikes it.
   After a goal, it rests on the non-scoring player's half until they strike it.
 - **Island Charter** — a 3–4-player hex-settlement strategy game with an
-  illustrated SVG island, distinct buildings, resource and dice artwork,
+  illustrated SVG island, distinct buildings, recognizable resource and dice artwork,
   production, trading, harbors, discoveries and ten-point victory. Play by
   private handoff or in a room; the original art and wording avoid commercial
   board-game assets.
@@ -118,7 +118,11 @@ Chess; and **120 min** for Island Charter.
   Ludo uses a full 52-square cross
   track and lets the player select which legal token to move.
 - **Island Charter** — original presentation of classic hex-settlement rules
-  for 3–4 players: snake-order opening placements, resource production,
+  for 3–4 players: everyone rolls two dice for opening placement order; ties
+  reroll, the highest places first and last, and the lowest places twice in
+  succession. Zoom controls enlarge or shrink the island without losing the
+  current view. Brighter, larger player buildings and roads stand apart from
+  the muted terrain. Resource production,
   blocking raider and seven-card discards, distance and road-building rules,
   bank/harbor and player trading, development cards and ten-point victory.
   Local players pass the device before revealing private cargo; in a room,
@@ -141,6 +145,16 @@ Chess; and **120 min** for Island Charter.
   Crazy Eights (2 players), with host-authoritative private hands.
   The room lobby keeps per-player and per-game wins, losses, draws and rankings
   for the lifetime of the room, including across replays and game changes.
+  A dropped connection pauses turns without discarding the room or active game.
+  The host can re-invite a disconnected guest into the same seat. If the host
+  tab reloads, a per-tab host checkpoint restores the roster and the current
+  round in every supported room game, including private card hands that remain
+  on the host. Guests need fresh invite/answer exchanges to reclaim their
+  seats; public boards resynchronize from the host and private games send each
+  guest only their own view. Play pauses until every selected seat reconnects.
+  Rooms use local browser storage, not a server: clearing site data or losing
+  the host's browser session cannot be recovered. WebRTC itself does not
+  reconnect across a full reload without another invite and answer.
   Other games remain local-only.
 
 **Future enhancement:** Solo campaigns with progressive stages, unlocks and
@@ -185,6 +199,11 @@ third-party synopses or bundling restricted API datasets (see
    should spectate, then choose one of the games available for that number
    of selected players. Return to the lobby to play another game over the
    same connection.
+   If someone disconnects, wait for WebRTC to recover. If it does not,
+   the host selects **Reconnect [name]** to generate a new invite for that
+   guest; they join with the same name, send a new answer, and reclaim their
+   seat. A restored host tab opens the lobby automatically and can resume a
+   saved Island Charter after guests reconnect.
 
 **Constraints shown before starting:** This static-hosted PWA has no
 signaling or TURN server. Both links must be exchanged manually, and some

@@ -96,7 +96,7 @@ function initialState() {
   };
 }
 
-function validCheckpoint(snapshot) {
+function validCheckpoint(snapshot, allowFinished = false) {
   if (!snapshot || typeof snapshot !== 'object' || !['pvp', 'ai'].includes(snapshot.mode) ||
       !['w', 'b'].includes(snapshot.side) || !snapshot.state || typeof snapshot.state !== 'object') return false;
   const { board, turn, castling, epTarget } = snapshot.state;
@@ -123,7 +123,8 @@ function validCheckpoint(snapshot) {
         !generateLegalMoves(snapshot.state, turn).some((m) =>
           m.from === pending.from && m.to === pending.to && m.promotion)) return false;
   }
-  return !snapshot.over && !isSquareAttacked(board, findKing(board, opp(turn)), turn);
+  return (!snapshot.over || allowFinished) &&
+    !isSquareAttacked(board, findKing(board, opp(turn)), turn);
 }
 
 function slidingTargets(board, sq, color, dirs) {
@@ -350,6 +351,10 @@ export default {
     const match = remoteMatch(multiplayer, game.id);
     const showTurn = createTurnIndicator(shell.root, match);
     const resume = !match && validCheckpoint(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && (roomSave.mode !== 'pvp' || !validCheckpoint(roomSave, true) ||
+        !Number.isSafeInteger(roomSave.generation) || roomSave.generation < 0))
+      throw new Error('Saved Chess room state is invalid.');
     const saved = loadJSON(KEYS.SETTINGS + ':chess', { mode: 'pvp', side: 'w' });
     const settings = match ? { mode: 'pvp', side: 'w' } : resume ? { mode: resume.mode, side: resume.side } : await renderSetup(stage, {
       title: '♟️ Chess',
@@ -385,14 +390,19 @@ export default {
     let lastMove = null;
     let over = false;
     let pendingPromotion = null; // { from, m }
-    let aiTimer = null, busy = false, generation = 0;
+    let aiTimer = null, busy = false, generation = roomSave?.generation ?? 0, stateEpoch = 0;
     const captured = { w: [], b: [] };
     function checkpoint() {
+      const snapshot = { mode: settings.mode, side: settings.side, state, captured,
+        lastMove, over, pendingPromotion: pendingPromotion &&
+          { from: pendingPromotion.from, to: pendingPromotion.m.to } };
+      if (match?.role === 'host') {
+        match.saveGame(game.id, { ...snapshot, generation });
+        return;
+      }
       if (match) return;
       if (over) session?.finish();
-      else session?.save({ mode: settings.mode, side: settings.side, state, captured,
-        lastMove, over, pendingPromotion: pendingPromotion &&
-          { from: pendingPromotion.from, to: pendingPromotion.m.to } });
+      else session?.save(snapshot);
     }
 
     const board = document.createElement('div');
@@ -470,7 +480,13 @@ export default {
     }
 
     function updateStatus() {
-      if (over) return;
+      if (over) {
+        const inCheck = isSquareAttacked(state.board, findKing(state.board, state.turn), opp(state.turn));
+        status.textContent = inCheck
+          ? `Checkmate! ${playerName(state.turn === 'w' ? 1 : 0, match)} wins`
+          : generateLegalMoves(state, state.turn).length ? 'Draw — insufficient material' : 'Stalemate — Draw';
+        return;
+      }
       const inCheck = isSquareAttacked(state.board, findKing(state.board, state.turn), opp(state.turn));
       const turnLabel = state.turn === 'w' ? 'White' : 'Black';
       if (pendingPromotion) { status.textContent = 'Choose a piece to promote to…'; return; }
@@ -514,10 +530,10 @@ export default {
     async function finalizeMove(from, m) {
       if (busy) return;
       busy = true;
-      const started = generation;
+      const started = generation, startedEpoch = stateEpoch;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
-      if (started !== generation) return;
+      if (started !== generation || startedEpoch !== stateEpoch) return;
       const capturedPiece = applyMove(state, from, m);
       if (capturedPiece) captured[capturedPiece.color].push(capturedPiece.type);
       lastMove = { from, to: m.to };
@@ -569,6 +585,7 @@ export default {
     function newGame() {
       clearTimeout(aiTimer);
       generation++;
+      stateEpoch++;
       shell.root.querySelector('.arcade-victory')?.remove();
       state = initialState();
       selected = null; legalFromSelected = []; lastMove = null; over = false; pendingPromotion = null; busy = false;
@@ -585,7 +602,20 @@ export default {
     });
     if (match && match.role !== 'host') getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
+      if (event.action?.type === 'room-state' && match.role === 'guest') {
+        const snapshot = event.action.state;
+        if (snapshot?.mode !== 'pvp' || !validCheckpoint(snapshot, true) ||
+            !Number.isSafeInteger(snapshot.generation) || snapshot.generation < 0) {
+          match.error(new Error('Invalid Chess room state.')); return;
+        }
+        restore(snapshot);
+        return;
+      }
       if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) {
         newGame();
       } else if (event.action?.type === 'move' && !over && validTurn(match, state.turn === 'w' ? 1 : 2, event.from)) {
@@ -600,19 +630,27 @@ export default {
 
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
-    if (resume) {
-      state = resume.state;
-      captured.w = resume.captured.w;
-      captured.b = resume.captured.b;
-      lastMove = resume.lastMove;
-      const pending = resume.pendingPromotion;
+    function restore(snapshot) {
+      clearTimeout(aiTimer);
+      stateEpoch++;
+      state = structuredClone(snapshot.state);
+      captured.w = [...snapshot.captured.w];
+      captured.b = [...snapshot.captured.b];
+      lastMove = snapshot.lastMove;
+      over = snapshot.over;
+      generation = snapshot.generation ?? generation;
+      selected = null; legalFromSelected = []; busy = false;
+      const pending = snapshot.pendingPromotion;
       if (pending) pendingPromotion = {
         from: pending.from,
         m: generateLegalMoves(state, state.turn).find((m) => m.from === pending.from && m.to === pending.to),
-      };
+      }; else pendingPromotion = null;
       render();
       if (aiMode && state.turn === aiSide) aiTimer = setTimeout(runAiTurn, 500);
-    } else newGame();
+    }
+    if (roomSave || resume) restore(roomSave || resume);
+    else newGame();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => {
       clearTimeout(aiTimer);
       generation++;

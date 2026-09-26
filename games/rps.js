@@ -37,6 +37,23 @@ function validCheckpoint(s) {
       s.phase === 'reveal' && s.p1Pick !== null && s.p2Pick !== null && s.round > 0);
 }
 
+function validRoomState(s) {
+  return s && s.mode === 'pvp' && s.target === 3 &&
+    Array.isArray(s.score) && s.score.length === 2 &&
+    s.score.every(n => Number.isInteger(n) && n >= 0 && n <= 3) &&
+    Number.isSafeInteger(s.round) && s.round >= 0 &&
+    Number.isSafeInteger(s.generation) && s.generation >= 0 &&
+    ['p1pick', 'p2pick', 'waiting', 'countdown', 'reveal', 'over'].includes(s.phase) &&
+    (s.p1Pick === null || !!choiceOf(s.p1Pick)) &&
+    (s.p2Pick === null || !!choiceOf(s.p2Pick)) &&
+    Number.isFinite(s.deadline) && s.deadline >= 0 &&
+    typeof s.nextPending === 'boolean' &&
+    (s.phase !== 'countdown' || s.p1Pick !== null && s.p2Pick !== null && s.deadline > 0) &&
+    (!['reveal', 'over'].includes(s.phase) ||
+      s.p1Pick !== null && s.p2Pick !== null && s.round > 0) &&
+    (s.phase !== 'over' || s.score.some(n => n === 3));
+}
+
 export default {
   async render(el, game, { navigate, multiplayer, session } = {}) {
     const shell = createShell(el, game, { title: 'Rock Paper Scissors', meta: 'Best of · quick match' });
@@ -48,6 +65,9 @@ export default {
     const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':rps', { mode: 'ai', target: '3' });
     const checkpoint = !match && validCheckpoint(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && !validRoomState(roomSave))
+      throw new Error('Saved Rock Paper Scissors room state is invalid.');
     const settings = match ? { mode: 'pvp', target: '3' } : checkpoint ?
       { mode: checkpoint.mode, target: String(checkpoint.target) } : await renderSetup(stage, {
       title: '✊✋✌️ Rock Paper Scissors',
@@ -82,14 +102,20 @@ export default {
     let nextPending = false;
     let countdownController = new AbortController();
     let deadline = 0;
+    let matchGeneration = 0;
 
     function checkpointGame() {
-      if (match || !session) return;
-      if (over) { session.finish(); return; }
-      session.save({
+      const snapshot = {
         mode: settings.mode, target, score: [score.p1, score.p2], round,
         p1Pick, p2Pick, phase, deadline,
-      });
+      };
+      if (match?.role === 'host') {
+        match.saveGame(game.id, { ...snapshot, generation: matchGeneration, nextPending });
+        return;
+      }
+      if (match || !session) return;
+      if (over) { session.finish(); return; }
+      session.save(snapshot);
     }
 
     const card = document.createElement('div');
@@ -240,7 +266,6 @@ export default {
       if (nextPending) { nextPending = false; nextRound(); }
     }
 
-    let matchGeneration = 0;
     function nextRound() {
       if (score.p1 >= target || score.p2 >= target) {
         over = true; phase = 'over';
@@ -278,12 +303,40 @@ export default {
     });
     if (match && match.role !== 'host') getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
       const { action, from } = event;
+      if (action?.type === 'room-state' && match.role === 'guest') {
+        const saved = action.state;
+        if (!validRoomState(saved)) {
+          match.error(new Error('Invalid Rock Paper Scissors room state.')); return;
+        }
+        countdownController.abort();
+        countdownController = new AbortController();
+        score = { p1: saved.score[0], p2: saved.score[1] };
+        round = saved.round; p1Pick = saved.p1Pick; p2Pick = saved.p2Pick;
+        deadline = saved.deadline; nextPending = saved.nextPending;
+        matchGeneration = saved.generation;
+        over = saved.phase === 'over';
+        phase = saved.phase === 'waiting' || ['p1pick', 'p2pick'].includes(saved.phase)
+          ? (seat(match) === 1 ? p1Pick === null ? 'p1pick' : 'waiting' :
+            p2Pick === null ? 'p2pick' : 'waiting') : saved.phase;
+        if (phase === 'countdown') {
+          if (Date.now() >= deadline) finishRound();
+          else startShowdown(true);
+        } else render();
+        return;
+      }
       if (action?.type === 'reset' && from === match.activeGame.playerIds[0]) newMatch();
       if (action?.type === 'next' && from === match.activeGame.playerIds[0]) {
         if (phase === 'reveal') nextRound();
-        else if (phase === 'countdown') nextPending = true;
+        else if (phase === 'countdown') {
+          nextPending = true;
+          checkpointGame();
+        }
       }
       if (action?.type !== 'pick' || !CHOICES.some((c) => c.id === action.choice)) return;
       if (from === match.activeGame.playerIds[0] && p1Pick === null) p1Pick = action.choice;
@@ -292,8 +345,9 @@ export default {
       if (p1Pick !== null && p2Pick !== null) startShowdown();
       else if (seat(match) === (from === match.activeGame.playerIds[0] ? 1 : 2)) {
         phase = 'waiting';
+        checkpointGame();
         render();
-      }
+      } else checkpointGame();
     });
     if (checkpoint) {
       score = { p1: checkpoint.score[0], p2: checkpoint.score[1] };
@@ -303,8 +357,23 @@ export default {
         if (Date.now() >= deadline) finishRound();
         else startShowdown(true);
       } else render();
-    } else if (match) render();
+    } else if (roomSave) {
+      score = { p1: roomSave.score[0], p2: roomSave.score[1] };
+      round = roomSave.round; p1Pick = roomSave.p1Pick; p2Pick = roomSave.p2Pick;
+      phase = roomSave.phase; deadline = roomSave.deadline;
+      matchGeneration = roomSave.generation; nextPending = roomSave.nextPending;
+      over = phase === 'over';
+      if (phase === 'countdown') {
+        if (Date.now() >= deadline) finishRound();
+        else startShowdown(true);
+      } else render();
+      checkpointGame();
+    } else if (match) {
+      render();
+      checkpointGame();
+    }
     else newMatch();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => { countdownController.abort(); offRoom?.(); } };
   },
 };
