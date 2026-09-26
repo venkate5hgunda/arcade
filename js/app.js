@@ -30,7 +30,7 @@ room.on((event) => {
     ? `Open multiplayer lobby, ${connected} connected` : 'Open multiplayer lobby');
   roomToggle.title = room.role ? `Open room · ${connected} connected` : 'Open multiplayer room';
 });
-if (new URL(location.href).searchParams.has('invite') ||
+if (room.isRestored || new URL(location.href).searchParams.has('invite') ||
     new URL(location.href).searchParams.has('answer')) {
   room.showLobby().catch((error) => console.error('Could not open shared invitation:', error));
 }

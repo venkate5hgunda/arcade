@@ -13,7 +13,7 @@ export const COSTS = {
   city: { grain: 2, ore: 3 },
   development: { grain: 1, wool: 1, ore: 1 },
 };
-export const COLORS = ['#eb805b', '#63c7b7', '#e7b759', '#9a8ad6'];
+export const COLORS = ['#dc2846', '#2168e2', '#c38c04', '#7335b4'];
 const TERRAIN = ['forest', 'forest', 'forest', 'forest', 'hills', 'hills', 'hills',
   'fields', 'fields', 'fields', 'fields', 'pasture', 'pasture', 'pasture', 'pasture',
   'mountains', 'mountains', 'mountains', 'desert'];
@@ -125,11 +125,12 @@ export function newCatan(count = 3, random = Math.random) {
     })),
     bank: Object.fromEntries(GOODS.map(g => [g, 19])),
     deck: shuffled(DECK, random), robber: board.tiles.findIndex(t => t.terrain === 'desert'),
-    current: 0, setupStep: 0, setupVertex: null, phase: 'setup-settlement',
+    current: 0, setupStep: 0, setupVertex: null, phase: 'setup-roll',
+    setupRolls: Array(count).fill(null), setupOrder: null,
     rolled: null, discards: [], robberReturn: 'main', freeRoads: 0,
     devPlayed: false, turn: 0, longest: null, largest: null, offer: null,
     roadsReturn: 'main',
-    winner: null, message: 'Place your first outpost.',
+    winner: null, message: 'Roll to determine the opening placement order.',
   };
 }
 
@@ -251,6 +252,32 @@ export function actCatan(state, action, actor = state.current, random = Math.ran
       !integer(actor) || actor >= state.players.length || state.winner !== null) return false;
   const p = state.players[actor], phase = state.phase;
   const type = action.type;
+  if (type === 'setup-roll') {
+    if (phase !== 'setup-roll' || actor !== state.current ||
+        !Array.isArray(action.dice) || action.dice.length !== 2 ||
+        !action.dice.every(value => integer(value, 1) && value <= 6)) return false;
+    state.setupRolls[actor] = action.dice[0] + action.dice[1];
+    const next = state.setupRolls.indexOf(null);
+    if (next >= 0) {
+      state.current = next;
+      state.message = 'Roll to determine the opening placement order.';
+    } else {
+      const totals = state.setupRolls;
+      const tied = totals.map((value, index) => totals.indexOf(value) !== index ||
+        totals.lastIndexOf(value) !== index);
+      if (tied.some(Boolean)) {
+        tied.forEach((isTied, index) => { if (isTied) totals[index] = null; });
+        state.current = totals.indexOf(null);
+        state.message = 'Tied rolls! Only tied navigators roll again.';
+      } else {
+        state.setupOrder = totals.map((_, index) => index).sort((a, b) => totals[b] - totals[a]);
+        state.current = state.setupOrder[0];
+        state.phase = 'setup-settlement';
+        state.message = 'Highest roll places first. The last navigator places twice in a row.';
+      }
+    }
+    return true;
+  }
   if (type === 'discard') {
     if (phase !== 'discard' || !state.discards[actor] || !validGoods(action.goods) ||
         SUM(action.goods) !== state.discards[actor] || !hasGoods(p, action.goods)) return false;
@@ -283,10 +310,11 @@ export function actCatan(state, action, actor = state.current, random = Math.ran
     state.setupStep++;
     const n = state.players.length;
     if (state.setupStep === 2 * n) {
-      state.current = 0; state.phase = 'roll'; state.turn = 1;
+      state.current = state.setupOrder[0]; state.phase = 'roll'; state.turn = 1;
       state.message = 'First voyage: roll both dice.';
     } else {
-      state.current = state.setupStep < n ? state.setupStep : 2 * n - 1 - state.setupStep;
+      state.current = state.setupOrder[state.setupStep < n ?
+        state.setupStep : 2 * n - 1 - state.setupStep];
       state.phase = 'setup-settlement';
       state.message = 'Place your outpost.';
     }
@@ -455,20 +483,33 @@ export function applyRemoteCatanAction(state, request, revision, from, playerIds
       !Array.isArray(playerIds) || !request.move || typeof request.move !== 'object') return false;
   const actor = playerIds.indexOf(from);
   if (actor < 0) return false;
-  const move = request.move.type === 'roll'
-    ? { type: 'roll', dice: [1 + Math.floor(random() * 6), 1 + Math.floor(random() * 6)] }
+  const move = ['roll', 'setup-roll'].includes(request.move.type)
+    ? { type: request.move.type, dice: [1 + Math.floor(random() * 6), 1 + Math.floor(random() * 6)] }
     : request.move;
   return ['accept', 'decline'].includes(move.type) ?
     actTradeReply(state, move, actor) : actCatan(state, move, actor, random);
 }
 
-export function validCatanCheckpoint(state) {
+export function validCatanCheckpoint(state, allowFinished = false) {
+  const legacySetup = state?.setupRolls === undefined &&
+    state?.setupOrder === undefined && state?.phase !== 'setup-roll';
   if (!state || !Array.isArray(state.players) ||
-      ![3, 4].includes(state.players.length) || state.winner !== null ||
-      !['setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'main', 'free-roads'].includes(state.phase) ||
+      ![3, 4].includes(state.players.length) ||
+      !(state.winner === null || allowFinished && integer(state.winner) &&
+        state.winner < state.players.length) ||
+      !['setup-roll', 'setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'main', 'free-roads'].includes(state.phase) ||
       !integer(state.current) || state.current >= state.players.length ||
       !integer(state.turn) || !integer(state.setupStep) ||
       state.setupStep > 2 * state.players.length ||
+      (state.roomRound !== undefined && (!Number.isSafeInteger(state.roomRound) ||
+        state.roomRound < 0)) ||
+      !legacySetup && (!Array.isArray(state.setupRolls) ||
+        state.setupRolls.length !== state.players.length ||
+        state.setupRolls.some(value => value !== null && (!integer(value, 2) || value > 12)) ||
+        !(state.setupOrder === null && state.phase === 'setup-roll' ||
+          Array.isArray(state.setupOrder) && state.setupOrder.length === state.players.length &&
+          new Set(state.setupOrder).size === state.players.length &&
+          state.setupOrder.every(value => integer(value) && value < state.players.length))) ||
       !integer(state.robber) || state.robber >= 19 ||
       !integer(state.freeRoads) || state.freeRoads > 2 ||
       !Array.isArray(state.deck) || state.deck.length > 25 ||
@@ -523,6 +564,7 @@ export function catanView(state, player) {
       roads: p.roads, settlements: p.settlements, cities: p.cities, knights: p.knights })),
     bank: { ...state.bank }, deckCount: state.deck.length, robber: state.robber,
     current: state.current, phase: state.phase, setupStep: state.setupStep,
+    setupRolls: state.setupRolls, setupOrder: state.setupOrder,
     setupVertex: state.setupVertex, rolled: state.rolled,
     discards: state.discards, robberReturn: state.robberReturn,
     freeRoads: state.freeRoads, devPlayed: state.devPlayed, turn: state.turn,
@@ -605,6 +647,10 @@ export default {
       return { dispose: () => shell.root.remove() };
     }
     const restored = !room && validCatanCheckpoint(session?.state) ? session.state : null;
+    if (restored && !restored.setupOrder) {
+      restored.setupRolls = Array(restored.players.length).fill(null);
+      restored.setupOrder = restored.players.map((_, index) => index);
+    }
     const setting = room ? { count: room.activeGame.playerIds.length } :
       restored ? { count: restored.players.length } :
       await renderSetup(shell.stage, {
@@ -614,10 +660,30 @@ export default {
           options: [3, 4].map(n => ({ value: String(n), label: `${n} players` })) }],
       });
     const count = Number(setting.count), mySeat = room ? seat(room) - 1 : null;
-    let state = room?.role === 'guest' ? null : restored || newCatan(count);
+    if (room?.savedCatan && (!validCatanCheckpoint(room.savedCatan, true) ||
+        room.savedCatan.players.length !== count)) {
+      const note = document.createElement('p');
+      note.className = 'ct-warning';
+      note.textContent = 'The saved island is invalid. Return to the room and start a new game.';
+      shell.stage.append(note);
+      shell.getResetButton().disabled = true;
+      room.error(new Error('Saved island checkpoint failed validation.'));
+      return { dispose: () => shell.root.remove() };
+    }
+    let state = room?.role === 'guest' ? null :
+      room?.savedCatan ? structuredClone(room.savedCatan) : restored || newCatan(count);
+    if (state && !state.setupOrder && state.phase !== 'setup-roll') {
+      state.setupRolls = Array(count).fill(null);
+      state.setupOrder = state.players.map((_, index) => index);
+    }
     let view = state ? catanView(state, mySeat ?? 0) : null;
-    let revision = 0, lastRevision = -1, round = 0, disposed = false;
-    let tool = 'road', chosenTile = null, panel = 'build';
+    let revision = 0, lastRevision = -1,
+      round = state?.roomRound ?? 0, disposed = false;
+    let tool = 'road', chosenTile = null, panel = 'build', chartZoom = 1;
+    const setZoom = value => {
+      chartZoom = Math.max(.75, Math.min(2, value));
+      render();
+    };
     let covered = !room, localViewer = state?.phase === 'discard' ?
       state.discards.findIndex(Boolean) : state?.offer?.to ?? state?.current ?? 0;
     const table = document.createElement('div');
@@ -633,11 +699,14 @@ export default {
     }
     function publish() {
       if (!room || room.role !== 'host') return;
+      state.roomRound = round;
+      room.saveCatan(state);
       revision++;
       view = catanView(state, mySeat);
       for (let i = 1; i < count; i++)
-        room.sendPrivateAction(room.activeGame.playerIds[i],
-          { type: 'ct-state', revision, view: catanView(state, i) });
+        if (room.members.some(member => member.id === room.activeGame.playerIds[i] && member.connected))
+          room.sendPrivateAction(room.activeGame.playerIds[i],
+            { type: 'ct-state', revision, view: catanView(state, i) });
     }
     function localNextViewer() {
       if (state.phase === 'discard') {
@@ -649,12 +718,12 @@ export default {
     function dispatch(move) {
       if (room) {
         room.sendAction({ type: 'ct-request', revision: room.role === 'host' ? revision : lastRevision,
-          move: move.type === 'roll' ? { type: 'roll' } : move });
+          move: ['roll', 'setup-roll'].includes(move.type) ? { type: move.type } : move });
         return;
       }
       const previous = state.winner;
-      const action = move.type === 'roll'
-        ? { type: 'roll', dice: [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)] }
+      const action = ['roll', 'setup-roll'].includes(move.type)
+        ? { type: move.type, dice: [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)] }
         : move;
       const actor = state.phase === 'discard' ? localViewer :
         ['accept', 'decline'].includes(action.type) ? state.offer?.to : state.current;
@@ -665,7 +734,7 @@ export default {
           celebrate(shell.root, `${playerName(state.winner)} founded a thriving island!`);
         if (state.winner !== null) session?.finish();
         else session?.save(state);
-        if (action.type === 'end' || action.type === 'setup-road' ||
+        if (action.type === 'end' || action.type === 'setup-road' || action.type === 'setup-roll' ||
             action.type === 'offer' || action.type === 'discard' ||
             action.type === 'roll' && state.phase === 'discard' ||
             ['accept', 'decline'].includes(action.type)) localNextViewer();
@@ -674,7 +743,16 @@ export default {
       } else feedback('buzz');
     }
     const offRoom = room?.on(event => {
-      if (disposed || event.type !== 'action' || room.activeGame?.id !== game.id) return;
+      if (disposed || room.activeGame?.id !== game.id) return;
+      if (event.type === 'state') {
+        render();
+        return;
+      }
+      if (event.type === 'reconnected' && room.role === 'guest') {
+        room.sendAction({ type: 'ct-sync' });
+        return;
+      }
+      if (event.type !== 'action') return;
       if (room.role === 'host') {
         const from = room.activeGame.playerIds.indexOf(event.from);
         if (event.action?.type === 'ct-sync') {
@@ -709,7 +787,13 @@ export default {
             incoming.counts?.length !== count || incoming.buildings?.length !== 54 ||
             incoming.roads?.length !== 72 || !incoming.goods || !Array.isArray(incoming.dev) ||
             !integer(incoming.current) || incoming.current >= count ||
-            !['setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'free-roads', 'main'].includes(incoming.phase) ||
+            !['setup-roll', 'setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'free-roads', 'main'].includes(incoming.phase) ||
+            !Array.isArray(incoming.setupRolls) || incoming.setupRolls.length !== count ||
+            incoming.setupRolls.some(total => total !== null && (!integer(total, 2) || total > 12)) ||
+            !(incoming.setupOrder === null && incoming.phase === 'setup-roll' ||
+              Array.isArray(incoming.setupOrder) && incoming.setupOrder.length === count &&
+              new Set(incoming.setupOrder).size === count &&
+              incoming.setupOrder.every(seat => integer(seat) && seat < count)) ||
             !integer(incoming.turn) || incoming.turn > 100000 ||
             ![null, ...Array.from({ length: count }, (_, i) => i)].includes(incoming.winner)) return;
         lastRevision = event.action.revision;
@@ -871,7 +955,9 @@ export default {
     function render() {
       if (disposed) return;
       const data = room ? view : catanView(state, localViewer);
-      const chartScroll = table.querySelector('.ct-chart-wrap')?.scrollLeft ?? 0;
+      const oldChart = table.querySelector('.ct-chart-wrap');
+      const chartCenter = oldChart ? (oldChart.scrollLeft + oldChart.clientWidth / 2) /
+        oldChart.scrollWidth : .5;
       table.replaceChildren();
       if (!data) {
         showTurn(null);
@@ -898,7 +984,9 @@ export default {
         ? data.discards[isMe] ? isMe : data.discards.findIndex(Boolean)
         : data.offer?.to ?? data.current;
       showTurn(turnFocus, data.winner === null);
-      const canAct = data.winner === null && data.current === isMe &&
+      const waitingForPlayer = room?.activeGame.playerIds.some(id =>
+        !room.members.find(member => member.id === id)?.connected);
+      const canAct = !waitingForPlayer && data.winner === null && data.current === isMe &&
         data.phase !== 'discard' && (!data.offer || data.offer.from === isMe);
       const title = document.createElement('div');
       title.className = 'ct-banner';
@@ -909,6 +997,7 @@ export default {
       const heading = document.createElement('h3');
       heading.textContent = data.winner === null ?
         `${playerName(data.current, room)} · ${({
+          'setup-roll': 'roll for the first outpost',
           'setup-settlement': 'choose an outpost', 'setup-road': 'lay an opening road',
           roll: 'roll the dice', discard: 'return cargo', robber: 'move the raider',
           main: 'trade & build', 'free-roads': 'chart free paths',
@@ -919,17 +1008,48 @@ export default {
       status.textContent = data.message;
       title.append(titleText, status);
       table.append(title);
+      if (waitingForPlayer) {
+        const notice = document.createElement('p');
+        notice.className = 'ct-warning';
+        notice.textContent = 'An island navigator is offline. Play resumes when they reconnect to the same seat.';
+        table.append(notice);
+      }
+      if (data.phase === 'setup-roll' || data.phase.startsWith('setup-')) {
+        const order = document.createElement('p');
+        order.className = 'ct-opening-order';
+        order.textContent = data.setupOrder
+          ? `Opening order: ${data.setupOrder.map(index => playerName(index, room)).join(' → ')} → ${[...data.setupOrder].reverse().map(index => playerName(index, room)).join(' → ')}`
+          : `Opening rolls: ${data.setupRolls.map((total, index) =>
+            `${playerName(index, room)} ${total ?? '—'}`).join(' · ')}`;
+        table.append(order);
+      }
       const layout = document.createElement('div');
       layout.className = 'ct-layout';
       const chartArea = document.createElement('div');
       chartArea.className = 'ct-chart-area';
+      const zoomControls = document.createElement('div');
+      zoomControls.className = 'ct-zoom-controls';
+      const zoomOut = button('−', () => setZoom(chartZoom - .25));
+      zoomOut.setAttribute('aria-label', 'Zoom out of island');
+      zoomOut.disabled = chartZoom <= .75;
+      const zoomLevel = document.createElement('span');
+      zoomLevel.textContent = `${Math.round(chartZoom * 100)}%`;
+      zoomLevel.setAttribute('role', 'status');
+      const zoomIn = button('+', () => setZoom(chartZoom + .25));
+      zoomIn.setAttribute('aria-label', 'Zoom into island');
+      zoomIn.disabled = chartZoom >= 2;
+      const fit = button('Reset zoom', () => setZoom(1));
+      fit.disabled = chartZoom === 1;
+      zoomControls.append(zoomOut, zoomLevel, zoomIn, fit);
       const scrollHint = document.createElement('p');
       scrollHint.className = 'ct-scroll-hint';
       scrollHint.textContent = 'Swipe the island sideways to see every shore →';
       const chartWrap = document.createElement('div');
       chartWrap.className = 'ct-chart-wrap';
-      chartWrap.append(boardNode(data, canAct));
-      chartArea.append(scrollHint, chartWrap);
+      const chart = boardNode(data, canAct);
+      chart.style.setProperty('--ct-zoom', chartZoom);
+      chartWrap.append(chart);
+      chartArea.append(zoomControls, scrollHint, chartWrap);
       const aside = document.createElement('aside');
       aside.className = 'ct-sidebar';
       const roster = document.createElement('div');
@@ -988,8 +1108,15 @@ export default {
       actions.className = 'ct-actions';
       aside.append(actions);
       layout.append(chartArea, aside); table.append(layout);
-      chartWrap.scrollLeft = chartScroll;
+      chartWrap.scrollLeft = chartCenter * chartWrap.scrollWidth - chartWrap.clientWidth / 2;
       if (data.winner !== null) return;
+      if (waitingForPlayer) {
+        const hint = document.createElement('p');
+        hint.className = 'ct-hint';
+        hint.textContent = 'Waiting for all navigators to reconnect.';
+        actions.append(hint);
+        return;
+      }
       if (data.phase === 'discard') {
         const quota = data.discards[isMe] || 0;
         const info = document.createElement('p');
@@ -1038,6 +1165,13 @@ export default {
         hint.className = 'ct-hint';
         hint.textContent = `Waiting for ${playerName(data.current, room)}.`;
         actions.append(hint); return;
+      }
+      if (data.phase === 'setup-roll') {
+        const rollButton = button('Roll for opening order', () => dispatch({ type: 'setup-roll' }),
+          false, 'ct-primary ct-roll-button');
+        rollButton.prepend(dieFace(3), dieFace(5));
+        actions.append(rollButton);
+        return;
       }
       if (data.phase === 'setup-settlement' || data.phase === 'setup-road') {
         const note = document.createElement('p');

@@ -42,13 +42,19 @@ function aiMove(board, aiToken, humanToken) {
 
 const TOKEN_STYLE = { 1: { color: '#ff5a3c', label: 'X' }, 2: { color: '#38bdf8', label: 'O' } };
 
-function validState(s) {
+function validState(s, allowFinished = false) {
   if (!s || typeof s !== 'object' || Array.isArray(s) || !['pvp', 'ai'].includes(s.mode) ||
       !Array.isArray(s.board) || s.board.length !== 9 ||
       !s.board.every(v => v === 0 || v === 1 || v === 2) || ![1, 2].includes(s.current)) return false;
   const x = s.board.filter(v => v === 1).length, o = s.board.filter(v => v === 2).length;
-  return x >= o && x <= o + 1 && s.current === (x === o ? 1 : 2) &&
-    (s.mode !== 'ai' || o <= x) && !findWin(s.board, N) && s.board.includes(0);
+  const win = findWin(s.board, N);
+  const finished = !!win || !s.board.includes(0);
+  return x >= o && x <= o + 1 &&
+    s.current === (finished ? x === o ? 2 : 1 : x === o ? 1 : 2) &&
+    (s.mode !== 'ai' || o <= x) &&
+    (!finished || allowFinished && s.over === true) &&
+    (finished || s.over !== true) &&
+    (!win || s.board[win[0]] === s.current);
 }
 
 export default {
@@ -62,6 +68,10 @@ export default {
     const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':tictactoe', { mode: 'pvp' });
     const restored = !match && validState(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && (roomSave.mode !== 'pvp' || !validState(roomSave, true) ||
+        !Number.isSafeInteger(roomSave.roundId) || roomSave.roundId < 0))
+      throw new Error('Saved Tic-Tac-Toe room state is invalid.');
     const settings = match ? { mode: 'pvp' } : restored ? { mode: restored.mode } : await renderSetup(stage, {
       title: '⚡ Ready to play?',
       subtitle: 'Choose your opponent',
@@ -78,12 +88,20 @@ export default {
       match ? `Online room · you are ${seat(match) === 1 ? 'X' : 'O'}` :
         settings.mode === 'ai' ? 'You (X) vs Computer (O)' : 'Two players · X goes first';
 
-    const board = restored ? restored.board.slice() : emptyBoard(N);
+    const board = (roomSave || restored)?.board.slice() ?? emptyBoard(N);
     let current = 1, gameOver = false, winLine = null, busy = false, aiTimer = null, recentMark = -1;
-    if (restored) current = restored.current;
-    let disposed = false, roundId = 0;
+    if (roomSave || restored) current = (roomSave || restored).current;
+    let disposed = false, roundId = roomSave?.roundId ?? 0, stateEpoch = 0;
+    if (roomSave?.over) {
+      gameOver = true;
+      winLine = findWin(board, N);
+    }
 
-    function checkpoint() { if (!match) session?.save({ mode: settings.mode, board: board.slice(), current }); }
+    function checkpoint() {
+      if (match?.role === 'host')
+        match.saveGame(game.id, { mode: 'pvp', board: board.slice(), current, over: gameOver, roundId });
+      else if (!match) session?.save({ mode: settings.mode, board: board.slice(), current });
+    }
 
     const grid = document.createElement('div');
     grid.className = 'ttt-grid';
@@ -121,7 +139,11 @@ export default {
     }
 
     function updateStatus() {
-      if (gameOver) return;
+      if (gameOver) {
+        status.textContent = winLine ? `${playerName(current - 1, match)} (${TOKEN_STYLE[current].label}) wins!` : "It's a draw!";
+        status.style.color = winLine ? TOKEN_STYLE[current].color : '';
+        return;
+      }
       const token = current;
       status.textContent = match
         ? `${TOKEN_STYLE[token].label} to move · ${current === seat(match) ? 'your turn' : 'waiting for opponent'}`
@@ -132,10 +154,11 @@ export default {
     async function onMove(i) {
       if (gameOver || board[i] !== 0 || busy || !Number.isInteger(i) || i < 0 || i >= board.length) return;
       busy = true;
-      const startedRound = roundId;
+      const startedRound = roundId, startedEpoch = stateEpoch;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
-      if (disposed || startedRound !== roundId || gameOver || board[i] !== 0) return;
+      if (disposed || startedRound !== roundId || startedEpoch !== stateEpoch ||
+          gameOver || board[i] !== 0) return;
       busy = false;
       board[i] = current;
       recentMark = i;
@@ -149,6 +172,7 @@ export default {
         if (match?.role === 'host') match.recordResult(game.id, current - 1, roundId);
         if (!match || seat(match) === current) celebrate(shell.root, `${name} wins!`);
         session?.finish();
+        checkpoint();
         return render();
       }
       if (board.every((v) => v !== 0)) {
@@ -157,6 +181,7 @@ export default {
         if (audio) audio.buzz();
         if (window.haptics) window.haptics.failure();
         session?.finish();
+        checkpoint();
         return render();
       }
       current = nextPlayer(current, 2);
@@ -190,6 +215,7 @@ export default {
 
     function reset() {
       roundId++;
+      stateEpoch++;
       clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
       current = 1; gameOver = false; winLine = null; busy = false; recentMark = -1;
@@ -203,7 +229,24 @@ export default {
     });
     if (match && match.role !== 'host') getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
+      if (event.action?.type === 'room-state' && match.role === 'guest') {
+        const snapshot = event.action.state;
+        if (snapshot?.mode !== 'pvp' || !validState(snapshot, true) ||
+            !Number.isSafeInteger(snapshot.roundId) || snapshot.roundId < 0) {
+          match.error(new Error('Invalid Tic-Tac-Toe room state.')); return;
+        }
+        roundId = snapshot.roundId;
+        stateEpoch++;
+        board.splice(0, board.length, ...snapshot.board);
+        current = snapshot.current; gameOver = !!snapshot.over;
+        winLine = findWin(board, N); busy = false;
+        render(); return;
+      }
       if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
       else if (event.action?.type === 'move' && validTurn(match, current, event.from))
         onMove(event.action.cell);
@@ -214,6 +257,7 @@ export default {
     render();
     if (restored) scheduleAi();
     else checkpoint();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => {
       disposed = true;
       clearTimeout(aiTimer);

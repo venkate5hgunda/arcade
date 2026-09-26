@@ -72,18 +72,20 @@ export function terrainArt(terrain, x = 0, y = 0, scale = 1) {
   return art;
 }
 
-const TERRAIN_FOR_GOOD = { timber: 'forest', clay: 'hills', grain: 'fields',
-  wool: 'pasture', ore: 'mountains' };
+const GOOD_ICONS = Object.fromEntries(['timber', 'clay', 'grain', 'wool', 'ore']
+  .map(good => [good, new URL(`../assets/icons/resources/${good}.svg`, import.meta.url).href]));
 
 export function goodIcon(good) {
+  if (!GOOD_ICONS[good]) throw new RangeError(`Unknown island resource: ${good}`);
   const icon = svg('svg', { class: `ct-icon ct-icon--${good}`, viewBox: '-48 -48 96 96',
     'aria-hidden': 'true', focusable: 'false' });
-  icon.append(terrainArt(TERRAIN_FOR_GOOD[good], 0, 0, 1));
+  icon.append(svg('image', { href: GOOD_ICONS[good], x: -43, y: -43, width: 86, height: 86 }));
   return icon;
 }
 
 export function buildingArt(city = false) {
-  const art = svg('g', { class: 'ct-building', 'aria-hidden': 'true', 'pointer-events': 'none' });
+  const art = svg('g', { class: 'ct-building', transform: `scale(${city ? 1.2 : 1.3})`,
+    'aria-hidden': 'true', 'pointer-events': 'none' });
   shape(art, 'circle', { r: city ? 19 : 16, class: 'ct-building-base' });
   shape(art, 'path', { d: city ? 'M-13 10V-5l5-4 5 4v-10h7v10l5-4 5 4v15Z' :
     'M-12 1 0-12 12 1v11h-24Z', class: 'ct-building-wall' });

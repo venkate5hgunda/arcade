@@ -64,6 +64,7 @@ export async function navigate(gameId, { pushState = true } = {}) {
   mountedSession = null;
   mountedGame?.dispose?.();
   mountedGame = null;
+  if (room.role === 'host') room.readyGameId = null;
   const game = gameId ? getGame(gameId) : null;
   activeRoute = game?.id ?? null;
   const stage = document.getElementById(STAGE_ID);
@@ -103,6 +104,10 @@ export async function navigate(gameId, { pushState = true } = {}) {
     }
     mountedGame = instance;
     mountedSession = session;
+    if (room.role === 'host' && room.activeGame?.id === game.id) {
+      room.readyGameId = game.id;
+      room.isRestored = false;
+    }
   } catch (err) {
     session?.stop();
     if (myToken !== navToken) return; // superseded mid-render; newer call owns the stage

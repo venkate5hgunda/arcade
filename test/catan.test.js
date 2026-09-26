@@ -12,6 +12,10 @@ function rng(seed = 517) {
   return () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
 }
 function setup(state) {
+  if (state.phase === 'setup-roll') {
+    for (const dice of [[6, 6], [5, 5], [4, 4], [3, 3]].slice(0, state.players.length))
+      assert.equal(actCatan(state, { type: 'setup-roll', dice }), true);
+  }
   while (state.phase.startsWith('setup')) {
     if (state.phase === 'setup-settlement') {
       const vertex = state.buildings.findIndex((_, i) => canSettle(state, state.current, i, true));
@@ -41,7 +45,7 @@ test('phone chart scrolls at playable scale with usable junction and path target
   assert.match(mobile, /\.ct-chart-wrap\s*\{[^}]*overflow-x:\s*auto/);
   assert.match(mobile, /\.ct-chart-wrap\s*\{[^}]*touch-action:\s*pan-x pan-y/);
   assert.match(mobile, /\.ct-scroll-hint\s*\{[^}]*display:\s*block/);
-  const boardWidth = Number(mobile.match(/\.ct-chart\s*\{[^}]*width:\s*(\d+)px/)?.[1]);
+  const boardWidth = Number(mobile.match(/\.ct-chart\s*\{[^}]*width:\s*calc\((\d+)px/)?.[1]);
   const edgeStroke = Number(css.match(/\.ct-edge-hit\s*\{[^}]*stroke-width:\s*(\d+)/)?.[1]);
   assert.ok(boardWidth > 760, 'board must expand beyond the phone viewport');
   assert.ok(2 * VERTEX_TOUCH_RADIUS * boardWidth / 760 >= 44,
@@ -125,6 +129,10 @@ test('3–4 players only; snake setup enforces distance, attached road and rever
   assert.throws(() => newCatan(2, rng()), RangeError);
   for (const n of [3, 4]) {
     const state = newCatan(n, rng());
+    assert.equal(state.phase, 'setup-roll');
+    assert.equal(actCatan(state, { type: 'setup-settlement', vertex: 0 }), false);
+    for (const dice of [[6, 6], [5, 5], [4, 4], [3, 3]].slice(0, n))
+      assert.equal(actCatan(state, { type: 'setup-roll', dice }), true);
     assert.equal(state.phase, 'setup-settlement');
     const start = 0;
     assert.equal(actCatan(state, { type: 'setup-settlement', vertex: start }, 1), false);
@@ -141,6 +149,31 @@ test('3–4 players only; snake setup enforces distance, attached road and rever
     assert.ok(state.players.every(p => p.settlements === 2 && p.roads === 2));
     assert.ok(state.players.some(p => GOODS.some(g => p.goods[g] > 0)));
   }
+});
+
+test('opening rolls determine both placement passes, with tied navigators rerolling', () => {
+  const state = newCatan(3, rng());
+  assert.equal(actCatan(state, { type: 'setup-roll', dice: [6, 6] }, 1), false);
+  for (const dice of [[2, 3], [4, 4], [4, 4]])
+    assert.equal(actCatan(state, { type: 'setup-roll', dice }), true);
+  assert.equal(state.phase, 'setup-roll');
+  assert.deepEqual(state.setupRolls, [5, null, null]);
+  assert.equal(actCatan(state, { type: 'setup-roll', dice: [1, 1] }), true);
+  assert.equal(actCatan(state, { type: 'setup-roll', dice: [6, 6] }), true);
+  assert.deepEqual(state.setupOrder, [2, 0, 1]);
+  const placements = [];
+  while (state.phase.startsWith('setup')) {
+    if (state.phase === 'setup-settlement') {
+      placements.push(state.current);
+      const vertex = state.buildings.findIndex((_, index) => canSettle(state, state.current, index, true));
+      assert.equal(actCatan(state, { type: 'setup-settlement', vertex }), true);
+    } else {
+      const edge = state.roads.findIndex((_, index) => canRoad(state, state.current, index, true));
+      assert.equal(actCatan(state, { type: 'setup-road', edge }), true);
+    }
+  }
+  assert.deepEqual(placements, [2, 0, 1, 1, 0, 2]);
+  assert.equal(state.current, 2);
 });
 
 test('dice production pays outposts once and cities twice, robber suppresses tile and seven discards', () => {
@@ -325,6 +358,11 @@ test('local voyage checkpoints validate topology, piece limits and bank conserva
   assert.equal(validCatanCheckpoint(JSON.parse(JSON.stringify(state))), true);
   roll(state);
   assert.equal(validCatanCheckpoint(state), true);
+  state.roomRound = 2;
+  assert.equal(validCatanCheckpoint(state), true);
+  state.roomRound = -1;
+  assert.equal(validCatanCheckpoint(state), false);
+  delete state.roomRound;
   const invalid = structuredClone(state);
   invalid.players[1].goods.ore++;
   assert.equal(validCatanCheckpoint(invalid), false);
@@ -334,9 +372,15 @@ test('local voyage checkpoints validate topology, piece limits and bank conserva
 });
 
 test('host rejects spoofed, stale and out-of-turn requests and generates dice itself', () => {
+  const opening = newCatan(3, rng());
+  const seats = ['host', 'visitor-a', 'visitor-b'];
+  const opener = { type: 'ct-request', revision: 0,
+    move: { type: 'setup-roll', dice: [6, 6] } };
+  assert.equal(applyRemoteCatanAction(opening, opener, 0, 'visitor-a', seats, () => .25), false);
+  assert.equal(applyRemoteCatanAction(opening, opener, 0, 'host', seats, () => .25), true);
+  assert.equal(opening.setupRolls[0], 4, 'the host generates opening dice, not the guest');
   const state = newCatan(3, rng());
   setup(state);
-  const seats = ['host', 'visitor-a', 'visitor-b'];
   const request = { type: 'ct-request', revision: 7,
     move: { type: 'roll', dice: [6, 6] } };
   assert.equal(applyRemoteCatanAction(state, request, 8, 'host', seats, () => .25), false);

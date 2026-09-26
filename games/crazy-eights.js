@@ -27,15 +27,20 @@ export function penalty(cards) {
     ['J', 'Q', 'K'].includes(card.rank) ? 10 : card.rank === 'A' ? 1 : Number(card.rank)), 0);
 }
 
-export function validCrazyEightsCheckpoint(s) {
+export function validCrazyEightsCheckpoint(s, allowFinished = false) {
+  const finished = allowFinished && s?.phase === 'over';
   if (!s || typeof s !== 'object' || !Array.isArray(s.stock) || !Array.isArray(s.discard) ||
       s.discard.length < 1 || !Array.isArray(s.hands) || s.hands.length !== 2 ||
-      s.hands.some((hand) => !Array.isArray(hand) || !hand.length) ||
+      s.hands.some((hand, index) => !Array.isArray(hand) ||
+        !hand.length && !(finished && s.ending === 'empty' && s.winner === index)) ||
       !SUITS.includes(s.activeSuit) || !Number.isInteger(s.current) || s.current < 0 || s.current > 1 ||
-      !['handoff', 'play', 'choose'].includes(s.phase) || typeof s.drawn !== 'boolean' ||
-      !Number.isInteger(s.passes) || s.passes < 0 || s.passes > 1 ||
-      !Number.isSafeInteger(s.turn) || s.turn < 1 || s.winner !== null ||
-      typeof s.ending !== 'string' || s.ending !== '' ||
+      !['handoff', 'play', 'choose', ...(allowFinished ? ['over'] : [])].includes(s.phase) ||
+      typeof s.drawn !== 'boolean' ||
+      !Number.isInteger(s.passes) || s.passes < 0 || s.passes > (finished ? 2 : 1) ||
+      !Number.isSafeInteger(s.turn) || s.turn < 1 ||
+      (finished ? !['empty', 'blocked'].includes(s.ending) ||
+        !(s.winner === null && s.ending === 'blocked' || [0, 1].includes(s.winner)) :
+        s.winner !== null || s.ending !== '') ||
       !(s.pendingEight === null || (Number.isInteger(s.pendingEight) &&
         s.pendingEight >= 0 && s.pendingEight < s.hands[s.current].length)) ||
       (s.phase === 'choose') !== (s.pendingEight !== null) ||
@@ -253,16 +258,21 @@ export default {
     }
     const mySeat = room ? seat(room) - 1 : null;
     if (room && room.activeGame.playerIds.length !== 2) return { dispose: () => shell.root.remove() };
+    const roomSave = room?.role === 'host' ? room.savedGame : null;
+    if (roomSave && (!validCrazyEightsCheckpoint(roomSave.state, true) ||
+        !Number.isSafeInteger(roomSave.round) || roomSave.round < 0))
+      throw new Error('Saved Crazy Eights room state is invalid.');
     shell.root.querySelector('.game-meta').textContent = room
       ? `Private room · ${playerName(mySeat, room)}` : 'Two players · pass & play';
     const table = document.createElement('div');
     table.className = 'cg-table ce-table';
     shell.stage.appendChild(table);
-    let state = room && room.role !== 'host' ? null : saved || newCrazyEightsGame();
+    let state = room && room.role !== 'host' ? null :
+      roomSave ? structuredClone(roomSave.state) : saved || newCrazyEightsGame();
     let view = room?.role === 'host' ? crazyEightsView(state, mySeat) : null;
     let covered = !room && !!state && state.phase !== 'over';
     if (saved && saved.phase === 'handoff') state.phase = 'play';
-    let revision = 0, lastRevision = -1, round = 0, disposed = false;
+    let revision = 0, lastRevision = -1, round = roomSave?.round ?? 0, disposed = false;
     let lastConnection = room?.members.find(member => member.id === room?.activeGame.playerIds[0])?.connected;
 
     function checkpoint() {
@@ -277,11 +287,13 @@ export default {
     }
     function publish() {
       if (room?.role !== 'host') return;
+      room.saveGame(game.id, { state, round });
       revision++;
       view = crazyEightsView(state, mySeat);
-      room.sendPrivateAction(room.activeGame.playerIds[1], {
-        type: 'crazy-eights-state', revision, view: crazyEightsView(state, 1),
-      });
+      if (room.members.some(member => member.id === room.activeGame.playerIds[1] && member.connected))
+        room.sendPrivateAction(room.activeGame.playerIds[1], {
+          type: 'crazy-eights-state', revision, view: crazyEightsView(state, 1),
+        });
     }
     function reset() {
       if (room) {

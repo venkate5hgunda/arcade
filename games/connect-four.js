@@ -36,13 +36,18 @@ function lowestEmptyRow(board, col) {
   return -1;
 }
 
-function validState(s) {
+function validState(s, allowFinished = false) {
   if (!s || typeof s !== 'object' || Array.isArray(s) || !['pvp', 'ai'].includes(s.mode) ||
       !Array.isArray(s.board) || s.board.length !== ROWS * COLS ||
       !s.board.every(v => v === 0 || v === 1 || v === 2) || ![1, 2].includes(s.current)) return false;
   const red = s.board.filter(v => v === 1).length, yellow = s.board.filter(v => v === 2).length;
-  if (red < yellow || red > yellow + 1 || s.current !== (red === yellow ? 1 : 2) ||
-      !s.board.includes(0) || checkWin(s.board, 1) || checkWin(s.board, 2)) return false;
+  const winRed = checkWin(s.board, 1), winYellow = checkWin(s.board, 2);
+  const finished = !!(winRed || winYellow) || !s.board.includes(0);
+  if (red < yellow || red > yellow + 1 ||
+      s.current !== (finished ? red === yellow ? 2 : 1 : red === yellow ? 1 : 2) ||
+      (finished ? !allowFinished || s.over !== true : s.over === true) ||
+      winRed && s.current !== 1 || winYellow && s.current !== 2 ||
+      winRed && winYellow) return false;
   for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS - 1; r++)
     if (s.board[idx(r, c)] && !s.board[idx(r + 1, c)]) return false;
   return true;
@@ -82,6 +87,10 @@ export default {
     const showTurn = createTurnIndicator(shell.root, match);
     const saved = loadJSON(KEYS.SETTINGS + ':connect-four', { mode: 'pvp' });
     const restored = !match && validState(session?.state) ? session.state : null;
+    const roomSave = match?.role === 'host' ? match.savedGame : null;
+    if (roomSave && (roomSave.mode !== 'pvp' || !validState(roomSave, true) ||
+        !Number.isSafeInteger(roomSave.roundId) || roomSave.roundId < 0))
+      throw new Error('Saved Connect Four room state is invalid.');
     const settings = match ? { mode: 'pvp' } : restored ? { mode: restored.mode } : await renderSetup(stage, {
       title: '🔴 Drop to Win',
       subtitle: 'Choose your opponent',
@@ -100,10 +109,21 @@ export default {
 
     const board = Array(ROWS * COLS).fill(0);
     let current = 1, gameOver = false, winCells = null, busy = false, aiTimer = null, recentDrop = -1;
-    if (restored) { restored.board.forEach((v, i) => { board[i] = v; }); current = restored.current; }
-    let disposed = false, roundId = 0;
+    if (roomSave || restored) {
+      (roomSave || restored).board.forEach((v, i) => { board[i] = v; });
+      current = (roomSave || restored).current;
+    }
+    let disposed = false, roundId = roomSave?.roundId ?? 0, stateEpoch = 0;
+    if (roomSave?.over) {
+      gameOver = true;
+      winCells = checkWin(board, 1) || checkWin(board, 2);
+    }
 
-    function checkpoint() { if (!match) session?.save({ mode: settings.mode, board: board.slice(), current }); }
+    function checkpoint() {
+      if (match?.role === 'host')
+        match.saveGame(game.id, { mode: 'pvp', board: board.slice(), current, over: gameOver, roundId });
+      else if (!match) session?.save({ mode: settings.mode, board: board.slice(), current });
+    }
 
     const boardArea = document.createElement('div');
     boardArea.className = 'c4-board';
@@ -158,7 +178,11 @@ export default {
     }
 
     function updateStatus() {
-      if (gameOver) return;
+      if (gameOver) {
+        status.textContent = winCells ? `${playerName(current - 1, match)} (${TOKEN_STYLE[current].label}) wins!` : "It's a draw!";
+        status.style.color = winCells ? TOKEN_STYLE[current].color : '';
+        return;
+      }
       status.textContent = match
         ? `${current === 1 ? 'Red' : 'Yellow'} to move · ${current === seat(match) ? 'your turn' : 'waiting for opponent'}`
         : `Player ${TOKEN_STYLE[current].label}'s turn`;
@@ -170,10 +194,11 @@ export default {
       const row = lowestEmptyRow(board, col);
       if (row === -1) return;
       busy = true;
-      const startedRound = roundId;
+      const startedRound = roundId, startedEpoch = stateEpoch;
       const audio = window.arcadeAudio;
       if (audio) await audio.prepare();
-      if (disposed || startedRound !== roundId || gameOver || lowestEmptyRow(board, col) !== row) return;
+      if (disposed || startedRound !== roundId || startedEpoch !== stateEpoch ||
+          gameOver || lowestEmptyRow(board, col) !== row) return;
       busy = false;
       board[idx(row, col)] = current;
       recentDrop = idx(row, col);
@@ -187,6 +212,7 @@ export default {
         if (match?.role === 'host') match.recordResult(game.id, current - 1, roundId);
         if (!match || seat(match) === current) celebrate(shell.root, `${name} wins!`);
         session?.finish();
+        checkpoint();
         return render();
       }
       if (board.every((v) => v !== 0)) {
@@ -195,6 +221,7 @@ export default {
         if (audio) audio.buzz();
         if (window.haptics) window.haptics.failure();
         session?.finish();
+        checkpoint();
         return render();
       }
       current = nextPlayer(current, 2);
@@ -239,6 +266,7 @@ export default {
 
     function reset() {
       roundId++;
+      stateEpoch++;
       clearTimeout(aiTimer);
       for (let i = 0; i < board.length; i++) board[i] = 0;
       current = 1; gameOver = false; winCells = null; busy = false; recentDrop = -1;
@@ -252,7 +280,24 @@ export default {
     });
     if (match && match.role !== 'host') getResetButton().disabled = true;
     const offRoom = match?.on((event) => {
-      if (event.type !== 'action' || match.activeGame?.id !== game.id) return;
+      if (match.activeGame?.id !== game.id) return;
+      if (event.type === 'reconnected' && match.role === 'guest') {
+        match.sendAction({ type: 'room-sync' }); return;
+      }
+      if (event.type !== 'action') return;
+      if (event.action?.type === 'room-state' && match.role === 'guest') {
+        const snapshot = event.action.state;
+        if (snapshot?.mode !== 'pvp' || !validState(snapshot, true) ||
+            !Number.isSafeInteger(snapshot.roundId) || snapshot.roundId < 0) {
+          match.error(new Error('Invalid Connect Four room state.')); return;
+        }
+        roundId = snapshot.roundId;
+        stateEpoch++;
+        board.splice(0, board.length, ...snapshot.board);
+        current = snapshot.current; gameOver = !!snapshot.over;
+        winCells = checkWin(board, 1) || checkWin(board, 2); busy = false;
+        render(); return;
+      }
       if (event.action?.type === 'reset' && event.from === match.activeGame.playerIds[0]) reset();
       else if (event.action?.type === 'drop' && validTurn(match, current, event.from))
         onDrop(event.action.column);
@@ -263,6 +308,7 @@ export default {
     render();
     if (restored) scheduleAi();
     else checkpoint();
+    if (match?.role === 'guest') match.sendAction({ type: 'room-sync' });
     return { dispose: () => {
       disposed = true;
       clearTimeout(aiTimer);
