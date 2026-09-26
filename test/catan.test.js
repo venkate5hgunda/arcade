@@ -43,7 +43,7 @@ test('phone chart scrolls at playable scale with usable junction and path target
   const css = readFileSync(new URL('../css/catan.css', import.meta.url), 'utf8');
   const mobile = css.slice(css.indexOf('@media (max-width: 650px)'));
   assert.match(mobile, /\.ct-chart-wrap\s*\{[^}]*overflow-x:\s*auto/);
-  assert.match(mobile, /\.ct-chart-wrap\s*\{[^}]*touch-action:\s*pan-x pan-y/);
+  assert.match(css, /\.ct-chart-wrap\s*\{[^}]*touch-action:\s*pan-x pan-y/);
   assert.match(mobile, /\.ct-scroll-hint\s*\{[^}]*display:\s*block/);
   const boardWidth = Number(mobile.match(/\.ct-chart\s*\{[^}]*width:\s*calc\((\d+)px/)?.[1]);
   const edgeStroke = Number(css.match(/\.ct-edge-hit\s*\{[^}]*stroke-width:\s*(\d+)/)?.[1]);

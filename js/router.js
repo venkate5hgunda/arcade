@@ -44,14 +44,11 @@ export function initialGameFromHash(hash) {
 
 function syncHash(gameId) {
   const next = gameId ? `#/games/${gameId}` : '#/';
-  if (location.hash !== next) location.hash = next;
+  if (location.hash !== next)
+    history.pushState(null, '', `${location.pathname}${location.search}${next}`);
 }
 
-// Guards against a subtle race: syncHash() sets location.hash, which fires an
-// async 'hashchange' event that re-enters navigate() for the same route while
-// the first call is still awaiting its dynamic import — both calls would
-// otherwise render into the stage and double-mount the game. Each call gets a
-// token; only the most recent one is allowed to touch the DOM after an await.
+// A superseded dynamic import must not mount over a newer navigation.
 let navToken = 0;
 let mountedGame = null;
 let mountedSession = null;
@@ -275,10 +272,24 @@ function renderError(game, err) {
 }
 
 export function initRouter() {
-  window.addEventListener('hashchange', () => {
+  const followHistory = () => {
     const id = parseHash(location.hash);
     if (id === activeRoute) return;
     navigate(id, { pushState: false });
+  };
+  window.addEventListener('popstate', followHistory);
+  window.addEventListener('hashchange', followHistory);
+  document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || event.repeat ||
+        event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]')) return;
+    const back = (event.altKey && event.key === 'ArrowLeft' && !event.metaKey && !event.ctrlKey) ||
+      (event.metaKey && event.key === '[' && !event.altKey && !event.ctrlKey);
+    const forward = (event.altKey && event.key === 'ArrowRight' && !event.metaKey && !event.ctrlKey) ||
+      (event.metaKey && event.key === ']' && !event.altKey && !event.ctrlKey);
+    if (!back && !forward) return;
+    event.preventDefault();
+    if (back) history.back();
+    else history.forward();
   });
 
   // Wire up back buttons rendered by router templates.

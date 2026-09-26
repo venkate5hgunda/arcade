@@ -78,6 +78,8 @@ Island Charter resource icons use color-tinted Game Icons silhouettes.
   saved round is discarded; setup choices and high scores remain. Remote
   rooms are tab-bound and do not
   auto-resume.
+- **Navigation** — browser Back and Forward move between visited games and
+  home; Alt+Left/Right or Cmd+[/] work as keyboard shortcuts.
 
 The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
 Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
@@ -120,8 +122,9 @@ Chess; and **120 min** for Island Charter.
 - **Island Charter** — original presentation of classic hex-settlement rules
   for 3–4 players: everyone rolls two dice for opening placement order; ties
   reroll, the highest places first and last, and the lowest places twice in
-  succession. Zoom controls enlarge or shrink the island without losing the
-  current view. Brighter, larger player buildings and roads stand apart from
+  succession. Pinch the island on touchscreens or pinch on a trackpad to
+  zoom without losing the current view; swipe to pan on narrow screens.
+  Brighter, larger player buildings and roads stand apart from
   the muted terrain. Resource production,
   blocking raider and seven-card discards, distance and road-building rules,
   bank/harbor and player trading, development cards and ten-point victory.

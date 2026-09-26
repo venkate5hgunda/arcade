@@ -680,9 +680,17 @@ export default {
     let revision = 0, lastRevision = -1,
       round = state?.roomRound ?? 0, disposed = false;
     let tool = 'road', chosenTile = null, panel = 'build', chartZoom = 1;
-    const setZoom = value => {
-      chartZoom = Math.max(.75, Math.min(2, value));
-      render();
+    const setZoom = (value, clientX) => {
+      const wrap = table.querySelector('.ct-chart-wrap');
+      const chart = wrap?.querySelector('.ct-chart');
+      if (!chart) return;
+      const next = Math.max(.75, Math.min(2, value));
+      if (next === chartZoom) return;
+      const x = clientX - wrap.getBoundingClientRect().left;
+      const position = (wrap.scrollLeft + x) / chart.getBoundingClientRect().width;
+      chartZoom = next;
+      chart.style.setProperty('--ct-zoom', chartZoom);
+      wrap.scrollLeft = position * chart.getBoundingClientRect().width - x;
     };
     let covered = !room, localViewer = state?.phase === 'discard' ?
       state.discards.findIndex(Boolean) : state?.offer?.to ?? state?.current ?? 0;
@@ -1027,29 +1035,50 @@ export default {
       layout.className = 'ct-layout';
       const chartArea = document.createElement('div');
       chartArea.className = 'ct-chart-area';
-      const zoomControls = document.createElement('div');
-      zoomControls.className = 'ct-zoom-controls';
-      const zoomOut = button('−', () => setZoom(chartZoom - .25));
-      zoomOut.setAttribute('aria-label', 'Zoom out of island');
-      zoomOut.disabled = chartZoom <= .75;
-      const zoomLevel = document.createElement('span');
-      zoomLevel.textContent = `${Math.round(chartZoom * 100)}%`;
-      zoomLevel.setAttribute('role', 'status');
-      const zoomIn = button('+', () => setZoom(chartZoom + .25));
-      zoomIn.setAttribute('aria-label', 'Zoom into island');
-      zoomIn.disabled = chartZoom >= 2;
-      const fit = button('Reset zoom', () => setZoom(1));
-      fit.disabled = chartZoom === 1;
-      zoomControls.append(zoomOut, zoomLevel, zoomIn, fit);
       const scrollHint = document.createElement('p');
       scrollHint.className = 'ct-scroll-hint';
-      scrollHint.textContent = 'Swipe the island sideways to see every shore →';
+      scrollHint.textContent = 'Swipe to explore · Pinch to zoom';
       const chartWrap = document.createElement('div');
       chartWrap.className = 'ct-chart-wrap';
+      chartWrap.addEventListener('wheel', event => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        setZoom(chartZoom * Math.exp(-event.deltaY * .01), event.clientX);
+      }, { passive: false });
+      let pinchDistance = 0, safariGesture = false;
+      chartWrap.addEventListener('touchstart', event => {
+        if (event.touches.length !== 2) { pinchDistance = 0; return; }
+        pinchDistance = Math.hypot(event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY);
+      }, { passive: true });
+      chartWrap.addEventListener('touchmove', event => {
+        if (event.touches.length !== 2 || !pinchDistance) return;
+        event.preventDefault();
+        if (safariGesture) return;
+        const distance = Math.hypot(event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY);
+        setZoom(chartZoom * distance / pinchDistance,
+          (event.touches[0].clientX + event.touches[1].clientX) / 2);
+        pinchDistance = distance;
+      }, { passive: false });
+      chartWrap.addEventListener('touchend', () => { pinchDistance = 0; });
+      chartWrap.addEventListener('touchcancel', () => { pinchDistance = 0; });
+      let gestureZoom = chartZoom;
+      chartWrap.addEventListener('gesturestart', event => {
+        event.preventDefault();
+        safariGesture = true;
+        gestureZoom = chartZoom;
+      });
+      chartWrap.addEventListener('gesturechange', event => {
+        event.preventDefault();
+        setZoom(gestureZoom * event.scale,
+          event.clientX ?? chartWrap.getBoundingClientRect().left + chartWrap.clientWidth / 2);
+      });
+      chartWrap.addEventListener('gestureend', () => { safariGesture = false; });
       const chart = boardNode(data, canAct);
       chart.style.setProperty('--ct-zoom', chartZoom);
       chartWrap.append(chart);
-      chartArea.append(zoomControls, scrollHint, chartWrap);
+      chartArea.append(scrollHint, chartWrap);
       const aside = document.createElement('aside');
       aside.className = 'ct-sidebar';
       const roster = document.createElement('div');
