@@ -821,7 +821,7 @@ body {
 .app-header .brand-icon {
   width: 48px;
   height: 48px;
-  filter: drop-shadow(0 0 8px #fd5fbe80) drop-shadow(0 4px 3px #0009);
+  filter: drop-shadow(0 3px 2px #0009);
 }
 .app-header .brand-title {
   font-size: clamp(1.25rem, 3vw, 1.65rem);

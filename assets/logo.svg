@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Arcade">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="Arcade">
   <defs>
     <linearGradient id="stick" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fff1a2"/>
