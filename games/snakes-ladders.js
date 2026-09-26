@@ -3,7 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer } from '../js/game-utils.js';
-import { dieMarkup, rollDie } from '../js/dice.js';
+import { dieMarkup, pauseAfterRoll, rollDie } from '../js/dice.js';
 import { boardArt, createBoardLayout, ladderTravelPoints, snakeTravelPoints, squareCenter } from '../js/snakes-board.js';
 import { decorateBoardToken, travelBoardToken } from '../js/board-tokens.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
@@ -204,6 +204,8 @@ export default {
       }
       if (roll === null) return;
       lastRoll = roll;
+      btn.disabled = true;
+      if (!await pauseAfterRoll(rollController.signal) || generation !== started) return;
       if (audio) audio.tap();
 
       const from = positions[current];

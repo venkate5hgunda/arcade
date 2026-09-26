@@ -1,5 +1,5 @@
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
-import { dieMarkup, rollDie } from '../js/dice.js';
+import { dieMarkup, pauseAfterRoll, rollDie } from '../js/dice.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
@@ -276,8 +276,12 @@ export default {
       if (rolling || awaiting || moving || winner !== null ||
           (!match && rollArea.querySelector('button').disabled)) return;
       rolling = true;
-      const result = await rollDie(rollArea.querySelector('button'), controller.signal, predeterminedValue);
+      const started = roundId;
+      const button = rollArea.querySelector('button');
+      const result = await rollDie(button, controller.signal, predeterminedValue);
       if (result === null) return;
+      button.disabled = true;
+      if (!await pauseAfterRoll(controller.signal) || started !== roundId) return;
       rolling = false;
       value = result;
       movable = legalMoves(tokens[current], value);
@@ -339,7 +343,12 @@ export default {
       }
     });
     render();
-    if (resume && awaiting && movable.length === 1) move(movable[0]);
+    if (resume && awaiting && movable.length === 1) {
+      const started = roundId;
+      pauseAfterRoll(controller.signal).then((ready) => {
+        if (ready && started === roundId) move(movable[0]);
+      });
+    }
     else if (!resume) checkpoint();
     return { dispose: () => { controller.abort(); offRoom?.(); } };
   },

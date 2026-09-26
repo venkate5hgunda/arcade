@@ -11,7 +11,7 @@ export const GAMES = [
     players: { min: 2, max: 2, type: 'local-multiplayer' },
     category: 'Action',
     color: '#ff5a3c',
-    icon: '🏒',
+    icon: 'game-icons:hockey',
     description: 'Fast two-player air hockey on a glowing table. Slide, shoot, and defend.',
   },
   {
@@ -21,7 +21,7 @@ export const GAMES = [
     players: { min: 2, max: 2, type: 'local-multiplayer' },
     category: 'Action',
     color: '#14b8a6',
-    icon: '🎱',
+    icon: 'game-icons:eight-ball',
     description: 'Rack the balls, aim the cue and clear your group in a physical two-player match.',
   },
   {
@@ -31,7 +31,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Action',
     color: '#84cc16',
-    icon: '🔨',
+    icon: 'game-icons:mole',
     description: 'Moles pop up at random. Whack as many as you can before time runs out.',
   },
   {
@@ -41,7 +41,7 @@ export const GAMES = [
     players: { min: 2, max: 4, type: 'local-multiplayer' },
     category: 'Board',
     color: '#34d399',
-    icon: '🐍',
+    icon: 'game-icons:snake',
     description: 'Classic board race with snakes that slide you back and ladders that boost you forward.',
   },
   {
@@ -51,7 +51,7 @@ export const GAMES = [
     players: { min: 2, max: 4, type: 'local-multiplayer' },
     category: 'Board',
     color: '#fbbf24',
-    icon: '🎲',
+    icon: 'game-icons:rolling-dice-cup',
     description: 'The beloved family board game. Roll, race, and knock opponents back to start.',
   },
   {
@@ -61,7 +61,7 @@ export const GAMES = [
     players: { min: 3, max: 4, type: 'local-multiplayer' },
     category: 'Board',
     color: '#14b8a6',
-    icon: '🏝️',
+    icon: 'game-icons:island',
     description: 'A hex-island strategy game: gather resources, build roads and settlements, trade, and race to ten points.',
   },
   {
@@ -71,7 +71,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Board',
     color: '#c9a24b',
-    icon: '♟️',
+    icon: 'game-icons:chess-knight',
     description: 'Full rules chess with check, checkmate, castling, en passant, and promotion. Play a friend or the computer.',
   },
   {
@@ -81,7 +81,7 @@ export const GAMES = [
     players: { min: 3, max: 8, type: 'group' },
     category: 'Party',
     color: '#a855f7',
-    icon: '🕵️',
+    icon: 'game-icons:spy',
     description: 'One player gets a secret word, everyone else gets a related clue. Blend in and deduce.',
   },
   {
@@ -91,7 +91,7 @@ export const GAMES = [
     players: { min: 2, max: 8, type: 'group' },
     category: 'Party',
     color: '#ec4899',
-    icon: '🎭',
+    icon: 'game-icons:drama-masks',
     description: 'Act out words and phrases without speaking. Teams race to guess before the timer runs out.',
   },
   {
@@ -101,7 +101,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Party',
     color: '#f43f5e',
-    icon: '✊',
+    icon: 'tabler:hand-rock',
     description: 'The timeless hand-game showdown. Play a friend pass-and-play or battle the computer.',
   },
   {
@@ -111,7 +111,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Cards',
     color: '#d4ad63',
-    icon: '♠️',
+    icon: 'game-icons:card-ace-spades',
     description: 'Hit, stand or double down at the felt table. Closest to 21 beats the dealer.',
   },
   {
@@ -121,7 +121,7 @@ export const GAMES = [
     players: { min: 2, max: 2, type: 'local-multiplayer' },
     category: 'Cards',
     color: '#8b5cf6',
-    icon: '🃏',
+    icon: 'game-icons:card-8-spades',
     description: 'Play with a room friend on separate devices, or pass one device. Match suits, ranks and wild eights.',
   },
   {
@@ -131,7 +131,7 @@ export const GAMES = [
     players: { min: 2, max: 4, type: 'local-multiplayer' },
     category: 'Cards',
     color: '#ef4444',
-    icon: '🌈',
+    icon: 'game-icons:card-joker',
     description: 'Start from a private room with separate hands, or play locally. Match colors, skip, reverse and go wild.',
   },
   {
@@ -141,7 +141,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Puzzle',
     color: '#38bdf8',
-    icon: '❌',
+    icon: 'game-icons:tic-tac-toe',
     description: 'The timeless pencil-and-paper classic. Play a friend or face the computer.',
   },
   {
@@ -151,7 +151,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Puzzle',
     color: '#f97316',
-    icon: '🔴',
+    icon: 'tabler:circles-filled',
     description: 'Gravity grid duel. Drop your discs and be the first to line up four.',
   },
   {
@@ -161,7 +161,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Puzzle',
     color: '#10b981',
-    icon: '💣',
+    icon: 'game-icons:minefield',
     description: 'Logic classic. Flag mines, reveal safe squares, and clear the board without a boom.',
   },
   {
@@ -171,7 +171,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Puzzle',
     color: '#e11d48',
-    icon: '🃏',
+    icon: 'tabler:cards-filled',
     description: 'Flip face-down cards and pair them up. Lowest mismatch count wins.',
   },
   {
@@ -181,7 +181,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Puzzle',
     color: '#edc22e',
-    icon: '🔢',
+    icon: 'tabler:number-123',
     description: 'Slide numbered tiles with arrow keys or swipes. Merge matching tiles to reach 2048.',
   },
   {
@@ -191,7 +191,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Puzzle',
     color: '#3b82f6',
-    icon: '🔴',
+    icon: 'tabler:color-swatch',
     description: 'A color sequence grows each round. Watch closely and repeat it back exactly.',
   },
   {
@@ -201,7 +201,7 @@ export const GAMES = [
     players: { min: 1, max: 2, type: 'local-multiplayer' },
     category: 'Word',
     color: '#6366f1',
-    icon: '🔤',
+    icon: 'tabler:abc',
     description: 'Guess letters one at a time. Too many wrong steps and the hanger finishes.',
   },
   {
@@ -211,7 +211,7 @@ export const GAMES = [
     players: { min: 1, max: 1, type: 'single' },
     category: 'Word',
     color: '#0ea5e9',
-    icon: '🔠',
+    icon: 'tabler:sort-ascending-letters',
     description: 'Letters shuffled, meaning hidden. Race to unscramble as many words as you can.',
   },
 ];

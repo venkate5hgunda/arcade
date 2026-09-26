@@ -6,6 +6,8 @@ const VERSION = 1;
 const MAX_URL = 16000;
 const MAX_PAYLOAD = 120000;
 const MAX_MESSAGE = 32000;
+const MAX_ACTION = 8000;
+const MAX_PRIVATE_CATAN_STATE = 30000;
 const ICE_TIMEOUT = 20000;
 const CONNECT_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
@@ -508,7 +510,7 @@ export class MultiplayerRoom {
               !this.activeGame.playerIds.includes(this.peerId) ||
               !Number.isSafeInteger(msg.sequence) || msg.sequence <= this.lastActionSequence)
             fail('Invalid private game message.');
-          this.checkAction(msg.action);
+          this.checkAction(msg.action, this.activeGame.id === 'catan');
           this.lastActionSequence = msg.sequence;
           this.emit({ type: 'action', from: id, action: msg.action, sequence: msg.sequence });
         } else fail('Unknown host message.');
@@ -516,10 +518,11 @@ export class MultiplayerRoom {
       peer.lastRequest = requestNumber;
     } catch (error) { this.error(error); }
   }
-  checkAction(action) {
+  checkAction(action, privateCatanState = false) {
     if (!action || typeof action !== 'object' || Array.isArray(action) ||
         typeof action.type !== 'string' || !GAME_ID.test(action.type) ||
-        JSON.stringify(action).length > 8000) fail('Invalid game action.');
+        JSON.stringify(action).length > (privateCatanState && action.type === 'ct-state'
+          ? MAX_PRIVATE_CATAN_STATE : MAX_ACTION)) fail('Invalid game action.');
   }
   broadcastAction(from, action) {
     const sequence = ++this.actionSequence;
@@ -532,7 +535,7 @@ export class MultiplayerRoom {
   sendPrivateAction(recipient, action) {
     if (this.role !== 'host' || !PRIVATE_GAMES.has(this.activeGame?.id) ||
         !this.activeGame.playerIds.includes(recipient)) fail('Invalid private game recipient.');
-    this.checkAction(action);
+    this.checkAction(action, this.activeGame.id === 'catan');
     if (recipient === this.peerId) {
       this.emit({ type: 'action', from: this.peerId, action });
       return;
@@ -683,7 +686,8 @@ export class MultiplayerRoom {
       invite: new URL(location.href).searchParams.has('invite') ? location.href : '',
       answer: new URL(location.href).searchParams.has('answer') ? location.href : '',
       mode: new URL(location.href).searchParams.has('invite') ? 'join' : null,
-      output: '', outputKind: '', qrVisible: false, message: '', seats: null,
+      output: '', outputKind: '', qrVisible: false, message: '', excludedSeats: new Set(),
+      creatingInvite: false,
     };
     let scanning = null;
     const stopScan = () => {
@@ -775,14 +779,15 @@ export class MultiplayerRoom {
       const guestConnected = this.role === 'guest' &&
         this.members.find((member) => member.id === this.peerId)?.connected;
       steps.textContent = this.role === 'host'
-        ? pending ? 'Send the invite, then accept the guest’s answer in this original tab.' :
-          connectedGuests ? 'Choose connected guests and start a game, or invite another player.' :
-            'Create an invite for each guest, then accept their answer here.'
+        ? draft.creatingInvite ? 'Preparing a unique invite for your guest…' :
+          pending ? '1. Share this guest’s invite QR or link. 2. Scan or paste their answer below in this same tab.' :
+          connectedGuests ? 'Everyone connected is selected to play. Choose a game below, or invite another friend.' :
+            'Create an invite for each guest, then scan or paste their answer in this tab.'
         : this.role === 'guest'
-          ? guestConnected ? 'You’re connected. The host will choose the next game.' :
-            'Send your answer to the host. Keep this tab open while they accept it.'
+          ? guestConnected ? 'Connected! The host will choose a game. Keep this tab open to play.' :
+            'Share your answer QR or link with the host. Keep this tab open while they accept it.'
           : draft.mode === 'create' ? 'Give yourself a name to open a room.' :
-            draft.mode === 'join' ? 'Paste or scan the invite you received, then send your answer back.' :
+            draft.mode === 'join' ? 'Scan or paste the host’s invite, enter your name, then send your answer back.' :
               'Make a room for friends, or join one with an invite.';
       root.append(steps);
       const status = document.createElement('p');
@@ -850,9 +855,22 @@ export class MultiplayerRoom {
       const display = (url, prompt, kind) => {
         draft.output = url;
         draft.outputKind = kind;
-        draft.qrVisible = false;
+        draft.qrVisible = true;
         draft.message = prompt + (url.length > 4000 ? ' Warning: long links may be truncated; use copy/paste without shortening.' : '');
         render();
+      };
+      const makeInvite = async (prompt) => {
+        draft.creatingInvite = true;
+        render();
+        try {
+          const url = await this.createInvite();
+          draft.creatingInvite = false;
+          display(url, prompt, 'invite');
+        } catch (error) {
+          draft.creatingInvite = false;
+          render();
+          throw error;
+        }
       };
       if (!this.role) {
         if (draft.answer) {
@@ -870,7 +888,10 @@ export class MultiplayerRoom {
         } else {
           const name = field('Your name', 'name');
           if (draft.mode === 'create') {
-            button('Create room', () => this.createHost(name.value));
+            button('Create room', async () => {
+              this.createHost(name.value);
+              await makeInvite('Share this invite with your first guest. Have them send their answer here.');
+            });
           } else {
             const invite = field('Paste invite URL', 'invite');
             button('Scan invite QR', () => scanInto('invite', invite));
@@ -882,9 +903,9 @@ export class MultiplayerRoom {
           button('Back to choices', () => { draft.mode = null; draft.message = ''; render(); });
         }
       } else if (this.role === 'host') {
-        button('Create guest invite', async () => {
-          display(await this.createInvite(), 'Send this invite to one guest; have them return their answer here.', 'invite');
-        });
+        if (!pending && !draft.creatingInvite)
+          button('Invite another guest', () =>
+            makeInvite('Share this invite with your next guest. Have them send their answer here.'));
         if (pending) {
           const answer = field('Paste guest answer URL', 'answer');
           button('Scan answer QR', () => scanInto('answer', answer));
@@ -898,13 +919,14 @@ export class MultiplayerRoom {
       } else if (!draft.message && !guestConnected)
         status.textContent = 'Waiting for the host to accept your answer link.';
       if (this.role) {
-        button('Leave room', () => {
+        const leave = button('Leave room', () => {
           draft.mode = null;
           draft.output = '';
           draft.message = '';
-          draft.seats = null;
+          draft.excludedSeats.clear();
           this.close();
         });
+        leave.className = 'mp-leave';
       }
       if (draft.output && (this.role === 'host' && draft.outputKind === 'invite' && pending ||
           this.role === 'guest' && draft.outputKind === 'answer' && !guestConnected)) {
@@ -965,14 +987,24 @@ export class MultiplayerRoom {
         const row = document.createElement('li');
         row.textContent = `${member.name} · ${member.connected ? 'connected' : 'waiting'} · ${member.admitted ? 'admitted' : 'spectating'}`;
         if (this.role === 'host' && member.id !== this.peerId) {
-          button(member.admitted ? 'Set spectator' : 'Admit', () => this.setAdmission(member.id, !member.admitted), row);
+          button(member.admitted ? 'Remove from games' : 'Admit to games',
+            () => this.setAdmission(member.id, !member.admitted), row);
         }
         roster.append(row);
       }
       if (this.role && (this.members.length > 1 || this.role === 'guest' && guestConnected)) {
-        const heading = document.createElement('h3');
-        heading.textContent = 'Players';
-        root.append(heading, roster);
+        if (this.role === 'host') {
+          const access = document.createElement('details');
+          access.className = 'mp-help mp-access';
+          const summary = document.createElement('summary');
+          summary.textContent = 'Manage room access';
+          access.append(summary, roster);
+          root.append(access);
+        } else {
+          const heading = document.createElement('h3');
+          heading.textContent = 'Players';
+          root.append(heading, roster);
+        }
       }
       if (this.role && this.stats.games.length) {
         const standings = document.createElement('section');
@@ -1020,49 +1052,89 @@ export class MultiplayerRoom {
         root.append(current);
         if (this.role === 'host') button('Return everyone to lobby', () => this.returnLobby(), root);
       }
-      if (this.role === 'host' && connectedGuests) {
+      if (this.role === 'host' && connectedGuests && !this.activeGame) {
         const games = document.createElement('div');
         games.className = 'mp-games';
-        const selection = document.createElement('div');
+        const selection = document.createElement('section');
         selection.className = 'mp-selection';
+        const seatTitle = document.createElement('h3');
+        seatTitle.textContent = 'Who’s playing?';
+        const seatHint = document.createElement('p');
+        seatHint.className = 'mp-seat-hint';
+        seatHint.textContent = 'Connected guests join automatically. Uncheck anyone who is watching this round.';
+        const seatList = document.createElement('div');
+        seatList.className = 'mp-seat-list';
         const hostName = this.members.find((person) => person.id === this.peerId)?.name ?? 'Host';
-        selection.append(document.createTextNode(`${hostName} (seat 1) with guests: `));
+        const hostSeat = document.createElement('span');
+        hostSeat.className = 'mp-seat mp-seat-host';
+        hostSeat.textContent = `${hostName} · Host · Seat 1`;
+        seatList.append(hostSeat);
         const eligibleGuests = this.members.filter((person) =>
           person.id !== this.peerId && person.connected && person.admitted);
-        for (const [index, member] of eligibleGuests.entries()) {
+        for (const member of eligibleGuests) {
           const label = document.createElement('label');
+          label.className = 'mp-seat';
           const check = document.createElement('input');
           check.type = 'checkbox';
           check.value = member.id;
-          check.checked = draft.seats === null ? index === 0 : draft.seats.includes(member.id);
+          check.checked = !draft.excludedSeats.has(member.id);
           check.addEventListener('change', () => {
-            draft.seats = [...selection.querySelectorAll('input:checked')].map((input) => input.value);
+            if (check.checked) draft.excludedSeats.delete(member.id);
+            else draft.excludedSeats.add(member.id);
+            render();
           });
           label.append(check, document.createTextNode(member.name));
-          selection.append(label);
+          seatList.append(label);
         }
-        if (!eligibleGuests.length) selection.append(document.createTextNode('Waiting for an admitted guest'));
+        const selectedCount = 1 + eligibleGuests.filter(member => !draft.excludedSeats.has(member.id)).length;
+        const count = document.createElement('p');
+        count.className = 'mp-seat-count';
+        count.setAttribute('role', 'status');
+        count.textContent = `${selectedCount} player${selectedCount === 1 ? '' : 's'} selected`;
+        selection.append(seatTitle, seatHint, seatList, count);
         root.append(selection);
+        const gamesTitle = document.createElement('h3');
+        gamesTitle.textContent = 'Choose a game';
         const scope = document.createElement('p');
-        scope.textContent = 'Host plays seat 1. Choose one guest for two-player games, or 1–3 guests for Snakes & Ladders, Ludo and UNO-inspired. Each card player sees only their own hand.';
-        games.append(scope);
+        scope.textContent = `Games for ${selectedCount} selected player${selectedCount === 1 ? '' : 's'}. Change the seats above to unlock other games.`;
+        games.append(gamesTitle, scope);
         const supported = catalog.filter(game => REMOTE_GAMES.has(game.id));
         supported.sort((a, b) => Number(b.id === this.preferredGame) - Number(a.id === this.preferredGame));
+        const available = document.createElement('div');
+        available.className = 'mp-game-list';
+        const unavailable = [];
         for (const game of supported) {
           if (!GAME_ID.test(game?.id ?? '')) continue;
           const { min, max } = seatLimits(game);
-          const start = button(`${game.name} (${min}–${max} players)`, () => {
-            const guestIds = [...selection.querySelectorAll('input:checked')].map((input) => input.value);
-            if (guestIds.length + 1 < min || guestIds.length + 1 > max)
-              fail(`Select ${min - 1}–${max - 1} connected admitted guests for ${game.name}.`);
+          if (selectedCount < min || selectedCount > max) {
+            unavailable.push(`${game.name} (${min}–${max})`);
+            continue;
+          }
+          button(`${game.name} (${min}–${max} players)`, () => {
+            const guestIds = eligibleGuests.filter(member => !draft.excludedSeats.has(member.id))
+              .map(member => member.id);
             this.startGame(game.id, [this.peerId, ...guestIds]);
             onStart(game.id);
-          }, games);
-          start.disabled = eligibleGuests.length + 1 < min;
+          }, available);
+        }
+        if (!available.children.length) {
+          const empty = document.createElement('p');
+          const largestGame = Math.max(0, ...supported.map(game => seatLimits(game).max));
+          empty.textContent = selectedCount > largestGame
+            ? `Uncheck guests to select at most ${largestGame} players for a room game.`
+            : 'Select another player, or invite a guest to unlock a game.';
+          available.append(empty);
+        }
+        games.append(available);
+        if (unavailable.length) {
+          const other = document.createElement('p');
+          other.className = 'mp-local-only';
+          other.textContent = `Change player count for: ${unavailable.join(', ')}.`;
+          games.append(other);
         }
         const local = document.createElement('p');
         local.className = 'mp-local-only';
-        local.textContent = 'Other cabinets are local-only. Blackjack is solo against the dealer.';
+        local.textContent = 'Other cabinets are local-only.';
         games.append(local);
         root.append(games);
       }

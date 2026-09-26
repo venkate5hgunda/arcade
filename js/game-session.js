@@ -53,9 +53,14 @@ function liveSessions(now = Date.now()) {
   return saved;
 }
 
-export function recentUnfinishedGame(now = Date.now()) {
+export function unfinishedGames(now = Date.now()) {
   const saved = liveSessions(now);
-  return Object.entries(saved).reverse().sort((a, b) => b[1].savedAt - a[1].savedAt)[0]?.[0] ?? null;
+  return Object.entries(saved).reverse().sort((a, b) => b[1].savedAt - a[1].savedAt)
+    .map(([id]) => id);
+}
+
+export function recentUnfinishedGame(now = Date.now()) {
+  return unfinishedGames(now)[0] ?? null;
 }
 
 export function createGameSession(id) {

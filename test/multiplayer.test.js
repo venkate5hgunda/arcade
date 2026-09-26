@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { MultiplayerRoom } from '../js/multiplayer.js';
+import { newCatan, catanView } from '../games/catan.js';
 
 globalThis.crypto ??= webcrypto;
 globalThis.location = new URL('https://example.test/arcade/index.html#/');
@@ -427,6 +428,7 @@ test('island game requires three seats and keeps each room hand private', async 
   host.createHost('Host');
   const first = await connectGuest(host, 'First');
   const second = await connectGuest(host, 'Second');
+  const third = await connectGuest(host, 'Third');
   const seen = [[], []];
   first.guest.on(event => { if (event.type === 'action') seen[0].push(event.action); });
   second.guest.on(event => { if (event.type === 'action') seen[1].push(event.action); });
@@ -434,15 +436,31 @@ test('island game requires three seats and keeps each room hand private', async 
     assert.throws(() => host.startGame('catan', [host.peerId, first.guest.peerId]), /player count/);
     host.startGame('catan', [host.peerId, first.guest.peerId, second.guest.peerId]);
     assert.equal(first.guest.activeGame.id, 'catan');
+    const island = newCatan(3);
+    const snapshot = { type: 'ct-state', revision: 1, view: catanView(island, 1) };
+    assert.ok(JSON.stringify(snapshot).length > 8000, 'the actual island view exceeds ordinary action limits');
+    host.sendPrivateAction(first.guest.peerId, snapshot);
+    assert.deepEqual(seen[0].at(-1), snapshot, 'the initial island board reaches the first guest');
+    assert.equal(seen[1].length, 0, 'private island board never reaches the other guest');
+    assert.throws(() => first.guest.sendAction(snapshot), /Invalid game action/);
+    assert.throws(() => host.sendPrivateAction(first.guest.peerId,
+      { type: 'ct-state', view: 'x'.repeat(30000) }), /Invalid game action/);
     host.sendPrivateAction(first.guest.peerId, {
-      type: 'ct-state', revision: 1, view: { goods: { timber: 3 }, dev: [{ type: 'victory' }] },
+      type: 'ct-state', revision: 2, view: { goods: { timber: 3 }, dev: [{ type: 'victory' }] },
     });
     assert.equal(seen[0].at(-1).view.goods.timber, 3);
     assert.equal(seen[1].length, 0);
     assert.equal(second.hostChannel.sent.includes('"victory"'), false);
+    host.startGame('catan', [host.peerId, first.guest.peerId, second.guest.peerId, third.guest.peerId]);
+    const fourPlayerView = { type: 'ct-state', revision: 1, view: catanView(newCatan(4), 2) };
+    host.sendPrivateAction(second.guest.peerId, fourPlayerView);
+    assert.deepEqual(seen[1].at(-1), fourPlayerView, 'a four-player island board reaches its own guest');
+    assert.equal(seen[0].length, 2, 'another guest’s four-player board stays private');
+    assert.equal(third.hostChannel.sent.includes('"ct-state"'), false);
   } finally {
     first.guest.close();
     second.guest.close();
+    third.guest.close();
     host.close();
   }
 });
@@ -692,7 +710,10 @@ test('lobby progressively reveals only the chosen flow and connected room contro
       createElement: (tag) => new ElementStub(tag),
       createTextNode: (value) => Object.assign(new ElementStub('#text'), { textContent: value }),
     };
-    const catalog = [{ id: 'chess', name: 'Chess', players: { min: 2, max: 2 } }];
+    const catalog = [
+      { id: 'chess', name: 'Chess', players: { min: 2, max: 2 } },
+      { id: 'catan', name: 'Island Charter', players: { min: 3, max: 4 } },
+    ];
     const hostView = new ElementStub();
     const unmountHost = host.mountLobby(hostView, catalog, () => {});
     button(hostView, 'Create a room');
@@ -702,11 +723,11 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     assert.doesNotMatch(visible(hostView), /Scan invite QR|Accept answer/);
     field(hostView, 'Your name').value = 'Host';
     await button(hostView, 'Create room').listeners.click();
-    assert.doesNotMatch(visible(hostView), /Paste guest answer URL|Chess \(2–2 players\)|Room standings|Copy link/);
-    await button(hostView, 'Create guest invite').listeners.click();
+    assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)|Room standings|Invite another guest/);
     button(hostView, 'Scan answer QR');
     button(hostView, 'Copy link');
-    button(hostView, 'Show QR');
+    button(hostView, 'Hide QR');
+    assert.ok(descendants(hostView).some(node => node.tag === 'img' && node.className === 'mp-qr'));
     const invite = descendants(hostView).find((node) => node.tag === 'textarea').value;
     globalThis.location = new URL(invite);
     const guestView = new ElementStub();
@@ -730,11 +751,58 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     hp.channel.onopen();
     guestChannel.onopen();
     button(hostView, 'Chess (2–2 players)');
+    assert.doesNotMatch(visible(hostView), /Island Charter \(3–4 players\)/);
+    const firstSeat = descendants(hostView).find(node => node.tag === 'input' && node.value === guest.peerId);
+    assert.equal(firstSeat.checked, true);
+    firstSeat.checked = false;
+    firstSeat.listeners.change();
+    assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
     assert.doesNotMatch(visible(guestView), /Answer for host|Copy link/);
     assert.doesNotMatch(visible(hostView), /Room standings/);
-    await button(hostView, 'Create guest invite').listeners.click();
+    await button(hostView, 'Invite another guest').listeners.click();
     button(hostView, 'Accept answer');
-    button(hostView, 'Chess (2–2 players)');
+    assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
+    assert.doesNotMatch(visible(hostView), /Invite another guest/);
+    const secondGuest = new MultiplayerRoom();
+    const secondView = new ElementStub();
+    try {
+      const secondInvite = descendants(hostView).find(node => node.tag === 'textarea').value;
+      globalThis.location = new URL(secondInvite);
+      const unmountSecond = secondGuest.mountLobby(secondView, catalog, () => {});
+      field(secondView, 'Your name').value = 'Third';
+      await button(secondView, 'Join and create answer').listeners.click();
+      field(hostView, 'Paste guest answer URL').value =
+        descendants(secondView).find(node => node.tag === 'textarea').value;
+      await button(hostView, 'Accept answer').listeners.click();
+      const secondHostPeer = FakePeer.instances.at(-2);
+      const secondGuestPeer = FakePeer.instances.at(-1);
+      const secondChannel = new FakeChannel('arcade');
+      secondHostPeer.channel.other = secondChannel;
+      secondChannel.other = secondHostPeer.channel;
+      secondGuestPeer.ondatachannel({ channel: secondChannel });
+      secondHostPeer.channel.readyState = secondChannel.readyState = 'open';
+      secondHostPeer.channel.onopen();
+      secondChannel.onopen();
+      assert.equal(descendants(hostView).find(node => node.tag === 'input' && node.value === guest.peerId).checked, false,
+        'a deliberately excluded guest stays unselected');
+      assert.equal(descendants(hostView).find(node => node.tag === 'input' && node.value === secondGuest.peerId).checked, true,
+        'new guests are selected on arrival');
+      const reselect = descendants(hostView).find(node => node.tag === 'input' && node.value === guest.peerId);
+      reselect.checked = true;
+      reselect.listeners.change();
+      button(hostView, 'Island Charter (3–4 players)');
+      assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
+      await button(hostView, 'Island Charter (3–4 players)').listeners.click();
+      assert.deepEqual(host.activeGame.playerIds, [host.peerId, guest.peerId, secondGuest.peerId]);
+      assert.equal(secondGuest.activeGame.id, 'catan');
+      host.returnLobby();
+      const seat = descendants(hostView).find(node => node.tag === 'input' && node.value === secondGuest.peerId);
+      seat.checked = false;
+      seat.listeners.change();
+      button(hostView, 'Chess (2–2 players)');
+      assert.doesNotMatch(visible(hostView), /Island Charter \(3–4 players\)/);
+      unmountSecond();
+    } finally { secondGuest.close(); }
     assert.equal(host.members.find((member) => member.id === guest.peerId).connected, true);
     unmountGuest();
     unmountHost();

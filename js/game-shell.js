@@ -6,6 +6,7 @@
 import { openNameEditor } from './player-names.js';
 import { room } from './multiplayer.js';
 import { GAME_HELP, openGameHelp } from './game-help.js';
+import { iconMarkup } from './icons.js';
 
 export function createShell(container, game, { title, meta, resetLabel = 'Reset' } = {}) {
   const shell = document.createElement('div');
@@ -13,21 +14,40 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
   shell.style.setProperty('--accent', game.color);
   shell.innerHTML = `
     <div class="game-head">
-      <button class="back-btn" type="button" data-nav="back">← Back to games</button>
+      <button class="back-btn" type="button" data-nav="back">${iconMarkup('tabler:arrow-left')} Back to games</button>
       <div class="game-head-center">
-        <h2 class="game-title">${title || game.name}</h2>
-        ${meta ? `<p class="game-meta">${meta}</p>` : ''}
+        <div class="game-head-identity">
+          ${game.icon ? `<span class="game-head-art">${iconMarkup(game.icon, 'catalog-icon')}</span>` : ''}
+          <div>
+            <h2 class="game-title">${title || game.name}</h2>
+            ${meta ? `<p class="game-meta">${meta}</p>` : ''}
+          </div>
+        </div>
       </div>
-      <button class="reset-btn" type="button" data-action="reset">${resetLabel}</button>
+      <button class="reset-btn" type="button" data-action="reset">${iconMarkup('tabler:refresh')} ${resetLabel}</button>
     </div>
     <div class="game-stage"></div>`;
 
   container.appendChild(shell);
+  const resetButton = shell.querySelector('[data-action="reset"]');
+  const resetToast = document.createElement('div');
+  resetToast.className = 'reset-toast';
+  resetToast.setAttribute('role', 'status');
+  resetToast.hidden = true;
+  shell.querySelector('.game-head').appendChild(resetToast);
+  let resetToastTimer;
+  resetButton.addEventListener('click', () => {
+    if (resetButton.disabled || shell.querySelector('.setup-card')) return;
+    resetToast.textContent = room.activeGame?.id === game.id ? 'Restart requested' : 'Game reset';
+    resetToast.hidden = false;
+    clearTimeout(resetToastTimer);
+    resetToastTimer = setTimeout(() => { resetToast.hidden = true; }, 2400);
+  });
   if (GAME_HELP[game.id]) {
     const help = document.createElement('button');
     help.type = 'button';
     help.className = 'game-help-btn';
-    help.textContent = 'ⓘ How to play';
+    help.innerHTML = `${iconMarkup('tabler:info-circle')} How to play`;
     help.addEventListener('click', () => openGameHelp(game.id));
     shell.querySelector('.game-head-center').appendChild(help);
   }
@@ -35,7 +55,7 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
     const names = document.createElement('button');
     names.type = 'button';
     names.className = 'game-names-btn';
-    names.textContent = '✎ Player names';
+    names.innerHTML = `${iconMarkup('tabler:pencil')} Player names`;
     names.addEventListener('click', () => openNameEditor(game.players.max));
     shell.querySelector('.game-head-center').appendChild(names);
   }
@@ -78,7 +98,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
       ${title ? `<h3 class="setup-title">${title}</h3>` : ''}
       ${subtitle ? `<p class="setup-subtitle">${subtitle}</p>` : ''}
       <div class="setup-fields"></div>
-      <button class="setup-start-btn" type="button">${startLabel}</button>`;
+      <button class="setup-start-btn" type="button">${startLabel} ${iconMarkup('tabler:arrow-right')}</button>`;
     stage.appendChild(card);
 
     const fieldsEl = card.querySelector('.setup-fields');

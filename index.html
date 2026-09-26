@@ -24,21 +24,21 @@
     </button>
     <div class="header-actions">
       <button id="roomToggle" class="icon-btn room-toggle" aria-label="Open multiplayer lobby" title="Open multiplayer room" type="button">
-        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 14c-3.9 0-7 2.2-7 5v2h14v-2c0-2.8-3.1-5-7-5zm8.4 0c-.8 0-1.5.1-2.1.3 1.7 1.2 2.7 2.9 2.7 4.7v2h6v-2c0-2.7-2.9-5-6.6-5z"/></svg>
-        <span>Room</span>
+        <span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/users.svg')"></span>
+        <span class="header-action-label">Room</span>
       </button>
       <div class="header-setting">
         <button id="feedbackToggle" class="icon-btn" aria-label="Sound and vibration settings" aria-expanded="false" aria-controls="feedbackPanel" title="Set sound and vibration" type="button">
-          <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12zM19 7a7 7 0 0 1 0 10l1.4 1.4a9 9 0 0 0 0-12.8z"/></svg>
-          <span>Sound<span class="feedback-label-extra"> & feel</span></span>
+          <span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>
+          <span class="header-action-label">Sound<span class="feedback-label-extra"> & feel</span></span>
         </button>
         <div id="feedbackPanel" class="feedback-panel" role="group" aria-label="Sound and vibration settings" hidden>
           <h2>Sound & feel</h2>
           <p>Choose how your games respond to taps.</p>
-          <button id="soundToggle" class="feedback-option" type="button" aria-pressed="true" title="Turn game sounds on or off"><span>Game sounds</span><span class="feedback-value">On</span></button>
-          <button id="soundTest" class="feedback-option" type="button" title="Play a sample sound to check your device">Test sound ♪</button>
+          <button id="soundToggle" class="feedback-option" type="button" aria-pressed="true" title="Turn game sounds on or off"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>Game sounds</span><span class="feedback-value">On</span></button>
+          <button id="soundTest" class="feedback-option" type="button" title="Play a sample sound to check your device"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>Test sound</span></button>
           <p id="soundStatus" role="status" class="feedback-audio-status"></p>
-          <button id="hapticsToggle" class="feedback-option" type="button" aria-pressed="false" title="Turn vibration on or off"><span>Vibration</span><span class="feedback-value">Off</span></button>
+          <button id="hapticsToggle" class="feedback-option" type="button" aria-pressed="false" title="Turn vibration on or off"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/device-mobile-vibration.svg')"></span>Vibration</span><span class="feedback-value">Off</span></button>
         </div>
       </div>
       <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Theme: Auto. Select Light" title="Theme: Auto (follows your device). Select Light" type="button">
