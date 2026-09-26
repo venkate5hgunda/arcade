@@ -187,11 +187,14 @@
   display: flex; align-items: center; gap: 8px;
   font-size: 1.2rem; font-weight: 900; color: #694427;
 }
-.ct-dice .ct-die, .ct-roll-button .ct-die { width: 34px; height: 34px; flex: 0 0 34px; }
-.ct-die rect { fill: #fff8e6; stroke: #b78349; stroke-width: 2; }
-.ct-die circle { fill: #654532; }
-.ct-roll-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 55px; }
-.ct-roll-button .ct-die { width: 27px; height: 27px; flex-basis: 27px; }
+.ct-roll-button { display: grid; justify-items: center; gap: 8px; }
+.ct-roll-button:disabled { opacity: 1; }
+.ct-roll-button .arcade-die-arena, .ct-dice .arcade-die-arena,
+.ct-roll-showcase .arcade-die-arena { background: radial-gradient(ellipse, #258072, #143c3f); }
+.ct-dice { flex-wrap: wrap; }
+.ct-roll-showcase { display: grid; place-items: center; margin: 0 auto 12px; }
+.ct-roll-showcase[hidden] { display: none; }
+.ct-roll-showcase button { border: 0; background: transparent; padding: 0; }
 .ct-field {
   display: flex; align-items: center; justify-content: space-between; gap: 9px;
   font-size: .72rem; font-weight: 750;

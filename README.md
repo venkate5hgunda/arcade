@@ -109,7 +109,9 @@ Chess; and **120 min** for Island Charter.
   private handoff or in a room; the original art and wording avoid commercial
   board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
-  adapted from Pick's tabletop animation; the final face remains visible briefly
+  adapted from Pick's tabletop animation; Island Charter uses the same shared
+  engine for two dice, including host-authoritative room rolls and opening order.
+  The final faces remain visible briefly
   before an automatic move or turn change. Snakes & Ladders draws varied
   non-intersecting snakes and ladders on each new board, including a large snake
   from square 99 into the bottom half, with square numbers placed clear of snake

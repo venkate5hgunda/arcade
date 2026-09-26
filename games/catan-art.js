@@ -94,22 +94,6 @@ export function buildingArt(city = false) {
   return art;
 }
 
-const PIPS = {
-  1: [[0, 0]], 2: [[-7, -7], [7, 7]], 3: [[-7, -7], [0, 0], [7, 7]],
-  4: [[-7, -7], [7, -7], [-7, 7], [7, 7]],
-  5: [[-7, -7], [7, -7], [0, 0], [-7, 7], [7, 7]],
-  6: [[-7, -8], [7, -8], [-7, 0], [7, 0], [-7, 8], [7, 8]],
-};
-
-export function dieFace(value) {
-  if (!PIPS[value]) throw new RangeError(`Invalid die: ${value}`);
-  const die = svg('svg', { class: 'ct-die', viewBox: '-19 -19 38 38',
-    'aria-hidden': 'true', focusable: 'false' });
-  shape(die, 'rect', { x: -17, y: -17, width: 34, height: 34, rx: 6 });
-  for (const [cx, cy] of PIPS[value]) shape(die, 'circle', { cx, cy, r: 2.6 });
-  return die;
-}
-
 const DISCOVERY_PATH = {
   knight: 'M16 3 26 7v9c0 6-4 10-10 13C10 26 6 22 6 16V7Z',
   victory: 'm16 3 3.2 8.5 9 .6-7 5.5 2.3 9-7.5-5-7.5 5 2.3-9-7-5.5 9-.6Z',
