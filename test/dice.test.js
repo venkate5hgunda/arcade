@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pauseAfterRoll, ROLL_REVEAL_DELAY_MS } from '../js/dice.js';
+import {
+  diceMarkup, dieMarkup, pauseAfterRoll, rollDiceValues, ROLL_REVEAL_DELAY_MS,
+} from '../js/dice.js';
+
+test('shared roller produces one or two Pick-style d6 results from a supplied source', () => {
+  assert.deepEqual(rollDiceValues(1, () => 0), [1]);
+  assert.deepEqual(rollDiceValues(2, () => .999), [6, 6]);
+  assert.throws(() => rollDiceValues(3), RangeError);
+  assert.throws(() => rollDiceValues(2, () => 1), RangeError);
+  assert.throws(() => diceMarkup([0, 3]), RangeError);
+  assert.equal((diceMarkup([2, 4]).match(/class="arcade-die"/g) || []).length, 2);
+  assert.equal((dieMarkup(5).match(/class="arcade-die"/g) || []).length, 1);
+});
 
 test('die result stays visible before an automatic move can continue', async () => {
   const original = globalThis.setTimeout;

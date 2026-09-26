@@ -231,6 +231,7 @@
   box-shadow: inset 0 3px 15px #0008, 0 4px 0 #523f33;
   perspective: 700px;
 }
+.arcade-die-arena--pair { width: 210px; }
 .arcade-die {
   --die-size: 41px;
   position: absolute;

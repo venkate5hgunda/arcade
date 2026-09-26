@@ -3,7 +3,8 @@ import { remoteMatch, seat } from '../js/remote-match.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
-import { svg, terrainArt, goodIcon, buildingArt, dieFace, discoveryIcon } from './catan-art.js';
+import { diceMarkup, pauseAfterRoll, rollDice, rollDiceValues } from '../js/dice.js';
+import { svg, terrainArt, goodIcon, buildingArt, discoveryIcon } from './catan-art.js';
 
 export const GOODS = ['timber', 'clay', 'grain', 'wool', 'ore'];
 export const VERTEX_TOUCH_RADIUS = 22;
@@ -478,13 +479,13 @@ export function actTradeReply(state, action, actor) {
 }
 
 export function applyRemoteCatanAction(state, request, revision, from, playerIds,
-  random = Math.random) {
+  random = Math.random, hostDice = null) {
   if (request?.type !== 'ct-request' || request.revision !== revision ||
       !Array.isArray(playerIds) || !request.move || typeof request.move !== 'object') return false;
   const actor = playerIds.indexOf(from);
   if (actor < 0) return false;
   const move = ['roll', 'setup-roll'].includes(request.move.type)
-    ? { type: request.move.type, dice: [1 + Math.floor(random() * 6), 1 + Math.floor(random() * 6)] }
+    ? { type: request.move.type, dice: hostDice ?? rollDiceValues(2, random) }
     : request.move;
   return ['accept', 'decline'].includes(move.type) ?
     actTradeReply(state, move, actor) : actCatan(state, move, actor, random);
@@ -679,6 +680,8 @@ export default {
     let view = state ? catanView(state, mySeat ?? 0) : null;
     let revision = 0, lastRevision = -1,
       round = state?.roomRound ?? 0, disposed = false;
+    let rolling = false, rollPending = false, rollPresentation = null;
+    let diceController = new AbortController();
     let tool = 'road', chosenTile = null, panel = 'build', chartZoom = 1;
     const setZoom = (value, clientX) => {
       const wrap = table.querySelector('.ct-chart-wrap');
@@ -696,7 +699,10 @@ export default {
       state.discards.findIndex(Boolean) : state?.offer?.to ?? state?.current ?? 0;
     const table = document.createElement('div');
     table.className = 'ct-table';
-    shell.stage.append(table);
+    const diceTray = document.createElement('div');
+    diceTray.className = 'ct-roll-showcase';
+    diceTray.hidden = true;
+    shell.stage.append(diceTray, table);
     shell.root.querySelector('.game-meta').textContent =
       room ? `Private room · ${count} players · seat ${mySeat + 1}` :
         `${count} players · local pass & play`;
@@ -731,7 +737,7 @@ export default {
       }
       const previous = state.winner;
       const action = ['roll', 'setup-roll'].includes(move.type)
-        ? { type: move.type, dice: [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)] }
+        ? { type: move.type, dice: move.dice ?? rollDiceValues(2) }
         : move;
       const actor = state.phase === 'discard' ? localViewer :
         ['accept', 'decline'].includes(action.type) ? state.offer?.to : state.current;
@@ -750,10 +756,53 @@ export default {
         render();
       } else feedback('buzz');
     }
+    async function animateRoll(values) {
+      table.querySelectorAll('.ct-actions button').forEach(button => { button.disabled = true; });
+      let target = table.querySelector('.ct-roll-button');
+      if (!target) {
+        diceTray.innerHTML = `<button type="button" disabled aria-label="Rolling dice">${diceMarkup([1, 1], '')}</button>`;
+        diceTray.hidden = false;
+        target = diceTray.querySelector('button');
+      }
+      const result = await rollDice(target, diceController.signal, values);
+      if (!result || !await pauseAfterRoll(diceController.signal)) return false;
+      diceTray.hidden = true;
+      return true;
+    }
+    function cancelRoll() {
+      diceController.abort();
+      diceController = new AbortController();
+      rolling = false;
+      rollPending = false;
+      rollPresentation = null;
+      diceTray.hidden = true;
+    }
+    async function startRoll(type) {
+      if (rolling || rollPending || disposed) return;
+      if (room) {
+        rollPending = true;
+        const button = table.querySelector('.ct-roll-button');
+        if (button) button.disabled = true;
+        try { dispatch({ type }); }
+        catch (error) {
+          rollPending = false;
+          if (button) button.disabled = false;
+          throw error;
+        }
+        return;
+      }
+      rolling = true;
+      const controller = diceController;
+      try {
+        const values = rollDiceValues(2);
+        if (await animateRoll(values) && !disposed && state.phase === type)
+          dispatch({ type, dice: values });
+      } finally { if (controller === diceController) rolling = false; }
+    }
     const offRoom = room?.on(event => {
       if (disposed || room.activeGame?.id !== game.id) return;
       if (event.type === 'state') {
-        render();
+        if (!rolling) render();
         return;
       }
       if (event.type === 'reconnected' && room.role === 'guest') {
@@ -767,8 +816,36 @@ export default {
           if (from > 0) room.sendPrivateAction(event.from,
             { type: 'ct-state', revision, view: catanView(state, from) });
         } else if (event.action?.type === 'ct-request' && from >= 0) {
+          if (rolling) return;
           const request = event.action;
           const previous = state.winner;
+          const rollType = request.move?.type;
+          if (['roll', 'setup-roll'].includes(rollType) &&
+              request.revision === revision &&
+              event.from === room.activeGame.playerIds[state.current] &&
+              state.phase === rollType && state.winner === null) {
+            rolling = true;
+            const controller = diceController;
+            void (async () => {
+              try {
+                const values = rollDiceValues(2);
+                if (!await animateRoll(values) || disposed) return;
+                if (!applyRemoteCatanAction(state, request, revision, event.from,
+                  room.activeGame.playerIds, Math.random, values)) return;
+                feedback('tap');
+                for (let i = 1; i < count; i++)
+                  if (room.members.some(member => member.id === room.activeGame.playerIds[i] && member.connected)) {
+                    try {
+                      room.sendPrivateAction(room.activeGame.playerIds[i],
+                        { type: 'ct-roll-result', revision: revision + 1, rollType, dice: values });
+                    } catch (error) { room.error(error); }
+                  }
+                rolling = false;
+                publish(); chosenTile = null; render();
+              } finally { if (controller === diceController) rolling = false; }
+            })().catch(error => { room.error(error); if (!disposed) render(); });
+            return;
+          }
           if (applyRemoteCatanAction(state, request, revision, event.from,
             room.activeGame.playerIds)) {
             feedback(state.winner !== null ? 'chime' : 'tap');
@@ -780,10 +857,29 @@ export default {
             publish(); chosenTile = null; render();
           } else if (from > 0) room.sendPrivateAction(event.from,
             { type: 'ct-state', revision, view: catanView(state, from) });
+          else { rollPending = false; feedback('buzz'); render(); }
         } else if (event.action?.type === 'ct-reset' && from === 0) {
           state = newCatan(count); round++;
           shell.root.querySelector('.arcade-victory')?.remove();
           publish(); render();
+        }
+      } else if (event.from === room.activeGame.playerIds[0] &&
+          event.action?.type === 'ct-roll-result') {
+        const result = event.action;
+        if (result.revision === lastRevision + 1 && view?.phase === result.rollType &&
+            !rolling && Array.isArray(result.dice) && result.dice.length === 2 &&
+            result.dice.every(value => integer(value, 1) && value <= 6)) {
+          rolling = true;
+          const controller = diceController;
+          rollPresentation = animateRoll(result.dice)
+            .finally(() => {
+              if (controller === diceController) {
+                rolling = false;
+                rollPending = false;
+                if (!disposed && lastRevision < result.revision) render();
+              }
+            });
+          rollPresentation.catch(error => room.error(error));
         }
       } else if (event.from === room.activeGame.playerIds[0] &&
           event.action?.type === 'ct-state' &&
@@ -804,12 +900,22 @@ export default {
               incoming.setupOrder.every(seat => integer(seat) && seat < count)) ||
             !integer(incoming.turn) || incoming.turn > 100000 ||
             ![null, ...Array.from({ length: count }, (_, i) => i)].includes(incoming.winner)) return;
-        lastRevision = event.action.revision;
-        const previous = view?.winner;
-        view = incoming;
-        if (previous === null && view.winner === mySeat)
-          celebrate(shell.root, `${playerName(mySeat, room)} founded a thriving island!`);
-        chosenTile = null; render();
+        const receivedRevision = event.action.revision;
+        lastRevision = receivedRevision;
+        if (rollPresentation && incoming.phase === 'setup-roll' &&
+            incoming.setupRolls.every(total => total === null) && incoming.turn === 0)
+          cancelRoll();
+        void (async () => {
+          if (rollPresentation) await rollPresentation;
+          if (disposed || receivedRevision !== lastRevision) return;
+          const previous = view?.winner;
+          view = incoming;
+          rollPending = false;
+          rollPresentation = null;
+          if (previous === null && view.winner === mySeat)
+            celebrate(shell.root, `${playerName(mySeat, room)} founded a thriving island!`);
+          chosenTile = null; render();
+        })().catch(error => room.error(error));
       }
     });
 
@@ -1196,9 +1302,16 @@ export default {
         actions.append(hint); return;
       }
       if (data.phase === 'setup-roll') {
-        const rollButton = button('Roll for opening order', () => dispatch({ type: 'setup-roll' }),
+        const rollButton = button('Roll for opening order', () => {
+          void startRoll('setup-roll').catch(error => {
+            if (room) room.error(error);
+            else console.error('Island dice roll failed:', error);
+            if (!disposed) render();
+          });
+        },
           false, 'ct-primary ct-roll-button');
-        rollButton.prepend(dieFace(3), dieFace(5));
+        rollButton.innerHTML = diceMarkup([1, 1], 'Roll for opening order');
+        rollButton.disabled = rolling || rollPending;
         actions.append(rollButton);
         return;
       }
@@ -1211,8 +1324,15 @@ export default {
         actions.append(note); return;
       }
       if (data.phase === 'roll') {
-        const rollButton = button('Roll two dice', () => dispatch({ type: 'roll' }), false, 'ct-primary ct-roll-button');
-        rollButton.prepend(dieFace(3), dieFace(5));
+        const rollButton = button('Roll two dice', () => {
+          void startRoll('roll').catch(error => {
+            if (room) room.error(error);
+            else console.error('Island dice roll failed:', error);
+            if (!disposed) render();
+          });
+        }, false, 'ct-primary ct-roll-button');
+        rollButton.innerHTML = diceMarkup([1, 1], 'Roll two dice');
+        rollButton.disabled = rolling || rollPending;
         actions.append(rollButton);
       }
       if (data.phase === 'robber') {
@@ -1251,7 +1371,7 @@ export default {
         dice.className = 'ct-dice';
         dice.setAttribute('role', 'img');
         dice.setAttribute('aria-label', `Dice: ${data.rolled[0]} plus ${data.rolled[1]} equals ${data.rolled[0] + data.rolled[1]}`);
-        dice.append(dieFace(data.rolled[0]), dieFace(data.rolled[1]));
+        dice.innerHTML = diceMarkup(data.rolled, '');
         const total = document.createElement('strong');
         total.textContent = `= ${data.rolled[0] + data.rolled[1]}`;
         dice.append(total);
@@ -1361,6 +1481,7 @@ export default {
       }
     }
     shell.getResetButton().addEventListener('click', () => {
+      cancelRoll();
       if (room) {
         if (room.role === 'host') room.sendAction({ type: 'ct-reset' });
       } else {
@@ -1377,6 +1498,6 @@ export default {
       else room.sendAction({ type: 'ct-sync' });
     }
     render();
-    return { dispose: () => { disposed = true; offRoom?.(); shell.root.remove(); } };
+    return { dispose: () => { disposed = true; cancelRoll(); offRoom?.(); shell.root.remove(); } };
   },
 };

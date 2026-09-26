@@ -6,7 +6,8 @@ import {
   canRoad, canSettle, longestRoad, points, tradeRate, catanView, applyRemoteCatanAction,
   validCatanCheckpoint, VERTEX_TOUCH_RADIUS,
 } from '../games/catan.js';
-import { terrainArt, goodIcon, buildingArt, dieFace, discoveryIcon } from '../games/catan-art.js';
+import { terrainArt, goodIcon, buildingArt, discoveryIcon } from '../games/catan-art.js';
+import { diceMarkup } from '../js/dice.js';
 
 function rng(seed = 517) {
   return () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
@@ -54,7 +55,7 @@ test('phone chart scrolls at playable scale with usable junction and path target
     'path touch target must be at least 44px across on a phone');
 });
 
-test('island terrain, supplies, buildings, discoveries and die faces have distinct vector art', () => {
+test('island terrain, supplies, buildings and discoveries have distinct vector art', () => {
   const previousDocument = globalThis.document;
   globalThis.document = {
     createElementNS(namespace, tag) {
@@ -76,15 +77,20 @@ test('island terrain, supplies, buildings, discoveries and die faces have distin
     assert.notDeepEqual(buildingArt(false), buildingArt(true));
     for (const discovery of ['knight', 'victory', 'roads', 'plenty', 'monopoly'])
       assert.equal(discoveryIcon(discovery).children[0].tag, 'path');
-    for (let n = 1; n <= 6; n++) {
-      const die = dieFace(n);
-      assert.equal(die.children.filter(child => child.tag === 'circle').length, n);
-      assert.equal(die.attributes['aria-hidden'], 'true');
-    }
   } finally {
     if (previousDocument === undefined) delete globalThis.document;
     else globalThis.document = previousDocument;
   }
+});
+
+test('island dice use the same pipped cubes as the other board games', () => {
+  for (let value = 1; value <= 6; value++) {
+    const face = diceMarkup([value]).match(new RegExp(
+      `<span class="arcade-die-face arcade-die-face-${value}">([\\s\\S]*?)</span>`))?.[1];
+    assert.ok(face);
+    assert.equal((face.match(/class="arcade-pip"/g) || []).length, value);
+  }
+  assert.equal((diceMarkup([3, 5]).match(/class="arcade-die"/g) || []).length, 2);
 });
 
 test('dice reject array-like objects and malformed rolls without throwing or mutating state', () => {
@@ -389,6 +395,11 @@ test('host rejects spoofed, stale and out-of-turn requests and generates dice it
   assert.equal(state.rolled, null);
   assert.equal(applyRemoteCatanAction(state, request, 7, 'host', seats, () => .25), true);
   assert.deepEqual(state.rolled, [2, 2]);
+  const next = newCatan(3, rng());
+  setup(next);
+  assert.equal(applyRemoteCatanAction(next, { ...request, revision: 0 }, 0,
+    'host', seats, () => .25, [3, 5]), true);
+  assert.deepEqual(next.rolled, [3, 5], 'host-selected animated result is committed unchanged');
   const snapshot = JSON.stringify(state);
   assert.equal(applyRemoteCatanAction(state, { ...request, move: { type: 'build-road',
     edge: 0 } }, 7, 'visitor-b', seats), false);

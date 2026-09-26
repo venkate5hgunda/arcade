@@ -208,7 +208,6 @@ export default {
       rolling = true;
       const started = generation, startedEpoch = stateEpoch;
       const audio = window.arcadeAudio;
-      if (audio) await audio.prepare();
       if (started !== generation || startedEpoch !== stateEpoch) return;
       const btn = dice.querySelector('.sl-roll-btn');
       let roll;
