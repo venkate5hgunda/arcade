@@ -35,9 +35,6 @@
 }
 .ct-layout { display: grid; grid-template-columns: minmax(0, 1.48fr) minmax(290px, .8fr); gap: 20px; }
 .ct-chart-area { min-width: 0; }
-.ct-zoom-controls { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
-.ct-zoom-controls .ct-btn { min-width: 42px; min-height: 42px; font-size: 1rem; }
-.ct-zoom-controls span { min-width: 53px; text-align: center; font-weight: 800; }
 .ct-opening-order {
   margin: -8px 8px 18px; padding: 10px 14px; border-radius: 11px;
   background: #fff8df; color: #315d54; font-size: .85rem; font-weight: 750;
@@ -51,6 +48,7 @@
   box-shadow: 0 24px 48px #263e3e32, inset 0 0 0 2px #fdf3d2;
   overflow-x: auto;
   overflow-y: hidden;
+  touch-action: pan-x pan-y;
   background: radial-gradient(circle at 75% 20%, #8bd0c9 0, transparent 60%),
     repeating-linear-gradient(120deg, #54a9aa 0, #54a9aa 3px, #65b9b4 3px, #65b9b4 8px);
 }
@@ -239,7 +237,6 @@
     border-radius: 13px;
     overflow-x: auto;
     overflow-y: hidden;
-    touch-action: pan-x pan-y;
     scrollbar-width: auto;
   }
   .ct-chart { width: calc(820px * var(--ct-zoom, 1)); min-height: 0; max-width: none; }
