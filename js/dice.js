@@ -3,6 +3,7 @@
 const STEP = 1 / 120;
 const RESTITUTION = .72;
 const DRAG = .982;
+export const ROLL_REVEAL_DELAY_MS = 850;
 const PIPS = {
   1: [4], 2: [0, 8], 3: [0, 4, 8],
   4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
@@ -22,6 +23,22 @@ export function dieMarkup(value = 1) {
   return `<span class="arcade-die-arena" aria-hidden="true">
     <span class="arcade-die"><span class="arcade-die-cube" style="transform:rotateX(${rx}deg) rotateY(${ry}deg)">${Array.from({ length: 6 }, (_, i) => dieFace(i + 1)).join('')}</span></span>
   </span><span class="arcade-roll-label">Roll dice</span>`;
+}
+
+export function pauseAfterRoll(signal) {
+  if (signal.aborted) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const abort = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', abort);
+      resolve(true);
+    }, ROLL_REVEAL_DELAY_MS);
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+  });
 }
 
 export async function rollDie(button, signal, predeterminedValue = null) {

@@ -41,6 +41,13 @@
 .sl-cell.snake::after, .sl-cell.ladder::after { content: none; }
 .sl-cell[data-num="100"] { background: #e5b860; }
 .sl-cell.snake .sl-number { border-bottom: 2px solid #b65745; }
+.sl-cell.snake .sl-number {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  border-radius: 6px 0 0 0;
+}
 .sl-cell.ladder .sl-number { border-bottom: 2px solid #438c63; }
 .sl-art {
   position: absolute;
@@ -59,10 +66,10 @@
 @keyframes sl-wobble { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
 @keyframes sl-tail { from { transform: rotate(-5deg); } to { transform: rotate(7deg); } }
 @keyframes sl-tongue { from { transform: scale(.55) rotate(-9deg); opacity: .65; } to { transform: scale(1.15) rotate(9deg); opacity: 1; } }
-.sl-tokens { position: absolute; z-index: 8; top: 69%; left: 69%; transform: translate(-50%, -50%); display: grid; grid-template-columns: repeat(2, min-content); place-items: center; gap: 1px; }
+.sl-tokens { position: absolute; z-index: 8; top: 60%; left: 60%; transform: translate(-50%, -50%); display: grid; grid-template-columns: repeat(2, min-content); place-items: center; gap: 1px; }
 .sl-cell:nth-child(10n) .sl-tokens { left: 54%; }
 .sl-cell:has(.sl-token:nth-child(2)) .sl-tokens { top: 50%; left: 50%; }
-.sl-cell:nth-child(n + 91) .sl-tokens { top: 39%; }
+.sl-cell:nth-child(n + 91) .sl-tokens { top: 50%; }
 .sl-cell:nth-child(n + 91) .board-token-number { bottom: -1px; }
 .sl-token, .sl-roster-icon {
   width: clamp(22px, 6vw, 36px);
@@ -76,8 +83,10 @@
   background: radial-gradient(circle at 25% 20%, #ffffffaa, transparent 50%), var(--piece-color);
   box-shadow: 0 3px 0 #24372f, 0 5px 8px #102c2abb;
 }
+.sl-token { width: clamp(24px, 7vw, 46px); height: clamp(24px, 7vw, 46px); }
 .sl-roster-icon { width: 41px; height: 41px; }
 .board-token-icon { width: 69%; height: 69%; fill: #fff9e9; stroke: #1b3040; stroke-width: 1.5; filter: drop-shadow(0 1px 1px #11202588); }
+.sl-token .board-token-icon { width: 78%; height: 78%; }
 .board-token-number {
   position: absolute;
   right: -4px;
@@ -92,7 +101,7 @@
   color: #fff;
   font: 900 9px/1 system-ui;
 }
-.sl-tokens:has(.sl-token:nth-child(2)) .sl-token { width: clamp(16px, 3.6vw, 24px); height: clamp(16px, 3.6vw, 24px); }
+.sl-tokens:has(.sl-token:nth-child(2)) .sl-token { width: clamp(12px, 4vw, 30px); height: clamp(12px, 4vw, 30px); }
 .sl-board .board-traveler {
   position: absolute;
   left: 0; top: 0;

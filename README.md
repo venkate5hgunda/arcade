@@ -31,6 +31,15 @@ mode, sound, and haptics.
 | Hangman | 1–2 | Word | ✅ Implemented |
 | Word Scramble | 1 | Word | ✅ Implemented |
 
+## Icon credits
+
+Game artwork from [Game Icons](https://game-icons.net/) by Lorc, Delapouite,
+Skoll and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+UI icons from [Tabler Icons](https://tabler.io/icons) by Paweł Kuna, licensed
+under [MIT](https://github.com/tabler/tabler-icons/blob/master/LICENSE).
+Both sets are served locally via [Iconify](https://iconify.design/); the
+downloaded icons are unmodified.
+
 ## Features
 
 - **Responsive** — mobile, tablet, desktop. Flexible grid + fluid game stages.
@@ -48,7 +57,8 @@ mode, sound, and haptics.
   per-game settings and unfinished local rounds.
 - **Setup flow** — every game opens with a lightweight options screen (player
   count, difficulty, mode, timer, etc.) before play starts; choices persist
-  per game.
+  per game. The top reset button briefly confirms a restart (or a restart
+  request in a room).
 - **How to play** — every cabinet has a quick help dialog with three illustrated
   steps, controls, available options and a goal. Moves and impacts are animated
   when motion is enabled; 2048 shows slides before merges and new tile spawns.
@@ -58,8 +68,10 @@ mode, sound, and haptics.
   room. Room guests only celebrate their own victories.
 - **Recently played** — the home screen surfaces your last few games (deduped,
   most-recent-first) above the full catalog for quick re-entry.
-- **Return to play** — opening the arcade starts at home unless the most
-  recently active game has an unfinished saved round. Each game has a
+- **Return to play** — refreshing or reopening the arcade preserves the current
+  page: an open game stays open, while returning home stays home even with
+  unfinished rounds. Home shows a temporary resume banner for every unfinished
+  game; it disappears when the rounds end or expire. Each game has a
   pace-appropriate inactivity window: 2–5 minutes for quick and timed games,
   8–20 minutes for puzzles, cards and physical games, and up to 45 minutes
   for chess, or two hours for Island Charter. Once its window expires, its
@@ -78,6 +90,10 @@ Chess; and **120 min** for Island Charter.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
   physical board surfaces in both themes, a vivid marquee-style header with
   labeled room, Sound & feel and theme controls, and reduced-motion support.
+- **Game artwork** — each catalog card and game header has a distinct,
+  locally hosted SVG icon. Category filters and shared controls use matching
+  UI icons; all artwork remains available offline.
+
 - **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
   simulation. Pool has rack, collisions, pockets, scratches and house-rule
   8-ball play; air hockey has acceleration-limited paddles, impact-dependent
@@ -91,9 +107,11 @@ Chess; and **120 min** for Island Charter.
   private handoff or in a room; the original art and wording avoid commercial
   board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
-  adapted from Pick's tabletop animation. Snakes & Ladders draws varied
-  non-intersecting snakes and ladders on each new board with square numbers above
-  the artwork. Distinctive player emblems travel square by square, climb ladders
+  adapted from Pick's tabletop animation; the final face remains visible briefly
+  before an automatic move or turn change. Snakes & Ladders draws varied
+  non-intersecting snakes and ladders on each new board, including a large snake
+  from square 99 into the bottom half, with square numbers placed clear of snake
+  heads. Larger player emblems travel square by square, climb ladders
   or slide through snakes. Nearby snakes hiss, flick their tongues and sway
   their tails; nearby ladders wobble. Ludo pieces follow the track and return
   captured pieces to their yards. Both boards honor reduced-motion preferences;
@@ -115,8 +133,9 @@ Chess; and **120 min** for Island Charter.
   Both card duels also work offline in local mode. The room host owns the
   deck and must be trusted.
 - **Room play** — one persistent WebRTC room connects devices for repeated
-  games. The host assigns active seats in the lobby; extra guests may watch
-  the lobby until selected. Supports Tic-Tac-Toe, Connect Four, Chess,
+  games. Connected guests are selected automatically as they join; the host
+  can uncheck guests to spectate and the lobby lists games available for the
+  selected seats. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
   games), Island Charter (3–4 players), plus UNO-inspired (2–4 players) and
   Crazy Eights (2 players), with host-authoritative private hands.
@@ -152,19 +171,20 @@ third-party synopses or bundling restricted API datasets (see
 
 1. Tap **Room** in the header and choose **Create a room** or **Join a room**.
    Opening an invite URL selects **Join a room** automatically. Enter your name
-   and select **Create room** if hosting.
-2. The host selects **Create guest invite**; send its URL using **Share link** or
-   **Copy link**, or display **Show QR** for the guest to scan. Make a separate
-   invite for each guest.
+   and select **Create room** if hosting; the first guest invite appears immediately.
+2. Share the displayed invite QR or URL using **Share link** or **Copy link**.
+   After each guest connects, use **Invite another guest** for the next person.
 3. The guest opens the invite URL or chooses **Join a room** and uses
    **Scan invite QR** (or pastes the URL), enters a name, and selects
-   **Join and create answer**. They send the answer
-   URL or show its QR to the host.
+   **Join and create answer**. Their answer QR is shown by default; send its
+   URL or show the QR to the host.
 4. In the **original host tab**, paste the answer URL or use **Scan answer QR**,
    then select **Accept answer**. Opening it in a new host tab will not work.
-   Acceptance admits the guest; wait until the lobby says **connected**
-   before selecting their seat and starting a game. Return to the lobby to
-   play another game over the same connection.
+   Acceptance admits the guest; wait until the lobby says **connected**.
+   Everyone connected is selected to play by default. Uncheck anyone who
+   should spectate, then choose one of the games available for that number
+   of selected players. Return to the lobby to play another game over the
+   same connection.
 
 **Constraints shown before starting:** This static-hosted PWA has no
 signaling or TURN server. Both links must be exchanged manually, and some

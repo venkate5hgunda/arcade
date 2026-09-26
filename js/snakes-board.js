@@ -1,7 +1,8 @@
 const SNAKE_CANDIDATES = [
-  [99, 54], [94, 69], [89, 37], [83, 45], [76, 24], [68, 31],
+  [94, 69], [89, 37], [83, 45], [76, 24], [68, 31],
   [63, 18], [58, 12], [49, 16], [43, 7], [34, 11], [27, 6],
 ];
+const GIANT_SNAKE = { start: 99, end: 21, color: '#c9955e', giant: true };
 const LADDER_CANDIDATES = [
   [2, 38], [5, 25], [9, 33], [14, 46], [20, 61], [28, 55],
   [36, 72], [42, 81], [51, 88], [57, 96], [66, 92], [71, 97],
@@ -54,8 +55,9 @@ export function createBoardLayout(seed) {
   const random = seededRandom(seed);
   let best = { snakes: [], ladders: [] };
   for (let attempt = 0; attempt < 48; attempt++) {
-    const used = new Set([1, 100]);
-    const snakes = [], ladders = [], paths = [];
+    const used = new Set([1, 100, GIANT_SNAKE.start, GIANT_SNAKE.end]);
+    const snakes = [{ ...GIANT_SNAKE }], ladders = [];
+    const paths = [snakeTravelPoints(GIANT_SNAKE).filter((_, index) => index % 2 === 0)];
     const candidates = [
       shuffle(SNAKE_CANDIDATES, random),
       shuffle(LADDER_CANDIDATES, random),
@@ -85,7 +87,7 @@ export function createBoardLayout(seed) {
         (Math.min(snakes.length, ladders.length) === Math.min(best.snakes.length, best.ladders.length) &&
           snakes.length + ladders.length > best.snakes.length + best.ladders.length))
       best = { snakes, ladders };
-    if (snakes.length === 4 && ladders.length === 4) break;
+    if (snakes.length === 5 && ladders.length === 4) break;
   }
   return best;
 }
@@ -145,7 +147,7 @@ export function ladderTravelPoints({ start, end }) {
 }
 
 function snakeShape(snake) {
-  const { start, color } = snake;
+  const { start, color, giant } = snake;
   const points = snakeTravelPoints(snake);
   const path = (from, to) => points.slice(from, to + 1)
     .map((point, i) => `${i ? 'L' : 'M'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
@@ -163,9 +165,9 @@ function snakeShape(snake) {
       `<ellipse cx="${(p.x + side * nx * 7).toFixed(1)}" cy="${(p.y + side * ny * 7).toFixed(1)}"
         rx="3.6" ry="5.4" fill="#17282b" fill-opacity="${i % 2 ? '.27' : '.17'}"/>`).join('');
   }).join('');
-  return `<g class="sl-art-snake" data-head="${start}">
-    <path d="${path(0, 30)}" stroke="#17282b" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${path(0, 30)}" stroke="${color}" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  return `<g class="sl-art-snake${giant ? ' sl-art-snake-giant' : ''}" data-head="${start}">
+    <path d="${path(0, 30)}" stroke="#17282b" stroke-width="${giant ? 34 : 30}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${path(0, 30)}" stroke="${color}" stroke-width="${giant ? 28 : 24}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <g class="sl-art-tail" style="transform-origin:${points[28].x.toFixed(1)}px ${points[28].y.toFixed(1)}px">
       <path d="${path(28, 34)}" stroke="#17282b" stroke-width="22" fill="none" stroke-linecap="round"/>
       <path d="${path(28, 34)}" stroke="${color}" stroke-width="17" fill="none" stroke-linecap="round"/>

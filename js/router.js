@@ -4,11 +4,21 @@
 
 import { loadJSON, remove, saveJSON, KEYS } from './storage.js';
 import { loadGameModule, getGame, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
-import { createGameSession, recentUnfinishedGame } from './game-session.js';
+import { createGameSession, unfinishedGames } from './game-session.js';
 import { room } from './multiplayer.js';
+import { iconMarkup } from './icons.js';
 
 const STAGE_ID = 'game-stage';
 const MAX_RECENT = 6;
+const CATEGORY_ICONS = {
+  All: 'tabler:layout-grid',
+  Action: 'tabler:bolt',
+  Board: 'tabler:chess',
+  Cards: 'tabler:cards',
+  Party: 'tabler:confetti',
+  Puzzle: 'tabler:puzzle',
+  Word: 'tabler:abc',
+};
 
 function recordRecentlyPlayed(id) {
   const list = loadJSON(KEYS.RECENT_GAMES, []).filter((e) => e.id !== id);
@@ -26,6 +36,10 @@ function parseHash(hash) {
   if (!hash) return null;
   const match = hash.match(/^#\/games\/([^/?#]+)/);
   return match ? match[1] : null;
+}
+
+export function initialGameFromHash(hash) {
+  return getGame(parseHash(hash))?.id ?? null;
 }
 
 function syncHash(gameId) {
@@ -105,17 +119,26 @@ function renderGameList(container, games) {
   container.innerHTML = '';
   container.setAttribute('role', 'list');
 
-  games.forEach((game) => {
+  games.forEach((game, index) => {
     const card = document.createElement('article');
     card.className = 'game-card';
     card.setAttribute('role', 'listitem');
     card.style.setProperty('--accent', game.color);
     card.innerHTML = `
       <button class="game-card-btn" type="button" data-game="${game.id}">
-        <span class="game-card-icon" aria-hidden="true">${game.icon}</span>
-        <span class="game-card-name">${game.name}</span>
-        <span class="game-card-tagline">${game.tagline}</span>
-        <span class="game-card-meta">${playerLabel(game)} · ${game.category}</span>
+        <span class="game-card-visual" aria-hidden="true">
+          <span class="game-card-icon">${iconMarkup(game.icon, 'catalog-icon')}</span>
+          <span class="game-card-number">${String(index + 1).padStart(2, '0')}</span>
+        </span>
+        <span class="game-card-copy">
+          <span class="game-card-category">${game.category}</span>
+          <span class="game-card-name">${game.name}</span>
+          <span class="game-card-tagline">${game.tagline}</span>
+          <span class="game-card-bottom">
+            <span class="game-card-meta">${iconMarkup('tabler:users')} ${playerLabel(game)}</span>
+            <span class="game-card-play" aria-hidden="true">Play ${iconMarkup('tabler:arrow-right')}</span>
+          </span>
+        </span>
       </button>`;
     container.appendChild(card);
   });
@@ -133,6 +156,7 @@ function wireGrid() {
 
   let active = 'All';
   renderGameGrid(grid, active);
+  renderResumeGames();
 
   const recentSection = document.querySelector('#recent-section');
   const recentGrid = document.querySelector('#recent-grid');
@@ -143,7 +167,7 @@ function wireGrid() {
   }
 
   landing.addEventListener('click', (e) => {
-    const btn = e.target.closest('.game-card-btn[data-game]');
+    const btn = e.target.closest('.game-card-btn[data-game], .resume-game[data-game]');
     if (!btn) return;
     window.arcadeAudio?.prepare();
     window.arcadeAudio?.tap();
@@ -167,20 +191,50 @@ function wireGrid() {
   }
 }
 
+function renderResumeGames() {
+  const section = document.querySelector('#resume-section');
+  if (!section) return;
+  const games = unfinishedGames().map((id) => getGame(id)).filter(Boolean);
+  const ids = games.map((game) => game.id).join(',');
+  if (section.dataset.games === ids) return;
+  section.dataset.games = ids;
+  section.hidden = games.length === 0;
+  section.querySelector('.resume-games').innerHTML = games.map((game) => `
+    <button class="resume-game" type="button" data-game="${game.id}" style="--accent:${game.color}" aria-label="Resume ${game.name}">
+      <span class="resume-icon">${iconMarkup(game.icon, 'catalog-icon')}</span>
+      <span class="resume-game-copy"><strong>${game.name}</strong><small>Continue playing</small></span>
+      ${iconMarkup('tabler:arrow-right')}
+    </button>`).join('');
+}
+
 function renderLanding() {
   return `
     <div class="landing">
       <div class="landing-hero">
+        <p class="landing-eyebrow">YOUR NEXT GAME NIGHT STARTS HERE</p>
         <img src="assets/logo.svg" class="landing-logo" alt="" width="72" height="72">
         <h1 class="landing-title">Arcade</h1>
         <p class="landing-sub">Pick a game and start playing. Local multiplayer, group games, and puzzles — all in your browser.</p>
       </div>
+      <section id="resume-section" class="resume-section" aria-labelledby="resume-heading" hidden>
+        <div class="resume-heading">
+          <span class="resume-heading-icon">${iconMarkup('tabler:history')}</span>
+          <div>
+            <h2 id="resume-heading">Pick up where you left off</h2>
+            <p>Your unfinished games are ready when you are.</p>
+          </div>
+        </div>
+        <div class="resume-games"></div>
+      </section>
       <section id="recent-section" class="recent-section" hidden>
-        <h2 class="section-heading">↻ Recently Played</h2>
+        <h2 class="section-heading">${iconMarkup('tabler:history')} Recently played</h2>
         <div id="recent-grid" class="game-grid recent-grid" role="list"></div>
       </section>
-      <div id="category-tabs" class="category-tabs" role="tablist">
-        ${CATEGORIES.map((c) => `<button type="button" class="category-tab${c === 'All' ? ' active' : ''}" data-category="${c}" role="tab" aria-selected="${c === 'All'}">${c}</button>`).join('')}
+      <div class="catalog-toolbar">
+        <h2 class="section-heading">${iconMarkup('tabler:layout-grid')} Explore games</h2>
+        <div id="category-tabs" class="category-tabs" role="tablist" aria-label="Game categories">
+          ${CATEGORIES.map((c) => `<button type="button" class="category-tab${c === 'All' ? ' active' : ''}" data-category="${c}" role="tab" aria-selected="${c === 'All'}">${iconMarkup(CATEGORY_ICONS[c])}${c}</button>`).join('')}
+        </div>
       </div>
       <div id="game-grid" class="game-grid" role="list"></div>
     </div>`;
@@ -189,9 +243,9 @@ function renderLanding() {
 function renderComingSoon(game) {
   return `
     <div class="game-shell coming-soon">
-      <button class="back-btn" data-nav="back" type="button">← Back to games</button>
+      <button class="back-btn" data-nav="back" type="button">${iconMarkup('tabler:arrow-left')} Back to games</button>
       <div class="game-hero">
-        <span class="game-emoji" style="--accent:${game.color}">${game.icon}</span>
+        <span class="game-emoji" style="--accent:${game.color}">${iconMarkup(game.icon, 'catalog-icon')}</span>
         <h2>${game.name}</h2>
         <p>${game.tagline}</p>
       </div>
@@ -205,9 +259,9 @@ function renderComingSoon(game) {
 function renderError(game, err) {
   return `
     <div class="game-shell error">
-      <button class="back-btn" data-nav="back" type="button">← Back to games</button>
+      <button class="back-btn" data-nav="back" type="button">${iconMarkup('tabler:arrow-left')} Back to games</button>
       <div class="game-hero">
-        <span class="game-emoji" style="--accent:${game.color}">${game.icon}</span>
+        <span class="game-emoji" style="--accent:${game.color}">${iconMarkup(game.icon, 'catalog-icon')}</span>
         <h2>${game.name}</h2>
         <p>Something went wrong loading this game.</p>
       </div>
@@ -232,10 +286,10 @@ export function initRouter() {
     }
   });
 
-  // A bookmarked game route is not an unfinished round. Start at home unless
-  // there is a recent, resumable checkpoint from this browser.
+  // The URL tracks where the player last navigated; saved rounds are offered
+  // on home but must never override an explicit return to home on refresh.
   remove(KEYS.ACTIVE_GAME);
-  const initial = recentUnfinishedGame();
+  const initial = initialGameFromHash(location.hash);
   history.replaceState(null, '', `${location.pathname}${location.search}${initial ? `#/games/${initial}` : '#/'}`);
   navigate(initial, { pushState: false });
   window.addEventListener('pagehide', () => mountedSession?.touch());
@@ -245,7 +299,8 @@ export function initRouter() {
   });
   window.setInterval(() => {
     const activeExpired = mountedSession?.isExpired();
-    recentUnfinishedGame();
+    if (activeRoute === null && !document.hidden) renderResumeGames();
+    else unfinishedGames();
     if (!document.hidden && activeExpired) navigate(null);
   }, 15_000);
 }

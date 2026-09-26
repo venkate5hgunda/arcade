@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v39';
-const RUNTIME_CACHE = 'arcade:runtime:v39';
+const STATIC_CACHE = 'arcade:static:v44';
+const RUNTIME_CACHE = 'arcade:runtime:v44';
 
 const STATIC_ASSETS = [
   './',
@@ -23,6 +23,7 @@ const STATIC_ASSETS = [
   './js/router.js',
   './js/game-session.js',
   './js/game-catalog.js',
+  './js/icons.js',
   './js/game-shell.js',
   './js/game-help.js',
   './js/card-room-entry.js',
@@ -50,7 +51,19 @@ const STATIC_ASSETS = [
   './assets/favicon.svg',
   './assets/logo.svg',
   './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png'
+  './assets/icons/icon-512.png',
+  ...[
+    'hockey', 'eight-ball', 'mole', 'snake', 'rolling-dice-cup', 'island',
+    'chess-knight', 'spy', 'drama-masks', 'card-ace-spades', 'card-8-spades',
+    'card-joker', 'tic-tac-toe', 'minefield',
+  ].map((name) => `./assets/icons/game-icons/${name}.svg`),
+  ...[
+    'hand-rock', 'circles-filled', 'cards-filled', 'number-123', 'color-swatch',
+    'abc', 'sort-ascending-letters', 'layout-grid', 'bolt', 'chess', 'cards',
+    'confetti', 'puzzle', 'history', 'arrow-left', 'arrow-right', 'refresh',
+    'info-circle', 'users', 'volume-2', 'device-mobile-vibration', 'pencil',
+    'sun', 'moon',
+  ].map((name) => `./assets/icons/tabler/${name}.svg`)
 ];
 
 self.addEventListener('install', (event) => {

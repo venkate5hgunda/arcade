@@ -49,8 +49,11 @@ test('generated obstacle paths stay apart and travel reaches the illustrated end
   };
   for (let seed = 0; seed < 250; seed++) {
     const { snakes, ladders } = createBoardLayout(`board-${seed}`);
-    assert.equal(snakes.length, 4);
+    assert.equal(snakes.length, 5);
     assert.equal(ladders.length, 4);
+    const giant = snakes.filter(({ start, end }) => start >= 95 && start < 100 && end < 50);
+    assert.equal(giant.length, 1, `board ${seed}: missing giant snake`);
+    assert.ok(boardArt({ snakes, ladders }).includes(`sl-art-snake-giant" data-head="${giant[0].start}"`));
     const paths = [
       ...snakes.map((obstacle) => [obstacle, snakeTravelPoints(obstacle)]),
       ...ladders.map((obstacle) => [obstacle, [squareCenter(obstacle.start), squareCenter(obstacle.end)]]),

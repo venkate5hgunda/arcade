@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameSession, recentUnfinishedGame, RESUME_MINUTES } from '../js/game-session.js';
+import { createGameSession, recentUnfinishedGame, unfinishedGames, RESUME_MINUTES } from '../js/game-session.js';
 import { KEYS, loadJSON, saveJSON } from '../js/storage.js';
 import { GAMES } from '../js/game-catalog.js';
+import { initialGameFromHash } from '../js/router.js';
 
 const values = new Map();
 globalThis.localStorage = {
@@ -58,6 +59,30 @@ test('the most recent unfinished game wins and leaving refreshes inactivity', ()
   chess.stop();
   chess.finish();
   assert.ok(createGameSession('chess').state);
+});
+
+test('home remains home with saved rounds, while a direct game URL opens that game', () => {
+  values.clear();
+  createGameSession('chess').save({ turn: 'w' });
+  assert.equal(initialGameFromHash('#/'), null);
+  assert.equal(initialGameFromHash(''), null);
+  assert.equal(initialGameFromHash('#/games/chess'), 'chess');
+  assert.equal(initialGameFromHash('#/games/pool'), 'pool');
+  assert.equal(initialGameFromHash('#/games/unknown'), null);
+});
+
+test('resume list includes every live game, newest first, and removes expired rounds', () => {
+  values.clear();
+  const now = Date.now();
+  saveJSON(KEYS.GAME_SESSIONS, {
+    chess: { state: { turn: 'w' }, savedAt: now - 30_000 },
+    ludo: { state: { turn: 1 }, savedAt: now - 1_000 },
+    blackjack: { state: { turn: 1 }, savedAt: now - RESUME_MINUTES.blackjack * 60_000 },
+  });
+  assert.deepEqual(unfinishedGames(now), ['ludo', 'chess']);
+  assert.deepEqual(Object.keys(loadJSON(KEYS.GAME_SESSIONS, {})), ['chess', 'ludo']);
+  createGameSession('ludo').finish();
+  assert.deepEqual(unfinishedGames(now), ['chess']);
 });
 
 test('expired games cannot be made fresh by touching them', () => {

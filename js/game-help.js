@@ -1,4 +1,6 @@
 // Three illustrated moves plus the controls, choices and goal for every cabinet.
+import { iconMarkup } from './icons.js';
+
 export const GAME_HELP = {
   '2048': { steps: [['⬅️', 'Slide', 'Swipe or press an arrow: every tile moves to the edge.'], ['2 + 2', 'Merge', 'Equal tiles collide once per move and double in value.'], ['✨', 'New tile', 'A 2 or 4 appears in an empty square after a successful move.']], controls: 'Swipe or use arrow keys. Empty space is needed to move.', options: 'Keep Going after 2048, or start a new board.', goal: 'Build a 2048 tile without filling the board with no legal merges.' },
   'air-hockey': { steps: [['🏒', 'Faceoff', 'The puck stays at center until either player hits it with their paddle.'], ['●', 'Strike', 'The table slows light taps quickly. Swipe firmly for a fast shot; angle your hit toward the opposite goal.'], ['⚑', 'Serve', 'After a goal, the puck rests on the other player’s half until struck.']], controls: 'Drag on the table; P1 (bottom) can use arrows, P2 (top) WASD.', options: 'Choose a winning score of 5, 7 or 10.', goal: 'Be the first to reach the chosen score.' },
@@ -30,7 +32,7 @@ export function openGameHelp(id) {
   const dialog = document.createElement('dialog');
   dialog.className = 'game-help-dialog';
   const heading = document.createElement('h2');
-  heading.textContent = 'How to play';
+  heading.innerHTML = `${iconMarkup('tabler:info-circle')} How to play`;
   const steps = document.createElement('ol');
   steps.className = 'game-help-steps';
   for (const [icon, label, description] of help.steps) {
@@ -58,7 +60,7 @@ export function openGameHelp(id) {
   }
   const close = document.createElement('button');
   close.type = 'button';
-  close.textContent = 'Got it · Play';
+  close.innerHTML = `Got it · Play ${iconMarkup('tabler:arrow-right')}`;
   close.addEventListener('click', () => dialog.close());
   dialog.append(heading, steps, details, close);
   document.body.appendChild(dialog);
