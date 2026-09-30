@@ -106,8 +106,12 @@ Chess; and **120 min** for Island Charter.
 - **Island Charter** — a 3–4-player hex-settlement strategy game with an
   illustrated SVG island, distinct buildings, recognizable resource and dice artwork,
   production, trading, harbors, discoveries and ten-point victory. Play by
-  private handoff or in a room; the original art and wording avoid commercial
-  board-game assets.
+  private handoff or in a room. Choose **Classic positions** for the same nine
+  coastal harbors and exchange rates on every island, or **Changing positions**
+  to redistribute nine non-overlapping harbors each new island. Harbor choice
+  persists across resets, local resumes and room reconnections. Resource
+  symbols appear in cargo, building costs and their corresponding harbors;
+  the original art and wording avoid commercial board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
   adapted from Pick's tabletop animation; Island Charter uses the same shared
   engine for two dice, including host-authoritative room rolls and opening order.

@@ -39,6 +39,9 @@
   margin: -8px 8px 18px; padding: 10px 14px; border-radius: 11px;
   background: #fff8df; color: #315d54; font-size: .85rem; font-weight: 750;
 }
+.ct-harbor-mode {
+  margin: 0 8px 10px; color: #315d54; font-size: .78rem; font-weight: 800;
+}
 .ct-scroll-hint { display: none; }
 .ct-chart-wrap {
   position: relative;
@@ -106,6 +109,12 @@
   text-anchor: middle; font-family: ui-rounded, "Avenir Next", system-ui, sans-serif;
 }
 .ct-harbor-disc { fill: #f8e9c3; stroke: #426677; stroke-width: 3; filter: drop-shadow(0 2px 2px #183f4488); }
+.ct-harbor--timber .ct-harbor-disc { fill: #d3e5d3; }
+.ct-harbor--clay .ct-harbor-disc { fill: #f3d8c8; }
+.ct-harbor--grain .ct-harbor-disc { fill: #f7e9b3; }
+.ct-harbor--wool .ct-harbor-disc { fill: #e2ebc9; }
+.ct-harbor--ore .ct-harbor-disc { fill: #d8dee3; }
+.ct-harbor .ct-icon { overflow: visible; }
 .ct-harbor-wave { stroke: #397c87; stroke-width: 2.5; fill: none; stroke-linecap: round; }
 .ct-harbor-rate { fill: #293e40; font-size: 12px; font-weight: 900; }
 .ct-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
