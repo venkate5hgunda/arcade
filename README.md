@@ -5,6 +5,9 @@ single player, two player, board games, and group party games. Built with pure
 HTML/CSS/JS (no build step), installable on desktop and mobile, with light/dark
 mode, sound, and haptics.
 
+For module boundaries, state recovery, game-by-game ownership, current
+limitations and refactoring priorities, see [Architecture and maintenance map](ARCHITECTURE.md).
+
 ## Game catalog
 
 | Game | Players | Category | Status |
@@ -304,10 +307,9 @@ See `CHANGELOG.md` for the full history of decisions and assumptions.
 
 ## Scope notes
 
-- A game link opened in a new tab lands at home unless this browser has an
-  unexpired unfinished local round. Game routes still work during an active
-  visit. This prevents stale bookmarks and completed rounds from dropping
-  the player into a new game without choosing it.
+- A direct game link opens that game, even without a saved round. Refreshing
+  on home stays on home even if other games have unfinished local rounds;
+  their resume banners let you choose when to return.
 - **Chess** implements checkmate, stalemate, and insufficient-material draws,
   but not draw-by-repetition or the 50-move rule — a deliberate scope limit
   for a casual pass-and-play/AI opponent experience.
