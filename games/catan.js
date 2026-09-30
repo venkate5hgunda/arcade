@@ -20,6 +20,8 @@ const TERRAIN = ['forest', 'forest', 'forest', 'forest', 'hills', 'hills', 'hill
   'mountains', 'mountains', 'mountains', 'desert'];
 const YIELDS = { forest: 'timber', hills: 'clay', fields: 'grain', pasture: 'wool', mountains: 'ore' };
 const NUMBERS = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12];
+const HARBORS = ['any', 'clay', 'any', 'timber', 'any', 'wool', 'any', 'grain', 'ore'];
+const PORT_MODES = ['fixed', 'shuffled'];
 const DECK = [...Array(14).fill('knight'), ...Array(5).fill('victory'),
   ...Array(2).fill('roads'), ...Array(2).fill('plenty'), ...Array(2).fill('monopoly')];
 const SUM = o => GOODS.reduce((n, good) => n + (o?.[good] || 0), 0);
@@ -37,7 +39,8 @@ const shuffled = (items, random) => {
   return copy;
 };
 
-export function createIsland(random = Math.random) {
+export function createIsland(random = Math.random, portMode = 'fixed') {
+  if (!PORT_MODES.includes(portMode)) throw new RangeError('Unknown harbor layout.');
   const coords = [];
   for (let row = -2; row <= 2; row++)
     for (let q = -2; q <= 2; q++)
@@ -95,7 +98,7 @@ export function createIsland(random = Math.random) {
       edges[edgeByEnds.get(key)].tiles.push(tileId);
     }
   });
-  // Distribute nine harbors evenly around the coast, leaving at least one edge between docks.
+  // Traverse the coast; harbor endpoints must be separated by at least two other edges.
   const boundary = edges.flatMap((edge, i) => edge.tiles.length === 1 ? [i] : []);
   const neighbors = i => boundary.filter(j => j !== i &&
     [edges[i].a, edges[i].b].some(v => v === edges[j].a || v === edges[j].b));
@@ -105,9 +108,22 @@ export function createIsland(random = Math.random) {
     if (!candidates.length) break;
     ordered.push(candidates.find(i => i !== ordered.at(-2)) ?? candidates[0]);
   }
-  const ports = shuffled(['any', 'any', 'any', 'any', 'timber', 'clay', 'grain', 'wool', 'ore'], random);
+  if (ordered.length !== 30) throw new Error('Island coastline must contain 30 connected edges.');
+  const ports = portMode === 'fixed' ? HARBORS : shuffled(HARBORS, random);
+  const positions = portMode === 'fixed'
+    ? Array.from({ length: 9 }, (_, i) => (ordered.length - i * 3) % ordered.length)
+    : (() => {
+      const gaps = shuffled([3, 3, 3, 3, 3, 3, 4, 4, 4], random);
+      const start = Math.floor(random() * ordered.length);
+      let position = start;
+      return gaps.map(gap => {
+        const current = position;
+        position = (position + gap) % ordered.length;
+        return current;
+      });
+    })();
   for (let i = 0; i < 9; i++) {
-    const edge = edges[ordered[(i * 3) % ordered.length]];
+    const edge = edges[ordered[positions[i]]];
     edge.port = ports[i];
     vertices[edge.a].port = ports[i];
     vertices[edge.b].port = ports[i];
@@ -115,11 +131,27 @@ export function createIsland(random = Math.random) {
   return { tiles, vertices, edges };
 }
 
-export function newCatan(count = 3, random = Math.random) {
+function validHarbors(board) {
+  if (!Array.isArray(board?.edges) || !Array.isArray(board?.vertices)) return false;
+  const ports = board.edges.filter(edge => edge?.port);
+  if (ports.length !== HARBORS.length ||
+      ports.map(edge => edge.port).sort().join(',') !== [...HARBORS].sort().join(',')) return false;
+  const docks = new Map();
+  for (const edge of ports) {
+    if (edge.tiles?.length !== 1 || !integer(edge.a) || !integer(edge.b) ||
+        edge.a >= board.vertices.length || edge.b >= board.vertices.length ||
+        docks.has(edge.a) || docks.has(edge.b)) return false;
+    docks.set(edge.a, edge.port);
+    docks.set(edge.b, edge.port);
+  }
+  return board.vertices.every((vertex, index) => vertex?.port === (docks.get(index) ?? null));
+}
+
+export function newCatan(count = 3, random = Math.random, portMode = 'fixed') {
   if (!integer(count, 3) || count > 4) throw new RangeError('Island Charter needs 3–4 players.');
-  const board = createIsland(random);
+  const board = createIsland(random, portMode);
   return {
-    board, buildings: Array(board.vertices.length).fill(null),
+    board, portMode, buildings: Array(board.vertices.length).fill(null),
     roads: Array(board.edges.length).fill(null),
     players: Array.from({ length: count }, () => ({
       goods: emptyGoods(), dev: [], roads: 0, settlements: 0, cities: 0, knights: 0,
@@ -496,6 +528,7 @@ export function validCatanCheckpoint(state, allowFinished = false) {
     state?.setupOrder === undefined && state?.phase !== 'setup-roll';
   if (!state || !Array.isArray(state.players) ||
       ![3, 4].includes(state.players.length) ||
+      !(state.portMode === undefined || PORT_MODES.includes(state.portMode)) ||
       !(state.winner === null || allowFinished && integer(state.winner) &&
         state.winner < state.players.length) ||
       !['setup-roll', 'setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'main', 'free-roads'].includes(state.phase) ||
@@ -518,6 +551,7 @@ export function validCatanCheckpoint(state, allowFinished = false) {
       !Array.isArray(state.board?.tiles) || state.board.tiles.length !== 19 ||
       !Array.isArray(state.board?.vertices) || state.board.vertices.length !== 54 ||
       !Array.isArray(state.board?.edges) || state.board.edges.length !== 72 ||
+      !validHarbors(state.board) ||
       state.board.tiles.some(t => !Array.isArray(t?.vertices) || t.vertices.length !== 6 ||
         t.vertices.some(v => !integer(v) || v >= 54)) ||
       state.board.vertices.some(v => !Array.isArray(v?.edges) ||
@@ -558,7 +592,8 @@ export function validCatanCheckpoint(state, allowFinished = false) {
 
 export function catanView(state, player) {
   return {
-    board: state.board, buildings: state.buildings, roads: state.roads,
+    board: state.board, portMode: state.portMode ?? 'shuffled',
+    buildings: state.buildings, roads: state.roads,
     goods: { ...state.players[player].goods },
     dev: state.players[player].dev.map(c => ({ ...c })),
     counts: state.players.map(p => ({ goods: SUM(p.goods), dev: p.dev.length,
@@ -580,7 +615,7 @@ const TERRAIN_LABEL = {
   forest: 'Grove', hills: 'Ridge', fields: 'Meadow', pasture: 'Heath',
   mountains: 'Peak', desert: 'Wastes',
 };
-const GOOD_LABEL = { timber: 'Timber', clay: 'Clay', grain: 'Grain', wool: 'Wool', ore: 'Ore' };
+const GOOD_LABEL = { timber: 'Lumber', clay: 'Brick', grain: 'Grain', wool: 'Wool', ore: 'Ore' };
 const CARD_LABEL = { knight: 'Ranger', victory: 'Legacy', roads: 'Trailblazer',
   plenty: 'Windfall', monopoly: 'Market Sweep' };
 const pieceLabel = (v, state, room) => state.buildings[v] ?
@@ -652,15 +687,26 @@ export default {
       restored.setupRolls = Array(restored.players.length).fill(null);
       restored.setupOrder = restored.players.map((_, index) => index);
     }
-    const setting = room ? { count: room.activeGame.playerIds.length } :
-      restored ? { count: restored.players.length } :
+    const setting = room?.savedCatan ? { count: room.activeGame.playerIds.length,
+      portMode: room.savedCatan.portMode ?? 'shuffled' } :
+      restored ? { count: restored.players.length, portMode: restored.portMode ?? 'shuffled' } :
+      room?.role === 'guest' ? { count: room.activeGame.playerIds.length } :
       await renderSetup(shell.stage, {
         title: '⟡ Island Charter', subtitle: 'A shared table for three or four navigators. No automated players.',
         themeClass: 'ct-setup', startLabel: 'Chart the island',
-        fields: [{ key: 'count', label: 'Navigators', default: '3',
-          options: [3, 4].map(n => ({ value: String(n), label: `${n} players` })) }],
+        fields: [
+          ...(!room ? [{ key: 'count', label: 'Navigators', default: '3',
+            options: [3, 4].map(n => ({ value: String(n), label: `${n} players` })) }] : []),
+          { key: 'portMode', label: 'Harbors', default: 'fixed',
+            options: [
+              { value: 'fixed', label: 'Classic positions' },
+              { value: 'shuffled', label: 'Changing positions' },
+            ] },
+        ],
       });
-    const count = Number(setting.count), mySeat = room ? seat(room) - 1 : null;
+    const count = Number(room ? room.activeGame.playerIds.length : setting.count);
+    const mySeat = room ? seat(room) - 1 : null;
+    const portMode = setting.portMode ?? 'fixed';
     if (room?.savedCatan && (!validCatanCheckpoint(room.savedCatan, true) ||
         room.savedCatan.players.length !== count)) {
       const note = document.createElement('p');
@@ -672,11 +718,12 @@ export default {
       return { dispose: () => shell.root.remove() };
     }
     let state = room?.role === 'guest' ? null :
-      room?.savedCatan ? structuredClone(room.savedCatan) : restored || newCatan(count);
+      room?.savedCatan ? structuredClone(room.savedCatan) : restored || newCatan(count, Math.random, portMode);
     if (state && !state.setupOrder && state.phase !== 'setup-roll') {
       state.setupRolls = Array(count).fill(null);
       state.setupOrder = state.players.map((_, index) => index);
     }
+    if (!room && !restored) session?.save(state);
     let view = state ? catanView(state, mySeat ?? 0) : null;
     let revision = 0, lastRevision = -1,
       round = state?.roomRound ?? 0, disposed = false;
@@ -859,7 +906,7 @@ export default {
             { type: 'ct-state', revision, view: catanView(state, from) });
           else { rollPending = false; feedback('buzz'); render(); }
         } else if (event.action?.type === 'ct-reset' && from === 0) {
-          state = newCatan(count); round++;
+          state = newCatan(count, Math.random, portMode); round++;
           shell.root.querySelector('.arcade-victory')?.remove();
           publish(); render();
         }
@@ -888,8 +935,10 @@ export default {
         const incoming = event.action.view;
         if (!incoming || incoming.board?.tiles?.length !== 19 ||
             incoming.board.vertices?.length !== 54 || incoming.board.edges?.length !== 72 ||
+            !validHarbors(incoming.board) ||
             incoming.counts?.length !== count || incoming.buildings?.length !== 54 ||
             incoming.roads?.length !== 72 || !incoming.goods || !Array.isArray(incoming.dev) ||
+            !PORT_MODES.includes(incoming.portMode) ||
             !integer(incoming.current) || incoming.current >= count ||
             !['setup-roll', 'setup-settlement', 'setup-road', 'roll', 'discard', 'robber', 'free-roads', 'main'].includes(incoming.phase) ||
             !Array.isArray(incoming.setupRolls) || incoming.setupRolls.length !== count ||
@@ -1004,7 +1053,7 @@ export default {
         if (edge.port) {
           const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
           const dx = x - 380, dy = y - 350, length = Math.hypot(dx, dy);
-          const mark = svg('g', { class: 'ct-harbor',
+          const mark = svg('g', { class: `ct-harbor ct-harbor--${edge.port}`,
             transform: `translate(${x + dx / length * 34} ${y + dy / length * 34})`,
             role: 'img', 'aria-label': `${edge.port === 'any' ? 'Any resource' : GOOD_LABEL[edge.port]} harbor, ${edge.port === 'any' ? '3:1' : '2:1'} exchange`,
             'pointer-events': 'none' });
@@ -1012,9 +1061,14 @@ export default {
           if (edge.port === 'any') mark.append(svg('path', {
             d: 'M-10 -6q5-4 10 0t10 0M-10 0q5-4 10 0t10 0', class: 'ct-harbor-wave',
           }));
-          else mark.append(terrainArt({
-            timber: 'forest', clay: 'hills', grain: 'fields', wool: 'pasture', ore: 'mountains',
-          }[edge.port], 0, -7, .3));
+          else {
+            const icon = goodIcon(edge.port);
+            icon.setAttribute('x', '-14');
+            icon.setAttribute('y', '-20');
+            icon.setAttribute('width', '28');
+            icon.setAttribute('height', '28');
+            mark.append(icon);
+          }
           mark.append(svg('text', { y: 14, class: 'ct-harbor-rate' }, edge.port === 'any' ? '3:1' : '2:1'));
           chart.append(mark);
         }
@@ -1137,6 +1191,11 @@ export default {
             `${playerName(index, room)} ${total ?? '—'}`).join(' · ')}`;
         table.append(order);
       }
+      const harborMode = document.createElement('p');
+      harborMode.className = 'ct-harbor-mode';
+      harborMode.textContent = data.portMode === 'fixed'
+        ? 'Classic harbors · set coastal positions' : 'Changing harbors · new layout each island';
+      table.append(harborMode);
       const layout = document.createElement('div');
       layout.className = 'ct-layout';
       const chartArea = document.createElement('div');
@@ -1418,9 +1477,7 @@ export default {
         const rate = document.createElement('p');
         rate.className = 'ct-hint';
         const refreshRate = () => {
-          const port = data.board.vertices.flatMap((v, i) =>
-            data.buildings[i]?.owner === isMe && v.port ? [v.port] : []);
-          const ratio = port.includes(gInput.value) ? 2 : port.includes('any') ? 3 : 4;
+          const ratio = tradeRate({ board: data.board, buildings: data.buildings }, isMe, gInput.value);
           rate.textContent = `${ratio} ${GOOD_LABEL[gInput.value]} → 1 ${GOOD_LABEL[rInput.value]} per bundle · bank has ${data.bank[rInput.value]}`;
         };
         gInput.addEventListener('change', refreshRate);
@@ -1485,7 +1542,7 @@ export default {
       if (room) {
         if (room.role === 'host') room.sendAction({ type: 'ct-reset' });
       } else {
-        state = newCatan(count); covered = true; localViewer = 0;
+        state = newCatan(count, Math.random, portMode); covered = true; localViewer = 0;
         chosenTile = null; panel = 'build';
         session?.save(state);
         shell.root.querySelector('.arcade-victory')?.remove();

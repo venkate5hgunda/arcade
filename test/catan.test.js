@@ -131,6 +131,57 @@ test('island has nineteen connected tiles, 54 junctions, 72 paths, nine harbors,
   }
 });
 
+test('classic harbor locations and types are fixed while changing harbors move around the coast', () => {
+  const describe = board => board.edges.flatMap((edge, id) =>
+    edge.port ? [[id, edge.port]] : []);
+  const fixed = describe(createIsland(rng(1), 'fixed'));
+  assert.deepEqual(describe(createIsland(rng(77), 'fixed')), fixed);
+  assert.deepEqual(fixed.map(([, kind]) => kind).sort(),
+    ['any', 'any', 'any', 'any', 'clay', 'grain', 'ore', 'timber', 'wool'].sort());
+  const arrangements = new Set();
+  for (let seed = 1; seed <= 32; seed++) {
+    const board = createIsland(rng(seed), 'shuffled');
+    const harbors = describe(board);
+    assert.equal(harbors.length, 9);
+    assert.deepEqual(harbors.map(([, kind]) => kind).sort(), fixed.map(([, kind]) => kind).sort());
+    const dockVertices = new Set();
+    for (const [id, kind] of harbors) {
+      const { a, b, tiles } = board.edges[id];
+      assert.equal(tiles.length, 1, 'harbors must be on the coast');
+      assert.equal(board.vertices[a].port, kind);
+      assert.equal(board.vertices[b].port, kind);
+      assert.ok(!dockVertices.has(a) && !dockVertices.has(b), 'harbors must not overlap');
+      dockVertices.add(a); dockVertices.add(b);
+    }
+    arrangements.add(harbors.map(([id]) => id).join(','));
+  }
+  assert.ok(arrangements.size > 1, 'changing mode must move docks, not merely swap labels');
+  assert.throws(() => createIsland(rng(1), 'unknown'), RangeError);
+});
+
+test('harbor selection survives the round checkpoint and host private views', () => {
+  for (const portMode of ['fixed', 'shuffled']) {
+    const state = newCatan(3, rng(2), portMode);
+    assert.equal(state.portMode, portMode);
+    assert.equal(catanView(state, 1).portMode, portMode);
+    assert.equal(validCatanCheckpoint(state), true);
+    const broken = structuredClone(state);
+    broken.portMode = 'invalid';
+    assert.equal(validCatanCheckpoint(broken), false);
+    broken.portMode = portMode;
+    const dock = broken.board.edges.find(edge => edge.port);
+    dock.port = 'unknown';
+    assert.equal(validCatanCheckpoint(broken), false, 'invalid harbor type cannot restore');
+    dock.port = state.board.edges.find(edge => edge.port).port;
+    broken.board.vertices[dock.a].port = null;
+    assert.equal(validCatanCheckpoint(broken), false, 'dock endpoints must match harbor');
+  }
+  const legacy = newCatan(3, rng(2));
+  delete legacy.portMode;
+  assert.equal(validCatanCheckpoint(legacy), true, 'existing saved games remain loadable');
+  assert.equal(catanView(legacy, 1).portMode, 'shuffled');
+});
+
 test('3–4 players only; snake setup enforces distance, attached road and reverse order', () => {
   assert.throws(() => newCatan(2, rng()), RangeError);
   for (const n of [3, 4]) {
