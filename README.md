@@ -45,13 +45,14 @@ Island Charter resource icons use color-tinted Game Icons silhouettes.
 - **Responsive** — mobile, tablet, desktop. Flexible grid + fluid game stages.
 - **Theme** — header control cycles Auto → Light → Dark; Auto is the default
   and follows the device. Your choice persists in `localStorage`.
-- **Sound** — synthesized Web Audio (no external assets), works offline.
+- **Sound** — synthesized Web Audio (no external assets), works offline and
+  retries interrupted effects after the next mobile-browser audio unlock.
 - **Touch feedback** — immediate light press sounds and haptics on game controls,
   with distinct game sounds for goals, collisions, dice and wins. Buttons
   bypass double-tap delay; Air Hockey pointer targets use a faster, fixed-step
-  paddle path. Vibration requires browser/device support (not available in
-  every mobile browser). Open **Sound & feel** in the header to control game
-  sounds and vibration separately; unavailable vibration is labeled.
+  paddle path. Game vibration requires the browser's Vibration API. On iOS,
+  tapping the native switch in **Sound & feel** can provide tactile feedback,
+  but browser games cannot reliably trigger arbitrary haptics.
 - **Offline-first PWA** — service worker caches the shell and runtime assets.
 - **Personalized** — local storage retains theme, sound, haptics, high scores,
   per-game settings and unfinished local rounds.
@@ -109,8 +110,12 @@ Chess; and **120 min** for Island Charter.
   private handoff or in a room. Choose **Classic positions** for the same nine
   coastal harbors and exchange rates on every island, or **Changing positions**
   to redistribute nine non-overlapping harbors each new island. Harbor choice
-  persists across resets, local resumes and room reconnections. Resource
-  symbols appear in cargo, building costs and their corresponding harbors;
+  persists across resets, local resumes and room reconnections. Setup also offers
+  **Illustrated** or **Colorblock** land and four independent adjacency switches:
+  whether 6/8, 2/12, identical numbers or identical land types may touch.
+  All four default to no; the choices persist across resets and room recovery.
+  Resource symbols appear on colorblock land, in cargo, building costs and
+  their corresponding harbors;
   the original art and wording avoid commercial board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
   adapted from Pick's tabletop animation; Island Charter uses the same shared
@@ -236,10 +241,12 @@ underlying WebRTC channel reconnects; blocked networks may still require a
 new invite or a different network because there is no TURN relay.
 
 Sound starts on your first tap and can be checked with **Sound & feel → Test
-sound**. On iPhone or iPad, check the device mute setting and audio output if
-the test reports playing but you hear nothing. Safari does not expose the Web
-Vibration API, so gameplay haptics are unavailable on iOS; the hidden-switch
-workaround is not used because it is unreliable on recent iOS versions.
+sound**. After switching apps or locking the screen, the next tap unlocks
+sound again. On iPhone or iPad, check the device mute setting and audio output
+if the test reports playing but you hear nothing. Safari and iOS Chrome do not
+expose the Web Vibration API, so gameplay haptics are unavailable there;
+the directly touched native switch can give a tactile tick on supported iOS
+versions, without relying on unreliable programmatic switch clicks.
 
 ## Running locally
 

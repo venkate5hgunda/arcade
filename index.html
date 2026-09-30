@@ -38,7 +38,8 @@
           <button id="soundToggle" class="feedback-option" type="button" aria-pressed="true" title="Turn game sounds on or off"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>Game sounds</span><span class="feedback-value">On</span></button>
           <button id="soundTest" class="feedback-option" type="button" title="Play a sample sound to check your device"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>Test sound</span></button>
           <p id="soundStatus" role="status" class="feedback-audio-status"></p>
-          <button id="hapticsToggle" class="feedback-option" type="button" aria-pressed="false" title="Turn vibration on or off"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/device-mobile-vibration.svg')"></span>Vibration</span><span class="feedback-value">Off</span></button>
+          <label class="feedback-option feedback-switch" for="hapticsToggle"><span class="feedback-option-label"><span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/device-mobile-vibration.svg')"></span>Haptics</span><span class="feedback-value">Off</span><input id="hapticsToggle" type="checkbox" switch></label>
+          <p id="hapticsStatus" class="feedback-audio-status"></p>
         </div>
       </div>
       <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Theme: Auto. Select Light" title="Theme: Auto (follows your device). Select Light" type="button">
