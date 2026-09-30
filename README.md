@@ -127,9 +127,10 @@ Chess; and **120 min** for Island Charter.
   heads. Larger player emblems travel square by square, climb ladders
   or slide through snakes. Nearby snakes hiss, flick their tongues and sway
   their tails; nearby ladders wobble. Ludo pieces follow the track and return
-  captured pieces to their yards. Both boards honor reduced-motion preferences;
-  Ludo uses a full 52-square cross
-  track and lets the player select which legal token to move.
+  captured pieces to their yards. Matching Ludo pieces have no visible numbers,
+  and the active player's home glows until the turn ends. Both boards honor
+  reduced-motion preferences; Ludo uses a full 52-square cross track and lets
+  the player select which legal token to move.
 - **Island Charter** — original presentation of classic hex-settlement rules
   for 3–4 players: everyone rolls two dice for opening placement order; ties
   reroll, the highest places first and last, and the lowest places twice in
@@ -243,8 +244,10 @@ new invite or a different network because there is no TURN relay.
 Sound starts on your first tap and can be checked with **Sound & feel → Test
 sound**. After switching apps or locking the screen, the next tap unlocks
 sound again. On iPhone or iPad, check the device mute setting and audio output
-if the test reports playing but you hear nothing. Safari and iOS Chrome do not
-expose the Web Vibration API, so gameplay haptics are unavailable there;
+if the test reports ready but you hear nothing. Chrome on iOS uses the system
+playback audio session where supported, so game sounds can pause other media
+while enabled; turning game sounds off releases that session. Safari and iOS
+Chrome do not expose the Web Vibration API, so gameplay haptics are unavailable there;
 the directly touched native switch can give a tactile tick on supported iOS
 versions, without relying on unreliable programmatic switch clicks.
 

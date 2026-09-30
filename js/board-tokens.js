@@ -11,10 +11,13 @@ export function decorateBoardToken(element, player, number) {
   icon.setAttribute('viewBox', '0 0 48 48');
   icon.setAttribute('aria-hidden', 'true');
   icon.innerHTML = EMBLEMS[player];
-  const badge = document.createElement('span');
-  badge.className = 'board-token-number';
-  badge.textContent = number;
-  element.append(icon, badge);
+  element.append(icon);
+  if (number !== null) {
+    const badge = document.createElement('span');
+    badge.className = 'board-token-number';
+    badge.textContent = number;
+    element.append(badge);
+  }
   return element;
 }
 

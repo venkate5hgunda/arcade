@@ -92,14 +92,17 @@ function initFeedbackControl(audio) {
     saveJSON(KEYS.SOUND_ENABLED, next);
     refresh();
     if (next) {
-      if (await audio.prepare()) audio.tap();
+      audio.tap();
+      if (await audio.prepare()) soundStatus.textContent = 'Audio is ready. If it is quiet, raise your media volume.' +
+        (audio.playbackSession ? ' On iOS Chrome, this may pause other audio on your device.' : '');
       else soundStatus.textContent = 'Could not start audio. Try Test sound after interacting with the page.';
     }
   });
   soundTest.addEventListener('click', async () => {
+    audio.chime();
     if (await audio.prepare()) {
-      audio.chime();
-      soundStatus.textContent = 'Sound played. If you cannot hear it, check your device mute setting and audio output.';
+      soundStatus.textContent = 'Audio is ready. If you did not hear the chime, check media volume, mute and audio output.' +
+        (audio.playbackSession ? ' On iOS Chrome, this may pause other audio on your device.' : '');
     } else {
       soundStatus.textContent = 'Audio is blocked or unavailable. Try again after tapping the page or check browser audio settings.';
     }

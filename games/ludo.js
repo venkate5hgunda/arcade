@@ -125,7 +125,7 @@ export default {
       button.style.setProperty('--piece-color', COLORS[player]);
       button.dataset.owner = player;
       button.dataset.token = index;
-      decorateBoardToken(button, player, index + 1);
+      decorateBoardToken(button, player, null);
       button.setAttribute('aria-label', `Player ${player + 1}, token ${index + 1}${selected ? ', move token' : ''}`);
       button.disabled = !selected;
       if (selected) button.addEventListener('click', () => {
@@ -140,7 +140,7 @@ export default {
       const players = document.createDocumentFragment();
       for (let p = 0; p < 4; p++) {
         const yard = document.createElement('div');
-        yard.className = `ld-home-yard ${p >= count ? 'ld-unused-yard' : ''}`;
+        yard.className = `ld-home-yard${p >= count ? ' ld-unused-yard' : ''}${p === current && winner === null ? ' ld-active-yard' : ''}`;
         yard.style.setProperty('--piece-color', COLORS[p]);
         yard.style.gridArea = `${YARDS[p][0]} / ${YARDS[p][1]} / span 5 / span 5`;
         yard.innerHTML = `<span class="ld-yard-label">PLAYER ${p + 1}</span>`;
@@ -190,7 +190,7 @@ export default {
         const item = document.createElement('div');
         item.className = `ld-player${p === current && winner === null ? ' active' : ''}`;
         item.style.setProperty('--piece-color', COLORS[p]);
-        const icon = decorateBoardToken(document.createElement('span'), p, p + 1);
+        const icon = decorateBoardToken(document.createElement('span'), p, null);
         icon.className = 'ld-roster-icon';
         const label = document.createElement('span');
         label.className = 'ld-player-name';
