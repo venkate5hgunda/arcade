@@ -68,6 +68,14 @@
 .ct-hex--pasture { --ct-land: #bdd899; }
 .ct-hex--mountains { --ct-land: #b7c4c6; }
 .ct-hex--desert { --ct-land: #e9d5a3; }
+.ct-chart--colorblock .ct-hex .ct-hex-inset { stroke: #fffaf080; stroke-width: 3; }
+.ct-chart--colorblock .ct-hex--forest { --ct-land: #539462; }
+.ct-chart--colorblock .ct-hex--hills { --ct-land: #bc6f4e; }
+.ct-chart--colorblock .ct-hex--fields { --ct-land: #e8bf55; }
+.ct-chart--colorblock .ct-hex--pasture { --ct-land: #9ec66e; }
+.ct-chart--colorblock .ct-hex--mountains { --ct-land: #849da4; }
+.ct-chart--colorblock .ct-hex--desert { --ct-land: #d8bb81; }
+.ct-colorblock-icon { filter: drop-shadow(0 2px 2px #172c3370); pointer-events: none; }
 .ct-hex--blocked .ct-ground { filter: saturate(.55) brightness(.8); }
 .ct-hex .ct-ground[tabindex="0"]:hover, .ct-hex .ct-ground:focus-visible {
   stroke: white; stroke-width: 5; filter: brightness(1.14); outline: none; cursor: pointer;

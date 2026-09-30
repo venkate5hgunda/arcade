@@ -4,7 +4,7 @@
 import { initTheme } from './theme.js';
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 import { ArcadeAudio } from './audio.js';
-import { haptics, isEnabled, isSupported, setEnabled } from './haptics.js';
+import { haptics, hasGameVibration, isEnabled, isSupported, setEnabled } from './haptics.js';
 import { initRouter } from './router.js';
 import { room } from './multiplayer.js';
 
@@ -49,17 +49,21 @@ function initFeedbackControl(audio) {
   const soundTest = document.getElementById('soundTest');
   const soundStatus = document.getElementById('soundStatus');
   const vibration = document.getElementById('hapticsToggle');
-  if (!trigger || !panel || !sound || !soundTest || !soundStatus || !vibration) return;
+  const hapticsStatus = document.getElementById('hapticsStatus');
+  if (!trigger || !panel || !sound || !soundTest || !soundStatus || !vibration || !hapticsStatus) return;
 
   const refresh = () => {
     sound.setAttribute('aria-pressed', String(audio.enabled));
     sound.querySelector('.feedback-value').textContent = audio.enabled ? 'On' : 'Off';
     soundTest.disabled = !audio.enabled;
     vibration.disabled = !isSupported();
-    vibration.setAttribute('aria-pressed', String(isEnabled()));
-    vibration.querySelector('.feedback-value').textContent = !isSupported()
+    vibration.checked = isEnabled();
+    vibration.parentElement.querySelector('.feedback-value').textContent = !isSupported()
       ? 'Unavailable' : isEnabled() ? 'On' : 'Off';
-    vibration.title = isSupported() ? 'Turn vibration on or off' : 'Vibration is unavailable on this device';
+    hapticsStatus.textContent = !isSupported() ? 'This browser has no haptics API.' :
+      !hasGameVibration()
+        ? 'iOS can give feedback when you tap this native switch; game vibrations are not available in iOS browsers.'
+        : '';
   };
   const close = () => {
     if (panel.hidden) return;
@@ -100,11 +104,10 @@ function initFeedbackControl(audio) {
       soundStatus.textContent = 'Audio is blocked or unavailable. Try again after tapping the page or check browser audio settings.';
     }
   });
-  vibration.addEventListener('click', () => {
-    const next = !isEnabled();
-    setEnabled(next);
+  vibration.addEventListener('change', () => {
+    setEnabled(vibration.checked);
     refresh();
-    if (next) haptics.light();
+    if (vibration.checked && hasGameVibration()) haptics.light();
   });
   refresh();
 }
@@ -113,6 +116,9 @@ function initGameTouchFeedback(audio) {
   const unlock = () => { if (audio.enabled) void audio.prepare(); };
   document.addEventListener('pointerdown', unlock, { capture: true, passive: true });
   document.addEventListener('touchstart', unlock, { capture: true, passive: true });
+  document.addEventListener('pointerup', unlock, { capture: true, passive: true });
+  document.addEventListener('touchend', unlock, { capture: true, passive: true });
+  document.addEventListener('click', unlock, { capture: true });
   document.addEventListener('keydown', (event) => {
     if (!event.repeat && ['Enter', ' '].includes(event.key)) unlock();
   }, { capture: true });

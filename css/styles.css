@@ -910,6 +910,11 @@ body {
 .feedback-option:disabled { opacity: .65; cursor: not-allowed; }
 .feedback-value { min-width: 76px; padding: 5px 8px; border-radius: 20px; background: #43536c; text-align: center; font-size: .82rem; }
 .feedback-option[aria-pressed="true"] .feedback-value { background: #268c6c; color: #fff; }
+.feedback-switch { cursor: pointer; }
+.feedback-switch:has(input:checked) .feedback-value { background: #268c6c; color: #fff; }
+.feedback-switch:has(input:focus-visible) { outline: 3px solid #fff3a7; outline-offset: 2px; }
+.feedback-switch:has(input:disabled) { opacity: .65; cursor: not-allowed; }
+.feedback-switch input { accent-color: #59deb6; min-width: 26px; min-height: 26px; cursor: pointer; }
 .feedback-panel .feedback-audio-status { margin: 2px 0 12px; }
 .feedback-panel .feedback-audio-status:empty { display: none; }
 .app-header .room-toggle.is-connected {

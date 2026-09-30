@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  GOODS, COSTS, createIsland, newCatan, actCatan, actTradeReply,
+  GOODS, COSTS, DEFAULT_BOARD_OPTIONS, createIsland, newCatan, actCatan, actTradeReply,
   canRoad, canSettle, longestRoad, points, tradeRate, catanView, applyRemoteCatanAction,
   validCatanCheckpoint, VERTEX_TOUCH_RADIUS,
 } from '../games/catan.js';
@@ -131,6 +131,45 @@ test('island has nineteen connected tiles, 54 junctions, 72 paths, nine harbors,
   }
 });
 
+test('island adjacency switches independently control land and number neighbors', () => {
+  const options = ['hotTouch', 'coldTouch', 'sameNumberTouch', 'sameResourceTouch'];
+  const terrainCounts = { forest: 4, hills: 3, fields: 4, pasture: 4, mountains: 3, desert: 1 };
+  const numberCounts = { 2: 1, 3: 2, 4: 2, 5: 2, 6: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 1 };
+  const allowedObserved = Object.fromEntries(options.map(key => [key, false]));
+  for (let mask = 0; mask < 16; mask++) {
+    const rules = { ...DEFAULT_BOARD_OPTIONS };
+    options.forEach((key, bit) => { rules[key] = Boolean(mask & (1 << bit)); });
+    for (let seed = 0; seed < 40; seed++) {
+      const board = createIsland(seed ? rng(seed) : () => 0, 'fixed', rules);
+      assert.deepEqual(Object.fromEntries(Object.keys(terrainCounts).map(key =>
+        [key, board.tiles.filter(tile => tile.terrain === key).length])), terrainCounts);
+      assert.deepEqual(Object.fromEntries(Object.keys(numberCounts).map(key =>
+        [key, board.tiles.filter(tile => tile.number === Number(key)).length])), numberCounts);
+      for (let i = 0; i < board.tiles.length; i++) {
+        for (let j = 0; j < i; j++) {
+          const a = board.tiles[i], b = board.tiles[j];
+          if (!a.vertices.some(v => b.vertices.includes(v))) continue;
+          const touch = {
+            hotTouch: [6, 8].includes(a.number) && [6, 8].includes(b.number),
+            coldTouch: [2, 12].includes(a.number) && [2, 12].includes(b.number),
+            sameNumberTouch: a.number !== null && a.number === b.number,
+            sameResourceTouch: a.terrain === b.terrain,
+          };
+          for (const key of options) {
+            if (!rules[key]) assert.equal(touch[key], false, `${key} seed ${seed} mask ${mask}`);
+            else allowedObserved[key] ||= touch[key];
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(allowedObserved, Object.fromEntries(options.map(key => [key, true])),
+    'each enabled switch must permit its corresponding adjacency on some generated board');
+  assert.deepEqual(createIsland(() => 0), createIsland(() => 0),
+    'a constant random source still yields a complete deterministic board');
+  assert.throws(() => createIsland(rng(1), 'fixed', { hotTouch: 'false' }), RangeError);
+});
+
 test('classic harbor locations and types are fixed while changing harbors move around the coast', () => {
   const describe = board => board.edges.flatMap((edge, id) =>
     edge.port ? [[id, edge.port]] : []);
@@ -161,11 +200,20 @@ test('classic harbor locations and types are fixed while changing harbors move a
 
 test('harbor selection survives the round checkpoint and host private views', () => {
   for (const portMode of ['fixed', 'shuffled']) {
-    const state = newCatan(3, rng(2), portMode);
+    const boardOptions = { ...DEFAULT_BOARD_OPTIONS, hotTouch: true, imageStyle: 'colorblock' };
+    const state = newCatan(3, rng(2), portMode, boardOptions);
     assert.equal(state.portMode, portMode);
     assert.equal(catanView(state, 1).portMode, portMode);
+    assert.deepEqual(state.boardOptions, boardOptions);
+    assert.deepEqual(catanView(state, 1).boardOptions, boardOptions);
     assert.equal(validCatanCheckpoint(state), true);
     const broken = structuredClone(state);
+    broken.boardOptions.hotTouch = 'true';
+    assert.equal(validCatanCheckpoint(broken), false);
+    broken.boardOptions.hotTouch = true;
+    broken.boardOptions.imageStyle = 'missing';
+    assert.equal(validCatanCheckpoint(broken), false);
+    broken.boardOptions.imageStyle = 'colorblock';
     broken.portMode = 'invalid';
     assert.equal(validCatanCheckpoint(broken), false);
     broken.portMode = portMode;
@@ -178,8 +226,11 @@ test('harbor selection survives the round checkpoint and host private views', ()
   }
   const legacy = newCatan(3, rng(2));
   delete legacy.portMode;
+  delete legacy.boardOptions;
   assert.equal(validCatanCheckpoint(legacy), true, 'existing saved games remain loadable');
   assert.equal(catanView(legacy, 1).portMode, 'shuffled');
+  assert.equal(catanView(legacy, 1).boardOptions.coldTouch, true);
+  assert.equal(catanView(legacy, 1).boardOptions.imageStyle, 'illustrated');
 });
 
 test('3–4 players only; snake setup enforces distance, attached road and reverse order', () => {

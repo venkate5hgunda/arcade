@@ -1,13 +1,20 @@
-// Haptics wrapper — prefers the Vibration API, respects the persisted
-// `ui.hapticsEnabled` toggle, and no-ops gracefully when unsupported.
+// Haptics wrapper — native vibration where available; iOS only exposes
+// tactile feedback on directly touched native switches.
 
 import { loadJSON, saveJSON, KEYS } from './storage.js';
 
 const HAS_VIBRATION = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+const IOS_SWITCH = typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
-let enabled = HAS_VIBRATION && loadJSON(KEYS.HAPTICS_ENABLED, true);
+let enabled = (HAS_VIBRATION || IOS_SWITCH) && loadJSON(KEYS.HAPTICS_ENABLED, true);
 
 export function isSupported() {
+  return HAS_VIBRATION || IOS_SWITCH;
+}
+
+export function hasGameVibration() {
   return HAS_VIBRATION;
 }
 
