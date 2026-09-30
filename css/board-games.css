@@ -153,6 +153,16 @@
   box-shadow: inset 0 0 0 5px #fff8e5, inset 0 0 22px #0003, 0 2px 4px #0005;
 }
 .ld-unused-yard { filter: grayscale(.85); opacity: .7; }
+.ld-active-yard {
+  border-color: #fff9d7;
+  box-shadow: inset 0 0 0 5px #fff8e5, inset 0 0 22px #0003,
+    0 0 0 4px var(--piece-color), 0 0 24px 9px var(--piece-color);
+  animation: ld-yard-glow 1.3s ease-in-out infinite alternate;
+}
+@keyframes ld-yard-glow {
+  to { box-shadow: inset 0 0 0 5px #fff8e5, inset 0 0 22px #0003,
+    0 0 0 6px #fff9d7, 0 0 38px 15px var(--piece-color); }
+}
 .ld-home-yard .ld-yard-label {
   grid-column: span 2;
   font-size: clamp(.55rem, 1.2vw, .85rem);
@@ -285,6 +295,6 @@
   .sl-vibe .game-stage, .ld-vibe .game-stage { padding: 8px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ld-piece-ready, .arcade-die.is-settled, .sl-art-ladder.is-near,
+  .ld-piece-ready, .ld-active-yard, .arcade-die.is-settled, .sl-art-ladder.is-near,
   .sl-art-snake.is-near .sl-art-tail, .sl-art-snake.is-near .sl-art-tongue { animation: none; }
 }

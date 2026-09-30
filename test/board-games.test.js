@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRACK, legalMoves } from '../games/ludo.js';
 import { createBoardLayout, squareCenter, boardArt, snakeTravelPoints, ladderTravelPoints } from '../js/snakes-board.js';
+import { decorateBoardToken } from '../js/board-tokens.js';
 import { dieMarkup } from '../js/dice.js';
 
 test('ludo track is a continuous 52-square circuit with quarter-turn starts', () => {
@@ -20,6 +21,24 @@ test('ludo identifies forced moves without changing multiple or no-move rolls', 
   assert.deepEqual(legalMoves([-1, 55, 58, 58], 2), [1]);
   assert.deepEqual(legalMoves([-1, 58, 58, 58], 4), []);
   assert.deepEqual(legalMoves([-1, -1, 58, 58], 6), [0, 1]);
+});
+
+test('ludo tokens have no visible number badges while numbered tokens remain available to other games', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElementNS() {
+      return { classList: { add() {} }, setAttribute() {}, innerHTML: '' };
+    },
+    createElement() { return { className: '', textContent: '' }; },
+  };
+  try {
+    const token = () => ({ children: [], append(...nodes) { this.children.push(...nodes); } });
+    assert.equal(decorateBoardToken(token(), 0, null).children.length, 1);
+    assert.equal(decorateBoardToken(token(), 0, 2).children[1].textContent, 2);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
 });
 
 test('snakes and ladders vary but never overlap or reverse direction', () => {

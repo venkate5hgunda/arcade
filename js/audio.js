@@ -17,11 +17,20 @@ export class ArcadeAudio {
     this.silenced = false;
     this.impactBuffer = null;
     this.warnedUnsupported = false;
+    this.playbackSession = false;
   }
 
   setEnabled(enabled) {
     this.enabled = enabled;
-    if (this.master) this.master.gain.value = enabled ? 0.35 : 0;
+    if (this.master) this.master.gain.value = enabled ? 0.55 : 0;
+    if (!enabled && this.playbackSession) {
+      try {
+        navigator.audioSession.type = 'auto';
+        this.playbackSession = false;
+      } catch (error) {
+        console.warn('Chrome on iOS could not release its playback audio session:', error);
+      }
+    }
   }
 
   async prepare() {
@@ -32,11 +41,23 @@ export class ArcadeAudio {
       this.warnedUnsupported = true;
       return false;
     }
+    if (typeof navigator !== 'undefined' && /CriOS/.test(navigator.userAgent) &&
+        /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) &&
+        navigator.audioSession) {
+      try {
+        if (navigator.audioSession.type !== 'playback') {
+          navigator.audioSession.type = 'playback';
+          this.playbackSession = navigator.audioSession.type === 'playback';
+        }
+      } catch (error) {
+        console.warn('Chrome on iOS could not select a playback audio session:', error);
+      }
+    }
     try {
       if (!this.context || this.context.state === 'closed') {
         this.context = new AudioContext();
         this.master = this.context.createGain();
-        this.master.gain.value = this.enabled ? 0.35 : 0;
+        this.master.gain.value = this.enabled ? 0.55 : 0;
         this.master.connect(this.context.destination);
         this.impactBuffer = null;
       }
@@ -65,7 +86,13 @@ export class ArcadeAudio {
 
   // Low-level: schedule a tone. `freq` in Hz, `duration` in seconds.
   tone(freq, duration = 0.08, type = 'sine', volume = 0.5, delay = 0) {
-    if (!this.whenReady(() => this.tone(freq, duration, type, volume, delay))) return;
+    if (!this.enabled || this.silenced) return;
+    if (this.context?.state !== 'running') void this.prepare();
+    if (!this.context || this.context.state === 'closed' || !this.master) return;
+    this.scheduleTone(freq, duration, type, volume, delay);
+  }
+
+  scheduleTone(freq, duration, type, volume, delay) {
     const now = this.context.currentTime + delay;
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();
@@ -86,9 +113,11 @@ export class ArcadeAudio {
 
   // A pleasant confirmation chime for correct answers / wins.
   chime() {
-    if (!this.whenReady(() => this.chime())) return;
+    if (!this.enabled || this.silenced) return;
+    if (this.context?.state !== 'running') void this.prepare();
+    if (!this.context || this.context.state === 'closed' || !this.master) return;
     [880, 1100, 1320].forEach((f, i) =>
-      this.tone(f, 0.18, 'triangle', 0.22, i * 0.07));
+      this.scheduleTone(f, 0.18, 'triangle', 0.22, i * 0.07));
   }
 
   // A "wrong" buzz.
@@ -116,9 +145,11 @@ export class ArcadeAudio {
 
   // Rolling dice / spinning wheel: a sequence of short clicks.
   rattle(count = 6, base = 520) {
-    if (!this.whenReady(() => this.rattle(count, base))) return;
+    if (!this.enabled || this.silenced) return;
+    if (this.context?.state !== 'running') void this.prepare();
+    if (!this.context || this.context.state === 'closed' || !this.master) return;
     for (let i = 0; i < count; i++)
-      this.tone(base + i * 18, 0.04, 'square', 0.12, i * 0.045);
+      this.scheduleTone(base + i * 18, 0.04, 'square', 0.12, i * 0.045);
   }
 
   // Ball strike / puck hit — short filtered noise burst.
@@ -145,9 +176,11 @@ export class ArcadeAudio {
 
   // Goal scored — rising chime.
   goal() {
-    if (!this.whenReady(() => this.goal())) return;
+    if (!this.enabled || this.silenced) return;
+    if (this.context?.state !== 'running') void this.prepare();
+    if (!this.context || this.context.state === 'closed' || !this.master) return;
     [440, 554, 659, 880].forEach((f, i) =>
-      this.tone(f, 0.22, 'triangle', 0.25, i * 0.06));
+      this.scheduleTone(f, 0.22, 'triangle', 0.25, i * 0.06));
   }
 
   // Countdown tick-tock.
