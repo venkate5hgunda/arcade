@@ -83,6 +83,43 @@ export function goodIcon(good) {
   return icon;
 }
 
+export function harborArt(port) {
+  if (port !== 'any' && !GOOD_ICONS[port]) throw new RangeError(`Unknown island harbor: ${port}`);
+  const art = svg('g', { class: 'ct-harbor-vessel', 'aria-hidden': 'true' });
+  shape(art, 'path', { d: 'M-31 -5H31L21 15Q0 27-21 15Z', class: 'ct-harbor-vessel-hull' });
+  shape(art, 'path', { d: 'M-25 -3H25M-17 5h34M-12 12h24', class: 'ct-harbor-vessel-plank' });
+  shape(art, 'circle', { cx: 0, cy: -13, r: 15, class: 'ct-harbor-disc' });
+  shape(art, 'path', { d: 'M0 -28v-10', class: 'ct-harbor-mast' });
+  shape(art, 'path', { d: 'M2 -37 17 -28H2Z', class: 'ct-harbor-sail' });
+  if (port === 'any') {
+    shape(art, 'path', { d: 'M-9 -16q4-3 8 0t9 0M-9 -10q4-3 8 0t9 0',
+      class: 'ct-harbor-wave' });
+  } else {
+    const icon = goodIcon(port);
+    icon.setAttribute('x', '-11');
+    icon.setAttribute('y', '-24');
+    icon.setAttribute('width', '22');
+    icon.setAttribute('height', '22');
+    art.append(icon);
+  }
+  art.append(svg('text', { y: 17, class: 'ct-harbor-rate' }, port === 'any' ? '3:1' : '2:1'));
+  return art;
+}
+
+export function harborGeometry(a, b) {
+  const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
+  const length = Math.hypot(b.x - a.x, b.y - a.y);
+  const side = (b.y - a.y) * (x - 380) - (b.x - a.x) * (y - 350) > 0 ? 1 : -1;
+  const nx = side * (b.y - a.y) / length, ny = side * (a.x - b.x) / length;
+  return {
+    x: x + nx * 48, y: y + ny * 48,
+    moorings: [a, b].map(vertex => ({
+      x: x + nx * 29 + (vertex.x - x) * .28,
+      y: y + ny * 29 + (vertex.y - y) * .28,
+    })),
+  };
+}
+
 export function buildingArt(city = false) {
   const art = svg('g', { class: 'ct-building', transform: `scale(${city ? 1.2 : 1.3})`,
     'aria-hidden': 'true', 'pointer-events': 'none' });

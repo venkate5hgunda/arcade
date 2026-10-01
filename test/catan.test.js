@@ -6,7 +6,9 @@ import {
   canRoad, canSettle, longestRoad, points, tradeRate, catanView, applyRemoteCatanAction,
   validCatanCheckpoint, VERTEX_TOUCH_RADIUS,
 } from '../games/catan.js';
-import { terrainArt, goodIcon, buildingArt, discoveryIcon } from '../games/catan-art.js';
+import {
+  terrainArt, goodIcon, buildingArt, discoveryIcon, harborGeometry, harborArt,
+} from '../games/catan-art.js';
 import { diceMarkup } from '../js/dice.js';
 
 function rng(seed = 517) {
@@ -40,19 +42,19 @@ function stock(state, player, quantity = 12) {
   }
 }
 
-test('phone chart scrolls at playable scale with usable junction and path targets', () => {
+test('phone chart fits the island by default and can zoom to usable targets', () => {
   const css = readFileSync(new URL('../css/catan.css', import.meta.url), 'utf8');
   const mobile = css.slice(css.indexOf('@media (max-width: 650px)'));
   assert.match(mobile, /\.ct-chart-wrap\s*\{[^}]*overflow-x:\s*auto/);
   assert.match(css, /\.ct-chart-wrap\s*\{[^}]*touch-action:\s*pan-x pan-y/);
   assert.match(mobile, /\.ct-scroll-hint\s*\{[^}]*display:\s*block/);
-  const boardWidth = Number(mobile.match(/\.ct-chart\s*\{[^}]*width:\s*calc\((\d+)px/)?.[1]);
+  assert.match(css, /\.ct-chart\s*\{[^}]*width:\s*calc\(100% \* var\(--ct-zoom, 1\)\)/);
+  assert.doesNotMatch(mobile, /\.ct-chart\s*\{[^}]*width:/);
   const edgeStroke = Number(css.match(/\.ct-edge-hit\s*\{[^}]*stroke-width:\s*(\d+)/)?.[1]);
-  assert.ok(boardWidth > 760, 'board must expand beyond the phone viewport');
-  assert.ok(2 * VERTEX_TOUCH_RADIUS * boardWidth / 760 >= 44,
-    'junction touch target must be at least 44px on a phone');
-  assert.ok(edgeStroke * boardWidth / 760 >= 44,
-    'path touch target must be at least 44px across on a phone');
+  assert.ok(2 * VERTEX_TOUCH_RADIUS * 3 * 320 / 760 >= 44,
+    'junction touch target must reach 44px at max zoom on a 320px phone');
+  assert.ok(edgeStroke * 3 * 320 / 760 >= 44,
+    'path touch target must reach 44px at max zoom on a 320px phone');
 });
 
 test('island terrain, supplies, buildings and discoveries have distinct vector art', () => {
@@ -74,12 +76,49 @@ test('island terrain, supplies, buildings and discoveries have distinct vector a
       assert.equal(art.attributes['aria-hidden'], 'true');
     }
     for (const good of GOODS) assert.ok(goodIcon(good).children.length);
+    for (const port of [...GOODS, 'any']) {
+      const art = harborArt(port);
+      assert.equal(art.attributes['aria-hidden'], 'true');
+      assert.ok(art.children.length >= 6, `${port} harbor needs a vessel and trade emblem`);
+      const rate = art.children.find(child => child.tag === 'text');
+      assert.equal(rate.textContent, port === 'any' ? '3:1' : '2:1');
+    }
+    assert.throws(() => harborArt('unknown'), RangeError);
     assert.notDeepEqual(buildingArt(false), buildingArt(true));
     for (const discovery of ['knight', 'victory', 'roads', 'plenty', 'monopoly'])
       assert.equal(discoveryIcon(discovery).children[0].tag, 'path');
   } finally {
     if (previousDocument === undefined) delete globalThis.document;
     else globalThis.document = previousDocument;
+  }
+});
+
+test('resource illustrations are custom, detailed SVG artwork', () => {
+  for (const good of GOODS) {
+    const artwork = readFileSync(new URL(`../assets/icons/resources/${good}.svg`, import.meta.url), 'utf8');
+    assert.match(artwork, /viewBox="0 0 128 128"/, `${good} uses a consistent icon canvas`);
+    assert.ok((artwork.match(/<path\b/g) || []).length >= 4, `${good} needs layered resource details`);
+    assert.match(artwork, /stroke=/, `${good} needs clear illustrated outlines`);
+  }
+});
+
+test('private resource and development hands are independently collapsible', () => {
+  const game = readFileSync(new URL('../games/catan.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/catan.css', import.meta.url), 'utf8');
+  assert.match(game, /timber: 'Wood', clay: 'Brick', grain: 'Wheat', wool: 'Sheep', ore: 'Ore'/);
+  assert.equal((game.match(/createElement\('details'\)/g) || []).length, 2);
+  assert.match(game, /handSectionsOpen\.resources/);
+  assert.match(game, /handSectionsOpen\.development/);
+  assert.match(game, /Resources · \$\{resourceCount\}/);
+  assert.match(game, /Development cards · \$\{data\.dev\.length\}/);
+  assert.match(css, /\.ct-hand-section summary\s*\{[^}]*cursor:\s*pointer/);
+  assert.match(css, /\.ct-hand-section\[open\] summary::after/);
+  for (const [good, color] of [
+    ['timber', '#77a960'], ['clay', '#cc7152'], ['grain', '#e8bd3e'],
+    ['wool', '#a6ca64'], ['ore', '#9ca7ab'],
+  ]) {
+    assert.match(css, new RegExp(`\\.ct-good--${good} \\{ --ct-good-bg: ${color}; \\}`));
+    assert.match(css, new RegExp(`\\.ct-harbor--${good} \\.ct-harbor-disc \\{ fill: ${color}; \\}`));
   }
 });
 
@@ -127,6 +166,28 @@ test('island has nineteen connected tiles, 54 junctions, 72 paths, nine harbors,
     for (const edge of board.edges) {
       assert.ok(board.vertices[edge.a].edges.some(i => board.edges[i] === edge));
       assert.ok(board.vertices[edge.b].edges.some(i => board.edges[i] === edge));
+    }
+  }
+});
+
+test('each harbor marker faces outward between its two coastal junctions', () => {
+  for (const portMode of ['fixed', 'shuffled']) {
+    const board = createIsland(rng(56), portMode);
+    for (const edge of board.edges.filter(edge => edge.port)) {
+      const a = board.vertices[edge.a], b = board.vertices[edge.b];
+      const dock = harborGeometry(a, b);
+      const midpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      assert.ok(Math.abs(Math.hypot(dock.x - a.x, dock.y - a.y) -
+        Math.hypot(dock.x - b.x, dock.y - b.y)) < 1e-8);
+      assert.ok((dock.x - midpoint.x) * (midpoint.x - 380) +
+        (dock.y - midpoint.y) * (midpoint.y - 350) > 0);
+      assert.equal(dock.moorings.length, 2);
+      for (const [index, vertex] of [a, b].entries()) {
+        const end = dock.moorings[index];
+        assert.ok(Math.hypot(end.x - vertex.x, end.y - vertex.y) <
+          Math.hypot(dock.x - vertex.x, dock.y - vertex.y));
+      }
+      assert.ok(dock.x >= 26 && dock.x <= 734 && dock.y >= 26 && dock.y <= 674);
     }
   }
 });

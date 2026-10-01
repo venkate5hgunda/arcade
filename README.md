@@ -113,11 +113,15 @@ Chess; and **120 min** for Island Charter.
   private handoff or in a room. Choose **Classic positions** for the same nine
   coastal harbors and exchange rates on every island, or **Changing positions**
   to redistribute nine non-overlapping harbors each new island. Harbor choice
-  persists across resets, local resumes and room reconnections. Setup also offers
+  persists across resets, local resumes and room reconnections. Paired piers
+  connect each offshore harbor marker to exactly two coastal outpost junctions;
+  only an outpost or city on either junction unlocks that harbor's trade rate.
+  Setup also offers
   **Illustrated** or **Colorblock** land and four independent adjacency switches:
   whether 6/8, 2/12, identical numbers or identical land types may touch.
   All four default to no; the choices persist across resets and room recovery.
-  Resource symbols appear on colorblock land, in cargo, building costs and
+  Brick, Wood, Wheat, Ore and Sheep use richer color-coded cargo cards;
+  resource symbols appear on colorblock land, in cargo, building costs and
   their corresponding harbors;
   the original art and wording avoid commercial board-game assets.
 - **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
@@ -137,8 +141,10 @@ Chess; and **120 min** for Island Charter.
 - **Island Charter** — original presentation of classic hex-settlement rules
   for 3–4 players: everyone rolls two dice for opening placement order; ties
   reroll, the highest places first and last, and the lowest places twice in
-  succession. Pinch the island on touchscreens or pinch on a trackpad to
-  zoom without losing the current view; swipe to pan on narrow screens.
+  succession. The whole island fits by default, including on phones. Pinch
+  on touchscreens or a trackpad to zoom and swipe to pan; each local player
+  keeps their own zoom and pan through private handoffs, and each room player
+  keeps their view when returning to the game in the same tab.
   Brighter, larger player buildings and roads stand apart from
   the muted terrain. Resource production,
   blocking raider and seven-card discards, distance and road-building rules,

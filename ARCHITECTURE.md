@@ -1,6 +1,6 @@
 # Arcade architecture and maintenance map
 
-Last reviewed: 2026-09-30 at `788bbd4`. This is the **current-state reference**,
+Last reviewed: 2026-10-01. This is the **current-state reference**,
 not a design proposal. Update it when a game's rules, persistence contract,
 room protocol, platform support, or an open issue changes. `README.md` explains
 how to play; `CHANGELOG.md` records historical decisions. Paths and named
@@ -109,7 +109,7 @@ means a separate-device room, not simply two players sharing a screen.
 | Whack-a-Mole (`games/whack-a-mole.js`) | No | Timed round, score/misses and absolute deadline. |
 | Snakes & Ladders (`games/snakes-ladders.js`) | Yes | Seeded obstacle layout, turn/positions; large upper-board snake and animated travel. |
 | Ludo (`games/ludo.js`) | Yes | Four identical tokens per seat, roll/movable set, captures and turn; active home glows. |
-| Island Charter (`games/catan.js`) | Yes, private views | 19-hex board, terrain/number/harbor options, opening order, bank, build/trade/deck and ten-point victory. |
+| Island Charter (`games/catan.js`) | Yes, private views | 19-hex board, terrain/number/harbor options, opening order, bank, build/trade/deck and ten-point victory. Its local/room players keep separate chart zoom/pan in per-tab `sessionStorage`, not the authoritative game checkpoint. |
 | Chess (`games/chess.js`) | Yes | Board, castling, en passant, promotion, turn/result. |
 | Imposter (`games/imposter.js`) | No | Roles, secret reveal, prompt category and round state. |
 | Dumb Charades (`games/dumb-charades.js`) | No | Prompt, actor/team, timer and round. |
@@ -197,6 +197,12 @@ reports** distinct. This list is a backlog, not a claim of exhaustive bugs.
 6. **Coverage gap, not a proven gameplay bug:** rule-level tests and device
    E2E tests are uneven. Rendering in a desktop browser does not prove
    iOS audio/haptics, room NAT traversal or offline update behavior.
+7. **Island Charter artwork gap:** the resource SVGs in
+   `assets/icons/resources/` are tinted generic pictograms rather than the
+   requested representative resource illustrations. Offshore harbor badges
+   now connect visibly to their two eligible junctions, but are not illustrated
+   ships. Do not use copyrighted game art as a substitute; the icon provider
+   must authorize SVG access or the project must supply distributable artwork.
 
 ## Refactoring opportunities (not yet implemented)
 
