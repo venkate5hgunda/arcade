@@ -4,7 +4,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
 import { diceMarkup, pauseAfterRoll, rollDice, rollDiceValues } from '../js/dice.js';
-import { svg, terrainArt, goodIcon, buildingArt, discoveryIcon } from './catan-art.js';
+import { svg, terrainArt, goodIcon, buildingArt, discoveryIcon, harborGeometry, harborArt } from './catan-art.js';
 
 export const GOODS = ['timber', 'clay', 'grain', 'wool', 'ore'];
 export const VERTEX_TOUCH_RADIUS = 22;
@@ -648,7 +648,7 @@ const TERRAIN_LABEL = {
   forest: 'Grove', hills: 'Ridge', fields: 'Meadow', pasture: 'Heath',
   mountains: 'Peak', desert: 'Wastes',
 };
-const GOOD_LABEL = { timber: 'Lumber', clay: 'Brick', grain: 'Grain', wool: 'Wool', ore: 'Ore' };
+const GOOD_LABEL = { timber: 'Wood', clay: 'Brick', grain: 'Wheat', wool: 'Sheep', ore: 'Ore' };
 const CARD_LABEL = { knight: 'Ranger', victory: 'Legacy', roads: 'Trailblazer',
   plenty: 'Windfall', monopoly: 'Market Sweep' };
 const pieceLabel = (v, state, room) => state.buildings[v] ?
@@ -782,17 +782,50 @@ export default {
     let rolling = false, rollPending = false, rollPresentation = null;
     let diceController = new AbortController();
     let tool = 'road', chosenTile = null, panel = 'build', chartZoom = 1;
+    const handSectionsOpen = { resources: false, development: false };
+    const viewKey = `arcade:catan:views:${room?.roomId ?? 'local'}`;
+    let chartViews = {};
+    try {
+      const saved = sessionStorage.getItem(viewKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
+            !Object.values(parsed).every(view =>
+              Number.isFinite(view?.zoom) && view.zoom >= 1 && view.zoom <= 3 &&
+              Number.isFinite(view?.center) && view.center >= 0 && view.center <= 1))
+          throw new Error('Invalid saved island chart view.');
+        chartViews = parsed;
+      }
+    } catch (error) {
+      console.warn('Could not restore island chart views.', error);
+    }
+    let displayedSeat = null;
+    let viewStorageFailed = false;
+    const saveChartView = (wrap, viewer) => {
+      if (viewer === null || !wrap.isConnected || !wrap.scrollWidth) return;
+      chartViews[viewer] = {
+        zoom: chartZoom,
+        center: (wrap.scrollLeft + wrap.clientWidth / 2) / wrap.scrollWidth,
+      };
+      try {
+        sessionStorage.setItem(viewKey, JSON.stringify(chartViews));
+      } catch (error) {
+        if (!viewStorageFailed) console.warn('Could not save island chart view.', error);
+        viewStorageFailed = true;
+      }
+    };
     const setZoom = (value, clientX) => {
       const wrap = table.querySelector('.ct-chart-wrap');
       const chart = wrap?.querySelector('.ct-chart');
       if (!chart) return;
-      const next = Math.max(.75, Math.min(2, value));
+      const next = Math.max(1, Math.min(3, value));
       if (next === chartZoom) return;
-      const x = clientX - wrap.getBoundingClientRect().left;
+      const x = Math.max(0, Math.min(wrap.clientWidth, clientX - wrap.getBoundingClientRect().left));
       const position = (wrap.scrollLeft + x) / chart.getBoundingClientRect().width;
       chartZoom = next;
       chart.style.setProperty('--ct-zoom', chartZoom);
       wrap.scrollLeft = position * chart.getBoundingClientRect().width - x;
+      saveChartView(wrap, displayedSeat);
     };
     let covered = !room, localViewer = state?.phase === 'discard' ?
       state.discards.findIndex(Boolean) : state?.offer?.to ?? state?.current ?? 0;
@@ -1116,25 +1149,22 @@ export default {
         group.append(path, hit);
         chart.append(group);
         if (edge.port) {
-          const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
-          const dx = x - 380, dy = y - 350, length = Math.hypot(dx, dy);
+          const { x, y, moorings } = harborGeometry(a, b);
           const mark = svg('g', { class: `ct-harbor ct-harbor--${edge.port}`,
-            transform: `translate(${x + dx / length * 34} ${y + dy / length * 34})`,
-            role: 'img', 'aria-label': `${edge.port === 'any' ? 'Any resource' : GOOD_LABEL[edge.port]} harbor, ${edge.port === 'any' ? '3:1' : '2:1'} exchange`,
+            role: 'img', 'aria-label': `${edge.port === 'any' ? 'Any resource' : GOOD_LABEL[edge.port]} harbor, ${edge.port === 'any' ? '3:1' : '2:1'} exchange at the two connected coastal junctions`,
             'pointer-events': 'none' });
-          mark.append(svg('circle', { r: 21, class: 'ct-harbor-disc' }));
-          if (edge.port === 'any') mark.append(svg('path', {
-            d: 'M-10 -6q5-4 10 0t10 0M-10 0q5-4 10 0t10 0', class: 'ct-harbor-wave',
-          }));
-          else {
-            const icon = goodIcon(edge.port);
-            icon.setAttribute('x', '-14');
-            icon.setAttribute('y', '-20');
-            icon.setAttribute('width', '28');
-            icon.setAttribute('height', '28');
-            mark.append(icon);
-          }
-          mark.append(svg('text', { y: 14, class: 'ct-harbor-rate' }, edge.port === 'any' ? '3:1' : '2:1'));
+          [a, b].forEach((vertex, index) => {
+            const end = moorings[index];
+            mark.append(svg('line', { x1: vertex.x, y1: vertex.y, x2: end.x, y2: end.y,
+              class: 'ct-harbor-mooring' }));
+            mark.append(svg('line', { x1: vertex.x, y1: vertex.y, x2: end.x, y2: end.y,
+              class: 'ct-harbor-mooring-cord' }));
+            mark.append(svg('circle', { cx: vertex.x, cy: vertex.y, r: 12,
+              class: 'ct-harbor-berth' }));
+          });
+          const badge = svg('g', { transform: `translate(${x} ${y})` });
+          badge.append(harborArt(edge.port));
+          mark.append(badge);
           chart.append(mark);
         }
       });
@@ -1150,7 +1180,8 @@ export default {
         const hit = svg('circle', { cx: vertex.x, cy: vertex.y, r: VERTEX_TOUCH_RADIUS,
           class: 'ct-vertex-hit', 'pointer-events': legalVertex(id) ? 'all' : 'none',
           'data-vertex': id, role: 'button', tabindex: legalVertex(id) ? '0' : '-1',
-          'aria-label': `${pieceLabel(id, data, room)}${vertex.port ? `, harbor ${vertex.port}` : ''}` });
+          'aria-label': `${pieceLabel(id, data, room)}${vertex.port ?
+            `, ${vertex.port === 'any' ? 'any resource' : GOOD_LABEL[vertex.port]} harbor, ${vertex.port === 'any' ? '3:1' : '2:1'} exchange` : ''}` });
         group.append(mark, hit);
         chart.append(group);
       });
@@ -1187,10 +1218,10 @@ export default {
 
     function render() {
       if (disposed) return;
-      const data = room ? view : catanView(state, localViewer);
       const oldChart = table.querySelector('.ct-chart-wrap');
-      const chartCenter = oldChart ? (oldChart.scrollLeft + oldChart.clientWidth / 2) /
-        oldChart.scrollWidth : .5;
+      if (oldChart) saveChartView(oldChart, displayedSeat);
+      displayedSeat = null;
+      const data = room ? view : catanView(state, localViewer);
       table.replaceChildren();
       if (!data) {
         showTurn(null);
@@ -1258,8 +1289,8 @@ export default {
       }
       const harborMode = document.createElement('p');
       harborMode.className = 'ct-harbor-mode';
-      harborMode.textContent = data.portMode === 'fixed'
-        ? 'Classic harbors · set coastal positions' : 'Changing harbors · new layout each island';
+      harborMode.textContent = `${data.portMode === 'fixed' ? 'Classic harbors' :
+        'Changing harbors'} · paired piers mark both trading junctions`;
       table.append(harborMode);
       const layout = document.createElement('div');
       layout.className = 'ct-layout';
@@ -1267,7 +1298,7 @@ export default {
       chartArea.className = 'ct-chart-area';
       const scrollHint = document.createElement('p');
       scrollHint.className = 'ct-scroll-hint';
-      scrollHint.textContent = 'Swipe to explore · Pinch to zoom';
+      scrollHint.textContent = 'Whole island view · Pinch to zoom, drag to explore';
       const chartWrap = document.createElement('div');
       chartWrap.className = 'ct-chart-wrap';
       chartWrap.addEventListener('wheel', event => {
@@ -1306,8 +1337,14 @@ export default {
       });
       chartWrap.addEventListener('gestureend', () => { safariGesture = false; });
       const chart = boardNode(data, canAct);
+      const chartView = chartViews[room ? mySeat : localViewer];
+      chartZoom = chartView?.zoom ?? 1;
+      const chartCenter = chartView?.center ?? .5;
       chart.style.setProperty('--ct-zoom', chartZoom);
       chartWrap.append(chart);
+      displayedSeat = room ? mySeat : localViewer;
+      const viewer = displayedSeat;
+      chartWrap.addEventListener('scroll', () => saveChartView(chartWrap, viewer));
       chartArea.append(scrollHint, chartWrap);
       const aside = document.createElement('aside');
       aside.className = 'ct-sidebar';
@@ -1337,8 +1374,16 @@ export default {
       const hand = document.createElement('section');
       hand.className = 'ct-hand';
       const handHeading = document.createElement('h4');
-      handHeading.textContent = `${playerName(isMe, room)} · private cargo`;
+      handHeading.textContent = `${playerName(isMe, room)} · private hand`;
       hand.append(handHeading);
+      const resources = document.createElement('details');
+      resources.className = 'ct-hand-section';
+      resources.open = handSectionsOpen.resources;
+      resources.addEventListener('toggle', () => { handSectionsOpen.resources = resources.open; });
+      const resourceSummary = document.createElement('summary');
+      const resourceCount = Object.values(data.goods).reduce((total, amount) => total + amount, 0);
+      resourceSummary.textContent = `Resources · ${resourceCount}`;
+      resources.append(resourceSummary);
       const goods = document.createElement('div');
       goods.className = 'ct-cargo';
       GOODS.forEach(g => {
@@ -1351,7 +1396,15 @@ export default {
         amount.textContent = data.goods[g];
         token.append(name, amount); goods.append(token);
       });
-      hand.append(goods);
+      resources.append(goods);
+      hand.append(resources);
+      const development = document.createElement('details');
+      development.className = 'ct-hand-section';
+      development.open = handSectionsOpen.development;
+      development.addEventListener('toggle', () => { handSectionsOpen.development = development.open; });
+      const developmentSummary = document.createElement('summary');
+      developmentSummary.textContent = `Development cards · ${data.dev.length}`;
+      development.append(developmentSummary);
       const cards = document.createElement('div');
       cards.className = 'ct-cards';
       data.dev.forEach(card => {
@@ -1361,7 +1414,8 @@ export default {
         cards.append(tag);
       });
       if (!cards.childNodes.length) cards.textContent = 'No discoveries yet.';
-      hand.append(cards);
+      development.append(cards);
+      hand.append(development);
       aside.append(hand);
       const actions = document.createElement('div');
       actions.className = 'ct-actions';
