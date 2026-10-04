@@ -66,6 +66,11 @@
 .mp-share-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; padding: 18px; margin: 16px 0; border: 1px solid #7ba1a488; border-radius: 16px; background: #141f36; }
 .mp-share-panel h3, .mp-share-panel .mp-link { flex-basis: 100%; margin: 0; }
 .mp-share-panel h3 { color: #ffe2a4; }
+.mp-share-steps { flex-basis: 100%; margin: 0; padding-left: 24px; color: #d5eee9; line-height: 1.6; }
+.mp-share-steps li + li { margin-top: 6px; }
+.mp-share-options { flex-basis: 100%; margin-bottom: 0; }
+.mp-share-options[open] .mp-link { display: block; margin: 14px 0 10px; }
+.mp-share-options .mp-qr { margin-top: 18px; }
 .mp-qr { display: block; width: min(100%, 350px); height: auto; aspect-ratio: 1; margin: 0 auto; padding: 14px; box-sizing: border-box; border-radius: 12px; background: #fff; image-rendering: pixelated; }
 .mp-scanner { width: 100%; padding: 12px; border: 1px solid #8acaff; border-radius: 12px; background: #111e30; }
 .mp-scanner video { display: block; max-width: 100%; max-height: 320px; margin: auto; }
@@ -82,6 +87,11 @@
   transition: transform .15s ease, box-shadow .15s ease;
 }
 .mp-lobby button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 0 #731a4a; }
+.mp-lobby button.mp-secondary { border-color: #8999b3; background: #323e59; box-shadow: 0 3px 0 #111c32; }
+.mp-lobby button.mp-secondary:hover:not(:disabled) { box-shadow: 0 5px 0 #111c32; }
+.mp-lobby button.mp-primary { border-width: 2px; min-height: 46px; }
+.mp-share-panel > .mp-primary { width: 100%; font-size: 1.05rem; }
+.mp-standings > summary { color: #ffe2a4; font-weight: 750; }
 .mp-lobby button.mp-leave { border-color: #8999b3; background: #323e59; box-shadow: 0 3px 0 #111c32; }
 .mp-lobby button.mp-leave:hover:not(:disabled) { box-shadow: 0 5px 0 #111c32; }
 .mp-lobby button:disabled { opacity: .45; cursor: not-allowed; }

@@ -341,6 +341,9 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
   text-align: center;
   min-width: 0;
 }
+.game-tools { margin-top: 8px; }
+.game-tools summary { width: fit-content; margin: auto; color: var(--text-soft); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.game-tools summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 .game-title {
   margin: 0;
   font-size: 1.3rem;
@@ -493,6 +496,13 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
 }
 .setup-title { margin: 0 0 4px; font-size: 1.3rem; font-weight: 800; }
 .setup-subtitle { margin: 0 0 20px; color: var(--text-soft); font-size: 0.9rem; }
+.setup-guide, .setup-field-help { color: var(--text-soft); font-size: .85rem; line-height: 1.5; }
+.setup-preview { padding: 12px; border-radius: 12px; background: var(--bg); font-size: .85rem; line-height: 1.65; }
+.setup-config { margin: 18px 0 24px; text-align: left; border: 1px solid var(--border); border-radius: 12px; }
+.setup-config summary { padding: 14px; cursor: pointer; font-weight: 750; }
+.setup-config summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 12px; }
+.setup-config .setup-fields { padding: 8px 14px 16px; margin-bottom: 0; text-align: center; }
+.setup-field-help { margin: 8px 0 0; }
 .setup-fields { display: flex; flex-direction: column; gap: 18px; margin-bottom: 24px; }
 .setup-field-label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: var(--text-soft); text-transform: uppercase; letter-spacing: .04em; }
 .setup-options { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }

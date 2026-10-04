@@ -20,6 +20,31 @@ const HOST_BACKUP_KEY = 'arcade:room:host:v1';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
+export function roomShareMessage(url, {
+  kind, name = 'A friend', gameName, reconnectingName = null, resumeGame = false,
+} = {}) {
+  const title = kind === 'answer' ? `Arcade · ${name} is ready to join` :
+    reconnectingName ? `Arcade · Rejoin ${gameName ?? 'your room'}` :
+      `Arcade · ${gameName ? `Let’s play ${gameName}` : 'You’re invited to play'}`;
+  const steps = kind === 'answer' ? [
+    'Return to your original host tab.',
+    'Paste this link into “Paste guest answer URL” and accept it.',
+    'Keep both Arcade tabs open. Once connected, return to play or let the host choose a game.',
+  ] : [
+    reconnectingName ? `Open the link and enter your original name: ${reconnectingName}.` :
+      'Open the link and enter your name.',
+    'Tap “Join and create answer”, then send your answer back to me.',
+    reconnectingName ? resumeGame ?
+      'Keep your Arcade tab open. Your seat is saved; play resumes when everyone reconnects.' :
+      'Keep your Arcade tab open. I’ll restore your seat, then choose a game.' :
+      'Keep your Arcade tab open. I’ll connect us and start the game.',
+  ];
+  const text = `${kind === 'answer' ? 'Here’s my answer for your room.' :
+    reconnectingName ? `${name} invited you back to your saved seat.` :
+      `${name} invited you to a private game room.`}\n\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
+  return { title, text, steps, message: `${title}\n\n${text}\n\n${url}` };
+}
+
 function fail(message) { throw new Error(message); }
 function nameOf(value) {
   if (typeof value !== 'string' || !value.trim() || value.trim().length > 40) fail('Enter a name (up to 40 characters).');
@@ -320,14 +345,18 @@ export class MultiplayerRoom {
   }
   watchConnection(peer, id) {
     clearTimeout(peer.connectTimer);
+    peer.connectionTimedOut = false;
     peer.connectTimer = setTimeout(() => {
       if (this.peers.get(id) !== peer) return;
       const connected = this.role === 'host'
         ? this.members.find(member => member.id === id)?.connected
         : this.members.find(member => member.id === this.peerId)?.connected;
-      if (!connected) this.connectionProblem(this.role === 'guest'
-        ? 'Still waiting for the host. Ask them to accept your answer in their original tab. If they already did, a direct connection may be blocked by this network; try another network.'
-        : `${this.members.find(member => member.id === id)?.name ?? 'Guest'} admitted, but no direct connection yet. Ask them to keep the original guest tab open; this network may block WebRTC (NAT, firewall or STUN). Try another network. No TURN relay is available.`, id);
+      if (!connected) {
+        peer.connectionTimedOut = true;
+        this.connectionProblem(this.role === 'guest'
+          ? 'Still waiting for the host. Ask them to accept your answer in their original tab. If they already did, a direct connection may be blocked by this network; try another network.'
+          : `${this.members.find(member => member.id === id)?.name ?? 'Guest'} admitted, but no direct connection yet. Ask them to keep the original guest tab open; this network may block WebRTC (NAT, firewall or STUN). Try another network. No TURN relay is available.`, id);
+      }
     }, this.role === 'guest' ? CONNECT_TIMEOUT * 3 : CONNECT_TIMEOUT);
   }
   createHost(name) {
@@ -473,11 +502,17 @@ export class MultiplayerRoom {
     if (answer.room !== this.roomId || answer.host !== this.peerId) fail('Answer belongs to a different room.');
     const peer = this.peers.get(answer.guest);
     if (!peer || peer.pc.signalingState !== 'have-local-offer' || peer.accepting) fail('No pending invitation for this guest.');
-    peer.accepting = true;
     const member = this.members.find(person => person.id === answer.guest);
-    if (member && (member.connected || member.name !== nameOf(answer.name)))
-      fail('Reconnect with the same guest name in the original room.');
+    if (member && (member.connected || member.name !== nameOf(answer.name))) {
+      this.peers.delete(answer.guest);
+      clearTimeout(peer.connectTimer);
+      peer.pc.close();
+      peer.channel?.close();
+      this.state();
+      fail(`Reconnect with the same guest name in the original room. This invitation was cancelled; create a new invite for ${member.name}.`);
+    }
     const admitted = member ?? { id: answer.guest, name: nameOf(answer.name), connected: false, admitted: true };
+    peer.accepting = true;
     if (!member) this.members.push(admitted);
     this.state();
     try {
@@ -494,20 +529,25 @@ export class MultiplayerRoom {
       throw error;
     }
   }
-  async share(url) {
+  async share(url, context) {
     if (typeof url !== 'string' || url.length > MAX_URL) fail('Invalid or oversized link.');
+    const invitation = context ? roomShareMessage(url, context) : null;
+    const message = invitation?.message ?? url;
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try { await navigator.share({ url }); return { method: 'share' }; }
+      try {
+        await navigator.share(invitation ? { title: invitation.title, text: `${invitation.text}\n\n${url}` } : { url });
+        return { method: 'share' };
+      }
       catch (error) {
         if (error?.name === 'AbortError') return { method: 'cancelled' };
         this.error(error);
       }
     }
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      try { await navigator.clipboard.writeText(url); return { method: 'clipboard' }; }
+      try { await navigator.clipboard.writeText(message); return { method: 'clipboard' }; }
       catch (error) { console.warn('Clipboard unavailable; select and copy the link manually', error); }
     }
-    return { method: 'manual', url };
+    return { method: 'manual', url: message };
   }
   send(channel, kind, fields = {}) {
     if (channel?.readyState !== 'open') return false;
@@ -542,6 +582,7 @@ export class MultiplayerRoom {
           member.connected = true;
           peer.verifiedHello = true;
           peer.connectionLost = false;
+          peer.connectionTimedOut = false;
           clearTimeout(peer.connectTimer);
           this.clearConnectionProblem(id);
           this.publish();
@@ -826,8 +867,9 @@ export class MultiplayerRoom {
       invite: new URL(location.href).searchParams.has('invite') ? location.href : '',
       answer: new URL(location.href).searchParams.has('answer') ? location.href : '',
       mode: new URL(location.href).searchParams.has('invite') ? 'join' : null,
-      output: '', outputKind: '', qrVisible: false, message: '', excludedSeats: new Set(),
-      creatingInvite: false,
+      output: '', outputKind: '', manualMessage: '', reconnectingName: null,
+      message: '', excludedSeats: new Set(),
+      creatingInvite: false, expanded: new Set(),
     };
     let scanning = null;
     const stopScan = () => {
@@ -918,27 +960,65 @@ export class MultiplayerRoom {
         (member) => member.id !== this.peerId && member.connected && member.admitted);
       const guestConnected = this.role === 'guest' &&
         this.members.find((member) => member.id === this.peerId)?.connected;
+      const connectingIds = new Set(this.role === 'host' ? [...this.peers].filter(([id, peer]) =>
+        !this.members.find(member => member.id === id)?.connected &&
+        !peer.connectionLost && !peer.connectionTimedOut && this.connectionIssuePeer !== id &&
+        (peer.accepting || peer.pc.signalingState === 'stable')).map(([id]) => id) : []);
+      const connecting = connectingIds.size > 0;
+      const preferred = catalog.find(game => game.id === this.preferredGame);
+      const selectedPlayers = 1 + this.members.filter(member =>
+        member.id !== this.peerId && member.connected && member.admitted &&
+        !draft.excludedSeats.has(member.id)).length;
+      const needsPlayers = preferred && selectedPlayers < seatLimits(preferred).min;
+      if (guestConnected) title.textContent = 'You’re connected';
       steps.textContent = this.role === 'host'
         ? draft.creatingInvite ? 'Preparing a unique invite for your guest…' :
           pending ? '1. Share this guest’s invite QR or link. 2. Scan or paste their answer below in this same tab.' :
           this.activeGame && this.activeGame.playerIds.some(id =>
             !this.members.find(member => member.id === id)?.connected)
             ? 'Game paused. Reconnect each offline player to their original seat; play resumes when everyone is connected.' :
-          connectedGuests ? 'Everyone connected is selected to play. Choose a game below, or invite another friend.' :
+          connecting ? 'Answer accepted. Keep this tab open while the guest connects. Game choices appear when connected.' :
+          this.activeGame ? 'Your game is in progress. Hide the lobby to return to play.' :
+          needsPlayers ? `${preferred.name} needs ${seatLimits(preferred).min}–${seatLimits(preferred).max} players. Select or invite ${seatLimits(preferred).min - selectedPlayers} more to play.` :
+          connectedGuests ? 'Choose who’s playing, then pick a game. Invite more friends if you need extra seats.' :
             'Create an invite for each guest, then scan or paste their answer in this tab.'
         : this.role === 'guest'
-          ? guestConnected ? 'Connected! The host will choose a game. Keep this tab open to play.' :
+          ? guestConnected ? this.activeGame ?
+            (this.activeGame.playerIds.includes(this.peerId) ? 'Your game is ready. Hide the lobby to return to play.' :
+              'You’re watching this round. The host can select you for the next game.') :
+            this.members.find(member => member.id === this.peerId)?.admitted ?
+              'Connected! The host will choose a game. Keep this tab open to play.' :
+              'Connected as a spectator. Ask the host to admit you before joining a game.' :
             'Share your answer QR or link with the host. Keep this tab open while they accept it.'
           : draft.mode === 'create' ? 'Give yourself a name to open a room.' :
             draft.mode === 'join' ? 'Scan or paste the host’s invite, enter your name, then send your answer back.' :
               'Make a room for friends, or join one with an invite.';
       root.append(steps);
+      const disclosure = (label, key, className = 'mp-help') => {
+        const details = document.createElement('details');
+        details.className = className;
+        details.open = draft.expanded.has(key);
+        const summary = document.createElement('summary');
+        summary.textContent = label;
+        summary.addEventListener('click', () => {
+          if (details.open) draft.expanded.delete(key);
+          else draft.expanded.add(key);
+        });
+        details.append(summary);
+        details.addEventListener('toggle', () => {
+          if (details.open) draft.expanded.add(key);
+          else draft.expanded.delete(key);
+        });
+        return details;
+      };
       const status = document.createElement('p');
       status.setAttribute('role', 'status');
       status.className = 'mp-status';
       status.textContent = draft.message;
-      if (this.role === 'host' && draft.message.startsWith('Answer accepted.') && connectedGuests) {
-        status.textContent = 'Guest connected. Select seats and start a game.';
+      if (this.role === 'host' && draft.message.startsWith('Answer accepted.') && connectedGuests && !connecting) {
+        status.textContent = this.activeGame ?
+          'Guest connected. Keep all player tabs open; play resumes when everyone is connected.' :
+          'Guest connected. Select seats and start a game.';
       } else if (guestConnected) {
         status.textContent = this.activeGame ? 'Connected to host.' :
           'Connected to host. Waiting for the host to start a game.';
@@ -952,17 +1032,12 @@ export class MultiplayerRoom {
         warning.textContent = this.connectionIssue;
         root.append(warning);
       }
-      const help = document.createElement('details');
-      help.className = 'mp-help';
-      const summary = document.createElement('summary');
-      summary.textContent = 'How does connecting work?';
+      const help = disclosure('Connection help', 'help');
       const explanation = document.createElement('p');
       explanation.textContent = 'Each guest gets a separate invite URL or QR and sends an answer URL or QR back. The host accepts it in the original tab. Keep both tabs open. Camera scanning requires HTTPS; direct play needs internet and may be blocked by some networks (no TURN relay).';
-      help.append(summary, explanation);
-      root.append(help);
+      help.append(explanation);
       const controls = document.createElement('div');
       controls.className = 'mp-controls';
-      root.append(controls);
       const field = (placeholder, key) => {
         const label = document.createElement('label');
         label.className = 'mp-field';
@@ -980,6 +1055,7 @@ export class MultiplayerRoom {
         const node = document.createElement('button');
         node.type = 'button';
         node.textContent = text;
+        node.className = 'mp-secondary';
         node.addEventListener('click', async () => {
           try { await handler(); } catch (error) {
             draft.message = error.message;
@@ -990,20 +1066,27 @@ export class MultiplayerRoom {
         parent.append(node);
         return node;
       };
+      const primary = node => { node.className = 'mp-primary'; return node; };
       const output = document.createElement('textarea');
       output.readOnly = true;
-      output.setAttribute('aria-label', 'Link to copy and send');
+      output.setAttribute('aria-label', draft.manualMessage ? 'Invitation message to copy and send' : 'Link to copy and send');
       output.className = 'mp-link';
-      output.value = draft.output;
+      output.value = draft.manualMessage || draft.output;
       const display = (url, prompt, kind) => {
         draft.output = url;
         draft.outputKind = kind;
-        draft.qrVisible = true;
+        draft.manualMessage = '';
         draft.message = prompt + (url.length > 4000 ? ' Warning: long links may be truncated; use copy/paste without shortening.' : '');
         render();
       };
       const makeInvite = async (prompt, reconnectingId = null) => {
         draft.creatingInvite = true;
+        draft.reconnectingName = this.members.find(member => member.id === reconnectingId)?.name ?? null;
+        draft.output = '';
+        draft.outputKind = '';
+        draft.manualMessage = '';
+        draft.answer = '';
+        draft.message = '';
         render();
         try {
           const url = await this.createInvite(reconnectingId);
@@ -1025,74 +1108,109 @@ export class MultiplayerRoom {
         if (!draft.mode) {
           const choices = document.createElement('div');
           choices.className = 'mp-choices';
-          button('Create a room', () => { draft.mode = 'create'; render(); }, choices);
-          button('Join a room', () => { draft.mode = 'join'; render(); }, choices);
+          primary(button('Create a room', () => { draft.mode = 'create'; render(); }, choices));
+          primary(button('Join a room', () => { draft.mode = 'join'; render(); }, choices));
           controls.append(choices);
         } else {
           const name = field('Your name', 'name');
           if (draft.mode === 'create') {
-            button('Create room', async () => {
+            primary(button('Create room', async () => {
               this.createHost(name.value);
               await makeInvite('Share this invite with your first guest. Have them send their answer here.');
-            });
+            }));
           } else {
             const invite = field('Paste invite URL', 'invite');
             button('Scan invite QR', () => scanInto('invite', invite));
-            button('Join and create answer', async () => {
+            primary(button('Join and create answer', async () => {
               const answer = await this.joinInvite(invite.value, name.value);
               display(answer, 'Send this answer to the original host tab. Wait until connected before playing.', 'answer');
-            });
+            }));
           }
           button('Back to choices', () => { draft.mode = null; draft.message = ''; render(); });
         }
       } else if (this.role === 'host') {
-        if (!pending && !draft.creatingInvite && !this.activeGame)
-          button('Invite another guest', () =>
+        if (!pending && !draft.creatingInvite && !connecting && !this.activeGame) {
+          const inviteButton = button(connectedGuests ? 'Invite another guest' : 'Create guest invite', () =>
             makeInvite('Share this invite with your next guest. Have them send their answer here.'));
+          if (!connectedGuests || needsPlayers) primary(inviteButton);
+        }
         if (!pending && !draft.creatingInvite)
           for (const member of this.members.filter(person =>
-            person.id !== this.peerId && !person.connected && person.admitted))
-            button(`Reconnect ${member.name}`, () => makeInvite(
+            person.id !== this.peerId && !person.connected && person.admitted &&
+            !connectingIds.has(person.id)))
+            primary(button(`Reconnect ${member.name}`, () => makeInvite(
               `Send this new invite to ${member.name}. They can rejoin with the same name and keep their seat.`,
-              member.id));
-        if (pending) {
+              member.id)));
+        if (pending && !draft.creatingInvite) {
           const answer = field('Paste guest answer URL', 'answer');
           button('Scan answer QR', () => scanInto('answer', answer));
-          button('Accept answer', async () => {
+          primary(button('Accept answer', async () => {
             await this.acceptAnswer(answer.value);
             draft.answer = '';
             draft.message = 'Answer accepted. Waiting for a direct connection; this may fail behind a NAT or firewall.';
             render();
-          });
+          }));
         }
       } else if (!draft.message && !guestConnected)
         status.textContent = 'Waiting for the host to accept your answer link.';
-      if (this.role) {
+      const roomOptions = this.role ? disclosure('Room options', 'room-options') : null;
+      if (roomOptions) {
         const leave = button('Leave room', () => {
           draft.mode = null;
           draft.output = '';
+          draft.manualMessage = '';
+          draft.reconnectingName = null;
           draft.message = '';
           draft.excludedSeats.clear();
           this.close();
-        });
+        }, roomOptions);
         leave.className = 'mp-leave';
       }
-      if (draft.output && (this.role === 'host' && draft.outputKind === 'invite' && pending ||
+      if (draft.output && !draft.creatingInvite && (this.role === 'host' && draft.outputKind === 'invite' && pending ||
           this.role === 'guest' && draft.outputKind === 'answer' && !guestConnected)) {
         const sharePanel = document.createElement('div');
         sharePanel.className = 'mp-share-panel';
         const label = document.createElement('h3');
         label.textContent = `${draft.outputKind === 'invite' ? 'Invite for guest' : 'Answer for host'}`;
-        sharePanel.append(label, output);
-        button('Share link', async () => {
-          const result = await this.share(draft.output);
-          draft.message = result.method === 'cancelled' ? 'Sharing cancelled; the link is still below.' :
-            result.method === 'manual' ? 'Select and copy the link below manually.' :
-              `Link ${result.method === 'share' ? 'shared' : 'copied'}. ${this.role === 'host'
+        const context = {
+          kind: draft.outputKind,
+          name: this.members.find(member => member.id === this.peerId)?.name ?? 'A friend',
+          gameName: catalog.find(game => game.id === (this.activeGame?.id ?? this.preferredGame))?.name,
+          reconnectingName: draft.reconnectingName,
+          resumeGame: Boolean(this.activeGame),
+        };
+        const invitation = roomShareMessage(draft.output, context);
+        const preview = document.createElement('ol');
+        preview.className = 'mp-share-steps';
+        for (const step of invitation.steps) {
+          const item = document.createElement('li');
+          item.textContent = step;
+          preview.append(item);
+        }
+        const extras = disclosure('QR code & link options', 'share-options', 'mp-help mp-share-options');
+        extras.append(output);
+        sharePanel.append(label, preview);
+        primary(button(draft.outputKind === 'invite' ? 'Share invitation' : 'Send answer to host', async () => {
+          const result = await this.share(draft.output, context);
+          draft.message = result.method === 'cancelled' ? 'Sharing cancelled; your invitation is still available.' :
+            result.method === 'manual' ? 'Select and copy the message below manually.' :
+              `Message ${result.method === 'share' ? 'shared' : 'copied'}. ${this.role === 'host'
                 ? 'The guest must send their answer link back to this tab.' : 'The host must paste your answer link into their original tab.'}`;
+          if (result.method === 'manual') {
+            extras.open = true;
+            draft.expanded.add('share-options');
+            draft.manualMessage = result.url;
+            output.value = result.url;
+            output.setAttribute('aria-label', 'Invitation message to copy and send');
+            output.focus();
+            output.select();
+          }
           container.querySelector('[role="status"]')?.replaceChildren(document.createTextNode(draft.message));
-        }, sharePanel);
+        }, sharePanel));
         button('Copy link', async () => {
+          draft.manualMessage = '';
+          output.value = draft.output;
+          output.setAttribute('aria-label', 'Link to copy and send');
           if (!navigator.clipboard?.writeText) {
             output.focus();
             output.select();
@@ -1109,27 +1227,23 @@ export class MultiplayerRoom {
             }
           }
           container.querySelector('[role="status"]').textContent = draft.message;
-        }, sharePanel);
-        button(draft.qrVisible ? 'Hide QR' : 'Show QR', () => {
-          draft.qrVisible = !draft.qrVisible;
-          render();
-        }, sharePanel);
-        if (draft.qrVisible) {
-          try {
-            const qr = document.createElement('img');
-            qr.className = 'mp-qr';
-            qr.alt = `QR code for ${draft.outputKind} link`;
-            qr.src = roomQrDataUrl(draft.output);
-            sharePanel.append(qr);
-          } catch (error) {
-            if (!(error instanceof RangeError)) throw error;
-            const fallback = document.createElement('p');
-            fallback.textContent = error.message;
-            sharePanel.append(fallback);
-          }
+        }, extras);
+        try {
+          const qr = document.createElement('img');
+          qr.className = 'mp-qr';
+          qr.alt = `QR code for ${draft.outputKind} link`;
+          qr.src = roomQrDataUrl(draft.output);
+          extras.append(qr);
+        } catch (error) {
+          if (!(error instanceof RangeError)) throw error;
+          const fallback = document.createElement('p');
+          fallback.textContent = error.message;
+          extras.append(fallback);
         }
+        sharePanel.append(extras);
         root.append(sharePanel);
       }
+      root.append(controls);
       const roster = document.createElement('ul');
       roster.className = 'mp-members';
       for (const member of this.members) {
@@ -1143,24 +1257,17 @@ export class MultiplayerRoom {
       }
       if (this.role && (this.members.length > 1 || this.role === 'guest' && guestConnected)) {
         if (this.role === 'host') {
-          const access = document.createElement('details');
-          access.className = 'mp-help mp-access';
-          const summary = document.createElement('summary');
-          summary.textContent = 'Manage room access';
-          access.append(summary, roster);
+          const access = disclosure('Manage room access', 'access', 'mp-help mp-access');
+          access.append(roster);
           root.append(access);
         } else {
-          const heading = document.createElement('h3');
-          heading.textContent = 'Players';
-          root.append(heading, roster);
+          const players = disclosure('Players in this room', 'players');
+          players.append(roster);
+          root.append(players);
         }
       }
       if (this.role && this.stats.games.length) {
-        const standings = document.createElement('section');
-        standings.className = 'mp-standings';
-        const heading = document.createElement('h3');
-        heading.textContent = 'Room standings';
-        standings.append(heading);
+        const standings = disclosure('Room standings', 'standings', 'mp-help mp-standings');
         const leaders = this.leaderboard();
         if (!leaders.length) {
           const empty = document.createElement('p');
@@ -1205,7 +1312,7 @@ export class MultiplayerRoom {
             this.emit({ type: 'game', game: this.activeGame, spectating: false });
           }, root);
       }
-      if (this.role === 'host' && connectedGuests && !this.activeGame) {
+      if (this.role === 'host' && connectedGuests && !this.activeGame && !pending && !draft.creatingInvite && !connecting) {
         const games = document.createElement('div');
         games.className = 'mp-games';
         const selection = document.createElement('section');
@@ -1263,12 +1370,13 @@ export class MultiplayerRoom {
             unavailable.push(`${game.name} (${min}–${max})`);
             continue;
           }
-          button(`${game.name} (${min}–${max} players)`, () => {
+          const gameButton = button(`${game.name} (${min}–${max} players)`, () => {
             const guestIds = eligibleGuests.filter(member => !draft.excludedSeats.has(member.id))
               .map(member => member.id);
             this.startGame(game.id, [this.peerId, ...guestIds]);
             onStart(game.id);
           }, available);
+          if (!preferred || game.id === preferred.id) primary(gameButton);
         }
         if (!available.children.length) {
           const empty = document.createElement('p');
@@ -1291,6 +1399,8 @@ export class MultiplayerRoom {
         games.append(local);
         root.append(games);
       }
+      if (roomOptions) root.append(roomOptions);
+      root.append(help);
       container.append(root);
     };
     render.stopScan = stopScan;

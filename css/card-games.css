@@ -378,6 +378,10 @@
 }
 .card-room-entry .card-room-entry-local { width: min(100%, 300px); }
 .card-room-entry small { max-width: 350px; line-height: 1.5; color: #c9e3db; }
+.card-room-entry-help { max-width: 350px; color: #c9e3db; }
+.card-room-entry-help summary { cursor: pointer; font-size: .85rem; }
+.card-room-entry-help summary:focus-visible { outline: 3px solid #ffe7ab; outline-offset: 4px; }
+.card-room-entry-help small { display: block; margin-top: 10px; }
 .card-room-entry-error { color: #ffe5a5; }
 
 .uno-vibe .cg-table {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { MultiplayerRoom } from '../js/multiplayer.js';
+import { MultiplayerRoom, roomShareMessage } from '../js/multiplayer.js';
 import { newCatan, catanView, validCatanCheckpoint } from '../games/catan.js';
 
 globalThis.crypto ??= webcrypto;
@@ -305,6 +305,68 @@ test('online peer enables public STUN and share safely falls back to manual copy
   navigator.onLine = false;
 });
 
+test('room sharing includes role-specific steps and the unmodified link across all delivery paths', async () => {
+  const previousNavigator = globalThis.navigator;
+  const host = new MultiplayerRoom();
+  const url = 'https://example.test/arcade/index.html?invite=abc#/';
+  const context = { kind: 'invite', name: 'Host', gameName: 'Island Charter' };
+  const invitation = roomShareMessage(url, context);
+  assert.match(invitation.title, /Island Charter/);
+  assert.match(invitation.text, /Host invited you/);
+  assert.equal(invitation.steps.length, 3);
+  assert.match(invitation.message, /1\. Open the link/);
+  assert.match(invitation.message, /2\. Tap “Join and create answer”/);
+  assert.ok(invitation.message.endsWith(url));
+  const answer = roomShareMessage(url.replace('invite=', 'answer='), { kind: 'answer', name: 'Guest' });
+  assert.match(answer.title, /Guest is ready to join/);
+  assert.match(answer.text, /original host tab/);
+  assert.match(answer.text, /Paste guest answer URL/);
+  assert.doesNotMatch(answer.text, /enter your name/);
+  let shared, copied;
+  const errors = [];
+  host.on(event => { if (event.type === 'error') errors.push(event.message); });
+  try {
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {
+      share: async data => { shared = data; },
+      clipboard: { writeText: async text => { copied = text; } },
+    } });
+    assert.deepEqual(await host.share(url, context), { method: 'share' });
+    assert.deepEqual(shared, { title: invitation.title, text: `${invitation.text}\n\n${url}` });
+    assert.equal(shared.text.split(url).length, 2, 'text-only native targets receive the full link exactly once');
+    assert.equal(copied, undefined);
+    navigator.share = async () => { throw Object.assign(new Error('Cancelled'), { name: 'AbortError' }); };
+    assert.deepEqual(await host.share(url, context), { method: 'cancelled' });
+    assert.equal(copied, undefined, 'cancellation must not silently copy');
+    navigator.share = async () => { throw new Error('Native sharing unavailable'); };
+    assert.deepEqual(await host.share(url, context), { method: 'clipboard' });
+    assert.equal(errors.at(-1), 'Native sharing unavailable');
+    assert.equal(copied, invitation.message, 'failed native sharing copies the complete invitation');
+    navigator.share = undefined;
+    assert.deepEqual(await host.share(url, context), { method: 'clipboard' });
+    assert.equal(copied, invitation.message);
+    navigator.clipboard = undefined;
+    assert.deepEqual(await host.share(url, context), { method: 'manual', url: invitation.message });
+    await assert.rejects(host.share('x'.repeat(16001), context), /oversized/);
+  } finally {
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: previousNavigator });
+    host.close();
+  }
+});
+
+test('reconnect share copy identifies the original seat and whether play resumes', () => {
+  const url = 'https://example.test/arcade/index.html?invite=abc#/';
+  const context = { kind: 'invite', name: 'Host', reconnectingName: 'Original Guest', gameName: 'Island Charter' };
+  const resumed = roomShareMessage(url, { ...context, resumeGame: true });
+  assert.equal(resumed.title, 'Arcade · Rejoin Island Charter');
+  assert.match(resumed.message, /original name: Original Guest/);
+  assert.match(resumed.message, /play resumes when everyone reconnects/);
+  assert.doesNotMatch(resumed.message, /start the game/);
+  assert.ok(resumed.message.endsWith(url));
+  const lobby = roomShareMessage(url, context);
+  assert.match(lobby.message, /restore your seat, then choose a game/);
+  assert.doesNotMatch(lobby.message, /play resumes/);
+});
+
 test('only supported catalog games can start remotely and room restart resets sequence', () => {
   const host = new MultiplayerRoom();
   host.createHost('Host');
@@ -422,6 +484,42 @@ async function connectGuest(host, name, reconnectingId = null) {
   channel.onopen();
   return { guest, hostChannel: hp.channel, guestChannel: channel };
 }
+
+test('a wrong reconnect name cancels the stale transport without losing the seat or game', async () => {
+  const host = new MultiplayerRoom();
+  const wrong = new MultiplayerRoom();
+  const corrected = new MultiplayerRoom();
+  host.createHost('Host');
+  const original = await connectGuest(host, 'Original Guest');
+  try {
+    host.startGame('chess', [host.peerId, original.guest.peerId]);
+    const activeGame = structuredClone(host.activeGame);
+    original.hostChannel.close();
+    original.guestChannel.close();
+    const invite = await host.createInvite(original.guest.peerId);
+    const rejectedPeer = host.peers.get(original.guest.peerId);
+    const rejected = await wrong.joinInvite(invite, 'Different Guest');
+    await assert.rejects(host.acceptAnswer(rejected), /create a new invite for Original Guest/);
+    assert.equal(host.peers.has(original.guest.peerId), false);
+    assert.equal(rejectedPeer.pc.connectionState, 'closed');
+    assert.equal(rejectedPeer.channel.readyState, 'closed');
+    assert.deepEqual(host.activeGame, activeGame);
+    assert.equal(host.members.length, 2);
+    await assert.rejects(host.acceptAnswer(rejected), /No pending invitation/);
+    const freshInvite = await host.createInvite(original.guest.peerId);
+    assert.notEqual(host.peers.get(original.guest.peerId), rejectedPeer, 'recovery uses a fresh transport');
+    const answer = await corrected.joinInvite(freshInvite, 'Original Guest');
+    await host.acceptAnswer(answer);
+    assert.equal(host.peers.get(original.guest.peerId).pc.signalingState, 'stable');
+    assert.equal(host.members[1].name, 'Original Guest');
+    assert.deepEqual(host.activeGame, activeGame);
+  } finally {
+    original.guest.close();
+    wrong.close();
+    corrected.close();
+    host.close();
+  }
+});
 
 test('island game requires three seats and keeps each room hand private', async () => {
   const host = new MultiplayerRoom();
@@ -892,6 +990,8 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     replaceChildren(...nodes) { this.children = [...nodes]; }
     setAttribute(key, value) { this.attributes[key] = value; }
     addEventListener(event, handler) { this.listeners[event] = handler; }
+    focus() { this.focused = true; }
+    select() { this.selected = true; }
     querySelector(selector) {
       return descendants(this).find((node) => selector === '.mp-controls'
         ? node.className === 'mp-controls' : node.attributes.role === 'status') ?? null;
@@ -938,7 +1038,12 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)|Room standings|Invite another guest/);
     button(hostView, 'Scan answer QR');
     button(hostView, 'Copy link');
-    button(hostView, 'Hide QR');
+    assert.equal(button(hostView, 'Share invitation').className, 'mp-primary');
+    assert.equal(button(hostView, 'Accept answer').className, 'mp-primary');
+    const shareOptions = descendants(hostView).find(node => node.className === 'mp-help mp-share-options');
+    assert.equal(shareOptions.open, false, 'QR and raw-link options start collapsed');
+    shareOptions.open = true;
+    shareOptions.listeners.toggle();
     assert.ok(descendants(hostView).some(node => node.tag === 'img' && node.className === 'mp-qr'));
     const invite = descendants(hostView).find((node) => node.tag === 'textarea').value;
     globalThis.location = new URL(invite);
@@ -950,9 +1055,25 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     await button(guestView, 'Join and create answer').listeners.click();
     const answer = descendants(guestView).find((node) => node.tag === 'textarea').value;
     button(guestView, 'Copy link');
+    assert.equal(button(guestView, 'Send answer to host').className, 'mp-primary');
+    await button(guestView, 'Send answer to host').listeners.click();
+    const manual = descendants(guestView).find(node => node.tag === 'textarea');
+    assert.match(manual.value, /Guest is ready to join/);
+    assert.ok(manual.value.endsWith(answer));
+    assert.equal(manual.selected, true);
+    assert.equal(descendants(guestView).find(node => node.className === 'mp-help mp-share-options').open, true);
+    guest.state();
+    const refreshedManual = descendants(guestView).find(node => node.tag === 'textarea');
+    assert.equal(refreshedManual.value, manual.value, 'manual invitation survives room updates');
+    await button(guestView, 'Copy link').listeners.click();
+    assert.equal(refreshedManual.value, answer, 'raw-link copying remains separate from message sharing');
     field(hostView, 'Paste guest answer URL').value = answer;
     await button(hostView, 'Accept answer').listeners.click();
-    assert.doesNotMatch(visible(hostView), /Paste guest answer URL|Room standings|Chess \(2–2 players\)/);
+    assert.doesNotMatch(visible(hostView), /Paste guest answer URL|Room standings|Chess \(2–2 players\)|Invite another guest|Create guest invite/);
+    assert.match(visible(hostView), /Keep this tab open while the guest connects/);
+    host.connectionProblem('Guest admitted, but no direct connection yet.', guest.peerId);
+    assert.equal(button(hostView, 'Reconnect Guest').className, 'mp-primary',
+      'a stalled connection exposes recovery instead of leaving the lobby stuck');
     const hp = FakePeer.instances.at(-2);
     const gp = FakePeer.instances.at(-1);
     const guestChannel = new FakeChannel('arcade');
@@ -964,6 +1085,18 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     guestChannel.onopen();
     button(hostView, 'Chess (2–2 players)');
     assert.doesNotMatch(visible(hostView), /Island Charter \(3–4 players\)/);
+    const roomAccess = () => descendants(hostView).find(node => node.className === 'mp-help mp-access');
+    roomAccess().children[0].listeners.click();
+    host.state();
+    assert.equal(roomAccess().open, true, 'opening options survives a room update before the native toggle event');
+    roomAccess().children[0].listeners.click();
+    host.state();
+    assert.equal(roomAccess().open, false, 'closing options survives the same immediate update');
+    host.preferredGame = 'catan';
+    host.state();
+    assert.match(visible(hostView), /Island Charter needs 3–4 players/);
+    assert.equal(button(hostView, 'Invite another guest').className, 'mp-primary');
+    assert.equal(button(hostView, 'Chess (2–2 players)').className, 'mp-secondary');
     const firstSeat = descendants(hostView).find(node => node.tag === 'input' && node.value === guest.peerId);
     assert.equal(firstSeat.checked, true);
     firstSeat.checked = false;
@@ -971,8 +1104,29 @@ test('lobby progressively reveals only the chosen flow and connected room contro
     assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
     assert.doesNotMatch(visible(guestView), /Answer for host|Copy link/);
     assert.doesNotMatch(visible(hostView), /Room standings/);
-    await button(hostView, 'Invite another guest').listeners.click();
+    const createInvite = host.createInvite.bind(host);
+    let releaseInvite, markPrepared;
+    const prepared = new Promise(resolve => { markPrepared = resolve; });
+    host.createInvite = async id => {
+      const url = await createInvite(id);
+      const release = new Promise(resolve => { releaseInvite = resolve; });
+      host.state();
+      markPrepared();
+      await release;
+      return url;
+    };
+    const creating = button(hostView, 'Invite another guest').listeners.click();
+    await prepared;
+    assert.match(visible(hostView), /Preparing a unique invite/);
+    assert.doesNotMatch(visible(hostView), /Share invitation|Accept answer|Paste guest answer URL/);
+    assert.ok(!descendants(hostView).some(node => node.tag === 'textarea'),
+      'an old invite must not appear while another guest’s invite is being generated');
+    releaseInvite();
+    await creating;
+    host.createInvite = createInvite;
     button(hostView, 'Accept answer');
+    assert.equal(descendants(hostView).find(node => node.className === 'mp-help mp-share-options').open, true,
+      'expanded auxiliary sections survive room updates');
     assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
     assert.doesNotMatch(visible(hostView), /Invite another guest/);
     const secondGuest = new MultiplayerRoom();
@@ -986,6 +1140,14 @@ test('lobby progressively reveals only the chosen flow and connected room contro
       field(hostView, 'Paste guest answer URL').value =
         descendants(secondView).find(node => node.tag === 'textarea').value;
       await button(hostView, 'Accept answer').listeners.click();
+      assert.doesNotMatch(visible(hostView), /Guest connected\. Select seats and start a game/);
+      hp.channel.close();
+      guestChannel.close();
+      assert.equal(button(hostView, 'Reconnect Guest').className, 'mp-primary',
+        'another offline seat remains recoverable while this answer connects');
+      hp.channel.readyState = guestChannel.readyState = 'open';
+      hp.channel.onopen();
+      guestChannel.onopen();
       const secondHostPeer = FakePeer.instances.at(-2);
       const secondGuestPeer = FakePeer.instances.at(-1);
       const secondChannel = new FakeChannel('arcade');
@@ -1003,16 +1165,40 @@ test('lobby progressively reveals only the chosen flow and connected room contro
       reselect.checked = true;
       reselect.listeners.change();
       button(hostView, 'Island Charter (3–4 players)');
+      assert.equal(button(hostView, 'Island Charter (3–4 players)').className, 'mp-primary');
       assert.doesNotMatch(visible(hostView), /Chess \(2–2 players\)/);
       await button(hostView, 'Island Charter (3–4 players)').listeners.click();
       assert.deepEqual(host.activeGame.playerIds, [host.peerId, guest.peerId, secondGuest.peerId]);
       assert.equal(secondGuest.activeGame.id, 'catan');
+      assert.doesNotMatch(visible(hostView), /Invite another guest|Choose a game/);
+      assert.match(visible(guestView), /Your game is ready/);
+      hp.channel.close();
+      guestChannel.close();
+      await button(hostView, 'Reconnect Guest').listeners.click();
+      assert.match(visible(hostView), /original name: Guest/);
+      assert.match(visible(hostView), /play resumes when everyone reconnects/);
+      assert.doesNotMatch(visible(hostView), /I’ll connect us and start the game/);
+      const reconnectInvite = descendants(hostView).find(node => node.tag === 'textarea').value;
+      field(hostView, 'Paste guest answer URL').value = await guest.joinInvite(reconnectInvite, 'Guest');
+      await button(hostView, 'Accept answer').listeners.click();
+      const reconnectHostPeer = FakePeer.instances.at(-2);
+      const reconnectGuestPeer = FakePeer.instances.at(-1);
+      const reconnectChannel = new FakeChannel('arcade');
+      reconnectHostPeer.channel.other = reconnectChannel;
+      reconnectChannel.other = reconnectHostPeer.channel;
+      reconnectGuestPeer.ondatachannel({ channel: reconnectChannel });
+      reconnectHostPeer.channel.readyState = reconnectChannel.readyState = 'open';
+      reconnectHostPeer.channel.onopen();
+      reconnectChannel.onopen();
+      assert.equal(guest.activeGame.id, 'catan');
       host.returnLobby();
       const seat = descendants(hostView).find(node => node.tag === 'input' && node.value === secondGuest.peerId);
       seat.checked = false;
       seat.listeners.change();
       button(hostView, 'Chess (2–2 players)');
       assert.doesNotMatch(visible(hostView), /Island Charter \(3–4 players\)/);
+      host.setAdmission(secondGuest.peerId, false);
+      assert.match(visible(secondView), /Connected as a spectator/);
       unmountSecond();
     } finally { secondGuest.close(); }
     assert.equal(host.members.find((member) => member.id === guest.peerId).connected, true);
@@ -1043,4 +1229,53 @@ test('leaderboard prioritizes wins, then fewer losses, then more draws', () => {
   assert.deepEqual(room.leaderboard().map(({ name, rank }) => [name, rank]),
     [['One', 1], ['Four', 2], ['Three', 3], ['Two', 4]]);
   room.close();
+});
+
+test('every timed-out seat remains recoverable when another handshake times out', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const previousDocument = globalThis.document;
+  const previousElement = globalThis.Element;
+  class ElementStub {
+    constructor(tag = 'div') { this.tag = tag; this.children = []; this.attributes = {}; }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children = [...nodes]; }
+    setAttribute(key, value) { this.attributes[key] = value; }
+    addEventListener() {}
+  }
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const host = new MultiplayerRoom();
+  const first = new MultiplayerRoom();
+  const second = new MultiplayerRoom();
+  let unmount;
+  try {
+    globalThis.Element = ElementStub;
+    globalThis.document = {
+      createElement: tag => new ElementStub(tag),
+      createTextNode: text => Object.assign(new ElementStub('#text'), { textContent: text }),
+    };
+    host.createHost('Host');
+    const container = new ElementStub();
+    unmount = host.mountLobby(container, [], () => {});
+    await host.acceptAnswer(await first.joinInvite(await host.createInvite(), 'First'));
+    t.mock.timers.tick(10000);
+    await host.acceptAnswer(await second.joinInvite(await host.createInvite(), 'Second'));
+    t.mock.timers.tick(10000);
+    assert.equal(host.peers.get(first.peerId).connectionTimedOut, true);
+    assert.equal(host.peers.get(second.peerId).connectionTimedOut, false);
+    let buttons = descendants(container).filter(node => node.tag === 'button').map(node => node.textContent);
+    assert.ok(buttons.includes('Reconnect First'));
+    assert.ok(!buttons.includes('Reconnect Second'));
+    t.mock.timers.tick(10000);
+    assert.equal(host.connectionIssuePeer, second.peerId, 'the shared warning now belongs to the second seat');
+    buttons = descendants(container).filter(node => node.tag === 'button').map(node => node.textContent);
+    assert.ok(buttons.includes('Reconnect First'), 'the first timeout must not become a fresh handshake');
+    assert.ok(buttons.includes('Reconnect Second'));
+  } finally {
+    unmount?.();
+    first.close();
+    second.close();
+    host.close();
+    globalThis.document = previousDocument;
+    globalThis.Element = previousElement;
+  }
 });
