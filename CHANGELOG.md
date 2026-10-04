@@ -3,6 +3,25 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Organized movie development tooling
+
+- Grouped the movie pipeline under `dev/movies/` with a module CLI, immutable
+  source inputs, editorial definitions and ignored `.local/` state/export.
+- Migrated the existing SQLite cache without losing IDs, responses, source
+  bytes or annotation revisions; documented development directory ownership.
+
+## 2026-10-04 — Lossless Telugu movie catalog
+
+- Added a resumable SQLite system of record preserving original CSV bytes,
+  source fields, full TMDB/OMDb responses, identity evidence and dated coverage.
+- Added Telugu-original discovery from 2000 onward, IMDb-based provider
+  crosswalks, explicit request budgets and an OMDb daily safety ceiling.
+- Defined a versioned charades rubric with 68 title-specific editorial reviews,
+  per-component reasoning and revision history; unresolved titles retain
+  uncertainty instead of fabricated final ratings.
+- Protected local credentials/development data in the development server and
+  recorded Bitwarden-backed cross-machine secrets management in the backlog.
+
 ## 2026-10-04 — Vibrant, illustrated Business districts
 
 - Brightened the city table, skyline, district colors, and player pieces;

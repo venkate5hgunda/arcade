@@ -265,6 +265,7 @@ compatibility, host authorization and per-seat privacy.
   only after a device or test verifies the fix; keep unverified reports
   explicitly labeled. Keep user-facing instructions in `README.md` and
   chronological decisions in `CHANGELOG.md`.
-- For the smallest local run use `python3 -m http.server 8000`; run
+- For the smallest local run use `python3 dev/serve.py` (blocks private
+  credentials and development data); run
   `npm test` for the Node suite. There is no bundler or package install
   step (`package.json`).
