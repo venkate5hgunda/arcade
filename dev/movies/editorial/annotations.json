@@ -1,0 +1,559 @@
+[
+  {
+    "title": "Eega",
+    "catalog_seed": true,
+    "year": 2012,
+    "source": "https://en.wikipedia.org/wiki/Eega",
+    "difficulty": {
+      "actability": {"value": 1, "method": "editorial-title-and-story", "reason": "Eega means fly: buzzing flight, tiny wings and swatting offer concrete, distinct nonverbal gestures."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "The unusual fly-revenge premise is distinctive for Telugu-film-aware players; this is an editorial familiarity estimate, not a measured audience statistic."},
+      "reason": "Easy: a short, concrete animal title and recognizable premise reinforce the same gesture. Avoid relying only on revenge scenes."
+    }
+  },
+  {
+    "title": "Baahubali: The Beginning",
+    "catalog_seed": true,
+    "year": 2015,
+    "source": "https://en.wikipedia.org/wiki/Baahubali:_The_Beginning",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-and-story", "reason": "Strong arms and lifting a large object provide physical cues; separately signal the first film to avoid confusion with The Conclusion."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "The epic and central hero are likely familiar to the target audience; familiarity is an editorial hypothesis, not measured from TMDB votes."},
+      "reason": "Easy-to-moderate: strength gestures are playable, but the subtitle and two-film distinction introduce genuine ambiguity."
+    }
+  },
+  {
+    "title": "Pushpa: The Rise",
+    "catalog_seed": true,
+    "aliases": ["Pushpa: The Rise - Part 1"],
+    "year": 2021,
+    "source": "https://en.wikipedia.org/wiki/Pushpa:_The_Rise",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-and-story", "reason": "Pushpa is a character name; flower and rising gestures can cue title sounds/meaning but are not uniquely identifying. A character mannerism helps only if recognized."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "The named protagonist is likely familiar among Telugu-film-aware players, but the estimate needs audience calibration and cannot identify the installment alone."},
+      "reason": "Approachable overall, with moderate actability: familiarity lowers the weighted rating, but the proper name and installment subtitle still require more than a concrete-noun gesture."
+    }
+  },
+  {
+    "title": "RRR",
+    "catalog_seed": true,
+    "year": 2022,
+    "source": "https://en.wikipedia.org/wiki/RRR",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-and-story", "reason": "An acronym has no concrete literal gesture when speech, mouthing and writing letters are disallowed. Two friends, synchronized dancing and period-action cues depend on film recognition."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience, but recognizable scenes should not be mistaken for evidence that the acronym itself is easy to act."},
+      "reason": "Moderate: a familiar film can still have a hard-to-act acronym; score actability independently from recognition."
+    }
+  },
+  {
+    "title": "Nuvve Kavali", "year": 2000, "source": "https://en.wikipedia.org/wiki/Nuvve_Kavali",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "The title expresses wanting only you: point to one person, reject alternatives, then beckon. Distinguish it from similarly titled romantic films."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as an early-2000s romance to the target audience, but younger players may need the literal title route."},
+      "reason": "Approachable: a short interpersonal phrase has a gesture sequence, though several Telugu romance titles use similar pronouns."
+    }
+  },
+  {
+    "title": "Kushi", "aliases": ["Khushi"], "year": 2001, "source": "https://en.wikipedia.org/wiki/Kushi_(2001_film)",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Happiness can be expressed with smiling and celebration; the gestures are easy but not unique to this film."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "The 2001 romance is likely familiar to Telugu-film-aware players; explicitly retain the year because a later film shares the title."},
+      "reason": "Easy-to-approachable: a recognizable emotion provides a literal route, but identical-title remakes/later releases need year context."
+    }
+  },
+  {
+    "title": "Indra", "year": 2002, "source": "https://en.wikipedia.org/wiki/Indra_(2002_film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Indra is a proper name; a thunderbolt/deity gesture is interpretive and can suggest other mythological films rather than this action drama."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the audience as a major Chiranjeevi film; recognition is a hypothesis, not a claim about current provider popularity."},
+      "reason": "Moderate despite familiarity: a short proper name is not automatically easy to express without speech."
+    }
+  },
+  {
+    "title": "Okkadu", "year": 2003, "source": "https://en.wikipedia.org/wiki/Okkadu",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "One man can be conveyed by indicating one person and standing alone; this is a counting gesture, not spelling."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar among Telugu-film-aware players; the single-person cue still overlaps other hero-centric titles."},
+      "reason": "Approachable: concise literal gestures exist, with film recognition resolving an otherwise generic cue."
+    }
+  },
+  {
+    "title": "Arya", "aliases": ["Aarya"], "year": 2004, "source": "https://en.wikipedia.org/wiki/Arya_(2004_film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A character's proper name has no unique literal mime. Romance or recognizable choreography relies on prior film knowledge."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar in this audience, but Arya 2 and similar-name titles make installment context useful."},
+      "reason": "Moderate: familiarity offsets, but does not remove, the difficulty of a name-only title."
+    }
+  },
+  {
+    "title": "Athadu", "year": 2005, "source": "https://en.wikipedia.org/wiki/Athadu",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "He/him can be indicated by pointing at a male person, but a pronoun is highly non-unique; an action-film cue may be needed."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players; the estimate concerns the film, not ease of communicating a pronoun."},
+      "reason": "Approachable overall with moderate actability: short length and familiarity compensate for an ambiguous pronoun."
+    }
+  },
+  {
+    "title": "Pokiri", "year": 2006, "source": "https://en.wikipedia.org/wiki/Pokiri",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A rogue/troublemaker can be suggested through swagger and mischievous behavior, but the adjective is less concrete than an object."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience; cross-language remakes are not automatically the same prompt identity."},
+      "reason": "Approachable overall: the recognizable film helps disambiguate a moderately difficult behavioral cue."
+    }
+  },
+  {
+    "title": "Happy Days", "year": 2007, "source": "https://en.wikipedia.org/wiki/Happy_Days_(2007_film)",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Smile/celebrate for happy, then indicate successive days through sleeping and waking. The English words are concrete enough for a short sequence."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu campus film; college-age familiarity may differ by generation."},
+      "reason": "Approachable: two readable concepts give a literal route without needing exact scene reenactment."
+    }
+  },
+  {
+    "title": "Jalsa", "year": 2008, "source": "https://en.wikipedia.org/wiki/Jalsa",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Revelry/fun can be mimed with dancing and celebration, but those gestures also fit happiness and party titles."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar among Telugu-film-aware players; a familiar star does not make generic celebration gestures unique."},
+      "reason": "Approachable overall, with ambiguity in the literal cue rather than title length."
+    }
+  },
+  {
+    "title": "Magadheera", "year": 2009, "source": "https://en.wikipedia.org/wiki/Magadheera",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A valiant warrior can be suggested by courage, sword fighting and heroic posture. These cues are playable but overlap many historical action films."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to this audience; the reincarnation premise can help only when players already know it."},
+      "reason": "Approachable overall: a physical warrior route exists, but film recognition carries much of the disambiguation."
+    }
+  },
+  {
+    "title": "Maryada Ramanna", "year": 2010, "source": "https://en.wikipedia.org/wiki/Maryada_Ramanna",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Respectful greeting can indicate maryada, but Ramanna is a personal name with no reliable nonverbal spelling route."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players, though less universal than the broadest blockbusters."},
+      "reason": "Moderate: one actable quality plus one hard-to-mime name creates a genuine bottleneck."
+    }
+  },
+  {
+    "title": "Dookudu", "year": 2011, "source": "https://en.wikipedia.org/wiki/Dookudu",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Aggressive forward movement or charging can communicate the title's forceful behavior, but cannot identify the film uniquely."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar in the target audience; recognizable police/action cues remain dependent on prior viewing."},
+      "reason": "Approachable overall: a physical movement cue is available, with moderate semantic ambiguity."
+    }
+  },
+  {
+    "title": "Gabbar Singh", "year": 2012, "source": "https://en.wikipedia.org/wiki/Gabbar_Singh_(film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Both words identify a character name. A police pose or mannerism depends on recognizing this film rather than translating its title."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players; distinguish the 2012 film from Sardaar Gabbar Singh."},
+      "reason": "Moderate: popular character identification does not supply a literal name gesture."
+    }
+  },
+  {
+    "title": "Attarintiki Daredi", "aliases": ["Atharintiki Daaredi"], "year": 2013, "source": "https://en.wikipedia.org/wiki/Attarintiki_Daredi",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "The way to an aunt's house can be acted with a house, family relationship and asking directions; communicating the precise aunt relationship is the hard part."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience, which can help resolve a longer concept compressed into two transliterated words."},
+      "reason": "Approachable overall with moderate actability: direction and house gestures work, but kinship is less direct."
+    }
+  },
+  {
+    "title": "Manam", "year": 2014, "source": "https://en.wikipedia.org/wiki/Manam_(film)",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "We/us can be communicated by pointing to oneself and then including the group. Distinguish the inclusive pronoun from a generic family-film cue."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar among Telugu-film-aware players, especially as a multi-generation family film."},
+      "reason": "Approachable: a concise inclusive gesture can communicate the title directly."
+    }
+  },
+  {
+    "title": "Srimanthudu", "year": 2015, "source": "https://en.wikipedia.org/wiki/Srimanthudu",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "A wealthy man can be conveyed by counting imaginary money, indicating luxury and pointing to a person."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience; village-adoption story cues are supplementary, not required to act the title."},
+      "reason": "Approachable: a fairly concrete social role supports a readable gesture sequence."
+    }
+  },
+  {
+    "title": "Nannaku Prematho", "year": 2016, "source": "https://en.wikipedia.org/wiki/Nannaku_Prematho",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "To father, with love requires father/family and affection gestures, plus conveying the relationship between them without speech."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to this audience; the title's emotional phrase is not as instantly concrete as an animal or object."},
+      "reason": "Approachable-to-moderate: short written length hides several relational concepts."
+    }
+  },
+  {
+    "title": "Pelli Choopulu", "year": 2016, "source": "https://en.wikipedia.org/wiki/Pelli_Choopulu",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A matchmaking meeting can be suggested by two prospective partners meeting with families; a generic wedding gesture alone misses the pre-marriage encounter."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players, but familiarity may vary more than for a major action franchise."},
+      "reason": "Approachable-to-moderate: culturally readable staging helps, yet the exact ritual needs more than a wedding mime."
+    }
+  },
+  {
+    "title": "Arjun Reddy", "year": 2017, "source": "https://en.wikipedia.org/wiki/Arjun_Reddy",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A full personal name has no unique literal gesture; doctor, anger and romance cues are film-dependent and non-unique."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience; familiarity with remakes is supporting recognition, not identity equivalence."},
+      "reason": "Moderate: character-name actability remains difficult despite strong expected recognition."
+    }
+  },
+  {
+    "title": "Rangasthalam", "year": 2018, "source": "https://en.wikipedia.org/wiki/Rangasthalam_(film)",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "A stage/theatre can be indicated by opening curtains, stepping onto a platform and performing. The film's village setting need not be reenacted."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players; the title's literal stage meaning provides an independent route."},
+      "reason": "Approachable: a concrete performance setting is easier than identifying the film solely through rural-drama scenes."
+    }
+  },
+  {
+    "title": "Jersey", "year": 2019, "source": "https://en.wikipedia.org/wiki/Jersey_(2019_film)",
+    "difficulty": {
+      "actability": {"value": 1, "method": "editorial-title-meaning", "reason": "Point to or mime wearing a sports shirt, then add cricket batting to distinguish it from generic clothing."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar in the target audience; retain the year/language to distinguish the later Hindi film."},
+      "reason": "Easy: a concrete wearable object and a sport cue reinforce each other."
+    }
+  },
+  {
+    "title": "Ala Vaikunthapurramuloo", "year": 2020, "source": "https://en.wikipedia.org/wiki/Ala_Vaikunthapurramuloo",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The phrase refers to being in Vaikuntha; an imagined heavenly realm is abstract and gestures do not readily communicate the precise literary phrase."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience, but recognizable dance cues rely on prior film/song knowledge."},
+      "reason": "Moderate: high expected familiarity offsets an unusually difficult literal title."
+    }
+  },
+  {
+    "title": "Jathi Ratnalu", "year": 2021, "source": "https://en.wikipedia.org/wiki/Jathi_Ratnalu",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Jewels of the nation is an idiomatic/ironic phrase: imaginary jewels plus country gestures may suggest the literal words but not the comic sense."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to this audience as a recent Telugu comedy; do not equate a humorous premise with an easy title."},
+      "reason": "Moderate: idiomatic meaning is harder to express than the title's short token count suggests."
+    }
+  },
+  {
+    "title": "Sita Ramam", "year": 2022, "source": "https://en.wikipedia.org/wiki/Sita_Ramam",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The paired names are hard to mime literally. Letter-writing and soldier/romance cues point to the plot and need film recognition."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar among Telugu-film-aware players; mythological-name associations can also misdirect guesses."},
+      "reason": "Moderate: a familiar romance has a name-dependent title with misleading alternative associations."
+    }
+  },
+  {
+    "title": "Dasara", "year": 2023, "source": "https://en.wikipedia.org/wiki/Dasara_(film)",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A festival can be suggested with celebration and a deity/effigy cue, but distinguishing Dasara from other festivals takes cultural knowledge."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar as a recent film, with the festival name supplying an additional cue to Telugu-speaking players."},
+      "reason": "Approachable-to-moderate: literal cultural cues exist but are not uniquely identifying."
+    }
+  },
+  {
+    "title": "Hanu-Man", "year": 2024, "source": "https://en.wikipedia.org/wiki/Hanu-Man",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "A monkey tail, carrying a mountain and a heroic leap can point to Hanuman; a generic superhero pose alone is insufficient."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience through the film and cultural figure; year context separates it from other Hanuman adaptations."},
+      "reason": "Approachable: distinctive culturally familiar gestures help, with adaptation ambiguity remaining."
+    }
+  },
+  {
+    "title": "Kalki 2898 AD", "year": 2024, "source": "https://en.wikipedia.org/wiki/Kalki_2898_AD",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A mythological proper name and exact future year cannot be communicated reliably without spelling/writing; futuristic action gestures depend on film recognition."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar among Telugu-film-aware players, but familiarity does not remove the no-writing difficulty of the year."},
+      "reason": "Moderate: the precise numeric subtitle and proper name resist literal mime despite expected recognition."
+    }
+  },
+  {
+    "title": "Pushpa 2: The Rule", "aliases": ["Pushpa 2 - The Rule"], "year": 2024, "source": "https://en.wikipedia.org/wiki/Pushpa_2:_The_Rule",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-and-installment", "reason": "Signal the second installment by counting, then communicate a character name and abstract rule/authority concept. A familiar mannerism alone cannot distinguish both films."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience; explicit sequel identification matters more than generic franchise familiarity."},
+      "reason": "Moderate: proper-name actability, an abstract subtitle and extra title length all raise difficulty relative to the first film."
+    }
+  },
+  {
+    "title": "Sankranthiki Vasthunam", "year": 2025, "source": "https://en.wikipedia.org/wiki/Sankranthiki_Vasthunam",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Coming for Sankranti requires an arrival gesture plus festival-specific cues; generic celebration can be mistaken for several festival titles."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to current Telugu-film-aware players; a recent release may be less familiar to diaspora groups with older viewing habits."},
+      "reason": "Approachable-to-moderate: a physical arrival cue helps, but the exact festival remains a cultural disambiguation step."
+    }
+  },
+  {
+    "title": "Mayabazar", "year": 1957, "source": "https://en.wikipedia.org/wiki/Mayabazar",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "An illusion/magic market can be expressed with a magic trick and shopping; translating the compound exactly still takes a sequence."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu classic; this estimate concerns cultural reach, not recency or current TMDB popularity."},
+      "reason": "Approachable overall: classic familiarity assists a moderately actable two-concept compound."
+    }
+  },
+  {
+    "title": "Gundamma Katha", "year": 1962, "source": "https://en.wikipedia.org/wiki/Gundamma_Katha",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Story can be mimed by opening a book, but Gundamma is a personal name without a unique gesture."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu family-comedy classic, though recognition may vary by generation."},
+      "reason": "Moderate: one concrete story cue does not solve the proper-name bottleneck."
+    }
+  },
+  {
+    "title": "Sagara Sangamam", "year": 1983, "source": "https://en.wikipedia.org/wiki/Sagara_Sangamam",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Ocean and confluence can be suggested by waves and joining streams/hands; the poetic compound is more abstract than either noun alone."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu dance-drama classic; dance cues are supplementary and can fit many films."},
+      "reason": "Approachable overall with moderate actability: poetic joining concepts benefit from classic-film recognition."
+    }
+  },
+  {
+    "title": "Geethanjali", "aliases": ["Geetanjali"], "year": 1989, "source": "https://en.wikipedia.org/wiki/Geethanjali_(1989_film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The name/title is difficult to mime directly; a romance cue is broad, and later horror films with the same name can mislead."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu romance classic; retain 1989 explicitly to distinguish later same-title films."},
+      "reason": "Moderate: familiarity is strong but exact name communication and same-title ambiguity remain."
+    }
+  },
+  {
+    "title": "Shiva", "aliases": ["Siva"], "year": 1989, "source": "https://en.wikipedia.org/wiki/Siva_(1989_film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A deity gesture can suggest the name but not the campus-action film; cycling/chain or college-action cues require specific film knowledge."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu action classic; Siva/Shiva transliteration must be reconciled rather than treated as unrelated titles."},
+      "reason": "Moderate: literal deity cues can mislead, so the proper-name route depends on recognition and year."
+    }
+  },
+  {
+    "title": "Aa Naluguru", "year": 2004, "source": "https://en.wikipedia.org/wiki/Aa_Naluguru",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Those four can be communicated by indicating a separate group and counting four people; counting is permitted, unlike spelling letters."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players as a social drama; familiarity may depend on generation."},
+      "reason": "Approachable: a short counting-and-pointing sequence supplies a literal route."
+    }
+  },
+  {
+    "title": "Anand", "year": 2004, "source": "https://en.wikipedia.org/wiki/Anand_(2004_film)",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Joy/happiness can be mimed, but Anand is also a character name and smiling overlaps Kushi and other happiness titles."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar in this audience; retain the year/language because an older Hindi film shares the title."},
+      "reason": "Approachable-to-moderate: easy emotion gestures are not uniquely identifying, and the name interpretation adds ambiguity."
+    }
+  },
+  {
+    "title": "Chakram", "year": 2005, "source": "https://en.wikipedia.org/wiki/Chakram",
+    "difficulty": {
+      "actability": {"value": 1, "method": "editorial-title-meaning", "reason": "A wheel can be conveyed by a circle and rolling/spinning gesture. This is a direct object cue independent of the film's plot."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players, though less universal than the broadest action blockbusters."},
+      "reason": "Easy: a concrete circular object gives a strong nonverbal route."
+    }
+  },
+  {
+    "title": "Nuvvostanante Nenoddantana", "year": 2005, "source": "https://en.wikipedia.org/wiki/Nuvvostanante_Nenoddantana",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The conditional/rhetorical phrase roughly asks whether one would refuse if the other came. Beckoning and negation gestures help, but precise conditional meaning is difficult without speech."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar as a Telugu romance; recognizability should not hide the title's unusual grammatical length."},
+      "reason": "Moderate: transliteration is one whitespace token, but the semantic phrase is much longer; actability captures what token count misses."
+    }
+  },
+  {
+    "title": "Sankranthi", "year": 2005, "source": "https://en.wikipedia.org/wiki/Sankranthi_(film)",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Harvest and festival celebration gestures can indicate Sankranti, but need cultural disambiguation from other festival titles."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among family-film viewers in the target audience; year context distinguishes other festival-named films."},
+      "reason": "Approachable-to-moderate: cultural gestures help, but a generic celebration is insufficient."
+    }
+  },
+  {
+    "title": "Anji", "year": 2004, "source": "https://en.wikipedia.org/wiki/Anji",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A character name is hard to mime literally; fantasy/adventure cues can point to the story only if players recognize it."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players as a Chiranjeevi fantasy film, but less universal than his best-known action titles."},
+      "reason": "Moderate: short length does not remove the name-only actability problem."
+    }
+  },
+  {
+    "title": "Nuvvu Naaku Nachav", "year": 2001, "source": "https://en.wikipedia.org/wiki/Nuvvu_Naaku_Nachav",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "I like you can be communicated by pointing to oneself, an approving/affectionate gesture and pointing to the other person."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu romantic-comedy staple, while age and viewing habits still need calibration."},
+      "reason": "Approachable: a simple relational gesture sequence communicates the title with less grammatical ambiguity than a conditional phrase."
+    }
+  },
+  {
+    "title": "Khadgam", "year": 2002, "source": "https://en.wikipedia.org/wiki/Khadgam",
+    "difficulty": {
+      "actability": {"value": 1, "method": "editorial-title-meaning", "reason": "A sword can be mimed by drawing a blade and making a controlled fencing gesture. Keep gestures non-contact and safe."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among Telugu-film-aware players; the literal object route does not depend on remembering the ensemble plot."},
+      "reason": "Easy: a distinctive concrete object is directly actable."
+    }
+  },
+  {
+    "title": "Varsham", "year": 2004, "source": "https://en.wikipedia.org/wiki/Varsham",
+    "difficulty": {
+      "actability": {"value": 1, "method": "editorial-title-meaning", "reason": "Rain can be shown with falling droplets, opening an umbrella and shielding oneself; avoid actual water or slippery-floor effects."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience as an early Prabhas romance; the weather cue provides an independent route."},
+      "reason": "Easy: a single concrete weather phenomenon has several intuitive gestures."
+    }
+  },
+  {
+    "title": "Venky", "year": 2004, "source": "https://en.wikipedia.org/wiki/Venky",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The nickname cannot be communicated uniquely by a literal mime. Train or police-comedy scene cues require film recognition."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu comedy viewers, but this estimate is audience-dependent rather than a measured popularity claim."},
+      "reason": "Moderate: recognizable comedy does not supply a direct gesture for a nickname."
+    }
+  },
+  {
+    "title": "Chatrapathi", "aliases": ["Chhatrapathi"], "year": 2005, "source": "https://en.wikipedia.org/wiki/Chatrapathi_(2005_film)",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A sovereign/ruler can be suggested with a crown and commanding posture; this communicates a role, not a unique character."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to the target audience as a Prabhas action film; retain year/language to distinguish the Hindi remake."},
+      "reason": "Approachable overall: a ruler-role cue is available, with film familiarity doing the disambiguation."
+    }
+  },
+  {
+    "title": "Bommarillu", "year": 2006, "source": "https://en.wikipedia.org/wiki/Bommarillu",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "A dollhouse can be conveyed by a small doll and miniature house gestures; a normal house alone misses the compound."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu family-romance staple; the title supports a route independent of reenacting the father-son relationship."},
+      "reason": "Approachable: two concrete objects form a readable compound."
+    }
+  },
+  {
+    "title": "Yamadonga", "year": 2007, "source": "https://en.wikipedia.org/wiki/Yamadonga",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Thief gestures are concrete, but adding Yama/death-deity identity requires culturally specific cues and can suggest other Yama comedies."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players; mythology familiarity aids but does not uniquely identify the film."},
+      "reason": "Approachable overall: a clear thief cue combines with a less direct deity cue."
+    }
+  },
+  {
+    "title": "Ashta Chamma", "year": 2008, "source": "https://en.wikipedia.org/wiki/Ashta_Chamma",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "The traditional board game can be suggested by a floor board, throwing shells/dice and moving pieces; exact game recognition depends on cultural exposure."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu romantic-comedy viewers, but the title's board-game reference may be less familiar to younger diaspora players."},
+      "reason": "Approachable-to-moderate: a physical game route exists but may be confused with other board games."
+    }
+  },
+  {
+    "title": "Vedam", "year": 2010, "source": "https://en.wikipedia.org/wiki/Vedam",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A sacred text can be indicated with a book and reverence, but exact identification as a Veda rather than another religious text is difficult without words."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among Telugu-film-aware players as an ensemble drama; recognition of the film is separate from its abstract title."},
+      "reason": "Moderate: a broad book cue does not uniquely communicate the title."
+    }
+  },
+  {
+    "title": "Ishq", "year": 2012, "source": "https://en.wikipedia.org/wiki/Ishq_(2012_film)",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Love can be indicated with affection or a heart gesture, but these do not distinguish Ishq from numerous love-titled films."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu romance viewers; exact year/language matter because multiple films share the title."},
+      "reason": "Approachable-to-moderate: easy emotion gestures have high title ambiguity."
+    }
+  },
+  {
+    "title": "Drushyam", "year": 2014, "source": "https://en.wikipedia.org/wiki/Drushyam",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A visual/scene can be suggested by looking or framing an image, but these broad gestures cannot uniquely identify the title."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar as a Telugu suspense film; original and sequel identities should not be collapsed with other-language remakes."},
+      "reason": "Moderate: suspense familiarity helps but the title is abstract and non-unique."
+    }
+  },
+  {
+    "title": "Temper", "year": 2015, "source": "https://en.wikipedia.org/wiki/Temper_(film)",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Anger can be conveyed through a frown, crossed arms and controlled frustration; do not use threatening contact with other players."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players; the English behavioral cue is understandable without reenacting police violence."},
+      "reason": "Approachable: a visible emotional state gives a direct non-contact route."
+    }
+  },
+  {
+    "title": "Kshanam", "year": 2016, "source": "https://en.wikipedia.org/wiki/Kshanam",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "A moment can be suggested by a very short interval, a watch and a brief pause. Distinguishing a moment from a second/minute is difficult."},
+      "recognition": {"value": 3, "method": "editorial-audience-hypothesis", "reason": "Expected familiarity is mixed outside Telugu thriller viewers; this is an editorial estimate needing audience calibration."},
+      "reason": "Moderate: time gestures are possible but imprecise, with less universal expected film recognition."
+    }
+  },
+  {
+    "title": "Fidaa", "year": 2017, "source": "https://en.wikipedia.org/wiki/Fidaa",
+    "difficulty": {
+      "actability": {"value": 3, "method": "editorial-title-meaning", "reason": "Being smitten/charmed can be mimed with surprise and affection, but a nuanced emotion is less concrete than a named object."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar to Telugu-film-aware players as a romance; recognized dance cues are optional rather than a literal title explanation."},
+      "reason": "Approachable overall with moderate emotional ambiguity."
+    }
+  },
+  {
+    "title": "Bharat Ane Nenu", "year": 2018, "source": "https://en.wikipedia.org/wiki/Bharat_Ane_Nenu",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "I, named Bharat is a self-introduction containing a proper name. An oath-taking or chief-minister cue depends on film knowledge and cannot literally spell the name."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar in the target audience as a political drama; the recognizable office does not solve the title grammar by itself."},
+      "reason": "Moderate: a name and spoken-introduction structure resist literal mime."
+    }
+  },
+  {
+    "title": "Mahanati", "year": 2018, "source": "https://en.wikipedia.org/wiki/Mahanati",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Great actress can be conveyed through stage/screen acting and an exaggerated excellence gesture; avoid relying only on identifying Savitri by appearance."},
+      "recognition": {"value": 1, "method": "editorial-audience-hypothesis", "reason": "Likely familiar as a Telugu cinema biographical film; actress-role gestures supply a route independent of prior viewing."},
+      "reason": "Approachable: a readable profession and quality form a manageable compound."
+    }
+  },
+  {
+    "title": "Agent Sai Srinivasa Athreya", "year": 2019, "source": "https://en.wikipedia.org/wiki/Agent_Sai_Srinivasa_Athreya",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Agent/detective can be mimed with observation and investigation, but the three-part personal name has no reliable nonverbal route."},
+      "recognition": {"value": 3, "method": "editorial-audience-hypothesis", "reason": "Expected familiarity is mixed outside comedy-thriller viewers; the distinctive detective persona can help only when already known."},
+      "reason": "Moderate overall with hard actability: an actable profession is followed by a long proper name and only mixed expected recognition."
+    }
+  },
+  {
+    "title": "Brochevarevarura", "year": 2019, "source": "https://en.wikipedia.org/wiki/Brochevarevarura",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A question about who will save/protect requires a rescue gesture plus an interrogative relationship. The literary phrase is not easily represented precisely."},
+      "recognition": {"value": 3, "method": "editorial-audience-hypothesis", "reason": "Expected familiarity is mixed outside Telugu comedy-thriller viewers; do not infer obscurity solely from its smaller scale."},
+      "reason": "Moderate-to-hard: a long semantic question is hidden inside a single transliterated token."
+    }
+  },
+  {
+    "title": "Colour Photo", "aliases": ["Color Photo"], "year": 2020, "source": "https://en.wikipedia.org/wiki/Colour_Photo",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Taking a photo is easy to mime; contrasting a plain image with a color palette can suggest colour, though colors cannot be named aloud."},
+      "recognition": {"value": 3, "method": "editorial-audience-hypothesis", "reason": "Expected familiarity is mixed outside Telugu romance/streaming viewers, so retain a literal route instead of relying only on the plot."},
+      "reason": "Approachable: a concrete camera/photo cue compensates for mixed expected recognition."
+    }
+  },
+  {
+    "title": "Uppena", "year": 2021, "source": "https://en.wikipedia.org/wiki/Uppena",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "A surge/high wave can be mimed with rising water and a sweeping wave; distinguish it from normal rain or the ocean generally."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to Telugu-film-aware players as a recent romance, with the physical-wave meaning providing another route."},
+      "reason": "Approachable: a physical motion cue is available, but exact water-phenomenon identification still matters."
+    }
+  },
+  {
+    "title": "DJ Tillu", "year": 2022, "source": "https://en.wikipedia.org/wiki/DJ_Tillu",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "Turntable/headphone gestures clearly communicate DJ, but Tillu is a name; generic DJ acting cannot identify the character uniquely."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to current Telugu comedy viewers; distinguish the original from Tillu Square."},
+      "reason": "Moderate: one actable occupation leaves a proper-name and installment bottleneck."
+    }
+  },
+  {
+    "title": "Virupaksha", "year": 2023, "source": "https://en.wikipedia.org/wiki/Virupaksha_(film)",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "A specific sacred epithet/name is not reliably conveyed by a generic deity or eye gesture; supernatural-thriller cues depend on viewing."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among recent Telugu thriller viewers, but familiarity is an editorial hypothesis rather than a provider score."},
+      "reason": "Moderate: the title's precise name resists literal mime even when the film is recognized."
+    }
+  },
+  {
+    "title": "Hi Nanna", "year": 2023, "source": "https://en.wikipedia.org/wiki/Hi_Nanna",
+    "difficulty": {
+      "actability": {"value": 2, "method": "editorial-title-meaning", "reason": "Wave a greeting and indicate a father-child relationship; both concepts can be staged without speaking or mouthing hi."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar to current Telugu family-romance viewers; family gestures also support players who have not seen the film."},
+      "reason": "Approachable: a concise greeting-and-relationship sequence gives a literal route."
+    }
+  },
+  {
+    "title": "Saripodhaa Sanivaaram", "year": 2024, "source": "https://en.wikipedia.org/wiki/Saripodhaa_Sanivaaram",
+    "difficulty": {
+      "actability": {"value": 4, "method": "editorial-title-meaning", "reason": "The title combines a sufficiency/rhetorical phrase with Saturday. Indicating a specific weekday without writing or speaking is hard; film-specific weekly action cues may be necessary."},
+      "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among current Telugu action viewers; exact weekday communication remains difficult even with recognition."},
+      "reason": "Moderate: short token count masks a relational phrase and an exact weekday."
+    }
+  }
+]

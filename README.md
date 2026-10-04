@@ -8,6 +8,12 @@ mode, sound, and haptics.
 For module boundaries, state recovery, game-by-game ownership, current
 limitations and refactoring priorities, see [Architecture and maintenance map](ARCHITECTURE.md).
 
+The progressive Telugu movie system of record, lossless ingestion, provider
+hydration and evidence-backed charades rubric are documented in
+[Movie catalog](dev/movies/README.md). Build locally with `npm run movies:build`;
+keep API credentials in the ignored `.env` file and use `npm start` rather than
+a generic static server to avoid exposing private development data.
+
 ## Game catalog
 
 | Game | Players | Category | Status |
@@ -288,9 +294,14 @@ versions, without relying on unreliable programmatic switch clicks.
 ## Running locally
 
 ```bash
-python3 -m http.server 8000
+python3 dev/serve.py
 # open http://localhost:8000
 ```
+
+`npm start` runs the same server. It blocks `.env`, hidden files and `dev/`
+data. For intentional LAN access, use `python3 dev/serve.py --bind 0.0.0.0`;
+phone camera scanning still requires HTTPS. Avoid generic static servers when
+local credentials are present.
 
 ## Project layout
 
