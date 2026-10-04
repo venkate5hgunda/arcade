@@ -1,6 +1,13 @@
 # Movie catalog backlog
 
-- Use Bitwarden as the source of truth for TMDB/OMDb credentials across development
+- Plug in the LLM annotation/review adapter once provider details are supplied:
+  endpoint/API format, runtime authentication source, annotation and review model
+  IDs, sampling/token settings, structured-output support, rate/cost limits,
+  retention policy and sanitized errors/usage/request IDs. Implement the stdin/
+  stdout contract in `llm_annotation.py`, version the profile, and qualify Telugu
+  meanings, uncertainty and critical-review quality against existing curated
+  reviews before activating bulk results. No live provider is configured yet.
+- Use Bitwarden as the source of truth for TMDB/OMDb and future LLM credentials across development
   machines. Resolve secrets at runtime into the process environment; retain `.env`
   only as a local development fallback. Document vault item names, onboarding,
   rotation and recovery without storing tokens in Git or browser assets.

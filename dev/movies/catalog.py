@@ -639,6 +639,9 @@ def hydrate_tmdb(db, client):
 
 
 def annotate(db, seeds):
+    from .llm_annotation import promoted_reviews
+
+    automated = promoted_reviews(db)
     for seed in seeds:
         if not isinstance(seed.get("title"), str) or not seed["title"].strip() or type(seed.get("year")) is not int:
             raise ValueError("Each editorial review requires a nonempty title and integer year.")
@@ -665,6 +668,8 @@ def annotate(db, seeds):
     for movie in db.execute("SELECT * FROM movies").fetchall():
         evidence = by_native_id.get(native_ids.get(movie["id"])) or curated.get(
             (title_key(movie["title"]), movie["year"]))
+        if not evidence:
+            evidence = automated.get(native_ids.get(movie["id"]))
         prompt_title = evidence["title"] if evidence else movie["title"]
         words = prompt_title.split()
         length_score = 1 if len(words) <= 2 else 2 if len(words) <= 4 else 4 if len(words) <= 6 else 5
@@ -683,7 +688,9 @@ def annotate(db, seeds):
             for name in ("actability", "recognition"):
                 components[name].update(evidence["difficulty"][name])
         complete = all(component["value"] is not None for component in components.values())
-        status = "editorial" if complete else "needs_review"
+        status = "needs_review"
+        if complete:
+            status = "llm_reviewed" if evidence and evidence.get("automation") else "editorial"
         # Unknown dimensions span the entire rubric, never a fabricated neutral value.
         low = sum(c["weight"] * (c["value"] if c["value"] is not None else 1) for c in components.values())
         high = sum(c["weight"] * (c["value"] if c["value"] is not None else 5) for c in components.values())
@@ -701,9 +708,13 @@ def annotate(db, seeds):
         }
         if evidence and evidence.get("tmdb_id"):
             annotation["identity_basis"] = {"provider": "tmdb", "external_id": evidence["tmdb_id"]}
+        if evidence and evidence.get("automation"):
+            annotation["automation"] = evidence["automation"]
         if evidence and evidence.get("evidence"):
             annotation["evidence"] = dict(evidence["evidence"])
-            annotation["evidence"]["response_id_scope"] = "original curatorial snapshot database"
+            annotation["evidence"]["response_id_scope"] = (
+                "local LLM job snapshot database" if evidence.get("automation")
+                else "original curatorial snapshot database")
             receipt = db.execute("SELECT * FROM responses WHERE id=? AND provider='tmdb' AND path=? AND fetched_at=?",
                                  (evidence["evidence"]["response_id"], "/movie/" + str(evidence["tmdb_id"]),
                                   evidence["evidence"]["fetched_at"])).fetchone()
@@ -755,12 +766,16 @@ def export(db, directory, run_errors=None):
                 "response_id": row["id"], "fetched_at": row["fetched_at"],
                 "http_status": row["status"], "data": json.loads(row["body"])}
         catalog.append(record)
-    for name, rows in (
+    outputs = [
         ("movies.jsonl", catalog),
         ("responses.jsonl", (dict(row) for row in db.execute("SELECT * FROM responses ORDER BY id"))),
         ("coverage.jsonl", (dict(row) for row in db.execute("SELECT * FROM coverage ORDER BY scope"))),
         ("redirects.jsonl", (dict(row) for row in db.execute("SELECT * FROM redirects ORDER BY alias_id"))),
-    ):
+    ]
+    for table in ("llm_jobs", "llm_calls", "llm_promotions"):
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+            outputs.append((table + ".jsonl", (dict(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid"))))
+    for name, rows in outputs:
         target = directory / name
         temporary = target.with_suffix(".tmp")
         with temporary.open("w") as output:
@@ -782,11 +797,18 @@ def export(db, directory, run_errors=None):
         "run_errors": run_errors or [],
         "provider_record_errors": db.execute(
             "SELECT count(*) FROM matches WHERE status='provider_error'").fetchone()[0],
+        "llm_job_status_counts": dict(db.execute(
+            "SELECT status,count(*) FROM llm_jobs GROUP BY status").fetchall()) if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='llm_jobs'").fetchone() else {},
         "coverage_scopes": [dict(row) for row in db.execute("SELECT scope,status FROM coverage ORDER BY scope")],
         "difficulty_reviewed": sum(bool(record["annotations"] and
                                        record["annotations"][-1]["difficulty"] is not None) for record in catalog),
         "difficulty_pending": sum(not record["annotations"] or
                                   record["annotations"][-1]["difficulty"] is None for record in catalog),
+        "difficulty_editorial": sum(bool(record["annotations"] and
+                                         record["annotations"][-1]["status"] == "editorial") for record in catalog),
+        "difficulty_llm_reviewed": sum(bool(record["annotations"] and
+                                            record["annotations"][-1]["status"] == "llm_reviewed") for record in catalog),
         "sources": [dict(row) for row in db.execute("SELECT sha256,path,headers_json FROM source_files")],
         "coverage_claim": "Source import plus explicitly completed TMDB intervals only; not an exhaustive filmography.",
         "attribution": "This product uses the TMDB API but is not endorsed or certified by TMDB. OMDb data: https://www.omdbapi.com/",

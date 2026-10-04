@@ -3,6 +3,16 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Provider-neutral LLM annotation and review
+
+- Added offline request preparation and a resumable, budgeted two-pass
+  annotation/review runner over trusted cached movie snapshots.
+- Persisted call intents, raw model receipts, reasoning, uncertainty and model
+  provenance; invalid outputs and interrupted calls cannot silently become scores.
+- Added explicit proposal promotion with stale-snapshot rejection and editorial
+  precedence; automated scores remain labeled model-reviewed, not human-verified.
+- Recorded live LLM provider/model/authentication integration as a backlog item.
+
 ## 2026-10-04 — Historical TMDB hydration and continued difficulty review
 
 - Added cache-resumable source-title matching with exact year/language and
