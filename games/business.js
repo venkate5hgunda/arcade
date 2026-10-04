@@ -581,16 +581,19 @@ export default {
         text(actionPanel, 'p', `Available cash · ${cost(player.cash)}`, 'bs-tip');
       const add = (label, move, quiet = false, actor = viewer) =>
         actionPanel.append(button(label, () => request(move, actor), quiet));
+      const revealTool = (selector, focus) => {
+        const panel = table.querySelector(selector);
+        panel.open = true;
+        panel.scrollIntoView({ block: 'nearest' });
+        panel.querySelector(focus)?.focus({ preventScroll: true });
+      };
       if (can && context === 'trade-response') {
         const o = s.offer;
         text(actionPanel, 'p', `${name(o.from, room)} offers ${o.offered.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashOut)} for ${o.wanted.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashIn)}. ${o.cardsOut || o.cardsIn ? 'Jail cards included. ' : ''}${o.interestTo || o.interestFrom ? 'Mortgage transfer fees apply.' : ''}`);
         add('Accept trade', { type: 'accept' });
         add('Reject trade', { type: 'reject' }, true);
-        actionPanel.append(button('Counter with new terms ↓', () => {
-          const panel = table.querySelector('.bs-trade');
-          panel.open = true; panel.scrollIntoView({ block: 'nearest' });
-          panel.querySelector('select')?.focus({ preventScroll: true });
-        }, true));
+        actionPanel.append(button('Counter with new terms ↓', () =>
+          revealTool('.bs-trade', 'select'), true));
       } else if (can && context === 'trade-wait') {
         text(actionPanel, 'p', `Waiting for ${name(s.offer.to, room)} to respond. You may withdraw the offer.`);
         add('Withdraw offer', { type: 'cancel' }, true);
@@ -637,7 +640,14 @@ export default {
         } else if (s.phase === 'debt') {
           text(actionPanel, 'p', `Owed: ${cost(s.debt.amount)} · available: ${cost(player.cash)}`);
           if (player.cash >= s.debt.amount) add('Settle debt and continue', { type: 'pay-debt' });
-          else text(actionPanel, 'p', 'Open Your portfolio below to sell buildings, mortgage, or trade. You can also declare bankruptcy.', 'bs-tip');
+          else {
+            text(actionPanel, 'p', 'Sell buildings, mortgage, or arrange a trade to raise cash. You can also declare bankruptcy.', 'bs-tip');
+            const canRaiseFromDeeds = DEEDS.some(id => s.deeds[id].owner === viewer &&
+              (s.deeds[id].level > 0 || !s.deeds[id].mortgaged));
+            actionPanel.append(button(canRaiseFromDeeds ? 'Open portfolio · raise cash ↓' :
+              'Arrange a trade · raise cash ↓', () =>
+              revealTool(canRaiseFromDeeds ? '.bs-portfolio' : '.bs-trade', 'button, select'), true));
+          }
           actionPanel.append(button('Declare bankruptcy…', () => {
             if (confirm('Declare bankruptcy? Buildings are liquidated and your deeds and cash transfer to your creditor (or bank auctions). This cannot be undone.'))
               request({ type: 'bankrupt' });
