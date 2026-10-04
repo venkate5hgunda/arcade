@@ -17,6 +17,8 @@ npm run movies:build
 python3 -m dev.movies --omdb --max-calls 100
 # TMDB discovery of released Telugu-original films since 2000 plus rich hydration:
 python3 -m dev.movies --tmdb --max-calls 100
+# Corroborate and hydrate existing historical source rows without creating duplicate movies:
+python3 -m dev.movies --tmdb-sources --max-calls 500
 # Earlier decades can be discovered independently:
 python3 -m dev.movies --tmdb --start-year 1931 --end-year 1999
 npm run test:movies
@@ -44,6 +46,7 @@ requests/day). A persistent 950-request UTC-day safety ceiling leaves headroom,
 but cannot account for calls made by other apps/machines with the same key.
 Requests for independent TMDB details run in batches of up to eight; database
 writes stay on the owner thread.
+Identical requests within a batch share one live request and response receipt.
 OMDb's per-record `Error getting data.` response is logged and retained as an
 auditable `provider_error`; other records can proceed. These records are skipped
 on ordinary reruns and retried only with explicit `--refresh`.
@@ -76,6 +79,14 @@ values. OMDb hydration uses the IMDb ID from TMDB details where available.
 Known historical OMDb identities crosswalk to TMDB through `/find`, requiring
 a unique Telugu-original movie with the same year. Transliteration aliases and
 remakes need explicit reviewed reconciliation.
+`--tmdb-sources` searches unlinked source records by exact normalized title and
+primary release year. A unique Telugu-original candidate must also have an
+exact independently corroborated director name; when director evidence is
+unavailable, an exact cast name can corroborate it. Name-token order and
+punctuation are normalized, but initials are not expanded and near spellings
+are not guessed. Contradicting director evidence is not overridden by matching
+cast. Identity collisions remain review-required. All search/detail snapshots
+are cached, and linked records are skipped on ordinary reruns.
 The source's 68 records marked `1930` are suspicious (Telugu feature film history
 starts later); these are flagged and excluded from automatic hydration.
 Year-only release dates remain year-only. Unknown values remain unknown.
@@ -105,10 +116,17 @@ Editorial familiarity estimates are explicitly hypotheses requiring calibration.
 The annotation's `prompt_title` identifies the reviewed display title; provider
 aliases with longer subtitles do not silently change its title-length score.
 
-`editorial/annotations.json` provides 68 title-specific editorial starter reviews,
+`editorial/annotations.json` provides 168 title-specific editorial reviews,
 including Eega, Baahubali: The Beginning, Pushpa: The Rise and RRR. They distinguish
 literal gestures from scene familiarity, and installment ambiguity from title
 length. They are **not** a comprehensive human review of the historical CSV.
+The additional 100 reviews bind to exact native TMDB IDs and cite cached
+snapshot metrics, credits and title evidence. Of these, 91 provide both
+dimensions; nine explicitly leave familiarity unresolved rather than inferring
+it from global votes. Incomplete dimensions remain null with a bounded range.
+Curatorial receipt IDs refer to the original snapshot database, not arbitrary
+IDs on another development machine. Available local snapshots are verified by
+native path and fetch timestamp and include request/body hashes.
 All other titles are honestly marked `needs_review`; their final score is withheld.
 A Telugu-aware reviewer must inspect meanings, aliases and audience familiarity
 before these enter difficulty-filtered gameplay. Changes to this file append

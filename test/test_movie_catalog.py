@@ -176,6 +176,15 @@ class CatalogTests(unittest.TestCase):
             self.assertEqual(len(resumed.get_many(jobs)), 3)
             self.assertEqual(resumed.calls, 1)
 
+    def test_duplicate_requests_share_one_live_receipt_within_batch(self):
+        client = self.client(provider="tmdb", max_calls=1)
+        with patch.object(catalog.urllib.request, "urlopen", return_value=Response({"results": []})) as request:
+            results = client.get_many([("/search/movie", {"query": "Same"}),
+                                       ("/search/movie", {"query": "Same"})])
+            self.assertEqual(request.call_count, 1)
+            self.assertEqual(results[0], results[1])
+            self.assertEqual(client.calls, 1)
+
     def test_imdb_crosswalk_requires_matching_year_and_language(self):
         catalog.link(self.db, self.movie["id"], "omdb", "tt2258337", {"test": True})
         self.db.commit()
@@ -258,21 +267,128 @@ class CatalogTests(unittest.TestCase):
     def test_every_editorial_rating_is_bounded_and_has_dimension_reasoning(self):
         seeds = json.loads(catalog.ANNOTATIONS.read_text())
         catalog.seed_movies(self.db, seeds)
+        for seed in seeds:
+            if seed.get("tmdb_id"):
+                movie = self.db.execute("SELECT id FROM movies WHERE title=? AND year=?",
+                                        (seed["title"], seed["year"])).fetchone()
+                catalog.link(self.db, movie["id"], "tmdb", seed["tmdb_id"], {"test": True})
+        self.db.commit()
         catalog.annotate(self.db, seeds)
         rows = self.db.execute("SELECT annotation_json FROM annotations").fetchall()
         self.assertEqual(len(rows), len(seeds))
         for row in rows:
             annotation = json.loads(row[0])
-            self.assertIn(annotation["difficulty"], range(1, 6))
             for component in annotation["components"].values():
-                self.assertIn(component["value"], range(1, 6))
+                self.assertTrue(component["value"] is None or component["value"] in range(1, 6))
                 self.assertTrue(component["reason"].strip())
                 self.assertTrue(component["method"].strip())
-            weighted = sum(component["value"] * component["weight"]
-                           for component in annotation["components"].values())
-            self.assertEqual(annotation["difficulty"], int(weighted + 0.5))
+            if all(component["value"] is not None for component in annotation["components"].values()):
+                weighted = sum(component["value"] * component["weight"]
+                               for component in annotation["components"].values())
+                self.assertEqual(annotation["difficulty"], int(weighted + 0.5))
+            else:
+                self.assertIsNone(annotation["difficulty"])
+                self.assertEqual(annotation["confidence"], "low")
             self.assertTrue(annotation["reason"])
             self.assertTrue(annotation["sources"])
+
+    def test_native_id_review_cannot_leak_to_same_title_different_movie(self):
+        review = {"title": "Eega", "year": 2012, "tmdb_id": 999, "source": "https://www.themoviedb.org/movie/999",
+                  "difficulty": {"actability": {"value": 1, "reason": "Concrete noun.", "method": "editorial"},
+                                 "recognition": {"value": 1, "reason": "Hypothesis.", "method": "editorial"},
+                                 "reason": "Reviewed native identity only."}}
+        catalog.link(self.db, self.movie["id"], "tmdb", 123, {"test": True})
+        self.db.commit()
+        catalog.annotate(self.db, [review])
+        value = json.loads(self.db.execute("SELECT annotation_json FROM annotations").fetchone()[0])
+        self.assertIsNone(value["difficulty"])
+
+    def test_partial_editorial_review_keeps_uncertainty_instead_of_final_score(self):
+        review = {"title": "Eega", "year": 2012, "source": "https://www.themoviedb.org/movie/123",
+                  "difficulty": {"actability": {"value": 1, "reason": "Concrete fly cue.", "method": "editorial"},
+                                 "recognition": {"value": None, "reason": "Audience evidence unresolved.", "method": "unresolved"},
+                                 "reason": "Meaning known; familiarity needs review."}}
+        catalog.annotate(self.db, [review])
+        value = json.loads(self.db.execute("SELECT annotation_json FROM annotations").fetchone()[0])
+        self.assertIsNone(value["difficulty"])
+        self.assertEqual(value["difficulty_range"], [1.0, 2.2])
+        self.assertEqual(value["status"], "needs_review")
+        self.assertEqual(value["confidence"], "low")
+
+    def test_curatorial_receipt_id_on_another_database_is_not_false_snapshot_proof(self):
+        with patch.object(catalog.urllib.request, "urlopen", return_value=Response({"id": 999})):
+            _, receipt_id = self.client(provider="tmdb").get("/movie/999", {})
+        fetched_at = self.db.execute("SELECT fetched_at FROM responses WHERE id=?", (receipt_id,)).fetchone()[0]
+        review = {"title": "Eega", "year": 2012, "tmdb_id": 123, "source": "https://www.themoviedb.org/movie/123",
+                  "evidence": {"response_id": receipt_id, "fetched_at": fetched_at},
+                  "difficulty": {"actability": {"value": 1, "reason": "Concrete fly cue.", "method": "editorial"},
+                                 "recognition": {"value": 1, "reason": "Hypothesis.", "method": "editorial"},
+                                 "reason": "Original evidence belongs to the curatorial database."}}
+        catalog.link(self.db, self.movie["id"], "tmdb", 123, {"test": True})
+        self.db.commit()
+        catalog.annotate(self.db, [review])
+        evidence = json.loads(self.db.execute("SELECT annotation_json FROM annotations").fetchone()[0])["evidence"]
+        self.assertFalse(evidence["snapshot_available_locally"])
+        self.assertNotIn("body_sha256", evidence)
+
+    def native_details(self, director="S. S. Rajamouli"):
+        return {**{name: {} for name in catalog.APPENDS.split(",")},
+                "id": 123, "original_language": "te", "release_date": "2012-07-05",
+                "credits": {"crew": [{"name": director, "job": "Director"}],
+                            "cast": [{"name": "Nani"}]}}
+
+    def source_search(self, title="Eega"):
+        return {"total_pages": 1, "total_results": 1, "results": [
+            {"id": 123, "title": title, "original_title": title,
+             "original_language": "te", "release_date": "2012-07-05"}]}
+
+    def test_source_hydration_requires_credit_corroboration_and_reuses_cache(self):
+        client = self.client(provider="tmdb")
+        with patch.object(catalog.urllib.request, "urlopen",
+                          side_effect=[Response(self.source_search()), Response(self.native_details())]) as request:
+            catalog.hydrate_tmdb_sources(self.db, client)
+            catalog.hydrate_tmdb_sources(self.db, client)
+            self.assertEqual(request.call_count, 2)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM movies").fetchone()[0], 1)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM identities").fetchone()[0], 1)
+        evidence = json.loads(self.db.execute("SELECT evidence_json FROM identities").fetchone()[0])
+        self.assertEqual(evidence["matched_cast"], ["Nani"])
+        self.assertEqual(evidence["method"], "exact-cast-name-tokens")
+        self.assertEqual(self.db.execute("SELECT count(*) FROM matches WHERE status='hydrated'").fetchone()[0], 1)
+
+    def test_source_director_contradiction_is_not_overridden_by_matching_cast(self):
+        raw = json.loads(self.db.execute("SELECT raw_json FROM source_rows").fetchone()[0])
+        raw["Director"] = "Different Director"
+        self.db.execute("UPDATE source_rows SET raw_json=?", (catalog.dump(raw),))
+        self.db.commit()
+        with patch.object(catalog.urllib.request, "urlopen",
+                          side_effect=[Response(self.source_search()), Response(self.native_details())]):
+            catalog.hydrate_tmdb_sources(self.db, self.client(provider="tmdb"))
+        self.assertEqual(self.db.execute("SELECT count(*) FROM identities").fetchone()[0], 0)
+        self.assertEqual(self.db.execute("SELECT status FROM matches").fetchone()[0], "needs_review")
+
+    def test_source_approximate_title_is_retained_but_never_auto_linked(self):
+        with patch.object(catalog.urllib.request, "urlopen",
+                          return_value=Response(self.source_search("Eega 2"))) as request:
+            catalog.hydrate_tmdb_sources(self.db, self.client(provider="tmdb"))
+            self.assertEqual(request.call_count, 1)
+        self.assertEqual(self.db.execute("SELECT count(*) FROM identities").fetchone()[0], 0)
+        self.assertEqual(self.db.execute("SELECT status FROM matches").fetchone()[0], "needs_review")
+
+    def test_incomplete_candidate_details_do_not_become_trusted_export_data(self):
+        with patch.object(catalog.urllib.request, "urlopen",
+                          side_effect=[Response(self.source_search()), Response({"id": 123})]):
+            with self.assertRaises(catalog.APIError):
+                catalog.hydrate_tmdb_sources(self.db, self.client(provider="tmdb"))
+        catalog.annotate(self.db, [])
+        catalog.export(self.db, self.path / "export")
+        movie = json.loads((self.path / "export/movies.jsonl").read_text())
+        self.assertEqual(movie["provider_data"], {})
+        self.assertEqual(movie["matches"][0]["status"], "needs_review")
+
+    def test_person_matching_allows_name_order_but_not_unproven_initial_expansion(self):
+        self.assertEqual(catalog.person_key("Akkineni Nagarjuna"), catalog.person_key("Nagarjuna Akkineni"))
+        self.assertNotEqual(catalog.person_key("C. Pullaiah"), catalog.person_key("Chittajallu Pullaiah"))
 
     def test_editorial_annotation_reasoning_and_history(self):
         seeds = json.loads(catalog.ANNOTATIONS.read_text())
