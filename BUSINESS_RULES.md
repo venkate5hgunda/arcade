@@ -122,3 +122,15 @@ instead reports ₹500 jail and ₹2,000 tax and internally conflicts about
 Rest/club effects. Sources also disagree on player range and roll-12
 opening. Arcade provides explicit defaults and selected toggles rather than
 claiming any one variant is universally official.
+
+### Exploring the Arcade table
+
+The contextual action card and current player's location are above the
+board, including on a phone. Board spaces are buttons: tap any deed to see
+its printed price, complete rent ladder, group, building price, mortgage,
+owner and buildings before deciding to buy or bid. Swipe **inside** the
+board to move around all 40 spaces; the board opens at Start and follows
+movement. The deed inspector's Previous/Next controls offer a keyboard-
+and touch-friendly alternative. The skyline and miniature piece emblems
+are original bundled vector artwork; no proprietary cards or board images
+are used.

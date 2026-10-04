@@ -3,6 +3,20 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Business city-table artwork and guided interactions
+
+- Illustrated the table with original bundled cityscape and deed/event
+  symbols, distinguishable sculpted player markers, animated arrival,
+  purchase/card/cash cues and an always-visible current-location chip.
+  Each board space now opens a full deed inspector with all rent tiers,
+  group/building/mortgage facts before buying; mobile places the live
+  actor's action and inspection ahead of the internally scrolling board.
+- Promoted recipient trade decisions to the primary action card, restored
+  the correct local responder, filtered impossible portfolio actions and
+  showed clear cash/build constraints. Fixed real room request-envelope
+  rejection, new-round snapshot revision resets, stale dice after reset
+  and a mismatched Fortune destination. Cache v59 includes original art.
+
 ## 2026-10-04 — Business: Indian-city property table
 
 - Added an original 40-space, 2–6-player cash-based Business house

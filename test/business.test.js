@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { BOARD, DEEDS, CARDS, GROUPS, createBusiness, actBusiness, rent,
   netWorth, actors, publicBusiness, validBusiness } from '../games/business-engine.js';
-import { validBusinessMove, applyRemoteBusinessAction } from '../games/business.js';
+import { validBusinessMove, applyRemoteBusinessAction, validBusinessSnapshot,
+  businessDeedActions, businessSpaceDetails, businessResponder,
+  businessActionContext, businessBuildHint, createBusinessRollCycle } from '../games/business.js';
 
 const apply = (s, actor, type, fields = {}) => actBusiness(s, { type, ...fields }, actor, () => 0);
 const visit = (s, id, dice = [1, id - 1]) => {
@@ -13,6 +16,16 @@ const holdings = (s, group, owner) => {
   for (const id of DEEDS.filter(x => BOARD[x].group === group)) s.deeds[id].owner = owner;
   return s;
 };
+
+test('original board artwork is bundled for offline play', () => {
+  const precache = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  for (const file of ['cityscape.svg', 'symbols.svg']) {
+    const path = `assets/business/${file}`;
+    const image = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+    assert.match(image, /<svg\b/);
+    assert.ok(precache.includes(`'./${path}'`), `${path} must be precached`);
+  }
+});
 
 test('original forty-space city board has unique deed slots and coherent groups', () => {
   assert.equal(BOARD.length, 40);
@@ -197,20 +210,119 @@ test('remote move allowlist excludes injected dice and invalid keys', () => {
 test('host authority rejects stale revision, forged dice, unknown seat and wrong phase without changing state', () => {
   const s = createBusiness();
   const ids = ['host', 'guest'];
+  const envelope = (revision, move, round = 0) =>
+    ({ type: 'bs-request', revision, round, move });
   assert.throws(() => applyRemoteBusinessAction(s,
-    { revision: 0, round: 0, move: { type: 'roll', dice: [6, 6] } }, 0, ids[0], ids), /invalid/);
+    envelope(0, { type: 'roll', dice: [6, 6] }), 0, ids[0], ids), /invalid/);
   assert.throws(() => applyRemoteBusinessAction(s,
-    { revision: 1, round: 0, move: { type: 'roll' } }, 0, ids[0], ids), /Stale/);
+    envelope(1, { type: 'roll' }), 0, ids[0], ids), /Stale/);
   assert.throws(() => applyRemoteBusinessAction(s,
-    { revision: 0, round: 0, move: { type: 'roll' } }, 0, 'spectator', ids), /not playing/);
+    envelope(0, { type: 'roll' }), 0, 'spectator', ids), /not playing/);
   assert.throws(() => applyRemoteBusinessAction(s,
-    { revision: 0, round: 0, move: { type: 'roll' } }, 0, ids[1], ids, [1, 2]), /Wait/);
+    envelope(0, { type: 'roll' }), 0, ids[1], ids, [1, 2]), /Wait/);
+  assert.throws(() => applyRemoteBusinessAction(s,
+    { revision: 0, round: 0, move: { type: 'roll' } }, 0, ids[0], ids, [1, 2]), /invalid/);
   assert.equal(s.revision, 0);
   const next = applyRemoteBusinessAction(s,
-    { revision: 0, round: 0, move: { type: 'roll' } }, 0, ids[0], ids, [1, 2]);
+    envelope(0, { type: 'roll' }), 0, ids[0], ids, [1, 2]);
   assert.equal(next.revision, 1);
   assert.equal(next.players[0].position, 3);
   assert.equal(s.players[0].position, 0);
+});
+
+test('room snapshot accepts legitimate new-round revision reset, rejects rollback and leaked decks', () => {
+  const previous = apply(createBusiness(), 0, 'roll', { dice: [1, 2] });
+  const fresh = createBusiness();
+  const msg = (round, view, type = 'bs-state') => ({ type, round, view });
+  assert.equal(validBusinessSnapshot(msg(1, publicBusiness(fresh)), 2, 0, previous.revision), true);
+  assert.equal(validBusinessSnapshot(msg(0, publicBusiness(fresh)), 2, 0, previous.revision), false);
+  assert.equal(validBusinessSnapshot(msg(0, publicBusiness(previous)), 2, 1, 0), false);
+  assert.equal(validBusinessSnapshot(msg(1, { ...publicBusiness(fresh), decks: fresh.decks }), 2, 0, 1), false);
+  assert.equal(validBusinessSnapshot({ ...msg(1, publicBusiness(fresh), 'bs-reject'),
+    message: 'x'.repeat(201) }, 2, 0, 1), false);
+});
+
+test('deed inspection exposes the full price and rent ladder before purchase', () => {
+  const s = createBusiness();
+  const details = businessSpaceDetails(publicBusiness(s), 1);
+  assert.equal(details.space.name, 'Pune');
+  assert.equal(details.space.price, 60);
+  assert.equal(details.mortgage, 30);
+  assert.equal(details.tiers.length, 6);
+  assert.deepEqual(details.tiers.map(tier => tier.amount), BOARD[1].rent);
+  assert.deepEqual(details.groupCities, [1, 3]);
+  assert.equal(businessSpaceDetails(publicBusiness(s), 5).tiers.length, 4);
+  assert.throws(() => businessSpaceDetails(publicBusiness(s), 99), /Unknown/);
+});
+
+test('portfolio displays only executable build, sell and mortgage actions', () => {
+  let s = createBusiness();
+  s.deeds[1].owner = 0;
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'build'), false);
+  assert.match(businessBuildHint(s, 0, 1), /Complete/);
+  s.deeds[3].owner = 0;
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'build'), true);
+  s.deeds[3].mortgaged = true;
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'build'), false);
+  assert.match(businessBuildHint(s, 0, 1), /mortgages/);
+  assert.equal(businessDeedActions(s, 0, 3).some(a => a.move.type === 'release'), true);
+  s.deeds[3].mortgaged = false;
+  s = apply(s, 0, 'build', { id: 1, kind: 'house' });
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'mortgage'), false);
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'sell'), true);
+  assert.equal(businessDeedActions(s, 0, 1).some(a => a.move.type === 'build'), false);
+});
+
+test('local restore hands the phone to the active trade, auction or debt respondent', () => {
+  let s = createBusiness();
+  assert.equal(businessResponder(s), 0);
+  assert.equal(businessActionContext(s, 0), 'roll');
+  s = apply(s, 0, 'offer', { to: 1, offered: [], wanted: [],
+    cashOut: 100, cashIn: 0, cardsOut: 0, cardsIn: 0 });
+  const restoredTrade = structuredClone(s);
+  assert.equal(restoredTrade.current, 0);
+  assert.equal(businessResponder(restoredTrade), 1);
+  assert.equal(businessActionContext(restoredTrade, 1), 'trade-response',
+    'the primary response overrides the underlying roll phase');
+  assert.equal(businessActionContext(restoredTrade, 0), 'trade-wait');
+  s = apply(s, 1, 'reject');
+  s = apply(s, 0, 'roll', { dice: [1, 2] });
+  s = apply(s, 0, 'decline');
+  s = apply(s, 0, 'pass');
+  assert.equal(businessResponder(structuredClone(s)), 1);
+  let debt = createBusiness();
+  debt.players[0].cash = 0; debt.players[0].position = 1;
+  debt = apply(debt, 0, 'roll', { dice: [1, 2] });
+  assert.equal(businessResponder(structuredClone(debt)), 0);
+  assert.equal(businessActionContext(debt, 0), 'debt');
+});
+
+test('Fortune movement title agrees with the destination deed', () => {
+  let s = createBusiness();
+  const index = CARDS.fortune.findIndex(card => card[0] === 'Travel to New Delhi');
+  assert.equal(CARDS.fortune[index][2], BOARD.find(space => space.name === 'New Delhi').id);
+  s.decks.fortune.draw = [index, ...s.decks.fortune.draw.filter(id => id !== index)];
+  s.players[0].position = 5;
+  s = apply(s, 0, 'roll', { dice: [1, 1] });
+  assert.equal(s.players[0].position, 39);
+  assert.equal(BOARD[s.players[0].position].name, 'New Delhi');
+  assert.equal(s.phase, 'buy');
+  assert.ok(s.log.some(entry => entry.includes('Fortune · Travel to New Delhi: travel to New Delhi.')));
+});
+
+test('reset, host reset and dispose invalidate old animated dice without invalidating new rolls', () => {
+  const cycle = createBusinessRollCycle();
+  const first = cycle.capture(0, 0);
+  assert.equal(cycle.allows(first, 0, 0), true);
+  cycle.cancel();
+  assert.equal(first.controller.signal.aborted, true);
+  assert.equal(cycle.allows(first, 1, 0), false);
+  const fresh = cycle.capture(1, 0);
+  assert.equal(cycle.allows(fresh, 1, 0), true);
+  assert.equal(cycle.allows(fresh, 1, 1), false, 'an intervening accepted move invalidates the roll');
+  cycle.cancel();
+  assert.equal(cycle.allows(fresh, 1, 0), false);
+  assert.equal(cycle.isCurrent(fresh), false);
 });
 
 test('decks settle each-player obligations in order; no debt or card is silently skipped', () => {

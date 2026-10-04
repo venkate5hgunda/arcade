@@ -40,7 +40,7 @@ export const DEFAULT_OPTIONS = Object.freeze({
 const CARD_SETS = {
   fortune: [
     ['Bank dividend', 'bank', 200], ['Festival shopping', 'bank', -150],
-    ['Advance to Start', 'move', 0], ['Travel to Mumbai', 'move', 39],
+    ['Advance to Start', 'move', 0], ['Travel to New Delhi', 'move', 39],
     ['Go to Jail', 'jail'], ['Get out of Jail Free', 'free'],
     ['Repair your properties', 'repair', 40, 115],
     ['Collect from each player', 'each', 50],
@@ -259,7 +259,15 @@ function draw(s, type, p, random) {
   const id = deck.draw.shift(), card = CARDS[type][id];
   if (card[1] === 'free') s.players[p].cards.push(type);
   else deck.discard.push(id);
-  note(s, `${card[0]}: ${card[1] === 'free' ? 'keep this card until used or traded.' : 'resolve the instruction.'}`);
+  const instruction = card[1] === 'bank' ? card[2] > 0 ?
+    `collect ₹${card[2]} from the bank` : `pay ₹${-card[2]} to the bank` :
+    card[1] === 'move' ? `travel to ${BOARD[card[2]].name}` :
+      card[1] === 'jail' ? 'go directly to Jail' :
+        card[1] === 'free' ? 'keep this card until used or traded' :
+          card[1] === 'repair' ? `pay ₹${card[2]} per house and ₹${card[3]} per hotel` :
+            card[2] > 0 ? `collect ₹${card[2]} from each other player` :
+              `pay ₹${-card[2]} to each other player`;
+  note(s, `${type === 'fund' ? 'City Fund' : 'Fortune'} · ${card[0]}: ${instruction}.`);
   if (card[1] === 'bank') {
     if (card[2] < 0) charge(s, p, null, -card[2], card[0]);
     else s.players[p].cash += card[2];

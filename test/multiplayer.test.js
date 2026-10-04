@@ -4,6 +4,7 @@ import { webcrypto } from 'node:crypto';
 import { MultiplayerRoom, roomShareMessage } from '../js/multiplayer.js';
 import { newCatan, catanView, validCatanCheckpoint } from '../games/catan.js';
 import { createBusiness, publicBusiness, validBusiness } from '../games/business-engine.js';
+import { applyRemoteBusinessAction } from '../games/business.js';
 
 globalThis.crypto ??= webcrypto;
 globalThis.location = new URL('https://example.test/arcade/index.html#/');
@@ -61,12 +62,18 @@ test('Business supports six room seats, private deck order and nonturn auction r
   try {
     assert.throws(() => host.startGame('business', [host.peerId]), /player count/);
     host.startGame('business', [host.peerId, ...guests.map(g => g.peerId)]);
-    const state = createBusiness(6), view = publicBusiness(state);
+    const state = createBusiness(6);
+    state.current = 5;
+    const view = publicBusiness(state);
     host.saveGame('business', { state, round: 0 });
     let received;
     host.on(event => { if (event.type === 'action') received = event; });
-    guests[4].sendAction({ type: 'bs-request', revision: 0, round: 0, move: { type: 'pass' } });
+    guests[4].sendAction({ type: 'bs-request', revision: 0, round: 0, move: { type: 'roll' } });
     assert.equal(received.from, guests[4].peerId);
+    const resolved = applyRemoteBusinessAction(state, received.action, 0, received.from,
+      host.activeGame.playerIds, [1, 2]);
+    assert.equal(resolved.revision, 1, 'the actual transport event envelope passes renderer authority checks');
+    assert.equal(resolved.players[5].position, 3);
     assert.equal(events.every(list => list.length === 0), true, 'host does not broadcast guest requests');
     host.sendPrivateAction(guests[4].peerId, { type: 'bs-state', round: 0, view });
     assert.equal(events[4].at(-1).action.type, 'bs-state');
