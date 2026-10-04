@@ -583,7 +583,6 @@ export default {
       }
     });
     function reset() {
-      if (!confirm('Start a new Business table? All current cash, deeds and progress will be lost.')) return;
       if (room) { if (room.role === 'host') requestReset(); return; }
       state = createBusiness(seats, state.options); view = publicBusiness(state);
       localViewer = 0; covered = true; errorText = ''; round++;
@@ -593,7 +592,13 @@ export default {
     function requestReset() {
       try { room.sendAction({ type: 'bs-reset' }); } catch (e) { errorText = e.message; render(); }
     }
-    shell.getResetButton().addEventListener('click', reset);
+    shell.getResetButton().addEventListener('click', event => {
+      if (!confirm('Start a new Business table? All current cash, deeds and progress will be lost.')) {
+        event.stopImmediatePropagation();
+        return;
+      }
+      reset();
+    }, { capture: true });
     if (room && room.role !== 'host') shell.getResetButton().disabled = true;
     if (room) {
       if (room.role === 'host') publish();
