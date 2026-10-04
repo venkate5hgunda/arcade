@@ -91,6 +91,26 @@ The source's 68 records marked `1930` are suspicious (Telugu feature film histor
 starts later); these are flagged and excluded from automatic hydration.
 Year-only release dates remain year-only. Unknown values remain unknown.
 
+### Published progress: 4 October 2026
+
+The local catalog contains 5,053 records, including all 2,407 supplied source
+rows unchanged. TMDB has 3,134 linked, fully hydrated identities; OMDb has 776.
+The cache retains 7,108 raw responses. Dated TMDB discovery has exhausted 430
+monthly intervals: 1931–1939 and January 2000 through 4 October 2026. The early
+decade added ten native records, without rewriting the suspicious source years.
+
+Historical search examined all 2,309 eligible, initially unlinked source rows
+and accepted 458 independently corroborated identities. The remaining 1,919
+source records without a TMDB link include the 68 excluded suspicious years;
+unmatched titles, contradictory credits and collisions remain unresolved.
+Replaying historical search and early-decade discovery required zero live calls.
+These are completed search scopes, not claims that every source film exists in
+TMDB or that the catalog is an exhaustive filmography.
+
+There are 159 complete editorial difficulty ratings and 4,894 records without
+a final score, including nine reviews with unresolved familiarity. OMDb remains
+paused at its persistent daily safety ceiling.
+
 ## Difficulty rubric: `charades-v1`
 
 Audience: Telugu-film-aware casual adult players. Rules: no speaking, mouthing,
