@@ -53,6 +53,11 @@ test('trade responses return the phone to the roller without interrupting nontur
   managed.deeds[3].owner = 1;
   const mortgaged = apply(managed, 1, 'mortgage', { id: 3 });
   assert.equal(businessHandoffSeat(managed, mortgaged, 1), 1);
+  const nonturnOffer = apply(managed, 1, 'offer', { to: 0, offered: [], wanted: [],
+    cashOut: 10, cashIn: 0, cardsOut: 0, cardsIn: 0 });
+  assert.equal(businessHandoffSeat(managed, nonturnOffer, 1), 0);
+  const accepted = apply(nonturnOffer, 0, 'accept');
+  assert.equal(businessHandoffSeat(nonturnOffer, accepted, 0), 0);
 });
 
 test('buy and decline lead to a competitive auction with the decliner eligible', () => {

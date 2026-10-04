@@ -107,7 +107,8 @@ export function businessResponder(s) {
 export function businessHandoffSeat(before, after, viewer) {
   const next = businessResponder(after);
   return after.phase !== 'win' && next !== viewer &&
-    (next !== businessResponder(before) || before.current !== after.current) ? next : viewer;
+    (next !== businessResponder(before) || before.current !== after.current ||
+      Boolean(after.offer && !before.offer)) ? next : viewer;
 }
 export function businessActionContext(s, viewer) {
   if (s.phase === 'win') return 'win';
