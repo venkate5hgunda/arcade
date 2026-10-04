@@ -106,10 +106,14 @@ Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
 **15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
 2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; **45 min** for
 Chess; **120 min** for Island Charter; and **240 min** for Business.
+
 - **Business** — an original 2–6-player Indian-city property trading
   game with local handoffs or host-authoritative private WebRTC rooms,
   auctions, rent, even development, mortgages, jail, cards, cash-raising
-  and bankruptcy. Configuration and edition differences are in
+  and bankruptcy. Its illustrated city table has distinctive player
+  pieces; inspect any board space for its full price and rent ladder before
+  bidding or buying. The current actor's decisions stay above the
+  scrollable board on phones. Configuration and edition differences are in
   [Business rules](BUSINESS_RULES.md).
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.

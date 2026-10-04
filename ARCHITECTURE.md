@@ -93,6 +93,15 @@ views without deck order** to each selected room seat and accepts revision-
 and round-checked host-authorized requests, including non-turn auction and
 trade responders. Eliminated seats need not remain connected; surviving
 disconnections pause the table. Room backup holds only the host checkpoint.
+`games/business.js:applyRemoteBusinessAction` validates the actual
+`bs-request` transport envelope, including its type, revision and round;
+`validBusinessSnapshot` compares revision only *within the same round*.
+The board and inspector use original local `assets/business/*.svg` artwork
+and CSS in `css/business.css`. The inspector reads the public state only;
+tap-to-inspect never mutates game state or reveals future deck order.
+The primary action and deed inspector precede the scrolling board in DOM
+order so the mobile visual order matches keyboard focus; supplementary
+portfolio/trade/rules disclosures follow the board.
 
 **Transport constraints.** No signaling service or TURN relay exists.
 Public STUN discovery needs network access, long SDP URLs can be truncated,
