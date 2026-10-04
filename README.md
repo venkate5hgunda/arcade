@@ -59,9 +59,12 @@ Island Charter resource icons use color-tinted Game Icons silhouettes.
 - **Offline-first PWA** — service worker caches the shell and runtime assets.
 - **Personalized** — local storage retains theme, sound, haptics, high scores,
   per-game settings and unfinished local rounds.
-- **Setup flow** — every game opens with a lightweight options screen (player
-  count, difficulty, mode, timer, etc.) before play starts; choices persist
-  per game. The top reset button briefly confirms a restart (or a restart
+- **Setup flow** — games with options show a concise selection summary and
+  a collapsed **Game configuration** section (player count, difficulty, mode,
+  timer, etc.). Start immediately with the current choices or expand to customize;
+  choices persist per game. Help and player names live under **Help & player options**.
+  Island Charter explains harbor, appearance and neighboring-tile choices.
+  The top reset button briefly confirms a restart (or a restart
   request in a room).
 - **How to play** — every cabinet has a quick help dialog with three illustrated
   steps, controls, available options and a goal. Moves and impacts are animated
@@ -84,6 +87,17 @@ Island Charter resource icons use color-tinted Game Icons silhouettes.
   auto-resume.
 - **Navigation** — browser Back and Forward move between visited games and
   home; Alt+Left/Right or Cmd+[/] work as keyboard shortcuts.
+- **Guided rooms** — the lobby highlights the next action: create or join,
+  share an invitation, return an answer, then choose seats and a game once
+  connected. Sharing includes a friendly message, three concise connection
+  steps and the full link; clipboard fallback copies the same message.
+  Reconnect invitations name the original seat and explain how paused play
+  resumes. Native sharing embeds the link in the text for text-only targets.
+  A mismatched reconnect name cancels that invitation without losing the seat
+  or game; create a fresh invite and use the original name.
+  QR codes, raw-link copying, room management and standings stay in expandable
+  sections. Each guest needs a unique invite and must keep their tab open;
+  hosts accept answers in the original tab.
 
 The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
 Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for

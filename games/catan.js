@@ -727,17 +727,21 @@ export default {
         boardOptions: restored.boardOptions ?? LEGACY_BOARD_OPTIONS } :
       room?.role === 'guest' ? { count: room.activeGame.playerIds.length } :
       await renderSetup(shell.stage, {
-        title: '⟡ Island Charter', subtitle: 'A shared table for three or four navigators. No automated players.',
+        title: '⟡ Island Charter',
+        subtitle: room ? 'Your room seats are ready. The host configures the island for everyone.' :
+          'Gather 3–4 navigators on this device. Start with opening rolls, then place outposts and paths. No automated players.',
         themeClass: 'ct-setup', startLabel: 'Chart the island',
         fields: [
           ...(!room ? [{ key: 'count', label: 'Navigators', default: '3',
             options: [3, 4].map(n => ({ value: String(n), label: `${n} players` })) }] : []),
           { key: 'portMode', label: 'Harbors', default: 'fixed',
+            help: 'Classic keeps coastal trade locations fixed; Changing rearranges them on each new island.',
             options: [
               { value: 'fixed', label: 'Classic positions' },
               { value: 'shuffled', label: 'Changing positions' },
             ] },
           { key: 'imageStyle', label: 'Island style', default: 'illustrated',
+            help: 'Appearance only: choose detailed scenery or simple resource-colored tiles.',
             options: [
               { value: 'illustrated', label: 'Illustrated' },
               { value: 'colorblock', label: 'Colorblock' },
@@ -748,6 +752,7 @@ export default {
             ['sameNumberTouch', 'Same numbers can touch'],
             ['sameResourceTouch', 'Same land types can touch'],
           ].map(([key, label]) => ({ key, label, default: 'false',
+            help: 'No keeps these tiles separated. Yes allows them to be neighbors on the new island.',
             options: [{ value: 'false', label: 'No' }, { value: 'true', label: 'Yes' }] })),
         ],
       });

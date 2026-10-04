@@ -10,7 +10,9 @@ export function chooseCardTable(stage, room = defaultRoom, game) {
     <p>Play from separate devices. Each player sees only their own cards.</p>
     <button class="cg-button card-room-entry-online" type="button">Play in a room ↗</button>
     <button class="cg-button cg-button--quiet card-room-entry-local" type="button">Pass &amp; play on this device</button>
-    <small>Invite friends from the lobby. Direct WebRTC connections require exchanging an invite and answer link; some networks may block them.</small>
+    <details class="card-room-entry-help"><summary>How room play works</summary>
+      <small>Create or join a room, exchange an invite and answer, then let the host start the game. Keep both tabs open. Some networks may block direct connections.</small>
+    </details>
     <p class="card-room-entry-error" role="alert"></p>`;
   entry.querySelector('h3').textContent = game.name;
   stage.append(entry);

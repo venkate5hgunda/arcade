@@ -43,21 +43,30 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
     clearTimeout(resetToastTimer);
     resetToastTimer = setTimeout(() => { resetToast.hidden = true; }, 2400);
   });
+  const hasNames = game.players?.max > 1 && room.activeGame?.id !== game.id;
+  const tools = GAME_HELP[game.id] || hasNames ? document.createElement('details') : null;
+  if (tools) {
+    tools.className = 'game-tools';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Help & player options';
+    tools.appendChild(summary);
+    shell.querySelector('.game-head-center').appendChild(tools);
+  }
   if (GAME_HELP[game.id]) {
     const help = document.createElement('button');
     help.type = 'button';
     help.className = 'game-help-btn';
     help.innerHTML = `${iconMarkup('tabler:info-circle')} How to play`;
     help.addEventListener('click', () => openGameHelp(game.id));
-    shell.querySelector('.game-head-center').appendChild(help);
+    tools.appendChild(help);
   }
-  if (game.players?.max > 1 && room.activeGame?.id !== game.id) {
+  if (hasNames) {
     const names = document.createElement('button');
     names.type = 'button';
     names.className = 'game-names-btn';
     names.innerHTML = `${iconMarkup('tabler:pencil')} Player names`;
     names.addEventListener('click', () => openNameEditor(game.players.max));
-    shell.querySelector('.game-head-center').appendChild(names);
+    tools.appendChild(names);
   }
   return {
     root: shell,
@@ -85,27 +94,39 @@ export function wireBack(shell, navigate) {
 // caller via `themeClass` + each game's own CSS, so games still get their own
 // vibe; only the interaction plumbing is shared.
 //
-// fields: [{ key, label, options: [{ value, label }], default }]
+// fields: [{ key, label, help?, options: [{ value, label }], default }]
 // Returns a Promise that resolves with { [key]: value } when the user starts.
 export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Start', themeClass = '' } = {}) {
   return new Promise((resolve) => {
     const values = {};
     for (const f of fields) values[f.key] = f.default ?? f.options[0].value;
+    const configurable = fields.filter(f => f.options.length > 1);
 
     const card = document.createElement('div');
     card.className = `setup-card${themeClass ? ' ' + themeClass : ''}`;
     card.innerHTML = `
       ${title ? `<h3 class="setup-title">${title}</h3>` : ''}
       ${subtitle ? `<p class="setup-subtitle">${subtitle}</p>` : ''}
-      <div class="setup-fields"></div>
+      <p class="setup-guide">${configurable.length ?
+        'Ready with the choices below. Expand configuration to customize, then start playing.' :
+        'Everything is ready. Start when you are.'}</p>
+      ${configurable.length ? `<p class="setup-preview" aria-live="polite"></p>
+      <details class="setup-config">
+        <summary>Game configuration</summary>
+        <div class="setup-fields"></div>
+      </details>` : ''}
       <button class="setup-start-btn" type="button">${startLabel} ${iconMarkup('tabler:arrow-right')}</button>`;
     stage.appendChild(card);
 
     const fieldsEl = card.querySelector('.setup-fields');
 
     function renderFields() {
+      if (!fieldsEl) return;
       fieldsEl.innerHTML = '';
-      for (const f of fields) {
+      card.querySelector('.setup-preview').textContent = configurable.slice(0, 3).map(f =>
+        `${f.label}: ${f.options.find(opt => opt.value === values[f.key])?.label ?? values[f.key]}`).join(' · ') +
+        (configurable.length > 3 ? ` · ${configurable.length - 3} more options in configuration` : '');
+      for (const f of configurable) {
         const group = document.createElement('div');
         group.className = 'setup-field';
         group.innerHTML = `<span class="setup-field-label">${f.label}</span>
@@ -115,6 +136,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'setup-option' + (values[f.key] === opt.value ? ' active' : '');
+          btn.setAttribute('aria-pressed', String(values[f.key] === opt.value));
           btn.textContent = opt.label;
           btn.addEventListener('click', () => {
             values[f.key] = opt.value;
@@ -122,8 +144,16 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             window.arcadeAudio?.tap();
             window.haptics?.select();
             renderFields();
+            fieldsEl.querySelector(`[data-setup-key="${f.key}"] [aria-pressed="true"]`)?.focus();
           });
           optionsEl.appendChild(btn);
+        }
+        group.dataset.setupKey = f.key;
+        if (f.help) {
+          const hint = document.createElement('p');
+          hint.className = 'setup-field-help';
+          hint.textContent = f.help;
+          group.appendChild(hint);
         }
         fieldsEl.appendChild(group);
       }
