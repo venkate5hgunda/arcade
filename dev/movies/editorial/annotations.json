@@ -555,5 +555,2705 @@
       "recognition": {"value": 2, "method": "editorial-audience-hypothesis", "reason": "Likely commonly familiar among current Telugu action viewers; exact weekday communication remains difficult even with recognition."},
       "reason": "Moderate: short token count masks a relational phrase and an exact weekday."
     }
+  },
+  {
+    "title": "Bāhubali 2: The Conclusion",
+    "year": 2017,
+    "tmdb_id": 350312,
+    "source": "https://www.themoviedb.org/movie/350312",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1458,
+      "fetched_at": "2026-10-04T09:42:41.992342+00:00",
+      "vote_count": 892,
+      "popularity": 5.9483,
+      "reviewers_note": "Cached Telugu original title 'బాహుబలి 2: ది కన్ క్లూజన్', director(s) S. S. Rajamouli, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A crown and sword can suggest the Baahubali saga, but the second installment's conclusion needs a finishing gesture or a remembered plot, not just a warrior pose."
+      },
+      "recognition": {
+        "value": 1,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the sequel and its central dynastic question are broadly familiar to Telugu-film-aware adults; its exact subtitle may still be missed."
+      },
+      "reason": "Dynastic mime is available, yet the sequel number and ending distinguish this from the first film."
+    }
+  },
+  {
+    "title": "Devara: Part 1",
+    "year": 2024,
+    "tmdb_id": 811941,
+    "source": "https://www.themoviedb.org/movie/811941",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 3246,
+      "fetched_at": "2026-10-04T09:50:10.594864+00:00",
+      "vote_count": 228,
+      "popularity": 5.6702,
+      "reviewers_note": "Cached Telugu original title 'దేవర', director(s) Koratala Siva, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Devara functions here as a character's name; a seafaring fighter or father-son exchange is a scene-dependent clue rather than a literal way to mime that name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the recent NTR-led release is commonly familiar in this audience, without assuming everybody identifies its part number."
+      },
+      "reason": "The named protagonist and Part 1 qualifier demand recognition beyond generic action gestures."
+    }
+  },
+  {
+    "title": "V",
+    "year": 2020,
+    "tmdb_id": 683342,
+    "source": "https://www.themoviedb.org/movie/683342",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1875,
+      "fetched_at": "2026-10-04T09:45:01.254939+00:00",
+      "vote_count": 134,
+      "popularity": 1.6441,
+      "reviewers_note": "Cached Telugu original title 'V', director(s) Mohana Krishna Indraganti, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 5,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "V is a single letter: speaking, tracing or finger-spelling it is prohibited, and a cop-versus-killer exchange does not reliably convey that exact title."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nani crime film may be familiar to some Telugu viewers but the one-letter label supplies little recall context."
+      },
+      "reason": "A compact written symbol can be harder to act than a long concrete phrase."
+    }
+  },
+  {
+    "title": "Salaar: Part 1 - Ceasefire",
+    "year": 2023,
+    "tmdb_id": 770906,
+    "source": "https://www.themoviedb.org/movie/770906",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2892,
+      "fetched_at": "2026-10-04T09:49:00.651788+00:00",
+      "vote_count": 128,
+      "popularity": 3.6429,
+      "reviewers_note": "Cached Telugu original title 'సలార్: పార్ట్\\u200c 1 – సీజ్\\u200cఫైర్\\u200c', director(s) Prashanth Neel, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Two friends at war and a stop-fighting gesture can suggest a ceasefire; Salaar is a specific name, and Part 1 still needs to be distinguished."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this large-scale Prabhas action release is commonly familiar, though the full installment subtitle is less readily recalled."
+      },
+      "reason": "The subtitle provides a usable truce cue but does not literally encode the lead's name."
+    }
+  },
+  {
+    "title": "Saaho",
+    "year": 2019,
+    "tmdb_id": 454292,
+    "source": "https://www.themoviedb.org/movie/454292",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1749,
+      "fetched_at": "2026-10-04T09:44:16.375056+00:00",
+      "vote_count": 119,
+      "popularity": 2.4099,
+      "reviewers_note": "Cached Telugu original title 'సాహో', director(s) Sujeeth, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "The title Saaho is an exclamation/name rather than the black-box heist in the synopsis; miming a box could fit many films."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Prabhas action film is commonly familiar to the target audience, not automatically identifiable from its title gesture."
+      },
+      "reason": "A familiar star vehicle still has an elusive nonverbal title."
+    }
+  },
+  {
+    "title": "The Ghazi Attack",
+    "year": 2017,
+    "tmdb_id": 442405,
+    "source": "https://www.themoviedb.org/movie/442405",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1441,
+      "fetched_at": "2026-10-04T09:42:35.790541+00:00",
+      "vote_count": 107,
+      "popularity": 2.13,
+      "reviewers_note": "Cached Telugu original title 'ఘాజీ', director(s) Sankalp Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "An underwater vessel sinking is concrete, but Ghazi names a particular submarine; distinguish this from a generic naval battle."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: some Telugu-film-aware players will know this submarine-war film, while its historical proper name may not be universal."
+      },
+      "reason": "Submarine mime gives a route, with a proper-name identification bottleneck."
+    }
+  },
+  {
+    "title": "1: Nenokkadine",
+    "year": 2014,
+    "tmdb_id": 249772,
+    "source": "https://www.themoviedb.org/movie/249772",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1138,
+      "fetched_at": "2026-10-04T09:40:27.318317+00:00",
+      "vote_count": 105,
+      "popularity": 1.6946,
+      "reviewers_note": "Cached Telugu original title '1 - నేనొక్కడినే', director(s) Sukumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Counting one and pointing to oneself can convey 'I am the only one'; the Telugu nenokkadine is one compound word whose relational meaning is hidden by token count."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Mahesh Babu psychological action film is commonly familiar, although its numeral-plus-Telugu title needs precision."
+      },
+      "reason": "A solitary-person sequence is stronger than relying on the short-looking title alone."
+    }
+  },
+  {
+    "title": "Lucky Baskhar",
+    "year": 2024,
+    "tmdb_id": 1239511,
+    "source": "https://www.themoviedb.org/movie/1239511",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 3259,
+      "fetched_at": "2026-10-04T09:50:13.742935+00:00",
+      "vote_count": 104,
+      "popularity": 3.3866,
+      "reviewers_note": "Cached Telugu original title 'లక్కీ భాస్కర్\\u200c', director(s) Venky Atluri, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Lucky can be gestured with chance and success, but Baskhar is a person's name; miming a banker or sudden wealth does not select that name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this recent Dulquer-led financial drama is commonly familiar to current Telugu-film audiences, with some uncertainty about exact-title recall."
+      },
+      "reason": "The luck cue helps while the named clerk remains a recognition task."
+    }
+  },
+  {
+    "title": "Geetha Govindam",
+    "year": 2018,
+    "tmdb_id": 540468,
+    "source": "https://www.themoviedb.org/movie/540468",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1626,
+      "fetched_at": "2026-10-04T09:43:33.970355+00:00",
+      "vote_count": 90,
+      "popularity": 1.9019,
+      "reviewers_note": "Cached Telugu original title 'గీత గోవిందం', director(s) Parasuram Petla, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Geetha and Govindam are names; portraying two lovers shows a relationship but cannot differentiate these names from another romance."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Vijay Deverakonda–Rashmika romance is commonly familiar to the target audience, not because paired names are actable."
+      },
+      "reason": "Two-name romance depends on film recognition rather than literal character gestures."
+    }
+  },
+  {
+    "title": "Yevadu",
+    "year": 2014,
+    "tmdb_id": 215248,
+    "source": "https://www.themoviedb.org/movie/215248",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1137,
+      "fetched_at": "2026-10-04T09:40:26.705736+00:00",
+      "vote_count": 78,
+      "popularity": 1.9528,
+      "reviewers_note": "Cached Telugu original title 'ఎవడు', director(s) Vamshi Paidipally, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Yevadu means 'who'; a questioning shrug and pointing among people can communicate the question, though the identity-switch plot is not in the title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan action film is commonly familiar to Telugu moviegoers; recognition of the exact interrogative is a separate hurdle."
+      },
+      "reason": "A question gesture is plausible, but needs to resolve to this one-word title."
+    }
+  },
+  {
+    "title": "DJ: Duvvada Jagannadham",
+    "year": 2017,
+    "tmdb_id": 443635,
+    "source": "https://www.themoviedb.org/movie/443635",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1473,
+      "fetched_at": "2026-10-04T09:42:47.241474+00:00",
+      "vote_count": 73,
+      "popularity": 1.7538,
+      "reviewers_note": "Cached Telugu original title 'డీజే: దువ్వాడ జగన్నాథం', director(s) Harish Shankar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A turntable can convey DJ, but Duvvada Jagannadham is a full proper name; undercover-agent acting would be a non-unique plot clue."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Allu Arjun film's DJ shorthand is commonly familiar, though the expanded name is less easy to retrieve."
+      },
+      "reason": "The acronym's meaning is actable, its named expansion is not."
+    }
+  },
+  {
+    "title": "Race Gurram",
+    "year": 2014,
+    "tmdb_id": 262227,
+    "source": "https://www.themoviedb.org/movie/262227",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 1162,
+      "fetched_at": "2026-10-04T09:40:36.770010+00:00",
+      "vote_count": 72,
+      "popularity": 1.7635,
+      "reviewers_note": "Cached Telugu original title 'రేసుగుర్రం', director(s) Surender Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Race suggests running while gurram means horse; galloping then racing conveys the fused Telugu compound, unlike a generic runner."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Allu Arjun comedy-action title is commonly familiar among Telugu-film-aware adults."
+      },
+      "reason": "Two physical cues communicate a meaning hidden inside a single transliterated token."
+    }
+  },
+  {
+    "title": "Peddi",
+    "year": 2026,
+    "tmdb_id": 1057265,
+    "source": "https://www.themoviedb.org/movie/1057265",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3820,
+      "fetched_at": "2026-10-04T09:52:29.364165+00:00",
+      "vote_count": 71,
+      "popularity": 8.8995,
+      "reviewers_note": "Cached Telugu original title 'పెద్ది', director(s) Buchi Babu Sana, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Peddi is a personal name; sporting prowess or a struggling village is a synopsis-based clue, not a unique gesture for that name."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity is unresolved: the cached 2026 listing and votes do not establish how this audience encountered the film or learned its title."
+      },
+      "reason": "The title is an unmimeable name, and cached reach does not settle audience familiarity."
+    }
+  },
+  {
+    "title": "Khaleja",
+    "year": 2010,
+    "tmdb_id": 56986,
+    "source": "https://www.themoviedb.org/movie/56986",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 908,
+      "fetched_at": "2026-10-04T09:38:38.755154+00:00",
+      "vote_count": 71,
+      "popularity": 1.7328,
+      "reviewers_note": "Cached Telugu original title 'ఖలేజా', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Khaleja suggests inner courage/guts; bracing oneself against danger might convey nerve, but would not specify this word without film familiarity."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: Mahesh Babu's Khaleja has a durable Telugu-film following, though that does not turn 'guts' into a distinctive gesture."
+      },
+      "reason": "A metaphorical quality has an indirect rather than literal charades route."
+    }
+  },
+  {
+    "title": "Son of Satyamurthy",
+    "year": 2015,
+    "tmdb_id": 333876,
+    "source": "https://www.themoviedb.org/movie/333876",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1252,
+      "fetched_at": "2026-10-04T09:41:16.501780+00:00",
+      "vote_count": 71,
+      "popularity": 1.4948,
+      "reviewers_note": "Cached Telugu original title 'సన్నాఫ్ సత్యమూర్తి', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A father-son gesture can convey 'son of', yet Satyamurthy is a specific father's name and inheritance mime alone cannot identify him."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Allu Arjun family drama is commonly familiar to Telugu-film-aware adults, even if its full name is hard to act."
+      },
+      "reason": "Kinship is clear; the particular parent is not."
+    }
+  },
+  {
+    "title": "Businessman",
+    "year": 2012,
+    "tmdb_id": 83889,
+    "source": "https://www.themoviedb.org/movie/83889",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 992,
+      "fetched_at": "2026-10-04T09:39:16.970494+00:00",
+      "vote_count": 69,
+      "popularity": 1.4572,
+      "reviewers_note": "Cached Telugu original title 'బిజినెస్ మాన్', director(s) Puri Jagannadh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "An office desk, sales pitch and money exchange could communicate businessman without borrowing the film's mafia-conquest storyline."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Mahesh Babu crime film is commonly familiar; the generic job title may also prompt many other guesses."
+      },
+      "reason": "A concrete occupation is playable, though non-unique."
+    }
+  },
+  {
+    "title": "Sarileru Neekevvaru",
+    "year": 2020,
+    "tmdb_id": 607313,
+    "source": "https://www.themoviedb.org/movie/607313",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1813,
+      "fetched_at": "2026-10-04T09:44:39.564522+00:00",
+      "vote_count": 66,
+      "popularity": 1.7647,
+      "reviewers_note": "Cached Telugu original title 'సరిలేరు నీకెవ్వరు', director(s) Anil Ravipudi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Sarileru Neekevvaru addresses someone as unmatched; pointing to a person then surveying others and rejecting comparisons conveys the relation imperfectly."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Mahesh Babu action-comedy is commonly familiar to Telugu-film-aware players; the military role is not the title's translation."
+      },
+      "reason": "The comparative phrase is harder than the film's action scenes suggest."
+    }
+  },
+  {
+    "title": "HIT: The Third Case",
+    "year": 2025,
+    "tmdb_id": 1060046,
+    "source": "https://www.themoviedb.org/movie/1060046",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 3479,
+      "fetched_at": "2026-10-04T09:50:53.870252+00:00",
+      "vote_count": 64,
+      "popularity": 3.8437,
+      "reviewers_note": "Cached Telugu original title 'హిట్: ది థర్డ్ కేస్', director(s) Sailesh Kolanu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A detective investigating murder can suggest the HIT franchise, but HIT is an agency acronym here and a third case requires franchise and count context."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: recent franchise followers may know this third entry, while casual adults need not recall which investigation is which."
+      },
+      "reason": "Counting three is permitted; it does not itself distinguish this case from other procedurals."
+    }
+  },
+  {
+    "title": "HIT: The First Case",
+    "year": 2020,
+    "tmdb_id": 678391,
+    "source": "https://www.themoviedb.org/movie/678391",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1829,
+      "fetched_at": "2026-10-04T09:44:44.755372+00:00",
+      "vote_count": 63,
+      "popularity": 1.4354,
+      "reviewers_note": "Cached Telugu original title 'హిట్: ది ఫస్ట్ కేస్', director(s) Sailesh Kolanu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Investigating a case can establish a crime story, but HIT denotes the Homicide Intervention Team rather than a blow; signal first installment without acting out letters."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the original HIT investigation is commonly familiar among Telugu thriller viewers, less certain across the entire audience."
+      },
+      "reason": "Literal punching would mislead; the agency acronym and first-case subtitle need context."
+    }
+  },
+  {
+    "title": "Rebel",
+    "year": 2012,
+    "tmdb_id": 135870,
+    "source": "https://www.themoviedb.org/movie/135870",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1031,
+      "fetched_at": "2026-10-04T09:39:36.919905+00:00",
+      "vote_count": 63,
+      "popularity": 0.3708,
+      "reviewers_note": "Cached Telugu original title 'రెబెల్', director(s) Raghava Lawrence, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Defying authority can portray a rebel, but a fist or protest sign without writing could fit many action titles."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Prabhas revenge film has mixed recognition outside dedicated star-film viewers."
+      },
+      "reason": "The abstract oppositional role is mimeable only broadly."
+    }
+  },
+  {
+    "title": "Red",
+    "year": 2021,
+    "tmdb_id": 681435,
+    "source": "https://www.themoviedb.org/movie/681435",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1909,
+      "fetched_at": "2026-10-04T09:45:13.647925+00:00",
+      "vote_count": 62,
+      "popularity": 1.358,
+      "reviewers_note": "Cached Telugu original title 'Red', director(s) Kishore Tirumala, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Pointing to a visibly red object or pretending to paint with red can communicate a color, but the lookalike murder plot does not uniquely help."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram suspense film may register with some recent Telugu thriller viewers; its generic English color title weakens precise recall."
+      },
+      "reason": "A simple color cue and uncertain film identification are separate judgments."
+    }
+  },
+  {
+    "title": "Oopiri",
+    "year": 2016,
+    "tmdb_id": 369925,
+    "source": "https://www.themoviedb.org/movie/369925",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 1343,
+      "fetched_at": "2026-10-04T09:41:59.014173+00:00",
+      "vote_count": 56,
+      "popularity": 1.5535,
+      "reviewers_note": "Cached Telugu original title 'ఊపిరి', director(s) Vamshi Paidipally, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Oopiri is breath: exaggerated inhaling and exhaling gives an immediate, embodied clue without acting out the caretaker story."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nagarjuna–Karthi film is commonly familiar to Telugu-film-aware adults, without treating cast as proof of universal recognition."
+      },
+      "reason": "Literal breath acting is especially clear; familiarity still depends on the audience."
+    }
+  },
+  {
+    "title": "Sarrainodu",
+    "year": 2016,
+    "tmdb_id": 374954,
+    "source": "https://www.themoviedb.org/movie/374954",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1354,
+      "fetched_at": "2026-10-04T09:42:02.900851+00:00",
+      "vote_count": 56,
+      "popularity": 1.542,
+      "reviewers_note": "Cached Telugu original title 'సరైనోడు', director(s) Boyapati Srinu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Sarrainodu suggests 'the right one/right man'; choosing one person from several could convey selection, but not the exact approving quality."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Allu Arjun action release is commonly familiar; generic fight gestures do not convey its title."
+      },
+      "reason": "A relational adjective needs more context than the one-token display implies."
+    }
+  },
+  {
+    "title": "Aarya 2",
+    "year": 2009,
+    "tmdb_id": 34763,
+    "source": "https://www.themoviedb.org/movie/34763",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 837,
+      "fetched_at": "2026-10-04T09:38:02.524290+00:00",
+      "vote_count": 56,
+      "popularity": 1.2723,
+      "reviewers_note": "Cached Telugu original title 'ఆర్య 2', director(s) Sukumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Aarya is a character's name and 2 differentiates the sequel; acting friendship or counting two alone cannot identify the named person."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Allu Arjun sequel is commonly familiar in Telugu-film circles, distinct from the earlier Aarya."
+      },
+      "reason": "An installment number is countable but cannot mime a proper name."
+    }
+  },
+  {
+    "title": "Major",
+    "year": 2022,
+    "tmdb_id": 605153,
+    "source": "https://www.themoviedb.org/movie/605153",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2255,
+      "fetched_at": "2026-10-04T09:46:52.064890+00:00",
+      "vote_count": 54,
+      "popularity": 2.5072,
+      "reviewers_note": "Cached Telugu original title 'మేజర్', director(s) Sashi Kiran Tikka, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A military salute communicates an army major, but the title also points to a particular real officer; do not reduce this biopic to any generic soldier."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this widely discussed Sandeep Unnikrishnan biopic is commonly familiar to Telugu-film-aware adults, not necessarily to everyone."
+      },
+      "reason": "An actable rank is only a partial identity cue."
+    }
+  },
+  {
+    "title": "Janatha Garage",
+    "year": 2016,
+    "tmdb_id": 405924,
+    "source": "https://www.themoviedb.org/movie/405924",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 1394,
+      "fetched_at": "2026-10-04T09:42:20.031739+00:00",
+      "vote_count": 54,
+      "popularity": 1.4127,
+      "reviewers_note": "Cached Telugu original title 'జనతా గ్యారేజ్', director(s) Koratala Siva, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Mime a group gathering then repairing a car in a garage; those two concrete pieces identify more than a generic hero fighting."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the NTR-led family/action film is commonly familiar among Telugu moviegoers; the compound location needs both halves."
+      },
+      "reason": "A setting-plus-community sequence makes the English compound playable."
+    }
+  },
+  {
+    "title": "Goodachari",
+    "year": 2018,
+    "tmdb_id": 540189,
+    "source": "https://www.themoviedb.org/movie/540189",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1623,
+      "fetched_at": "2026-10-04T09:43:33.968938+00:00",
+      "vote_count": 54,
+      "popularity": 1.2439,
+      "reviewers_note": "Cached Telugu original title 'గూఢచారి', director(s) Sashi Kiran Tikka, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Goodachari means spy; creeping, observing and disguising oneself can convey the profession, though many spy films share those gestures."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Telugu espionage film is commonly familiar to thriller viewers, less certain for broader casual audiences."
+      },
+      "reason": "The occupation offers a route but not a distinctive individual scene."
+    }
+  },
+  {
+    "title": "HIT: The 2nd Case",
+    "year": 2022,
+    "tmdb_id": 811945,
+    "source": "https://www.themoviedb.org/movie/811945",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2470,
+      "fetched_at": "2026-10-04T09:47:34.106837+00:00",
+      "vote_count": 52,
+      "popularity": 2.0272,
+      "reviewers_note": "Cached Telugu original title 'హిట్: ది సెకండ్ కేస్', director(s) Sailesh Kolanu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "HIT again names an investigation unit, not a physical strike; a police file plus two fingers suggests a second case only to franchise-aware guessers."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the sequel is familiar to some HIT viewers, but casual adults may confuse its case number with the first or third entry."
+      },
+      "reason": "Case numbering can be acted; identifying this particular acronym remains difficult."
+    }
+  },
+  {
+    "title": "Dear Comrade",
+    "year": 2019,
+    "tmdb_id": 563604,
+    "source": "https://www.themoviedb.org/movie/563604",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1736,
+      "fetched_at": "2026-10-04T09:44:11.077946+00:00",
+      "vote_count": 52,
+      "popularity": 1.9718,
+      "reviewers_note": "Cached Telugu original title 'డియర్ కామ్రేడ్', director(s) Bharat Kamma, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A salute or comrades helping each other can evoke comrade, while 'dear' adds affection; the cricketer romance alone does not encode the title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Vijay Deverakonda romance is commonly familiar among current Telugu-film viewers, not inferred from votes."
+      },
+      "reason": "Combining affection with comradeship is more useful than miming anger or cricket alone."
+    }
+  },
+  {
+    "title": "Julayi",
+    "year": 2012,
+    "tmdb_id": 125835,
+    "source": "https://www.themoviedb.org/movie/125835",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1025,
+      "fetched_at": "2026-10-04T09:39:34.274202+00:00",
+      "vote_count": 51,
+      "popularity": 1.6415,
+      "reviewers_note": "Cached Telugu original title 'జులాయి', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Julayi can suggest an idle wanderer; lounging and aimless roaming are possible, but the clever bank-robbery plot does not literally express that label."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Trivikram–Allu Arjun entertainer is commonly familiar among Telugu-film-aware adults."
+      },
+      "reason": "A colloquial character judgment needs interpretation beyond a generic walking mime."
+    }
+  },
+  {
+    "title": "Shyam Singha Roy",
+    "year": 2021,
+    "tmdb_id": 799676,
+    "source": "https://www.themoviedb.org/movie/799676",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2093,
+      "fetched_at": "2026-10-04T09:46:17.067746+00:00",
+      "vote_count": 50,
+      "popularity": 1.613,
+      "reviewers_note": "Cached Telugu original title 'శ్యామ్ సింగ రాయ్', director(s) Rahul Sankrityan, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Shyam Singha Roy is a full personal name; filmmaking or a past-life gesture depends on story knowledge and cannot reliably mime those three name parts."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nani reincarnation drama is commonly familiar to recent Telugu-film viewers, while exact-name recall varies."
+      },
+      "reason": "Distinctive story associations are not literal translations of the proper name."
+    }
+  },
+  {
+    "title": "Ante... Sundaraniki!",
+    "year": 2022,
+    "tmdb_id": 834654,
+    "source": "https://www.themoviedb.org/movie/834654",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2264,
+      "fetched_at": "2026-10-04T09:46:54.144050+00:00",
+      "vote_count": 49,
+      "popularity": 2.378,
+      "reviewers_note": "Cached Telugu original title 'అంటే... సుందరానికీ!', director(s) Vivek Athreya, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Ante... Sundaraniki! addresses Sundar with a conversational 'so/you mean'; reacting and pointing at a person only approximates that specific phrase and name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nani romantic comedy is commonly familiar to contemporary Telugu audiences, with less certainty about its punctuated wording."
+      },
+      "reason": "Speech-like wording must be conveyed without mouthing the line."
+    }
+  },
+  {
+    "title": "Naa Peru Surya - Naa Illu India",
+    "year": 2018,
+    "tmdb_id": 500494,
+    "source": "https://www.themoviedb.org/movie/500494",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1584,
+      "fetched_at": "2026-10-04T09:43:20.894879+00:00",
+      "vote_count": 49,
+      "popularity": 1.8298,
+      "reviewers_note": "Cached Telugu original title 'నా పేరు సూర్య', director(s) Vakkantham Vamsi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Point to oneself, give one's name, then indicate a house and India; the displayed title extends beyond the shorter Telugu original 'Naa Peru Surya'."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Allu Arjun army film is commonly familiar, but viewers might recall only its shortened title."
+      },
+      "reason": "Self-identification and home/country are mimeable sequences; Surya remains a name."
+    }
+  },
+  {
+    "title": "Seethamma Vakitlo Sirimalle Chettu",
+    "year": 2013,
+    "tmdb_id": 193197,
+    "source": "https://www.themoviedb.org/movie/193197",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1057,
+      "fetched_at": "2026-10-04T09:39:49.491882+00:00",
+      "vote_count": 47,
+      "popularity": 1.5466,
+      "reviewers_note": "Cached Telugu original title 'సీతమ్మ వాకిట్లో సిరిమల్లె చెట్టు', director(s) Srikanth Addala, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "The phrase places a jasmine tree in Seethamma's courtyard: mime a home entrance, planting and smelling flowers, but the named owner's identity remains elusive."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this multi-star family drama is commonly familiar to Telugu-film-aware adults, not solely because of its cast."
+      },
+      "reason": "The compound imagery provides better cues than the title's token count suggests."
+    }
+  },
+  {
+    "title": "G-Zombie",
+    "year": 2021,
+    "tmdb_id": 794362,
+    "source": "https://www.themoviedb.org/movie/794362",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 1933,
+      "fetched_at": "2026-10-04T09:45:21.379175+00:00",
+      "vote_count": 47,
+      "popularity": 1.042,
+      "reviewers_note": "Cached Telugu original title 'G-Zombie', director(s) Deepu, Aryan Gowra, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Zombie staggering can express half the hyphenated title, but the initial G cannot be spoken, written or spelled with fingers."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity is unresolved: the cached science-experiment synopsis and provider votes do not show whether casual Telugu audiences encountered this specific zombie film."
+      },
+      "reason": "A distinctive monster gesture leaves a forbidden initial and uncertain recognition."
+    }
+  },
+  {
+    "title": "Bruce Lee: The Fighter",
+    "year": 2015,
+    "tmdb_id": 364080,
+    "source": "https://www.themoviedb.org/movie/364080",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1299,
+      "fetched_at": "2026-10-04T09:41:38.080586+00:00",
+      "vote_count": 46,
+      "popularity": 2.0514,
+      "reviewers_note": "Cached Telugu original title 'బ్రూస్ లీ: ది ఫైటర్', director(s) Sreenu Vaitla, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Boxing or stunt-fighting conveys 'the fighter', but Bruce Lee is a specific famous name; film's stuntman is not the martial artist himself."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan action film has mixed title recall; familiarity with Bruce Lee the person is not evidence of familiarity with this film."
+      },
+      "reason": "The subtitle is physical while the namesake causes substantial ambiguity."
+    }
+  },
+  {
+    "title": "Majili",
+    "year": 2019,
+    "tmdb_id": 571610,
+    "source": "https://www.themoviedb.org/movie/571610",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1708,
+      "fetched_at": "2026-10-04T09:44:01.786705+00:00",
+      "vote_count": 46,
+      "popularity": 1.6149,
+      "reviewers_note": "Cached Telugu original title 'మజిలీ', director(s) Shiva Nirvana, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Majili suggests a stage or stop on a journey; traveling then pausing could work, but cricket and heartbreak are plot clues rather than a literal journey title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Naga Chaitanya–Samantha relationship drama is commonly familiar to Telugu-film viewers."
+      },
+      "reason": "A metaphorical life-stage requires a sequence and audience interpretation."
+    }
+  },
+  {
+    "title": "Bheeshma",
+    "year": 2020,
+    "tmdb_id": 674779,
+    "source": "https://www.themoviedb.org/movie/674779",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1825,
+      "fetched_at": "2026-10-04T09:44:44.201687+00:00",
+      "vote_count": 46,
+      "popularity": 1.3531,
+      "reviewers_note": "Cached Telugu original title 'భీష్మ', director(s) Venky Kudumula, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Bheeshma is a personal/mythic name shared by the protagonist; mime of farming or battling chemicals describes the synopsis but not that name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nithiin comedy is commonly familiar to recent Telugu-film viewers, although the mythic name by itself is ambiguous."
+      },
+      "reason": "A named character resists mime despite the film's concrete agricultural conflict."
+    }
+  },
+  {
+    "title": "Bāhubali: The Epic",
+    "year": 2025,
+    "tmdb_id": 1511417,
+    "source": "https://www.themoviedb.org/movie/1511417",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3660,
+      "fetched_at": "2026-10-04T09:51:33.089698+00:00",
+      "vote_count": 45,
+      "popularity": 7.0527,
+      "reviewers_note": "Cached Telugu original title 'Bāhubali: The Epic', director(s) S. S. Rajamouli, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "An epic-scale waterfall or crown may evoke Baahubali, but 'The Epic' labels a combined presentation, not an ordinary third chapter."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity with this specific 2025 combined cut is unresolved; recognition of the original Baahubali films cannot establish recognition of this separate TMDB identity."
+      },
+      "reason": "Keep the compilation distinct from both films and avoid transferring their audience score unexamined."
+    }
+  },
+  {
+    "title": "Radhe Shyam",
+    "year": 2022,
+    "tmdb_id": 673392,
+    "source": "https://www.themoviedb.org/movie/673392",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2180,
+      "fetched_at": "2026-10-04T09:46:36.021467+00:00",
+      "vote_count": 44,
+      "popularity": 2.6517,
+      "reviewers_note": "Cached Telugu original title 'రాధే శ్యామ్', director(s) Radha Krishna Kumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Radhe and Shyam are paired names; two lovers or palm reading is film-dependent and cannot reliably distinguish these names."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Prabhas romantic fantasy is commonly familiar to Telugu-film-aware viewers, though remembering both names may be uneven."
+      },
+      "reason": "A memorable premise is not a literal gesture for paired names."
+    }
+  },
+  {
+    "title": "Happy",
+    "year": 2006,
+    "tmdb_id": 81060,
+    "source": "https://www.themoviedb.org/movie/81060",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 569,
+      "fetched_at": "2026-10-04T09:35:51.455884+00:00",
+      "vote_count": 44,
+      "popularity": 1.8073,
+      "reviewers_note": "Cached Telugu original title 'హ్యాపీ', director(s) A. Karunakaran, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Smile, celebrate and visibly brighten one's mood to show happy; avoid silently reproducing the unrelated arranged-marriage plot."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Allu Arjun romance has mixed familiarity among casual Telugu-film-aware adults."
+      },
+      "reason": "The emotion is easy to act, but a generic adjective may invite many answers."
+    }
+  },
+  {
+    "title": "Kick",
+    "year": 2009,
+    "tmdb_id": 60807,
+    "source": "https://www.themoviedb.org/movie/60807",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 796,
+      "fetched_at": "2026-10-04T09:37:44.713315+00:00",
+      "vote_count": 44,
+      "popularity": 1.4896,
+      "reviewers_note": "Cached Telugu original title 'కిక్', director(s) Surender Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A sudden thrill or jolt can convey the idiomatic 'kick'; a literal foot kick risks the wrong interpretation of this thrill-seeking story."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Ravi Teja original is commonly familiar among Telugu-film viewers; distinguish it from other films named Kick."
+      },
+      "reason": "Acting excitement works better than literal violence for the idiom."
+    }
+  },
+  {
+    "title": "Mirchi",
+    "year": 2013,
+    "tmdb_id": 176590,
+    "source": "https://www.themoviedb.org/movie/176590",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 1062,
+      "fetched_at": "2026-10-04T09:39:52.095738+00:00",
+      "vote_count": 43,
+      "popularity": 1.4975,
+      "reviewers_note": "Cached Telugu original title 'మిర్చి', director(s) Koratala Siva, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A chilli pepper's shape followed by tasting heat and fanning the mouth gives a clear route to mirchi, independent of the family conflict."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Prabhas action film is commonly familiar among Telugu-film-aware adults."
+      },
+      "reason": "A specific food-and-heat sequence is stronger than generic action."
+    }
+  },
+  {
+    "title": "Dhruva",
+    "year": 2016,
+    "tmdb_id": 410994,
+    "source": "https://www.themoviedb.org/movie/410994",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1403,
+      "fetched_at": "2026-10-04T09:42:22.752733+00:00",
+      "vote_count": 43,
+      "popularity": 1.4868,
+      "reviewers_note": "Cached Telugu original title 'ధృవ', director(s) Surender Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Dhruva is the hero's name (also associated with a pole star); a police investigation or star gesture alone cannot uniquely name this film."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan thriller is commonly familiar, but its remake lineage should not be mistaken for an identical title."
+      },
+      "reason": "Proper-name ambiguity persists despite a familiar cop premise."
+    }
+  },
+  {
+    "title": "Maharshi",
+    "year": 2019,
+    "tmdb_id": 541487,
+    "source": "https://www.themoviedb.org/movie/541487",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1714,
+      "fetched_at": "2026-10-04T09:44:03.940953+00:00",
+      "vote_count": 42,
+      "popularity": 1.9669,
+      "reviewers_note": "Cached Telugu original title 'మహర్షి', director(s) Vamshi Paidipally, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Maharshi means sage; meditation and ascetic gestures offer a conceptual clue, but the CEO's corporate role is not a translation of the title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Mahesh Babu film is commonly familiar to Telugu moviegoers; sage mime may still suggest other titles."
+      },
+      "reason": "A role word is actable without conflating its protagonist's career with the title."
+    }
+  },
+  {
+    "title": "Mr. Perfect",
+    "year": 2011,
+    "tmdb_id": 63376,
+    "source": "https://www.themoviedb.org/movie/63376",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 948,
+      "fetched_at": "2026-10-04T09:38:55.664177+00:00",
+      "vote_count": 42,
+      "popularity": 1.5847,
+      "reviewers_note": "Cached Telugu original title 'Mr. పర్\\u200cఫెక్ట్', director(s) Dasaradh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Showing flawless work followed by a self-satisfied pose suggests 'perfect', but the honorific Mr. calls for a second person cue."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Prabhas romance is familiar to some Telugu-film-aware players, not assumed broadly known from its star."
+      },
+      "reason": "The adjective is abstract and the honorific narrows it only slightly."
+    }
+  },
+  {
+    "title": "Vikramarkudu",
+    "year": 2006,
+    "tmdb_id": 40909,
+    "source": "https://www.themoviedb.org/movie/40909",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 598,
+      "fetched_at": "2026-10-04T09:36:05.670791+00:00",
+      "vote_count": 42,
+      "popularity": 1.4394,
+      "reviewers_note": "Cached Telugu original title 'విక్రమార్కుడు', director(s) S. S. Rajamouli, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Vikramarkudu is an epithet/name; a policeman and a thief lookalike can sketch the story but do not literally identify the title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Rajamouli–Ravi Teja Telugu original is commonly familiar, distinct from later language remakes."
+      },
+      "reason": "Story-based double-role mime depends on knowing the original film."
+    }
+  },
+  {
+    "title": "Orange",
+    "year": 2010,
+    "tmdb_id": 57734,
+    "source": "https://www.themoviedb.org/movie/57734",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 912,
+      "fetched_at": "2026-10-04T09:38:40.267167+00:00",
+      "vote_count": 42,
+      "popularity": 1.4299,
+      "reviewers_note": "Cached Telugu original title 'Orange', director(s) Bhaskar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Peel an orange and eat segments or point to its color; the fruit makes a more distinctive clue than the relationship synopsis."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan romance may have mixed recall among casual Telugu audiences despite a simple everyday-word title."
+      },
+      "reason": "Orange is easy to gesture but not necessarily easy to identify as this particular film."
+    }
+  },
+  {
+    "title": "100% Love",
+    "year": 2011,
+    "tmdb_id": 63378,
+    "source": "https://www.themoviedb.org/movie/63378",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 952,
+      "fetched_at": "2026-10-04T09:38:57.410369+00:00",
+      "vote_count": 42,
+      "popularity": 1.1838,
+      "reviewers_note": "Cached Telugu original title '100% Love', director(s) Sukumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Count to one hundred, show a full measure and then a heart to suggest 100% love; precision of the percentage requires a sequence."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Naga Chaitanya romance is commonly familiar among Telugu-film-aware viewers, but counting alone can point to other numbered films."
+      },
+      "reason": "An exact number is allowed; the percent-and-love relationship completes the clue."
+    }
+  },
+  {
+    "title": "Brindavanam",
+    "year": 2010,
+    "tmdb_id": 56981,
+    "source": "https://www.themoviedb.org/movie/56981",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 907,
+      "fetched_at": "2026-10-04T09:38:38.731322+00:00",
+      "vote_count": 42,
+      "popularity": 1.124,
+      "reviewers_note": "Cached Telugu original title 'బృందావనం', director(s) Vamshi Paidipally, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Brindavanam evokes Krishna's pastoral place: a grove or flute might suggest it, but the love-triangle ruse is not its literal meaning."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this NTR family film is commonly familiar among Telugu-film-aware adults, while its place-name may cue different stories."
+      },
+      "reason": "Mythic-place associations offer partial rather than uniquely literal mime."
+    }
+  },
+  {
+    "title": "Sye Raa Narasimha Reddy",
+    "year": 2019,
+    "tmdb_id": 496495,
+    "source": "https://www.themoviedb.org/movie/496495",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1773,
+      "fetched_at": "2026-10-04T09:44:25.943014+00:00",
+      "vote_count": 41,
+      "popularity": 2.1789,
+      "reviewers_note": "Cached Telugu original title 'సై రా నరసింహ రెడ్డి', director(s) Surender Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Sye Raa Narasimha Reddy calls out a named historical rebel; sword-and-battle mime is insufficient to identify that full name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Chiranjeevi historical release is commonly familiar to Telugu-film viewers, though recalling its precise hero name is less assured."
+      },
+      "reason": "Do not treat the rebellion's setting as a literal translation of the title."
+    }
+  },
+  {
+    "title": "Evaru",
+    "year": 2019,
+    "tmdb_id": 607310,
+    "source": "https://www.themoviedb.org/movie/607310",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1752,
+      "fetched_at": "2026-10-04T09:44:16.881793+00:00",
+      "vote_count": 41,
+      "popularity": 1.4267,
+      "reviewers_note": "Cached Telugu original title 'ఎవరు', director(s) Venkat Ramji, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Evaru asks 'who?'; gesture toward several possible people and shrug, rather than trying to depict the police case's disputed testimony."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Adivi Sesh mystery is familiar to thriller watchers but may have mixed recall across casual Telugu audiences."
+      },
+      "reason": "A simple interrogative is actable yet generic among mystery films."
+    }
+  },
+  {
+    "title": "Awe!",
+    "year": 2018,
+    "tmdb_id": 500723,
+    "source": "https://www.themoviedb.org/movie/500723",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1564,
+      "fetched_at": "2026-10-04T09:43:14.577696+00:00",
+      "vote_count": 41,
+      "popularity": 1.2455,
+      "reviewers_note": "Cached Telugu original title 'అ!', director(s) Prasanth Varma, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "The Telugu original 'అ!' is an exclamation; surprise or awe can be acted, but its one-symbol English display is hard to distinguish from other reactions."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this experimental ensemble film is familiar to some Telugu cinema enthusiasts, less reliably to all casual players."
+      },
+      "reason": "Do not spell the punctuation; show the emotion instead."
+    }
+  },
+  {
+    "title": "Aravinda Sametha... Veera Raghava",
+    "year": 2018,
+    "tmdb_id": 534530,
+    "source": "https://www.themoviedb.org/movie/534530",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1649,
+      "fetched_at": "2026-10-04T09:43:39.667740+00:00",
+      "vote_count": 40,
+      "popularity": 1.9011,
+      "reviewers_note": "Cached Telugu original title 'అరవింద సమేత... వీర రాఘవ', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Aravinda and Veera Raghava are names; 'sametha' links them as together/along with, but staging two people cannot identify which named pair."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the NTR–Trivikram faction drama is commonly familiar among Telugu-film-aware viewers, not because its names are mimeable."
+      },
+      "reason": "A relational connector inside the long title does not solve the proper names."
+    }
+  },
+  {
+    "title": "Nani's Gang Leader",
+    "year": 2019,
+    "tmdb_id": 612402,
+    "source": "https://www.themoviedb.org/movie/612402",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1764,
+      "fetched_at": "2026-10-04T09:44:21.597337+00:00",
+      "vote_count": 40,
+      "popularity": 1.679,
+      "reviewers_note": "Cached Telugu original title \"నాని'స్ గ్యాంగ్ లీడర్\", director(s) Vikram Kumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A group gathered around a leader can convey Gang Leader; adding the possessive Nani's is actor-specific, not an instruction to mime his name."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nani-led revenge comedy has mixed familiarity; do not confuse it with the older Chiranjeevi Gang Leader."
+      },
+      "reason": "The visible title distinguishes a later same-name concept using the star's possessive."
+    }
+  },
+  {
+    "title": "Bhaagamathie",
+    "year": 2018,
+    "tmdb_id": 485789,
+    "source": "https://www.themoviedb.org/movie/485789",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1550,
+      "fetched_at": "2026-10-04T09:43:10.013613+00:00",
+      "vote_count": 40,
+      "popularity": 1.4114,
+      "reviewers_note": "Cached Telugu original title 'భాగమతి', director(s) Ashok G., synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Bhaagamathie names a woman and, in the story, a bungalow; haunted-house pantomime cannot identify that particular name."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Anushka-led horror film is familiar to some Telugu genre fans, but not assumed universally known."
+      },
+      "reason": "A vivid haunted setting still leaves the proper-name bottleneck."
+    }
+  },
+  {
+    "title": "F2: Fun and Frustration",
+    "year": 2019,
+    "tmdb_id": 566914,
+    "source": "https://www.themoviedb.org/movie/566914",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1684,
+      "fetched_at": "2026-10-04T09:43:52.299560+00:00",
+      "vote_count": 39,
+      "popularity": 3.0287,
+      "reviewers_note": "Cached Telugu original title 'F2 – ఫన్ అండ్ ఫ్రస్టేషన్', director(s) Anil Ravipudi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Show two married couples or count two, then alternate laughing with exasperation; F2 abbreviates the film's Fun and Frustration, not a sequel number."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the family comedy is commonly familiar to Telugu audiences, but the abbreviated display may invite sequel confusion."
+      },
+      "reason": "The paired contrasting emotions are actable; treat the digit as part of the acronym."
+    }
+  },
+  {
+    "title": "They Call Him OG",
+    "year": 2025,
+    "tmdb_id": 1080365,
+    "source": "https://www.themoviedb.org/movie/1080365",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3640,
+      "fetched_at": "2026-10-04T09:51:25.803953+00:00",
+      "vote_count": 39,
+      "popularity": 2.5845,
+      "reviewers_note": "Cached Telugu original title 'దె కాల్ హిమ్ ఓజి', director(s) Sujeeth, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A feared gangster could suggest OG as 'original gangster', but the initials cannot be written or spelled and 'They Call Him' asks for a title bestowed on someone."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity is unresolved for this cached 2025 entry: a familiar lead and provider votes alone do not establish reach of this precise film."
+      },
+      "reason": "Nickname initials and an uncertain release-era audience make guessing a rating unsafe."
+    }
+  },
+  {
+    "title": "Darling",
+    "year": 2010,
+    "tmdb_id": 63414,
+    "source": "https://www.themoviedb.org/movie/63414",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 873,
+      "fetched_at": "2026-10-04T09:38:20.895880+00:00",
+      "vote_count": 39,
+      "popularity": 1.7452,
+      "reviewers_note": "Cached Telugu original title 'డార్లింగ్', director(s) A. Karunakaran, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Sending affectionate gestures to a beloved can convey darling, but could equally suggest many romantic films; the gangster subplot is not in the title."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Prabhas romance is commonly familiar among Telugu-film-aware adults, independently of how generic its endearment is."
+      },
+      "reason": "The term of affection is accessible but non-unique."
+    }
+  },
+  {
+    "title": "Taxiwala",
+    "year": 2018,
+    "tmdb_id": 520393,
+    "source": "https://www.themoviedb.org/movie/520393",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1658,
+      "fetched_at": "2026-10-04T09:43:43.402721+00:00",
+      "vote_count": 39,
+      "popularity": 1.4315,
+      "reviewers_note": "Cached Telugu original title 'టాక్సీవాలా', director(s) Rahul Sankrityan, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Mime steering a cab, stopping for a fare and taking payment to convey taxiwala, a taxi driver despite its single-token spelling."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Vijay Deverakonda supernatural cab film has mixed familiarity beyond fans of recent Telugu genre releases."
+      },
+      "reason": "A compound occupation has a direct mime route even if its film is not universally recalled."
+    }
+  },
+  {
+    "title": "Rudhramadevi",
+    "year": 2015,
+    "tmdb_id": 315009,
+    "source": "https://www.themoviedb.org/movie/315009",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1298,
+      "fetched_at": "2026-10-04T09:41:37.641741+00:00",
+      "vote_count": 39,
+      "popularity": 1.2871,
+      "reviewers_note": "Cached Telugu original title 'రుద్రమదేవి', director(s) Gunasekhar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Rudhramadevi names a specific Kakatiya ruler; crown and sword suggest a queen but cannot single her out without historical/film knowledge."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Anushka historical film is commonly familiar to Telugu-film-aware adults; generic royal mime remains ambiguous."
+      },
+      "reason": "The historical proper name is harder than acting royalty in general."
+    }
+  },
+  {
+    "title": "Liger",
+    "year": 2022,
+    "tmdb_id": 787163,
+    "source": "https://www.themoviedb.org/movie/787163",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2324,
+      "fetched_at": "2026-10-04T09:47:06.903804+00:00",
+      "vote_count": 38,
+      "popularity": 2.2091,
+      "reviewers_note": "Cached Telugu original title 'లైగర్', director(s) Puri Jagannadh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Boxing can suggest Liger's fighter, but 'liger' names a lion–tiger hybrid; combining two animal gestures may still be hard to identify precisely."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Vijay Deverakonda boxing film has mixed familiarity; knowing the actor does not ensure recall of its hybrid title."
+      },
+      "reason": "Animal-compound semantics are more relevant than the protagonist's sport alone."
+    }
+  },
+  {
+    "title": "C/o Kancharapalem",
+    "year": 2018,
+    "tmdb_id": 544795,
+    "source": "https://www.themoviedb.org/movie/544795",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1638,
+      "fetched_at": "2026-10-04T09:43:37.081051+00:00",
+      "vote_count": 38,
+      "popularity": 1.681,
+      "reviewers_note": "Cached Telugu original title 'C/o కంచరపాలెం', director(s) Venkatesh Maha, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "C/o abbreviates 'care of' and Kancharapalem is a specific place; showing an addressed letter would violate writing rules and generic village mime will not identify it."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this anthology is admired among Telugu cinema followers but may have mixed recognition among casual adults."
+      },
+      "reason": "A postal abbreviation and locality make an apparently short title unexpectedly difficult."
+    }
+  },
+  {
+    "title": "Jai Lava Kusa",
+    "year": 2017,
+    "tmdb_id": 101736,
+    "source": "https://www.themoviedb.org/movie/101736",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1500,
+      "fetched_at": "2026-10-04T09:42:55.603277+00:00",
+      "vote_count": 38,
+      "popularity": 1.4579,
+      "reviewers_note": "Cached Telugu original title 'జై లవ కుశ', director(s) Bobby Kolli, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Jai, Lava and Kusa are three brothers' names; counting three lookalikes conveys triplets but not these particular names."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the NTR triple-role film is commonly familiar to Telugu-film viewers, especially the three-person premise."
+      },
+      "reason": "Triplets are actable; naming them without speech is the challenge."
+    }
+  },
+  {
+    "title": "Court: State vs. A Nobody",
+    "year": 2025,
+    "tmdb_id": 1424217,
+    "source": "https://www.themoviedb.org/movie/1424217",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3446,
+      "fetched_at": "2026-10-04T09:50:48.628468+00:00",
+      "vote_count": 37,
+      "popularity": 2.353,
+      "reviewers_note": "Cached Telugu original title 'కోర్ట్: State vs. A Nobody', director(s) Ram Jagadeesh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A judge's bench and defendant suggest court, but State vs. A Nobody needs opposing sides and an unnamed person rather than a generic trial."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity with this exact 2025 courtroom title is unresolved; cached votes and synopsis cannot establish exposure among Telugu-film-aware casual adults."
+      },
+      "reason": "The courtroom setting gives a partial route while specific-title recognition remains unverified."
+    }
+  },
+  {
+    "title": "Badrinath",
+    "year": 2011,
+    "tmdb_id": 77715,
+    "source": "https://www.themoviedb.org/movie/77715",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 958,
+      "fetched_at": "2026-10-04T09:39:00.085942+00:00",
+      "vote_count": 37,
+      "popularity": 1.7922,
+      "reviewers_note": "Cached Telugu original title 'బద్రీనాధ్', director(s) V. V. Vinayak, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Badri is a named temple guardian and Badrinath is also a place; a prayer gesture cannot identify this specific proper name."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Allu Arjun film has mixed recognition; Telugu cinema awareness need not include every named temple action title."
+      },
+      "reason": "The name/place collision is not solved by generic devotion."
+    }
+  },
+  {
+    "title": "Arundhati",
+    "year": 2009,
+    "tmdb_id": 31629,
+    "source": "https://www.themoviedb.org/movie/31629",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 772,
+      "fetched_at": "2026-10-04T09:37:32.163200+00:00",
+      "vote_count": 37,
+      "popularity": 1.7594,
+      "reviewers_note": "Cached Telugu original title 'అరుంధతి', director(s) Kodi Ramakrishna, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Arundhati is a woman's name; depicting a haunted house or an ancestor can hint at this story but does not literally mime her name."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Anushka-led supernatural film is commonly familiar to Telugu audiences, particularly its central heroine."
+      },
+      "reason": "High film recall can offset—but not eliminate—a difficult named-title cue."
+    }
+  },
+  {
+    "title": "The Rajasaab",
+    "year": 2026,
+    "tmdb_id": 1022453,
+    "source": "https://www.themoviedb.org/movie/1022453",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3720,
+      "fetched_at": "2026-10-04T09:51:52.128953+00:00",
+      "vote_count": 36,
+      "popularity": 4.4,
+      "reviewers_note": "Cached Telugu original title 'ది రాజాసాబ్', director(s) Maruthi Dasari, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Rajasaab is an honorific/title for a person; a crown and haunted mansion are non-unique and the honorific is not the plot's curse."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity is unresolved for this cached 2026 film; the supplied provider votes do not measure target-audience exposure."
+      },
+      "reason": "Leave recognition open rather than projecting the leading actor's fame onto a later release."
+    }
+  },
+  {
+    "title": "Waltair Veerayya",
+    "year": 2023,
+    "tmdb_id": 989017,
+    "source": "https://www.themoviedb.org/movie/989017",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2512,
+      "fetched_at": "2026-10-04T09:47:44.001403+00:00",
+      "vote_count": 36,
+      "popularity": 2.0869,
+      "reviewers_note": "Cached Telugu original title 'వాల్తేరు వీరయ్య', director(s) Bobby Kolli, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Waltair is a place identifier and Veerayya a person's name; mime of smuggling or sea travel cannot specify both."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Chiranjeevi film is commonly familiar to current Telugu audiences, though its location-plus-name still resists mime."
+      },
+      "reason": "A proper-name compound needs story recognition, not merely a generic outlaw."
+    }
+  },
+  {
+    "title": "Guntur Kaaram",
+    "year": 2024,
+    "tmdb_id": 868660,
+    "source": "https://www.themoviedb.org/movie/868660",
+    "confidence": "high",
+    "evidence": {
+      "response_id": 2934,
+      "fetched_at": "2026-10-04T09:49:10.190951+00:00",
+      "vote_count": 36,
+      "popularity": 1.9812,
+      "reviewers_note": "Cached Telugu original title 'గుంటూరు కారం', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Guntur is a place, but kaaram is spice/heat; tasting hot chilli and signaling that locality can form a sequence, with the place the weaker half."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this recent Mahesh Babu film is commonly familiar to Telugu-film-aware adults, not automatically guessed from spicy-food mime."
+      },
+      "reason": "The spice is concrete; exact place identification is the challenge."
+    }
+  },
+  {
+    "title": "Oh! Baby",
+    "year": 2019,
+    "tmdb_id": 607091,
+    "source": "https://www.themoviedb.org/movie/607091",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1738,
+      "fetched_at": "2026-10-04T09:44:12.175443+00:00",
+      "vote_count": 36,
+      "popularity": 1.4533,
+      "reviewers_note": "Cached Telugu original title 'ఓ! బేబీ', director(s) B. V. Nandini Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Reacting in surprise and cradling a baby conveys the English title; the older-to-younger transformation is an extra story cue, not the phrase itself."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Samantha-led age-swap comedy is commonly familiar to Telugu audiences; distinguish its Telugu remake identity from the Korean source film."
+      },
+      "reason": "A direct exclamation-and-baby sequence competes with remake-title ambiguity."
+    }
+  },
+  {
+    "title": "Hello!",
+    "year": 2017,
+    "tmdb_id": 494061,
+    "source": "https://www.themoviedb.org/movie/494061",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1542,
+      "fetched_at": "2026-10-04T09:43:07.722708+00:00",
+      "vote_count": 35,
+      "popularity": 1.932,
+      "reviewers_note": "Cached Telugu original title 'హలో!', director(s) Vikram Kumar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Wave a greeting and indicate someone nearby; 'Hello!' is a performable greeting without speaking or mouthing it."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Akhil romance has mixed recognition, and its generic greeting title may compete with unrelated films."
+      },
+      "reason": "Easy-to-act greeting is not the same as easy movie identification."
+    }
+  },
+  {
+    "title": "Iddarammayilatho",
+    "year": 2013,
+    "tmdb_id": 197999,
+    "source": "https://www.themoviedb.org/movie/197999",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1087,
+      "fetched_at": "2026-10-04T09:40:03.674640+00:00",
+      "vote_count": 35,
+      "popularity": 1.5805,
+      "reviewers_note": "Cached Telugu original title 'ఇద్దరమ్మాయిలతో', director(s) Puri Jagannadh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Iddarammayilatho means 'with two girls'; count two, indicate women and someone accompanying them, rather than portray the political plot."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Allu Arjun romance/action film may have mixed recall among casual Telugu-film viewers."
+      },
+      "reason": "Several semantic units are concealed inside one transliterated Telugu word."
+    }
+  },
+  {
+    "title": "Kingdom",
+    "year": 2025,
+    "tmdb_id": 1124838,
+    "source": "https://www.themoviedb.org/movie/1124838",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3573,
+      "fetched_at": "2026-10-04T09:51:13.324212+00:00",
+      "vote_count": 34,
+      "popularity": 2.3144,
+      "reviewers_note": "Cached Telugu original title 'కింగ్డమ్\\u200c', director(s) Gowtam Tinnanuri, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A ruler surveying a realm can suggest kingdom, but generic monarchy mime may also lead to films with kings or empires."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity of this specific cached 2025 undercover thriller remains unresolved; a generic English title and provider votes do not tell us its target-audience reach."
+      },
+      "reason": "The literal realm cue works, while the film's exact recognition needs calibration."
+    }
+  },
+  {
+    "title": "A Aa",
+    "year": 2016,
+    "tmdb_id": 372399,
+    "source": "https://www.themoviedb.org/movie/372399",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1365,
+      "fetched_at": "2026-10-04T09:42:08.485343+00:00",
+      "vote_count": 34,
+      "popularity": 1.8914,
+      "reviewers_note": "Cached Telugu original title 'అ ఆ', director(s) Trivikram Srinivas, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 5,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A Aa refers to Telugu alphabet sounds/letters; writing, spelling, mouthing or forming letters is prohibited, and two lovers are not a title-specific substitute."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Trivikram romance is commonly familiar to Telugu-film-aware adults even though its letter-based prompt is hard to act."
+      },
+      "reason": "A widely known film can have effectively unplayable literal lettering."
+    }
+  },
+  {
+    "title": "Parugu",
+    "year": 2008,
+    "tmdb_id": 23776,
+    "source": "https://www.themoviedb.org/movie/23776",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 725,
+      "fetched_at": "2026-10-04T09:37:09.582563+00:00",
+      "vote_count": 34,
+      "popularity": 1.4141,
+      "reviewers_note": "Cached Telugu original title 'పరుగు', director(s) Bhaskar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Parugu means running: run in place with purposeful strides; imprisonment/elopement in the synopsis need not be enacted."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Allu Arjun film may have mixed exact-title recall among casual Telugu-film-aware adults."
+      },
+      "reason": "Literal motion is easy, but generic running is not film-specific."
+    }
+  },
+  {
+    "title": "Game Changer",
+    "year": 2025,
+    "tmdb_id": 811944,
+    "source": "https://www.themoviedb.org/movie/811944",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3398,
+      "fetched_at": "2026-10-04T09:50:38.616726+00:00",
+      "vote_count": 33,
+      "popularity": 2.3926,
+      "reviewers_note": "Cached Telugu original title 'గేమ్\\u200c ఛేంజర్\\u200c', director(s) Shankar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Show an initial game move followed by transforming its outcome to communicate 'game changer'; a collector fighting corruption is not the title's literal action."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity with this exact 2025 film is unresolved from the cached material; the star and TMDB votes do not measure casual Telugu viewers' recall."
+      },
+      "reason": "The English idiom needs a two-stage gesture, and familiarity cannot safely be inferred."
+    }
+  },
+  {
+    "title": "Karthikeya 2",
+    "year": 2022,
+    "tmdb_id": 894762,
+    "source": "https://www.themoviedb.org/movie/894762",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2335,
+      "fetched_at": "2026-10-04T09:47:08.947752+00:00",
+      "vote_count": 33,
+      "popularity": 1.6014,
+      "reviewers_note": "Cached Telugu original title 'కార్తికేయ 2', director(s) Chandoo Mondeti, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Karthikeya names the investigator and a deity, while 2 is countable; an anklet or temple mystery cannot uniquely select the sequel."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Krishna-quest sequel is commonly familiar among recent Telugu-film viewers, distinct from the earlier temple mystery."
+      },
+      "reason": "Explicitly mark the second film rather than transferring the first film's clues."
+    }
+  },
+  {
+    "title": "Ala Modalaindi",
+    "year": 2011,
+    "tmdb_id": 57010,
+    "source": "https://www.themoviedb.org/movie/57010",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 923,
+      "fetched_at": "2026-10-04T09:38:46.036729+00:00",
+      "vote_count": 33,
+      "popularity": 1.5944,
+      "reviewers_note": "Cached Telugu original title 'అలా.. మొదలైంది', director(s) B. V. Nandini Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Ala Modalaindi roughly means 'that's how it began'; gesture a start and then a retrospective telling, but the discourse phrase is not a concrete object."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Nani romantic comedy has mixed recognition in a casual Telugu-film audience."
+      },
+      "reason": "A beginning can be mimed; the conversational framing is trickier."
+    }
+  },
+  {
+    "title": "Oosaravelli",
+    "year": 2011,
+    "tmdb_id": 80281,
+    "source": "https://www.themoviedb.org/movie/80281",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 973,
+      "fetched_at": "2026-10-04T09:39:07.623700+00:00",
+      "vote_count": 33,
+      "popularity": 1.4899,
+      "reviewers_note": "Cached Telugu original title 'ఊసరవెల్లి', director(s) Surender Reddy, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Oosaravelli means chameleon: crawl, project a tongue and change imagined colors to convey the animal rather than the revenge plot."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the NTR action film may have mixed recall despite a distinctive animal title."
+      },
+      "reason": "An animal provides a vivid literal route independent of story fame."
+    }
+  },
+  {
+    "title": "Leader",
+    "year": 2010,
+    "tmdb_id": 55283,
+    "source": "https://www.themoviedb.org/movie/55283",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 859,
+      "fetched_at": "2026-10-04T09:38:13.566592+00:00",
+      "vote_count": 33,
+      "popularity": 1.1319,
+      "reviewers_note": "Cached Telugu original title 'లీడర్', director(s) Sekhar Kammula, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 2,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Mime directing a group from the front and making decisions to express leader; a politician's campaign is optional context, not essential title translation."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Rana political debut has mixed recognition among Telugu-film-aware adults versus newer mass-market titles."
+      },
+      "reason": "A straightforward social role can still prompt many generic film guesses."
+    }
+  },
+  {
+    "title": "Miss. Shetty Mr. Polishetty",
+    "year": 2023,
+    "tmdb_id": 1045385,
+    "source": "https://www.themoviedb.org/movie/1045385",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2754,
+      "fetched_at": "2026-10-04T09:48:34.370476+00:00",
+      "vote_count": 32,
+      "popularity": 2.013,
+      "reviewers_note": "Cached Telugu original title 'Miss. Shetty Mr. Polishetty', director(s) Mahesh Babu P, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Polishetty and Shetty are surnames; contrasting two people with Miss and Mr. is possible, but their specific names cannot be acted without dialogue."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this recent Anushka–Naveen romantic comedy is commonly familiar to Telugu-film audiences, despite its name-heavy title."
+      },
+      "reason": "Relationship contrast is a route; surname precision needs recognition."
+    }
+  },
+  {
+    "title": "Raja the Great",
+    "year": 2017,
+    "tmdb_id": 456431,
+    "source": "https://www.themoviedb.org/movie/456431",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1511,
+      "fetched_at": "2026-10-04T09:42:58.912776+00:00",
+      "vote_count": 32,
+      "popularity": 1.8052,
+      "reviewers_note": "Cached Telugu original title 'రాజా ది గ్రేట్', director(s) Anil Ravipudi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Indicate a person, then exaggerated excellence for 'the Great'; the named Raja and the film's blind protagonist must not be reduced to generic disability mime."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ravi Teja comedy has mixed title recall among casual Telugu viewers."
+      },
+      "reason": "The honorific is actable, but neither it nor a plot gesture identifies Raja uniquely."
+    }
+  },
+  {
+    "title": "Vinaya Vidheya Rama",
+    "year": 2019,
+    "tmdb_id": 566402,
+    "source": "https://www.themoviedb.org/movie/566402",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1683,
+      "fetched_at": "2026-10-04T09:43:52.296325+00:00",
+      "vote_count": 32,
+      "popularity": 1.6923,
+      "reviewers_note": "Cached Telugu original title 'వినయ విధేయ రామ', director(s) Boyapati Srinu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Vinaya and Vidheya suggest humility and obedience, but Rama is a name; bowing and complying may show qualities without identifying the named man."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan action film has mixed recognition, not automatically broad because of the lead."
+      },
+      "reason": "Alliterative moral adjectives and a name are difficult without spoken clues."
+    }
+  },
+  {
+    "title": "Mass",
+    "year": 2004,
+    "tmdb_id": 81088,
+    "source": "https://www.themoviedb.org/movie/81088",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 491,
+      "fetched_at": "2026-10-04T09:35:11.605544+00:00",
+      "vote_count": 32,
+      "popularity": 1.1064,
+      "reviewers_note": "Cached Telugu original title 'మాస్', director(s) Raghava Lawrence, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Mass can mean a crowd or a crowd-pleasing persona; gathering people risks the wrong sense for this named hero's action film."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this older Nagarjuna action film has mixed exact-title recall among Telugu-film-aware adults."
+      },
+      "reason": "A short English word has multiple meanings and is not automatically easy."
+    }
+  },
+  {
+    "title": "MAD",
+    "year": 2023,
+    "tmdb_id": 1187075,
+    "source": "https://www.themoviedb.org/movie/1187075",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2789,
+      "fetched_at": "2026-10-04T09:48:41.171430+00:00",
+      "vote_count": 31,
+      "popularity": 1.8631,
+      "reviewers_note": "Cached Telugu original title 'MAD', director(s) Kalyan Shankar, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 5,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "MAD may imply craziness or be an acronym, but the engineering-hostel synopsis does not establish which expansion the uppercase title intends; acting madness would be an unverified interpretation."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this recent college comedy may be known to younger Telugu viewers but less so to the wider casual-adult audience."
+      },
+      "reason": "Avoid inventing an acronym expansion or assuming the obvious English reading is the official title sense."
+    }
+  },
+  {
+    "title": "Naayak",
+    "year": 2013,
+    "tmdb_id": 182954,
+    "source": "https://www.themoviedb.org/movie/182954",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1056,
+      "fetched_at": "2026-10-04T09:39:49.491343+00:00",
+      "vote_count": 31,
+      "popularity": 1.5859,
+      "reviewers_note": "Cached Telugu original title 'నాయక్', director(s) V. V. Vinayak, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Naayak means leader; directing followers offers a route, but the duplicate-hero plot is not the word's meaning."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ram Charan action film has mixed exact-title recall; several Telugu movies share leadership themes."
+      },
+      "reason": "A recognizable role gesture is still non-unique."
+    }
+  },
+  {
+    "title": "Krack",
+    "year": 2021,
+    "tmdb_id": 784572,
+    "source": "https://www.themoviedb.org/movie/784572",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1911,
+      "fetched_at": "2026-10-04T09:45:14.569264+00:00",
+      "vote_count": 31,
+      "popularity": 1.5129,
+      "reviewers_note": "Cached Telugu original title 'క్రాక్', director(s) Gopichand Malineni, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "A cracking object or a sharp snap expresses one sense of Krack; the English title could also imply madness, so a hot-headed-cop mime risks guessing the wrong sense."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Ravi Teja police film has mixed familiarity across casual Telugu viewers."
+      },
+      "reason": "Ambiguous transliterated English prevents a confidently distinctive literal clue."
+    }
+  },
+  {
+    "title": "Once Upon a Warrior",
+    "year": 2011,
+    "tmdb_id": 72440,
+    "source": "https://www.themoviedb.org/movie/72440",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 929,
+      "fetched_at": "2026-10-04T09:38:48.144501+00:00",
+      "vote_count": 31,
+      "popularity": 1.4187,
+      "reviewers_note": "Cached Telugu original title 'ఆనగనగా ఓ ధీరుడు', director(s) Prakash Kovelamudi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "The English display suggests a lone warrior from a fairy-tale opening, but the original Telugu 'Anaganaga O Dheerudu' says 'once upon a time, a brave man'; mime hero and storybook opening."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this fantasy adventure has mixed recall; its English alias may be less familiar than the Telugu original."
+      },
+      "reason": "The two titles are aliases, not two films; translation changes the best acting cue."
+    }
+  },
+  {
+    "title": "Pilla Zamindar",
+    "year": 2011,
+    "tmdb_id": 85818,
+    "source": "https://www.themoviedb.org/movie/85818",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 974,
+      "fetched_at": "2026-10-04T09:39:08.096853+00:00",
+      "vote_count": 31,
+      "popularity": 1.4184,
+      "reviewers_note": "Cached Telugu original title 'పిల్లజమీందార్', director(s) Ashok G., synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Pilla means child and zamindar a landlord; show a child inheriting land, but an actual aristocratic title cannot be pinned down by a generic rich-person gesture."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Nani coming-of-age comedy has mixed familiarity among casual Telugu-film-aware adults."
+      },
+      "reason": "The compound has two concepts hidden inside its display tokens."
+    }
+  },
+  {
+    "title": "Mathu Vadalara",
+    "year": 2019,
+    "tmdb_id": 657853,
+    "source": "https://www.themoviedb.org/movie/657853",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1807,
+      "fetched_at": "2026-10-04T09:44:36.808477+00:00",
+      "vote_count": 31,
+      "popularity": 1.226,
+      "reviewers_note": "Cached Telugu original title 'మత్తు వదలరా', director(s) Ritesh Rana, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Mathu Vadalara urges someone to shake off intoxication; wobble then regain focus, rather than depict the delivery-job scheme."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Telugu crime comedy is familiar to some newer-film followers, with mixed reach across casual adults."
+      },
+      "reason": "An imperative change of state needs both before and after."
+    }
+  },
+  {
+    "title": "Kuberaa",
+    "year": 2025,
+    "tmdb_id": 1171101,
+    "source": "https://www.themoviedb.org/movie/1171101",
+    "confidence": "low",
+    "evidence": {
+      "response_id": 3552,
+      "fetched_at": "2026-10-04T09:51:08.633685+00:00",
+      "vote_count": 30,
+      "popularity": 2.2818,
+      "reviewers_note": "Cached Telugu original title 'కుబేర', director(s) Sekhar Kammula, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Kuberaa names the wealth-associated deity/person; piling up money can suggest great wealth, but not the specific name or the film's laundering plot."
+      },
+      "recognition": {
+        "value": null,
+        "method": "editorial-unresolved-familiarity",
+        "reason": "Editorial familiarity of this specific 2025 financial drama remains unresolved; cast and cached votes are not target-audience awareness measurements."
+      },
+      "reason": "A wealth gesture cannot substitute for the named mythic title; withhold ungrounded recognition."
+    }
+  },
+  {
+    "title": "Akhanda",
+    "year": 2021,
+    "tmdb_id": 794961,
+    "source": "https://www.themoviedb.org/movie/794961",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2090,
+      "fetched_at": "2026-10-04T09:46:16.571187+00:00",
+      "vote_count": 30,
+      "popularity": 1.8001,
+      "reviewers_note": "Cached Telugu original title 'అఖండ', director(s) Boyapati Srinu, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Akhanda suggests unbroken/whole; join pieces and resist separation, though the divided-twin storyline is not the title's literal meaning."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Balakrishna action film is commonly familiar to Telugu-film-aware adults, while the abstract adjective needs care."
+      },
+      "reason": "Two brothers may recall the film, but a literal whole/unbroken gesture is less scene-dependent."
+    }
+  },
+  {
+    "title": "Karthikeya",
+    "year": 2014,
+    "tmdb_id": 300214,
+    "source": "https://www.themoviedb.org/movie/300214",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1205,
+      "fetched_at": "2026-10-04T09:40:53.470694+00:00",
+      "vote_count": 30,
+      "popularity": 1.127,
+      "reviewers_note": "Cached Telugu original title 'కార్తికేయ', director(s) Chandoo Mondeti, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Karthikeya is a protagonist's name and deity reference; a closed temple or investigator mime cannot uniquely encode this first film."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the 2014 temple mystery has mixed familiarity among casual Telugu audiences; do not import recognition from its later sequel."
+      },
+      "reason": "Keep the original temple case distinct from Karthikeya 2."
+    }
+  },
+  {
+    "title": "RX 100",
+    "year": 2018,
+    "tmdb_id": 535369,
+    "source": "https://www.themoviedb.org/movie/535369",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1612,
+      "fetched_at": "2026-10-04T09:43:30.768693+00:00",
+      "vote_count": 29,
+      "popularity": 2.0499,
+      "reviewers_note": "Cached Telugu original title 'RX 100', director(s) Ajay Bhupathi, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 4,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "RX 100 is a specific motorcycle model; riding a bike plus counting a hundred can suggest it, but RX are initials and cannot be spelled."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Kartikeya romance-thriller has mixed recall among casual Telugu viewers; motorcycle familiarity is not film recognition."
+      },
+      "reason": "The vehicle clue is useful but the model's letters remain a hard bottleneck."
+    }
+  },
+  {
+    "title": "Ninnu Kori",
+    "year": 2017,
+    "tmdb_id": 465099,
+    "source": "https://www.themoviedb.org/movie/465099",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1482,
+      "fetched_at": "2026-10-04T09:42:50.398076+00:00",
+      "vote_count": 29,
+      "popularity": 1.7164,
+      "reviewers_note": "Cached Telugu original title 'నిన్ను కోరి', director(s) Shiva Nirvana, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Ninnu Kori conveys longing for you; point toward someone then reach or plead, but the ex-boyfriend/marriage triangle is not literally in the phrase."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this Nani relationship film has mixed recall across Telugu-film-aware casual adults."
+      },
+      "reason": "A direct emotion-and-addressee route exists, though many romances share it."
+    }
+  },
+  {
+    "title": "Desamuduru",
+    "year": 2007,
+    "tmdb_id": 117058,
+    "source": "https://www.themoviedb.org/movie/117058",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 633,
+      "fetched_at": "2026-10-04T09:36:22.914091+00:00",
+      "vote_count": 29,
+      "popularity": 1.5644,
+      "reviewers_note": "Cached Telugu original title 'దేశముదురు', director(s) Puri Jagannadh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Desamuduru combines desa (country) and muduru (hardened/seasoned person); a tough wanderer could hint at it, but TV-assignment acting is not the title."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this earlier Allu Arjun film has mixed title recognition among casual adults."
+      },
+      "reason": "A compound personal descriptor resists a single unambiguous gesture."
+    }
+  },
+  {
+    "title": "Sarkaru Vaari Paata",
+    "year": 2022,
+    "tmdb_id": 784696,
+    "source": "https://www.themoviedb.org/movie/784696",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 2221,
+      "fetched_at": "2026-10-04T09:46:44.869686+00:00",
+      "vote_count": 29,
+      "popularity": 1.5158,
+      "reviewers_note": "Cached Telugu original title 'సర్కారు వారి పాట\\u200b', director(s) Parasuram Petla, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Sarkaru Vaari Paata invokes the government's bid/song; an auction bidding gesture helps the paata sense, but the governmental qualifier is abstract and the loan plot is not a translation."
+      },
+      "recognition": {
+        "value": 2,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: the Mahesh Babu film is commonly familiar among contemporary Telugu-film viewers, despite a tricky idiomatic title."
+      },
+      "reason": "Avoid misreading paata only as a literal song or the finance plot as the title."
+    }
+  },
+  {
+    "title": "Chirutha",
+    "year": 2007,
+    "tmdb_id": 84504,
+    "source": "https://www.themoviedb.org/movie/84504",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 675,
+      "fetched_at": "2026-10-04T09:36:44.404528+00:00",
+      "vote_count": 29,
+      "popularity": 1.4772,
+      "reviewers_note": "Cached Telugu original title 'చిరుత', director(s) Puri Jagannadh, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 1,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Chirutha means cheetah: imitate fast four-legged sprinting and spotted fur, avoiding the generic revenge plot."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: Ram Charan's debut is familiar to some Telugu viewers but exact title recall may be mixed across casual adults."
+      },
+      "reason": "An animal provides a vivid route regardless of debut-film knowledge."
+    }
+  },
+  {
+    "title": "Ee Nagaraniki Emaindi?",
+    "year": 2018,
+    "tmdb_id": 532789,
+    "source": "https://www.themoviedb.org/movie/532789",
+    "confidence": "medium",
+    "evidence": {
+      "response_id": 1603,
+      "fetched_at": "2026-10-04T09:43:27.586690+00:00",
+      "vote_count": 29,
+      "popularity": 1.3215,
+      "reviewers_note": "Cached Telugu original title 'ఈ నగరానికి ఏమైంది?', director(s) Tharun Bhascker, synopsis and leading cast inspected; global TMDB votes are not a Telugu-audience familiarity measure."
+    },
+    "difficulty": {
+      "actability": {
+        "value": 3,
+        "method": "editorial-title-and-cached-metadata",
+        "reason": "Ee Nagaraniki Emaindi? asks 'what happened to this city?'; point around a city and show bewilderment, but the Goa trip is not a literal title clue."
+      },
+      "recognition": {
+        "value": 3,
+        "method": "editorial-audience-hypothesis",
+        "reason": "Editorial hypothesis: this ensemble comedy has strong pockets of recognition among younger Telugu viewers but mixed reach across casual adults."
+      },
+      "reason": "A rhetorical city question must be conveyed without speech; film-specific friend mime is optional."
+    }
   }
 ]
