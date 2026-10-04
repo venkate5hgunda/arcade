@@ -735,7 +735,12 @@ export class MultiplayerRoom {
     if (this.role !== 'host' || !this.activeGame || this.activeGame.id !== gameId ||
         typeof gameId !== 'string' || !REMOTE_GAMES.has(gameId))
       fail('Only the host can record a result for the active game.');
-    if (winnerIndex !== null && (!Number.isInteger(winnerIndex) ||
+    const shared = Array.isArray(winnerIndex) && gameId === 'business' &&
+      winnerIndex.length >= 2 && winnerIndex.length <= this.activeGame.playerIds.length &&
+      winnerIndex.every(index => Number.isInteger(index) && index >= 0 &&
+        index < this.activeGame.playerIds.length) &&
+      new Set(winnerIndex).size === winnerIndex.length;
+    if (!shared && winnerIndex !== null && (!Number.isInteger(winnerIndex) ||
         winnerIndex < 0 || winnerIndex >= this.activeGame.playerIds.length))
       fail('Winner must be an active zero-based seat index or null for a draw.');
     if (!((typeof roundKey === 'string' && roundKey.length > 0 && roundKey.length <= 128) ||
@@ -745,7 +750,9 @@ export class MultiplayerRoom {
     if (this.roundKeys.has(key)) return false;
     const players = this.activeGame.playerIds;
     const increments = players.map((id, index) => ({
-      id, field: winnerIndex === null ? 'draws' : index === winnerIndex ? 'wins' : 'losses',
+      id, field: winnerIndex === null ? 'draws' :
+        shared ? winnerIndex.includes(index) ? 'wins' : 'losses' :
+          index === winnerIndex ? 'wins' : 'losses',
     }));
     const game = this.stats.games.find((entry) => entry.id === gameId);
     const delta = counts();
