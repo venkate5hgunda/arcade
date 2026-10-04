@@ -3,6 +3,17 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Historical TMDB hydration and continued difficulty review
+
+- Added cache-resumable source-title matching with exact year/language and
+  independent director/cast corroboration; mismatches and identity collisions
+  retain review evidence instead of silently merging records.
+- Added 100 native-ID-backed editorial reviews with original title-specific
+  reasoning, cached snapshot provenance and explicit uncertainty; 91 provide
+  complete ratings and nine withhold unresolved familiarity.
+- Deduplicated identical live requests within concurrent batches and kept
+  unverified candidate details out of trusted exported movie data.
+
 ## 2026-10-04 — Organized movie development tooling
 
 - Grouped the movie pipeline under `dev/movies/` with a module CLI, immutable

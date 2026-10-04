@@ -318,11 +318,17 @@ class Client:
         """Fetch independent requests concurrently; SQLite writes stay on the owner thread."""
         results = [None] * len(jobs)
         pending = []
+        scheduled = {}
+        aliases = []
         failure = None
         for index, (path, params) in enumerate(jobs):
             cached = self.cached(path, params)
             if cached:
                 results[index] = cached
+                continue
+            group_key = (path, dump(params))
+            if group_key in scheduled:
+                aliases.append((index, scheduled[group_key]))
                 continue
             try:
                 self.reserve()
@@ -330,6 +336,7 @@ class Client:
                 failure = error
                 break
             pending.append((index, path, params))
+            scheduled[group_key] = index
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [(index, path, params, pool.submit(self.fetch, path, params))
                        for index, path, params in pending]
@@ -340,6 +347,8 @@ class Client:
                     failure = failure or error
         if failure:
             raise failure
+        for index, original in aliases:
+            results[index] = results[original]
         return results
 
 
@@ -382,6 +391,112 @@ def reconcile_tmdb(db, client):
                 status = "linked"
             record_match(db, identity["movie_id"], "tmdb", response_id, status,
                          "IMDb crosswalk; require unique Telugu movie and exact year; collisions not merged.")
+
+
+def detail_job(external_id):
+    return ("/movie/" + str(external_id),
+            {"append_to_response": APPENDS, "language": "en-US",
+             "include_image_language": "te,en,null"})
+
+
+def validate_details(db, movie_id, external_id, payload, response_id):
+    if str(payload.get("id")) != str(external_id):
+        raise APIError("TMDB detail identity mismatch.")
+    failed = [name for name in APPENDS.split(",") if name not in payload or
+              (isinstance(payload[name], dict) and payload[name].get("success") is False)]
+    if failed:
+        trusted = db.execute("SELECT 1 FROM identities WHERE movie_id=? AND provider='tmdb' AND external_id=?",
+                             (movie_id, str(external_id))).fetchone()
+        record_match(db, movie_id, "tmdb", response_id, "hydrated_partial" if trusted else "needs_review",
+                     "Missing/failed appended endpoints: " + ", ".join(failed))
+        raise APIError("TMDB appended endpoint failure; raw details retained, hydration incomplete.")
+
+
+def person_key(name):
+    tokens = re.findall(r"[^\W_]+", unicodedata.normalize("NFKC", name).casefold())
+    return tuple(sorted(tokens))
+
+
+def source_corroboration(raw, payload):
+    credits = payload["credits"]
+    source_director = raw.get("Director", "").strip()
+    directors = [person["name"] for person in credits.get("crew", []) if person.get("job") == "Director"]
+    if source_director and directors:
+        key = person_key(source_director)
+        matched = bool(key) and any(key == person_key(name) for name in directors)
+        return matched, {"method": "exact-director-name-tokens", "source_director": source_director,
+                         "tmdb_directors": directors, "reason": "Director corroborated." if matched else
+                         "Source and native director names disagree; no fuzzy correction applied."}
+    source_cast = [name.strip() for name in re.split(r"[,;/]", raw.get("Cast", "")) if name.strip()]
+    native_cast = [person["name"] for person in credits.get("cast", [])]
+    matched_cast = [name for name in source_cast if person_key(name) and any(
+        person_key(name) == person_key(candidate) for candidate in native_cast)]
+    return bool(matched_cast), {"method": "exact-cast-name-tokens", "source_cast": source_cast,
+                               "matched_cast": matched_cast,
+                               "reason": "Cast corroborated where director evidence is unavailable." if matched_cast else
+                               "No independent director/cast corroboration available; needs review."}
+
+
+def hydrate_tmdb_sources(db, client):
+    """Conservatively link existing source rows; never create duplicate native movies."""
+    movies = db.execute(
+        "SELECT m.*,s.raw_json FROM movies m JOIN source_rows s ON s.movie_id=m.id "
+        "WHERE m.year>=1931 AND m.year<=? AND NOT EXISTS "
+        "(SELECT 1 FROM identities i WHERE i.movie_id=m.id AND i.provider='tmdb') "
+        "ORDER BY m.year DESC,m.title,m.id", (dt.date.today().year,)).fetchall()
+    for offset in range(0, len(movies), 8):
+        batch = movies[offset:offset + 8]
+        params = [{"query": movie["title"], "primary_release_year": movie["year"],
+                   "include_adult": "true", "language": "en-US", "page": 1} for movie in batch]
+        searches = client.get_many([("/search/movie", query) for query in params])
+        pending = []
+        for movie, query, (payload, search_receipt) in zip(batch, params, searches):
+            if payload["total_pages"] > 500:
+                raise APIError("TMDB source search exceeds page cap; manual review required.")
+            results = list(payload["results"])
+            for page in range(2, payload["total_pages"] + 1):
+                other, _ = client.get("/search/movie", {**query, "page": page})
+                results.extend(other["results"])
+            candidates = {result["id"]: result for result in results
+                          if result.get("original_language") == "te"
+                          and result.get("release_date", "")[:4] == str(movie["year"])
+                          and title_key(movie["title"]) in {
+                              title_key(result.get("title", "")), title_key(result.get("original_title", ""))}}
+            if len(candidates) != 1:
+                record_match(db, movie["id"], "tmdb", search_receipt,
+                             "not_found" if not results else "needs_review",
+                             f"Exact title/year/Telugu candidates: {len(candidates)}; "
+                             "all search responses retained, no approximate title match accepted.")
+                continue
+            external_id = next(iter(candidates))
+            occupied = db.execute("SELECT movie_id FROM identities WHERE provider='tmdb' AND external_id=?",
+                                   (str(external_id),)).fetchone()
+            if occupied and occupied["movie_id"] != movie["id"]:
+                record_match(db, movie["id"], "tmdb", search_receipt, "needs_review",
+                             "Native ID belongs to another catalog record; source duplicate/alias requires review.")
+                continue
+            pending.append((movie, external_id, search_receipt))
+        details = client.get_many([detail_job(external_id) for _, external_id, _ in pending])
+        for (movie, external_id, search_receipt), (payload, response_id) in zip(pending, details):
+            validate_details(db, movie["id"], external_id, payload, response_id)
+            if (payload.get("original_language") != "te"
+                    or payload.get("release_date", "")[:4] != str(movie["year"])):
+                record_match(db, movie["id"], "tmdb", response_id, "needs_review",
+                             "Native details disagree with search language/year; source retained without linking.")
+                continue
+            corroborated, evidence = source_corroboration(json.loads(movie["raw_json"]), payload)
+            evidence.update({"search_response_id": search_receipt, "detail_response_id": response_id,
+                             "title": movie["title"], "year": movie["year"]})
+            if not corroborated or not link(db, movie["id"], "tmdb", external_id, evidence):
+                record_match(db, movie["id"], "tmdb", response_id, "needs_review",
+                             evidence["reason"] if not corroborated else
+                             "Identity collision after corroboration; duplicate source retained.")
+                continue
+            record_match(db, movie["id"], "tmdb", search_receipt, "linked",
+                         "Exact title/year/Telugu plus independent source credit corroboration.")
+            record_match(db, movie["id"], "tmdb", response_id, "hydrated", evidence["reason"])
+        print(f"TMDB source matching: examined {min(offset + 8, len(movies))}/{len(movies)} pending rows.",
+              file=sys.stderr)
 
 
 def hydrate_omdb(db, client, movies):
@@ -513,30 +628,43 @@ def hydrate_tmdb(db, client):
             "SELECT i.* FROM identities i WHERE i.provider='tmdb' AND NOT EXISTS "
             "(SELECT 1 FROM matches m WHERE m.movie_id=i.movie_id AND m.provider='tmdb' AND m.status='hydrated')"
         ).fetchall()
-    jobs = [("/movie/" + identity["external_id"],
-             {"append_to_response": APPENDS, "language": "en-US",
-              "include_image_language": "te,en,null"}) for identity in identities]
+    jobs = [detail_job(identity["external_id"]) for identity in identities]
     for offset in range(0, len(jobs), 8):
         batch = jobs[offset:offset + 8]
         responses = client.get_many(batch)
         for identity, (payload, response_id) in zip(identities[offset:offset + 8], responses):
-            if str(payload.get("id")) != identity["external_id"]:
-                raise APIError("TMDB detail identity mismatch.")
-            failed = [name for name in APPENDS.split(",") if name not in payload or
-                      (isinstance(payload[name], dict) and payload[name].get("success") is False)]
-            if failed:
-                record_match(db, identity["movie_id"], "tmdb", response_id, "hydrated_partial",
-                             "Missing/failed appended endpoints: " + ", ".join(failed))
-                raise APIError("TMDB appended endpoint failure; raw details retained, hydration incomplete.")
+            validate_details(db, identity["movie_id"], identity["external_id"], payload, response_id)
             record_match(db, identity["movie_id"], "tmdb", response_id, "hydrated",
                          "Native TMDB ID; full details and appended responses retained without field projection.")
 
 
 def annotate(db, seeds):
-    curated = {(title_key(name), seed["year"]): seed for seed in seeds
+    for seed in seeds:
+        if not isinstance(seed.get("title"), str) or not seed["title"].strip() or type(seed.get("year")) is not int:
+            raise ValueError("Each editorial review requires a nonempty title and integer year.")
+        for dimension in ("actability", "recognition"):
+            component = seed["difficulty"][dimension]
+            value = component["value"]
+            if value is not None and (type(value) is not int or not 1 <= value <= 5):
+                raise ValueError(f"{seed['title']}: {dimension} must be null or an integer from 1 to 5.")
+            if not component.get("reason") or not component.get("method"):
+                raise ValueError(f"{seed['title']}: {dimension} requires reasoning and method.")
+        if seed.get("tmdb_id") is not None and (type(seed["tmdb_id"]) is not int or seed["tmdb_id"] <= 0):
+            raise ValueError(f"{seed['title']}: tmdb_id must be a positive integer.")
+        if seed.get("confidence", "medium") not in ("low", "medium", "high"):
+            raise ValueError(f"{seed['title']}: unsupported confidence.")
+        if seed.get("evidence") and ("tmdb_id" not in seed
+                                    or type(seed["evidence"].get("response_id")) is not int
+                                    or not seed["evidence"].get("fetched_at")):
+            raise ValueError(f"{seed['title']}: snapshot evidence requires native ID, receipt ID and fetch timestamp.")
+    curated = {(title_key(name), seed["year"]): seed for seed in seeds if "tmdb_id" not in seed
                for name in [seed["title"], *seed.get("aliases", [])]}
+    by_native_id = {str(seed["tmdb_id"]): seed for seed in seeds if "tmdb_id" in seed}
+    native_ids = {row["movie_id"]: row["external_id"] for row in db.execute(
+        "SELECT movie_id,external_id FROM identities WHERE provider='tmdb'")}
     for movie in db.execute("SELECT * FROM movies").fetchall():
-        evidence = curated.get((title_key(movie["title"]), movie["year"]))
+        evidence = by_native_id.get(native_ids.get(movie["id"])) or curated.get(
+            (title_key(movie["title"]), movie["year"]))
         prompt_title = evidence["title"] if evidence else movie["title"]
         words = prompt_title.split()
         length_score = 1 if len(words) <= 2 else 2 if len(words) <= 4 else 4 if len(words) <= 6 else 5
@@ -554,24 +682,35 @@ def annotate(db, seeds):
         if evidence:
             for name in ("actability", "recognition"):
                 components[name].update(evidence["difficulty"][name])
-            status = "editorial"
-        else:
-            status = "needs_review"
+        complete = all(component["value"] is not None for component in components.values())
+        status = "editorial" if complete else "needs_review"
         # Unknown dimensions span the entire rubric, never a fabricated neutral value.
         low = sum(c["weight"] * (c["value"] if c["value"] is not None else 1) for c in components.values())
         high = sum(c["weight"] * (c["value"] if c["value"] is not None else 5) for c in components.values())
-        value = max(1, min(5, int(low + 0.5))) if evidence else None
+        value = max(1, min(5, int(low + 0.5))) if complete else None
         annotation = {
             "rubric": RUBRIC, "status": status, "difficulty": value,
             "prompt_title": prompt_title,
             "difficulty_range": [round(low, 2), round(high, 2)],
-            "components": components, "confidence": "medium" if evidence else "low",
+            "components": components, "confidence": evidence.get("confidence", "medium") if complete else "low",
             "audience": "Telugu-film-aware casual adult players",
             "reason": evidence["difficulty"]["reason"] if evidence else
             "Final rating withheld: title length alone cannot support a defensible charades rating.",
             "sources": [evidence["source"]] if evidence else ["Source title; not independently verified"],
             "review_required": True,
         }
+        if evidence and evidence.get("tmdb_id"):
+            annotation["identity_basis"] = {"provider": "tmdb", "external_id": evidence["tmdb_id"]}
+        if evidence and evidence.get("evidence"):
+            annotation["evidence"] = dict(evidence["evidence"])
+            annotation["evidence"]["response_id_scope"] = "original curatorial snapshot database"
+            receipt = db.execute("SELECT * FROM responses WHERE id=? AND provider='tmdb' AND path=? AND fetched_at=?",
+                                 (evidence["evidence"]["response_id"], "/movie/" + str(evidence["tmdb_id"]),
+                                  evidence["evidence"]["fetched_at"])).fetchone()
+            if receipt:
+                annotation["evidence"]["request_key"] = receipt["request_key"]
+                annotation["evidence"]["body_sha256"] = receipt["body_sha256"]
+            annotation["evidence"]["snapshot_available_locally"] = bool(receipt)
         input_sha = digest(dump(annotation))
         latest = db.execute("SELECT input_sha256 FROM annotations WHERE movie_id=? AND rubric=? "
                             "ORDER BY id DESC LIMIT 1", (movie["id"], RUBRIC)).fetchone()
@@ -666,6 +805,7 @@ def main():
     parser.add_argument("--export", type=Path, default=DEFAULT_EXPORT)
     parser.add_argument("--omdb", action="store_true", help="Hydrate known titles using OMDb")
     parser.add_argument("--tmdb", action="store_true", help="Discover and hydrate Telugu originals using TMDB")
+    parser.add_argument("--tmdb-sources", action="store_true", help="Hydrate existing source rows using corroborated TMDB search")
     parser.add_argument("--start-year", type=int, default=2000)
     parser.add_argument("--end-year", type=int, default=dt.date.today().year)
     parser.add_argument("--max-calls", type=int, default=100, help="Per-provider live request budget")
@@ -683,7 +823,7 @@ def main():
         imported = import_csv(db, args.csv)
         seed_movies(db, [seed for seed in seeds if seed.get("catalog_seed")])
         annotate(db, seeds)
-        for provider, enabled in (("tmdb", args.tmdb), ("omdb", args.omdb)):
+        for provider, enabled in (("tmdb", args.tmdb or args.tmdb_sources), ("omdb", args.omdb)):
             if not enabled:
                 continue
             key = os.environ.get(provider.upper() + "_API_KEY")
@@ -695,7 +835,10 @@ def main():
             try:
                 if provider == "tmdb":
                     reconcile_tmdb(db, client)
-                    discover_tmdb(db, client, args.start_year, args.end_year)
+                    if args.tmdb_sources:
+                        hydrate_tmdb_sources(db, client)
+                    if args.tmdb:
+                        discover_tmdb(db, client, args.start_year, args.end_year)
                     hydrate_tmdb(db, client)
                 else:
                     # Current-year source lists can include planned releases.
@@ -710,7 +853,9 @@ def main():
                        ("provider_run:" + provider, dump({
                            "status": "partial" if provider_error else "complete_selected_scope",
                            "finished_at": now(), "live_calls": client.calls, "error": provider_error,
-                           "start_year": args.start_year, "end_year": args.end_year})))
+                           "start_year": args.start_year, "end_year": args.end_year,
+                           "source_matching": args.tmdb_sources if provider == "tmdb" else False,
+                           "discovery": args.tmdb if provider == "tmdb" else False})))
             db.commit()
         reconcile_seed_aliases(db, seeds)
         annotate(db, seeds)
