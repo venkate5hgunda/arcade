@@ -5,6 +5,10 @@ building Arcade, so no context is lost between sessions.
 
 ## 2026-10-04 — Business city-table artwork and guided interactions
 
+- Aligned undeveloped group rent and the inspector with mortgages, guarded
+  scarce-building auction awards against cross-price placements, and
+  recorded shared showdown winners without crediting eliminated players
+  with a draw. Bundled the previously untracked catalog icon; cache v60.
 - Illustrated the table with original bundled cityscape and deed/event
   symbols, distinguishable sculpted player markers, animated arrival,
   purchase/card/cash cues and an always-visible current-location chip.
@@ -15,7 +19,7 @@ building Arcade, so no context is lost between sessions.
   the correct local responder, filtered impossible portfolio actions and
   showed clear cash/build constraints. Fixed real room request-envelope
   rejection, new-round snapshot revision resets, stale dice after reset
-  and a mismatched Fortune destination. Cache v59 includes original art.
+  and a mismatched Fortune destination. Original art remains offline-cached.
 
 ## 2026-10-04 — Business: Indian-city property table
 

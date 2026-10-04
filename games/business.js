@@ -33,14 +33,15 @@ export function businessSpaceDetails(s, id) {
   const details = { space, owner: d?.owner ?? null, mortgaged: d?.mortgaged ?? false,
     level: d?.level ?? 0, group: space.group || null };
   if (space.kind === 'city') {
+    const group = DEEDS.filter(x => BOARD[x].group === space.group);
+    details.complete = d?.owner !== null && d &&
+      group.every(x => s.deeds[x].owner === d.owner);
+    details.unmortgaged = details.complete && group.every(x => !s.deeds[x].mortgaged);
     details.tiers = space.rent.map((amount, level) => ({
-      level, amount: level === 0 && d?.owner !== null && d &&
-        DEEDS.filter(x => BOARD[x].group === space.group).every(x => s.deeds[x].owner === d.owner) ?
+      level, amount: level === 0 && details.unmortgaged ?
         amount * 2 : amount,
     }));
-    details.complete = d?.owner !== null && d &&
-      DEEDS.filter(x => BOARD[x].group === space.group).every(x => s.deeds[x].owner === d.owner);
-    details.groupCities = DEEDS.filter(x => BOARD[x].group === space.group);
+    details.groupCities = group;
     details.mortgage = space.price / 2;
   } else if (space.kind === 'transport') {
     details.tiers = [25, 50, 100, 200].map((amount, level) => ({ level, amount }));
@@ -75,6 +76,13 @@ export function businessDeedActions(s, player, id) {
   } else if (!group || levels.every(level => level === 0))
     actions.push({ label: `Mortgage · +${cost(space.price / 2)}`, move: { type: 'mortgage', id } });
   return actions;
+}
+export function businessAwardChoices(s, player) {
+  if (s.phase !== 'award' || s.auction?.bidder !== player) return [];
+  return DEEDS.filter(id => s.deeds[id].owner === player &&
+    BOARD[id].cost <= s.auction.bid &&
+    businessDeedActions(s, player, id).some(option =>
+      option.move.type === 'build' && option.move.kind === s.auction.kind));
 }
 export function businessBuildHint(s, player, id) {
   const space = BOARD[id], deed = s.deeds[id];
@@ -357,8 +365,10 @@ export default {
         const next = actBusiness(state, move, actor);
         state = next; highlight(before, next);
         errorText = ''; persist();
-        if (state.phase === 'win' && prev !== 'win' && state.winner !== null)
-          celebrate(shell.root, `${name(state.winner, room)} wins Business!`);
+        if (state.phase === 'win' && prev !== 'win')
+          celebrate(shell.root, state.winners.length > 1 ?
+            `${state.winners.map(i => name(i, room)).join(' & ')} share the win!` :
+            `${name(state.winner, room)} wins Business!`);
         const nextActor = businessResponder(state);
         if (state.phase === 'win') covered = false;
         else if (nextActor !== localViewer &&
@@ -611,9 +621,7 @@ export default {
           add('Pass auction', { type: 'pass' }, true);
         } else if (s.phase === 'award') {
           const a = s.auction;
-          const choices = DEEDS.filter(id => s.deeds[id].owner === viewer &&
-            businessDeedActions(s, viewer, id).some(option =>
-              option.move.type === 'build' && option.move.kind === a.kind));
+          const choices = businessAwardChoices(s, viewer);
           const [wrap, input] = select('Place the awarded building', choices.map(id => [id, BOARD[id].name]));
           actionPanel.append(wrap);
           actionPanel.append(button(`Build for ${cost(a.bid)}`, () =>
@@ -652,7 +660,9 @@ export default {
           `${name(info.owner, room)} owns this deed${info.mortgaged ? ' · mortgaged, no rent' :
             info.level === 5 ? ' · hotel' : info.level ? ` · ${info.level} house${info.level === 1 ? '' : 's'}` : ''}.`, 'bs-inspector-owner');
         if (info.space.kind === 'city') {
-          text(inspection, 'p', `District: ${info.group} · ${info.groupCities.map(id => BOARD[id].name).join(' · ')}. ${info.complete ? 'Complete set!' : 'Complete the set to double undeveloped rent.'} Each building ${cost(info.space.cost)}.`, 'bs-inspector-group');
+          text(inspection, 'p', `District: ${info.group} · ${info.groupCities.map(id => BOARD[id].name).join(' · ')}. ${info.unmortgaged ? 'Complete unmortgaged set · double undeveloped rent.' :
+            info.complete ? 'Group mortgages suspend the undeveloped rent bonus.' :
+              'Complete the unmortgaged set to double undeveloped rent.'} Each building ${cost(info.space.cost)}.`, 'bs-inspector-group');
           const rates = document.createElement('dl'); rates.className = 'bs-rent-grid';
           for (const { level, amount } of info.tiers) {
             const cell = document.createElement('div');
@@ -841,8 +851,10 @@ export default {
             highlight(before, state);
             pending = false;
             if (oldPhase !== 'win' && state.phase === 'win') {
-              room.recordResult(game.id, state.winner, round);
-              if (state.winner === mySeat) celebrate(shell.root, `${name(mySeat, room)} wins Business!`);
+              room.recordResult(game.id, state.winners.length > 1 ? state.winners : state.winner, round);
+              if (state.winners.includes(mySeat)) celebrate(shell.root, state.winners.length > 1 ?
+                `${state.winners.map(i => name(i, room)).join(' & ')} share the win!` :
+                `${name(mySeat, room)} wins Business!`);
             }
             errorText = ''; revision = state.revision; publish();
           } catch (e) { rejection = e.message; }

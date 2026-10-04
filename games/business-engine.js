@@ -83,7 +83,7 @@ export function rent(s, id, dice = s.dice?.reduce((a, b) => a + b, 0) || 7) {
   if (owner === null || record.mortgaged) return 0;
   if (space.kind === 'city') {
     if (record.level) return space.rent[record.level];
-    return space.rent[0] * (groupOwned(s, id, owner) ? 2 : 1);
+    return space.rent[0] * (groupOwned(s, id, owner) && groupClear(s, id) ? 2 : 1);
   }
   if (space.kind === 'transport')
     return 25 * 2 ** ([5, 15, 25, 35].filter(x => own(s, x, owner)).length - 1);
@@ -140,7 +140,7 @@ export function validBusiness(s, count = null, { publicView = false } = {}) {
       !(s.winner === null || seat(s, s.winner)) ||
       !(s.winners === null || Array.isArray(s.winners) && s.winners.length >= 1 &&
         s.winners.length <= s.players.length && new Set(s.winners).size === s.winners.length &&
-        s.winners.every(i => seat(s, i))) ||
+        s.winners.every(i => seat(s, i) && !s.players[i].out)) ||
       (s.phase === 'win') !== (s.winners !== null) ||
       (s.phase === 'win' && s.winner !==
         (s.winners.length === 1 ? s.winners[0] : null)) ||
@@ -414,6 +414,8 @@ function auctionStep(s, actor, move) {
 function build(s, p, id, kind, price = null) {
   insist(eligibleBuild(s, p, kind).includes(id), 'Own a complete unmortgaged set and build evenly.');
   insist(kind === 'house' ? s.houses > 0 : s.hotels > 0, 'The bank has no buildings of that type.');
+  insist(price === null || price >= BOARD[id].cost,
+    'Auction bid does not cover this city’s building cost.');
   const cost = price ?? BOARD[id].cost;
   insist(s.players[p].cash >= cost, 'Not enough cash to build.');
   s.players[p].cash -= cost;

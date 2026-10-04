@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { BOARD, DEEDS, CARDS, GROUPS, createBusiness, actBusiness, rent,
   netWorth, actors, publicBusiness, validBusiness } from '../games/business-engine.js';
 import { validBusinessMove, applyRemoteBusinessAction, validBusinessSnapshot,
-  businessDeedActions, businessSpaceDetails, businessResponder,
+  businessDeedActions, businessAwardChoices, businessSpaceDetails, businessResponder,
   businessActionContext, businessBuildHint, createBusinessRollCycle } from '../games/business.js';
 
 const apply = (s, actor, type, fields = {}) => actBusiness(s, { type, ...fields }, actor, () => 0);
@@ -148,6 +148,18 @@ test('building parity, hotel supply, mortgaging and net worth are enforced', () 
   assert.equal(rent(s, a), 0);
   s = apply(s, 0, 'release', { id: a });
   assert.equal(s.deeds[a].mortgaged, false);
+});
+
+test('a mortgaged sibling suspends undeveloped color rent and the displayed bonus', () => {
+  let s = holdings(createBusiness(), 'indigo', 0);
+  assert.equal(rent(s, 3), 12);
+  s = apply(s, 0, 'mortgage', { id: 1 });
+  assert.equal(rent(s, 1), 0);
+  assert.equal(rent(s, 3), BOARD[3].rent[0]);
+  assert.equal(businessSpaceDetails(publicBusiness(s), 3).tiers[0].amount, BOARD[3].rent[0]);
+  assert.equal(businessSpaceDetails(publicBusiness(s), 3).unmortgaged, false);
+  s = apply(s, 0, 'release', { id: 1 });
+  assert.equal(rent(s, 3), BOARD[3].rent[0] * 2);
 });
 
 test('card decks are privately projected, transfers of free cards preserve the finite deck', () => {
@@ -417,6 +429,33 @@ test('the scarce last house is auctioned between eligible developers', () => {
   assert.equal(validBusiness(s), true);
 });
 
+test('a scarce-building auction cannot place a cheap winning bid on an expensive city', () => {
+  let s = createBusiness(2);
+  for (const group of ['indigo', 'navy', 'gold', 'green', 'rose'])
+    holdings(s, group, 0);
+  holdings(s, 'sky', 1);
+  for (const id of DEEDS.filter(x => ['gold', 'green'].includes(BOARD[x].group)))
+    s.deeds[id].level = 4;
+  DEEDS.filter(id => BOARD[id].group === 'rose')
+    .forEach((id, i) => { s.deeds[id].level = i === 2 ? 3 : 2; });
+  s.houses = 1;
+  assert.equal(validBusiness(s), true);
+  s = apply(s, 0, 'build', { id: 1, kind: 'house' });
+  assert.equal(s.phase, 'auction');
+  s = apply(s, 0, 'bid', { amount: 50 });
+  s = apply(s, 1, 'pass');
+  assert.equal(s.phase, 'award');
+  assert.deepEqual(businessAwardChoices(publicBusiness(s), 0), [1, 3]);
+  assert.throws(() => apply(s, 0, 'place-award', { id: 37 }), /building cost/);
+  assert.equal(s.houses, 1);
+  assert.equal(s.deeds[37].level, 0);
+  s = apply(s, 0, 'place-award', { id: 1 });
+  assert.equal(s.houses, 0);
+  assert.equal(s.deeds[1].level, 1);
+  assert.equal(s.players[0].cash, 14950);
+  assert.equal(validBusiness(s), true);
+});
+
 test('an exhausted house bank still allows full-group hotel liquidation', () => {
   let s = createBusiness();
   for (const group of ['indigo', 'sky', 'rose', 'saffron']) holdings(s, group, 0);
@@ -467,6 +506,16 @@ test('salary, optional jackpot, exact Start bonus and turn-limit ties are explic
   tie = apply(tie, 0, 'end');
   assert.deepEqual(tie.winners, [0, 1]);
   assert.equal(tie.winner, null);
+  let solventTie = createBusiness(3, { turnLimit: 1 });
+  solventTie.players[2].out = true;
+  solventTie.players[2].cash = 0;
+  solventTie.phase = 'finish';
+  solventTie = apply(solventTie, 0, 'end');
+  assert.deepEqual(solventTie.winners, [0, 1]);
+  assert.equal(solventTie.winner, null);
+  assert.equal(validBusiness(solventTie), true);
+  solventTie.winners = [0, 2];
+  assert.equal(validBusiness(solventTie), false, 'eliminated seats cannot appear in shared wins');
 });
 
 test('no eligible bidders ends a property offer without leaving a stale completion', () => {

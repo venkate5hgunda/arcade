@@ -37,13 +37,16 @@ collected by landing on Rest Stop.
 
 Rent is paid by a player landing on another owner's **unmortgaged** deed.
 Complete an unmortgaged color group to double its undeveloped base rent and
-buy buildings: develop every city in that group **evenly** (lowest level
-first; when selling, highest first). Each city can hold four houses, then
+buy buildings. Mortgaging any city in a group suspends that group's
+undeveloped-rent bonus until the mortgage is repaid. Develop every city
+in that group **evenly** (lowest level first; when selling, highest first).
+Each city can hold four houses, then
 one hotel. A hotel replaces and returns four houses; downgrading requires
 four available bank houses. There are only **32 houses and 12 hotels** in
 the bank. If multiple eligible developers compete for the last building,
 it goes to an ascending auction with bids at least the building cost; its
-winner places it on a legal owned city. If a hotel cannot downgrade because
+winner places it on a legal owned city whose building cost does not exceed
+the winning bid. If a hotel cannot downgrade because
 the house bank is empty, the owner may liquidate **all buildings in the
 color group** directly for half their total cost. Ordinary building sales
 return half the building price, one level at a time. Building management is
@@ -81,6 +84,9 @@ number of **completed turns** (not a wall-clock timer); compare net worth:
 **cash + full printed value of unmortgaged deeds + half printed value of
 mortgaged deeds + full original building investment (5 building units
 for a hotel)**. Equal top totals share the win.
+In room standings, each tied solvent leader receives a win and every
+other participant, including bankrupt players, receives a loss; a draw in
+another game still credits all its players with a draw.
 
 ## Arcade board prices and rents
 

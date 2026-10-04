@@ -884,6 +884,7 @@ test('host records each round once, retains results across games, and resets on 
   for (const [game, winner, key, error] of [
     ['rps', 0, 'one', /active game/], ['chess', 2, 'one', /Winner/],
     ['chess', -1, 'one', /Winner/], ['chess', 0.5, 'one', /Winner/],
+    ['chess', [0, 1], 'one', /Winner/],
     ['chess', undefined, 'one', /Winner/], ['chess', 0, '', /Round key/],
     ['chess', 0, {}, /Round key/], ['chess', 0, -1, /Round key/],
     ['chess', 0, Number.MAX_SAFE_INTEGER + 1, /Round key/],
@@ -910,6 +911,27 @@ test('host records each round once, retains results across games, and resets on 
   host.close();
 });
 
+test('Business shared solvent leaders win while other seats lose, without changing draws', () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  const otherIds = [crypto.randomUUID(), crypto.randomUUID()];
+  for (const id of otherIds)
+    host.members.push({ id, name: 'Guest', connected: true, admitted: true });
+  host.startGame('business', [host.peerId, ...otherIds]);
+  for (const invalid of [[0], [0, 0], [0, 3], [0, 1.5], []])
+    assert.throws(() => host.recordResult('business', invalid, 'tie'), /Winner/);
+  assert.equal(host.recordResult('business', [0, 1], 'tie'), true);
+  assert.equal(host.recordResult('business', [1, 2], 'tie'), false);
+  assert.deepEqual(host.stats.games, [{ id: 'business', wins: 2, losses: 1, draws: 0 }]);
+  assert.deepEqual([host.peerId, ...otherIds].map(id => {
+    const { wins, losses, draws } = host.stats.players.find(player => player.id === id);
+    return [wins, losses, draws];
+  }), [[1, 0, 0], [1, 0, 0], [0, 1, 0]]);
+  assert.equal(host.recordResult('business', null, 'next'), true);
+  assert.deepEqual(host.stats.games, [{ id: 'business', wins: 2, losses: 1, draws: 3 }]);
+  host.close();
+});
+
 test('standings sync to guests, reject forged and malformed state, and keep disconnected names', async () => {
   const host = new MultiplayerRoom();
   host.createHost('Captain');
@@ -919,6 +941,7 @@ test('standings sync to guests, reject forged and malformed state, and keep disc
   guest.on((event) => { if (event.type === 'error') errors.push(event.message); });
   host.startGame('chess', [host.peerId, guest.peerId]);
   assert.throws(() => guest.recordResult('chess', 1, 'g1'), /Only the host/);
+  assert.throws(() => guest.recordResult('chess', [0, 1], 'g1'), /Only the host/);
   guestChannel.send(JSON.stringify({
     v: 1, room: host.roomId, id: guest.peerId, request: `${guest.peerId}:100`,
     kind: 'result', game: 'chess', winnerIndex: 1, roundKey: 'g1',
