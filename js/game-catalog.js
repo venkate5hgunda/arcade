@@ -65,6 +65,16 @@ export const GAMES = [
     description: 'A hex-island strategy game: gather resources, build roads and settlements, trade, and race to ten points.',
   },
   {
+    id: 'business',
+    name: 'Business',
+    tagline: 'Own the city, shape your fortune',
+    players: { min: 2, max: 6, type: 'local-multiplayer' },
+    category: 'Board',
+    color: '#ce9b58',
+    icon: 'tabler:building-bank',
+    description: 'Trade Indian cities, collect rent, develop neighborhoods and auction deeds together or in a private room.',
+  },
+  {
     id: 'chess',
     name: 'Chess',
     tagline: 'The ultimate strategy game',

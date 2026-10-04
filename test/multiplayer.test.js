@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { MultiplayerRoom, roomShareMessage } from '../js/multiplayer.js';
 import { newCatan, catanView, validCatanCheckpoint } from '../games/catan.js';
+import { createBusiness, publicBusiness, validBusiness } from '../games/business-engine.js';
 
 globalThis.crypto ??= webcrypto;
 globalThis.location = new URL('https://example.test/arcade/index.html#/');
@@ -41,6 +42,47 @@ class FakePeer {
   close() { this.connectionState = 'closed'; }
 }
 globalThis.RTCPeerConnection = FakePeer;
+
+test('Business supports six room seats, private deck order and nonturn auction responses', async () => {
+  const host = new MultiplayerRoom(), guests = Array.from({ length: 5 }, () => new MultiplayerRoom());
+  host.createHost('Banker');
+  const events = guests.map(() => []);
+  for (const [index, guest] of guests.entries()) {
+    guest.on(event => { if (event.type === 'action') events[index].push(event); });
+    const answer = await guest.joinInvite(await host.createInvite(), `Trader ${index + 1}`);
+    await host.acceptAnswer(answer);
+    const hp = FakePeer.instances.at(-2), gp = FakePeer.instances.at(-1);
+    const channel = new FakeChannel('arcade');
+    hp.channel.other = channel; channel.other = hp.channel;
+    gp.ondatachannel({ channel });
+    hp.channel.readyState = channel.readyState = 'open';
+    hp.channel.onopen(); channel.onopen();
+  }
+  try {
+    assert.throws(() => host.startGame('business', [host.peerId]), /player count/);
+    host.startGame('business', [host.peerId, ...guests.map(g => g.peerId)]);
+    const state = createBusiness(6), view = publicBusiness(state);
+    host.saveGame('business', { state, round: 0 });
+    let received;
+    host.on(event => { if (event.type === 'action') received = event; });
+    guests[4].sendAction({ type: 'bs-request', revision: 0, round: 0, move: { type: 'pass' } });
+    assert.equal(received.from, guests[4].peerId);
+    assert.equal(events.every(list => list.length === 0), true, 'host does not broadcast guest requests');
+    host.sendPrivateAction(guests[4].peerId, { type: 'bs-state', round: 0, view });
+    assert.equal(events[4].at(-1).action.type, 'bs-state');
+    assert.equal(validBusiness(events[4].at(-1).action.view, 6, { publicView: true }), true);
+    assert.equal(events.slice(0, 4).every(list => list.length === 0), true);
+    assert.equal(host.peers.get(guests[0].peerId).channel.sent.includes('"decks"'), false);
+    assert.throws(() => guests[4].sendAction({ type: 'bs-request', move: { type: 'x', data: 'z'.repeat(8100) } }),
+      /Invalid game action/);
+    host.members.find(m => m.id === guests[0].peerId).connected = false;
+    assert.doesNotThrow(() => guests[4].sendAction({ type: 'bs-sync' }),
+      'snapshot requests work while another player reconnects');
+  } finally {
+    guests.forEach(guest => guest.close());
+    host.close();
+  }
+});
 
 test('offline invite and answer require a second exchange; several sequential guests can join', async () => {
   const host = new MultiplayerRoom();
