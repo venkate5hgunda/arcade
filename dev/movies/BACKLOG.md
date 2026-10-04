@@ -4,13 +4,16 @@
   machines. Resolve secrets at runtime into the process environment; retain `.env`
   only as a local development fallback. Document vault item names, onboarding,
   rotation and recovery without storing tokens in Git or browser assets.
-- Maintain released Telugu-original discovery from 2000 onward. Extend by decade,
-  then add undated films and reviewed Telugu dubs.
+- Maintain released Telugu-original discovery from 2000 onward. Dated discovery
+  also covers 1931–1939; extend native discovery through 1940–1999, then add
+  undated films and reviewed Telugu dubs without duplicating source identities.
 - Review the 68 suspicious `1930` CSV records, transliteration variants, duplicate
   records, remake identity and source provenance/license before reconciliation.
 - Resolve historical TMDB source matches that fail exact title/year/language or
   independent director/cast corroboration; preserve original fields and approve
-  aliases explicitly instead of lowering match thresholds.
+  aliases explicitly instead of lowering match thresholds. The first complete
+  search accepted 458 links; 1,919 supplied records still lack TMDB identities,
+  including the 68 excluded suspicious years.
 - Complete Telugu-aware title-by-title annotation. Calibrate familiarity and
   actability with player outcomes; preserve rubric versions and reason history.
 - Resolve the nine explicitly uncertain familiarity estimates in the first
