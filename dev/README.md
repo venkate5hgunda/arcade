@@ -12,3 +12,6 @@ and shared runtime code in `js/`. This directory is not publicly served.
 Run `npm run movies:build` to rebuild from local data, or
 `python3 -m dev.movies --help` for provider hydration and discovery options.
 Run `npm run test:movies` for the movie pipeline tests.
+Run `npm run movies:annotate -- prepare --limit 5` to prepare offline LLM
+annotation requests; the movie guide documents the provider-neutral adapter,
+separate review pass, explicit promotion and remaining provider-integration work.

@@ -153,6 +153,89 @@ before these enter difficulty-filtered gameplay. Changes to this file append
 new annotation revisions on the next build; provider metadata never silently
 replaces editorial reasoning.
 
+## LLM annotation and review
+
+`llm_annotation.py` automates a separate annotation inference and critical review
+inference using the existing rubric. The provider connection is intentionally
+not implemented until endpoint, authentication and model details are supplied;
+that integration is recorded in `BACKLOG.md`. No LLM calls occur in an ordinary
+catalog build or offline preparation.
+
+```sh
+# Prepare five real, snapshot-bound requests without calling any model:
+npm run movies:annotate -- prepare --limit 5
+
+# Once a trusted Python adapter exists, preview the exact configured requests:
+python3 -m dev.movies.llm_annotation prepare \
+  --adapter /path/to/adapter.py --profile telugu-v1 --limit 20
+
+# Generate and review, with at most 40 adapter/model invocations:
+python3 -m dev.movies.llm_annotation run \
+  --adapter /path/to/adapter.py --profile telugu-v1 --limit 20 --max-calls 40
+
+# Explicitly activate approved proposals; generation/review alone changes no scores:
+python3 -m dev.movies.llm_annotation promote --job-key <job-key>
+# Or deliberately activate all currently approved proposals:
+python3 -m dev.movies.llm_annotation promote --all-reviewed
+```
+
+The queue prioritizes cached vote counts for review order **only**, never for
+rating values. It excludes curated editorial identities (including incomplete
+reviews), untrusted candidates, adult films, future/undated releases and movies
+without a trusted Telugu-original TMDB snapshot. It uses preserved source fields,
+native titles/aliases, overview, genres, credits and global metrics without any
+new TMDB/OMDb request. Original full provider payloads remain in the catalog.
+
+### Adapter contract
+
+Supply a trusted Python file; it runs with the current Python interpreter,
+reads one JSON object from stdin and writes one JSON object to stdout. No shell
+command is interpolated. The request includes `protocol`, a versioned `profile`,
+`stage` (`annotate` or `review`), `job_key`, cached `input`, `instructions`, and
+the exact `output_schema`. Review additionally receives the proposed annotation
+and its SHA-256; an explicit retry of a rejected proposal includes review feedback.
+Send `instructions` as system instructions and the remaining evidence as data.
+The adapter should have no model tool access. It can route the two stages to
+different models; two calls to the same model are not independent verification.
+Each adapter invocation should make one inference, without hidden model retries.
+
+Return an envelope with nonempty `provider` and actual `model` strings,
+`output` conforming to the supplied schema, and optional native `usage` and
+provider request identifiers. Preserve useful provider metadata in the envelope;
+never put credentials, authorization headers or secrets in stdout. Resolve
+credentials inside the adapter at runtime, not in profile names or arguments.
+Adapter stderr is not persisted or echoed. Nonzero exit codes, timeouts,
+malformed JSON, invalid scores, missing reasons, identity changes, fabricated
+evidence paths and approvals with outstanding issues fail explicitly.
+
+### Persistence and score activation
+
+Jobs are keyed by exact input/snapshot, rubric/prompt schemas, adapter content,
+protocol and profile. Change the profile when endpoint/model/settings change;
+otherwise successfully reviewed jobs are not called again. A call intent is
+committed before invoking the adapter. Immutable completed receipts retain
+requests, raw response envelopes, parsed outputs, model identities, usage and
+errors. These live in `llm_jobs`, `llm_calls` and `llm_promotions`, with matching
+private JSONL exports and manifest status counts.
+
+An interrupted in-flight call has an unknown billing/result outcome and is not
+silently repeated. Failed, rejected and in-flight jobs require explicit `--retry`;
+only retry in-flight work after stopping its original runner.
+Run one exporting catalog/annotation CLI per database/export directory at a time.
+completed annotation calls resume at review, and completed approvals are skipped.
+There is no unbounded revision loop. Call budgets and per-call timeouts are
+explicit; budget exhaustion exits nonzero with completed work preserved.
+
+Promotion requires a validated approval bound to the exact proposal and still-
+current source/identity/snapshot. Stale proposals cannot be promoted, and a later
+snapshot change removes stale automated scores on the next catalog rebuild while
+preserving their history. Curated editorial reviews always take precedence.
+Activated complete scores use status `llm_reviewed`, carry call IDs, model/profile
+provenance and `human_verified: false`, and still require gameplay review.
+Unknown dimensions retain null final scores and bounded ranges. Code computes
+title complexity and the weighted final score; the model cannot choose them.
+The manifest separates `difficulty_editorial` from `difficulty_llm_reviewed`.
+
 ## Attribution and usage
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.

@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --test",
     "start": "python3 dev/serve.py",
-    "test:movies": "python3 -m unittest discover -s test -p 'test_movie_catalog.py'",
-    "movies:build": "python3 -m dev.movies"
+    "test:movies": "python3 -m unittest discover -s test -p 'test_movie_*.py'",
+    "movies:build": "python3 -m dev.movies",
+    "movies:annotate": "python3 -m dev.movies.llm_annotation"
   }
 }
