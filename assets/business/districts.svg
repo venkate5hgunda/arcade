@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 112">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#b8edff"/><stop offset="1" stop-color="#effcff"/></linearGradient>
+    <g id="cloud" fill="#fff" opacity=".9"><ellipse rx="23" ry="7"/><circle cx="-8" cy="-5" r="9"/><circle cx="6" cy="-7" r="12"/></g>
+    <g id="tree"><path d="M0 0v28" stroke="#805128" stroke-width="5"/><circle cy="-7" r="15" fill="#14b87a"/><circle cx="8" cy="-13" r="11" fill="#6ee784"/></g>
+    <g id="windows" fill="#fff5a7"><path d="M0 0h8v12H0zm16 0h8v12h-8zm32 0h8v12h-8zm-32 20h8v12H0zm16 0h8v12h-8zm16 0h8v12h-8z"/></g>
+    <g id="background"><path fill="url(#sky)" d="M0 0h240v112H0z"/><circle cx="207" cy="23" r="14" fill="#ffcf42"/><use href="#cloud" x="38" y="25"/><use href="#cloud" x="142" y="18"/><path d="M0 91q55-11 113 0t127-3v24H0z" fill="#8ce6be"/></g>
+    <g id="street"><path d="M0 101h240v11H0z" fill="#6c8baa"/><path d="M10 107h20m20 0h20m20 0h20m20 0h20m20 0h20m20 0h20" stroke="#fff" stroke-width="2"/></g>
+  </defs>
+  <symbol id="indigo" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M30 48h59v51H30z" fill="#8b5cf6"/><path d="m23 48 36-26 37 26" fill="#6d28d9"/>
+    <path d="M110 35h75v64h-75z" fill="#c4b5fd"/><path d="M107 31h81v8h-81z" fill="#7c3aed"/>
+    <use href="#windows" x="116" y="45"/><path d="M49 99V72a10 10 0 0 1 20 0v27" fill="#4c238b"/>
+    <use href="#tree" x="16" y="72"/><use href="#tree" x="214" y="70"/><use href="#street"/>
+  </symbol>
+  <symbol id="sky" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M28 49h93v49H28z" fill="#00b8e6"/><path d="m25 49 21-17 23 17 23-17 23 17" fill="#0284c7"/>
+    <path d="M43 60h62v17H43z" fill="#ecfeff"/><path d="M42 88h64v10H42z" fill="#0369a1"/>
+    <path d="M139 34h66v64h-66z" fill="#67e8f9"/><path d="M134 31h76v8h-76z" fill="#0891b2"/>
+    <use href="#windows" x="145" y="44"/><path d="M148 83h48v15h-48z" fill="#0e7490"/>
+    <use href="#tree" x="224" y="72"/><use href="#street"/>
+  </symbol>
+  <symbol id="rose" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M37 52h166v47H37z" fill="#fb718f"/><path d="M61 38h118v61H61z" fill="#f9a8d4"/>
+    <path d="M96 39q24-36 48 0z" fill="#f43f8e"/><path d="M117 14h6v11h-6z" fill="#fbbf24"/>
+    <path d="M41 51V31h13v20m132 0V31h13v20" fill="#ec4899"/>
+    <path d="m36 32 12-17 12 17m121 0 12-17 12 17" fill="#be185d"/>
+    <path d="M108 99V67a12 12 0 0 1 24 0v32M72 86V66a8 8 0 0 1 16 0v20m64 0V66a8 8 0 0 1 16 0v20" fill="#a21caf"/>
+    <path d="M34 54h172M59 43h122" stroke="#ffe1a8" stroke-width="4"/>
+    <use href="#tree" x="16" y="76"/><use href="#tree" x="224" y="76"/><use href="#street"/>
+  </symbol>
+  <symbol id="saffron" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M0 84q60-8 120 0t120-3v31H0z" fill="#38bdf8"/><path d="M5 97h43m105 5h67m-142 6h38" stroke="#d4f8ff" stroke-width="3"/>
+    <path d="M48 69h97v12H48zM39 81h118v9H39zM28 90h142v8H28z" fill="#ffc65a"/>
+    <path d="M60 43h73v26H60z" fill="#fb923c"/><path d="m54 44 42-26 43 26" fill="#ea580c"/>
+    <path d="M89 68V48h15v20" fill="#9a3412"/><path d="M167 45h31v38h-31z" fill="#ffb23f"/>
+    <path d="m162 46 20-28 22 28" fill="#f97316"/><path d="M181 16v-8l15 3-15 5" fill="#ef4444"/>
+    <path d="m178 99 28 0-8 8h-14z" fill="#a85b26"/>
+  </symbol>
+  <symbol id="crimson" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M33 37h60v61H33z" fill="#f87171"/><path d="M38 29h50v11H38z" fill="#ef4444"/>
+    <use href="#windows" x="39" y="47"/>
+    <path d="M111 52h49v46h-49z" fill="#ffaf80"/><path d="M173 23h46v75h-46z" fill="#f43f5e"/>
+    <path d="M181 32h30v8h-30zm0 16h30v8h-30zm0 16h30v8h-30z" fill="#ffeab2"/>
+    <path d="M120 68h31v18h-31z" fill="#fff1c8"/>
+    <use href="#tree" x="14" y="73"/><use href="#tree" x="151" y="79"/><use href="#street"/>
+  </symbol>
+  <symbol id="gold" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M0 94q54-9 112 0t128-3v21H0z" fill="#22b8da"/>
+    <path d="M36 59h151v32H36z" fill="#ffce4b"/><path d="M58 47h107v12H58z" fill="#f59e0b"/>
+    <path d="M77 34h70v13H77zM89 23h45v11H89z" fill="#ffd768"/>
+    <path d="m94 23 18-16 17 16" fill="#f97316"/>
+    <path d="M59 87V67a8 8 0 0 1 16 0v20m21 4V65a16 16 0 0 1 32 0v26m21-4V67a8 8 0 0 1 16 0v20" fill="#b45309"/>
+    <path d="M39 63h145" stroke="#fff4bd" stroke-width="4"/>
+    <use href="#tree" x="215" y="66"/><path d="M188 101h39" stroke="#d8fbff" stroke-width="3"/>
+  </symbol>
+  <symbol id="green" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M57 24h55v75H57z" fill="#10b981"/><path d="M67 35h35v10H67zm0 19h35v10H67zm0 19h35v10H67z" fill="#d9fff0"/>
+    <path d="M137 43h65v56h-65z" fill="#6ee7b7"/><path d="M144 36h51v10h-51z" fill="#059669"/>
+    <use href="#windows" x="143" y="55"/>
+    <use href="#tree" x="24" y="65"/><use href="#tree" x="121" y="76"/><use href="#tree" x="219" y="69"/>
+    <path d="M12 89q39-12 65 0" stroke="#c0f98e" stroke-width="8" fill="none"/><use href="#street"/>
+  </symbol>
+  <symbol id="navy" viewBox="0 0 240 112">
+    <use href="#background"/>
+    <path d="M35 38h30v60H35zm142-15h35v75h-35z" fill="#3b82f6"/>
+    <path d="M41 48h17v9H41zm0 18h17v9H41zm143-32h21v11h-21zm0 22h21v11h-21z" fill="#c7f4ff"/>
+    <path d="M81 49h81v49H81z" fill="#8cb9ff"/><path d="M74 45h94v9H74z" fill="#2563eb"/>
+    <path d="M88 45V29h14v16m39 0V29h14v16" fill="#60a5fa"/>
+    <path d="m82 30 13-17 13 17m26 0 14-17 13 17" fill="#1d4ed8"/>
+    <path d="M109 98V70a13 13 0 0 1 26 0v28" fill="#1e40af"/>
+    <use href="#tree" x="19" y="78"/><use href="#tree" x="226" y="78"/><use href="#street"/>
+  </symbol>
+</svg>

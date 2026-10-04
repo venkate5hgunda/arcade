@@ -3,6 +3,18 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Vibrant, illustrated Business districts
+
+- Brightened the city table, skyline, district colors, and player pieces;
+  added eight original illustrated district scenes to interactive deed cards.
+- Kept long multiplayer names inside the turn banner and fitted the entire
+  board to large desktop tables without clipping edge spaces. Cache v61
+  includes the district artwork for offline play.
+- Prioritized mobile action buttons ahead of player standings, added cash
+  beside decisions, and returned the phone to the roller after trade replies.
+- Design direction across Arcade: fun, vibrant, art-rich, interactive,
+  intuitive, and polished; primary gameplay stays ahead of auxiliary tools.
+
 ## 2026-10-04 — Business city-table artwork and guided interactions
 
 - Aligned undeveloped group rent and the inspector with mortgages, guarded

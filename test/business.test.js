@@ -5,7 +5,7 @@ import { BOARD, DEEDS, CARDS, GROUPS, createBusiness, actBusiness, rent,
   netWorth, actors, publicBusiness, validBusiness } from '../games/business-engine.js';
 import { validBusinessMove, applyRemoteBusinessAction, validBusinessSnapshot,
   businessDeedActions, businessAwardChoices, businessSpaceDetails, businessResponder,
-  businessActionContext, businessBuildHint, createBusinessRollCycle } from '../games/business.js';
+  businessActionContext, businessHandoffSeat, businessBuildHint, createBusinessRollCycle } from '../games/business.js';
 
 const apply = (s, actor, type, fields = {}) => actBusiness(s, { type, ...fields }, actor, () => 0);
 const visit = (s, id, dice = [1, id - 1]) => {
@@ -19,12 +19,15 @@ const holdings = (s, group, owner) => {
 
 test('original board artwork is bundled for offline play', () => {
   const precache = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-  for (const file of ['cityscape.svg', 'symbols.svg']) {
+  for (const file of ['cityscape.svg', 'symbols.svg', 'districts.svg']) {
     const path = `assets/business/${file}`;
     const image = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
     assert.match(image, /<svg\b/);
     assert.ok(precache.includes(`'./${path}'`), `${path} must be precached`);
   }
+  const districts = readFileSync(new URL('../assets/business/districts.svg', import.meta.url), 'utf8');
+  for (const group of Object.keys(GROUPS))
+    assert.ok(districts.includes(`<symbol id="${group}"`), `${group} must have its own district scene`);
 });
 
 test('original forty-space city board has unique deed slots and coherent groups', () => {
@@ -34,6 +37,22 @@ test('original forty-space city board has unique deed slots and coherent groups'
   assert.equal(Object.values(GROUPS).reduce((n, x) => n + x.names.length, 0), 22);
   assert.equal(BOARD[0].kind, 'start');
   assert.equal(BOARD[30].kind, 'go-jail');
+});
+
+test('trade responses return the phone to the roller without interrupting nonturn management', () => {
+  const before = createBusiness(3);
+  const offered = apply(before, 0, 'offer', { to: 1, offered: [], wanted: [],
+    cashOut: 10, cashIn: 0, cardsOut: 0, cardsIn: 0 });
+  assert.equal(businessHandoffSeat(before, offered, 0), 1);
+  for (const type of ['accept', 'reject']) {
+    const response = apply(offered, 1, type);
+    assert.equal(businessHandoffSeat(offered, response, 1), 0);
+    assert.equal(businessActionContext(response, 0), 'roll');
+  }
+  const managed = createBusiness(3);
+  managed.deeds[3].owner = 1;
+  const mortgaged = apply(managed, 1, 'mortgage', { id: 3 });
+  assert.equal(businessHandoffSeat(managed, mortgaged, 1), 1);
 });
 
 test('buy and decline lead to a competitive auction with the decliner eligible', () => {
