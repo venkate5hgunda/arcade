@@ -1,6 +1,6 @@
 # Arcade architecture and maintenance map
 
-Last reviewed: 2026-10-01. This is the **current-state reference**,
+Last reviewed: 2026-10-04. This is the **current-state reference**,
 not a design proposal. Update it when a game's rules, persistence contract,
 room protocol, platform support, or an open issue changes. `README.md` explains
 how to play; `CHANGELOG.md` records historical decisions. Paths and named
@@ -29,7 +29,7 @@ sw.js precaches shell, modules, styles and local artwork for offline local play.
 ```
 
 `js/app.js` initializes theme, sound, haptics, router and the room, then
-registers `sw.js`. `js/game-catalog.js` owns the 21 catalog entries, player
+registers `sw.js`. `js/game-catalog.js` owns the 22 catalog entries, player
 bounds, category metadata and dynamic module lookup. `js/router.js` handles
 `#/games/<id>`, browser history, recent games, the landing/resume view and
 superseded asynchronous navigations (`navToken`). It disposes the previous
@@ -45,7 +45,7 @@ provides navigation, a local session and (where applicable) multiplayer.
 `js/turn-indicator.js` and `js/celebration.js` provide shared presentation.
 Game-specific renderers, rules and checkpoint validators remain inside game
 modules. `css/styles.css` has the shell/theme; `css/board-games.css`,
-`css/card-games.css`, `css/physical-games.css`, `css/catan.css` and
+`css/card-games.css`, `css/physical-games.css`, `css/catan.css`, `css/business.css` and
 `css/multiplayer.css` style their respective tables and lobby. All are linked
 from `index.html`, not loaded per route.
 
@@ -55,7 +55,7 @@ from `index.html`, not loaded per route.
 `localStorage` (preferences, names, settings, recent games and sessions).
 `js/game-session.js` supplies `session.save`, `finish`, `stop`, inactivity
 expiry and `unfinishedGames` for the home resume banner. Expiry ranges from
-two minutes (Whack-a-Mole) to 120 minutes (Island Charter); the exact
+two minutes (Whack-a-Mole) to 240 minutes (Business); the exact
 per-game windows are in `js/game-session.js` and `README.md`. A renderer
 validates its own `session.state` before restoring; an expired or malformed
 session is discarded. Reset/reload must preserve intended settings while
@@ -76,7 +76,7 @@ Gameplay pauses until selected seats reconnect. Transient WebRTC disconnects
 have a recovery window before manual re-invitation is needed
 (`js/multiplayer.js`, `test/multiplayer.test.js`).
 
-Nine games support rooms: Chess, Connect Four, Crazy Eights, Island Charter,
+Ten games support rooms: Business, Chess, Connect Four, Crazy Eights, Island Charter,
 Ludo, Rock Paper Scissors, Snakes & Ladders, Tic-Tac-Toe and UNO-inspired.
 Public-board games synchronize actions or host snapshots. Island Charter,
 Crazy Eights and UNO-inspired keep the deck/hidden hands on the host and send
@@ -87,6 +87,12 @@ new random board/deck. Game-specific `validCheckpoint`/view validators protect
 local restore and room recovery, but saved-state formats are not centrally
 versioned (`games/catan.js`, `games/crazy-eights.js`, `games/uno.js`,
 `test/multiplayer.test.js`).
+Business also uses private host snapshots: `games/business-engine.js` owns
+rules, decks and checkpoint validation; `games/business.js` sends **public
+views without deck order** to each selected room seat and accepts revision-
+and round-checked host-authorized requests, including non-turn auction and
+trade responders. Eliminated seats need not remain connected; surviving
+disconnections pause the table. Room backup holds only the host checkpoint.
 
 **Transport constraints.** No signaling service or TURN relay exists.
 Public STUN discovery needs network access, long SDP URLs can be truncated,
@@ -98,7 +104,7 @@ choose to share links through (`js/multiplayer.js`, `README.md:Playing together`
 
 ## Game inventory
 
-All 21 games support local play and game-owned checkpoint validation. "Room"
+All 22 games support local play and game-owned checkpoint validation. "Room"
 means a separate-device room, not simply two players sharing a screen.
 
 | Game / module | Room | Important state and boundary |
@@ -110,6 +116,7 @@ means a separate-device room, not simply two players sharing a screen.
 | Snakes & Ladders (`games/snakes-ladders.js`) | Yes | Seeded obstacle layout, turn/positions; large upper-board snake and animated travel. |
 | Ludo (`games/ludo.js`) | Yes | Four identical tokens per seat, roll/movable set, captures and turn; active home glows. |
 | Island Charter (`games/catan.js`) | Yes, private views | 19-hex board, terrain/number/harbor options, opening order, bank, build/trade/deck and ten-point victory. Its local/room players keep separate chart zoom/pan in per-tab `sessionStorage`, not the authoritative game checkpoint. |
+| Business (`games/business.js`, `games/business-engine.js`) | Yes, private public-state views | 40-space original Indian-city board, host card order, auctions, complete-set even building, debt/trades and bankruptcies; validated local/host resume. [Rules](BUSINESS_RULES.md). |
 | Chess (`games/chess.js`) | Yes | Board, castling, en passant, promotion, turn/result. |
 | Imposter (`games/imposter.js`) | No | Roles, secret reveal, prompt category and round state. |
 | Dumb Charades (`games/dumb-charades.js`) | No | Prompt, actor/team, timer and round. |

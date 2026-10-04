@@ -3,6 +3,21 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Business: Indian-city property table
+
+- Added an original 40-space, 2–6-player cash-based Business house
+  edition with auctions, scarce buildings, uneven-build protection,
+  mortgage interest, retained cards, debtor cash-raising, inheritance,
+  bank auctions, and optional completed-turn net-worth showdown.
+- Added same-phone guided handoffs and host-authoritative WebRTC rooms
+  with revisioned actions and private deck order, validated local/room
+  recovery, contextual action panels, accessible scrolling board and
+  expandable asset/trade/rule tools. Offline cache v58 includes all
+  new modules, styles and artwork.
+- [Rules and sources](BUSINESS_RULES.md) distinguish this Arcade edition
+  from Funskool's current, mechanically different Gold Quest product;
+  classic cash-based accounts conflict about taxes, Jail and Rest Stop.
+
 ## 2026-09-25 — Illustrated island table
 
 - Island Charter now uses original SVG terrain scenes, coastal harbor badges,

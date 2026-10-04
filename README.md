@@ -18,6 +18,7 @@ limitations and refactoring priorities, see [Architecture and maintenance map](A
 | Snakes & Ladders | 2–4 | Board | ✅ Implemented |
 | Ludo | 2–4 | Board | ✅ Implemented |
 | Island Charter | 3–4 | Board | ✅ Implemented |
+| Business | 2–6 | Board | ✅ Implemented |
 | Chess | 1–2 | Board | ✅ Implemented |
 | Imposter | 3–8 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
@@ -81,7 +82,7 @@ Island Charter resource icons use color-tinted Game Icons silhouettes.
   game; it disappears when the rounds end or expire. Each game has a
   pace-appropriate inactivity window: 2–5 minutes for quick and timed games,
   8–20 minutes for puzzles, cards and physical games, and up to 45 minutes
-  for chess, or two hours for Island Charter. Once its window expires, its
+  for chess, two hours for Island Charter, or four hours for Business. Once its window expires, its
   saved round is discarded; setup choices and high scores remain. Remote
   rooms are tab-bound and do not
   auto-resume.
@@ -104,7 +105,12 @@ Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
 Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
 **15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
 2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; **45 min** for
-Chess; and **120 min** for Island Charter.
+Chess; **120 min** for Island Charter; and **240 min** for Business.
+- **Business** — an original 2–6-player Indian-city property trading
+  game with local handoffs or host-authoritative private WebRTC rooms,
+  auctions, rent, even development, mortgages, jail, cards, cash-raising
+  and bankruptcy. Configuration and edition differences are in
+  [Business rules](BUSINESS_RULES.md).
 - **Per-game "vibe"** — each game has its own accent palette/theme layered on
   top of the shared shell, so the arcade doesn't feel like one reskinned game.
 - **Arcade-room design** — layered stage lighting, cabinet-like cards and
@@ -179,7 +185,7 @@ Chess; and **120 min** for Island Charter.
   can uncheck guests to spectate and the lobby lists games available for the
   selected seats. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games), Island Charter (3–4 players), plus UNO-inspired (2–4 players) and
+  games), Island Charter (3–4 players), Business (2–6 players), plus UNO-inspired (2–4 players) and
   Crazy Eights (2 players), with host-authoritative private hands.
   The room lobby keeps per-player and per-game wins, losses, draws and rankings
   for the lifetime of the room, including across replays and game changes.
@@ -189,7 +195,8 @@ Chess; and **120 min** for Island Charter.
   round in every supported room game, including private card hands that remain
   on the host. Guests need fresh invite/answer exchanges to reclaim their
   seats; public boards resynchronize from the host and private games send each
-  guest only their own view. Play pauses until every selected seat reconnects.
+  guest only their own view. Play pauses until every remaining selected
+  player reconnects; an eliminated Business seat cannot block the match.
   Rooms use local browser storage, not a server: clearing site data or losing
   the host's browser session cannot be recovered. WebRTC itself does not
   reconnect across a full reload without another invite and answer.
