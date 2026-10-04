@@ -1,13 +1,13 @@
 // Arcade's original cash-based Indian-city property game. All transitions run on the host.
 export const GROUPS = {
-  indigo: { color: '#6b56a7', cost: 50, names: ['Pune', 'Nagpur'], prices: [60, 60] },
-  sky: { color: '#54a9cc', cost: 50, names: ['Surat', 'Vadodara', 'Ahmedabad'], prices: [100, 100, 120] },
-  rose: { color: '#cd5688', cost: 100, names: ['Jaipur', 'Udaipur', 'Jodhpur'], prices: [140, 140, 160] },
-  saffron: { color: '#de8c41', cost: 100, names: ['Lucknow', 'Kanpur', 'Varanasi'], prices: [180, 180, 200] },
-  crimson: { color: '#cd5a53', cost: 150, names: ['Hyderabad', 'Visakhapatnam', 'Vijayawada'], prices: [220, 220, 240] },
-  gold: { color: '#d5af39', cost: 150, names: ['Chennai', 'Coimbatore', 'Madurai'], prices: [260, 260, 280] },
-  green: { color: '#4c9a6c', cost: 200, names: ['Bengaluru', 'Mysuru', 'Mangaluru'], prices: [300, 300, 320] },
-  navy: { color: '#4071a7', cost: 200, names: ['Mumbai', 'New Delhi'], prices: [350, 400] },
+  indigo: { color: '#7c3aed', cost: 50, names: ['Pune', 'Nagpur'], prices: [60, 60] },
+  sky: { color: '#00a9d6', cost: 50, names: ['Surat', 'Vadodara', 'Ahmedabad'], prices: [100, 100, 120] },
+  rose: { color: '#f43f8e', cost: 100, names: ['Jaipur', 'Udaipur', 'Jodhpur'], prices: [140, 140, 160] },
+  saffron: { color: '#ff9416', cost: 100, names: ['Lucknow', 'Kanpur', 'Varanasi'], prices: [180, 180, 200] },
+  crimson: { color: '#ef4444', cost: 150, names: ['Hyderabad', 'Visakhapatnam', 'Vijayawada'], prices: [220, 220, 240] },
+  gold: { color: '#eab308', cost: 150, names: ['Chennai', 'Coimbatore', 'Madurai'], prices: [260, 260, 280] },
+  green: { color: '#00aa7a', cost: 200, names: ['Bengaluru', 'Mysuru', 'Mangaluru'], prices: [300, 300, 320] },
+  navy: { color: '#2563eb', cost: 200, names: ['Mumbai', 'New Delhi'], prices: [350, 400] },
 };
 const citySlots = [1, 3, 6, 8, 9, 11, 13, 14, 16, 18, 19, 21, 23, 24, 26, 27, 29, 31, 32, 34, 37, 39];
 export const BOARD = Array.from({ length: 40 }, (_, id) => ({ id, kind: 'rest', name: 'Rest stop' }));

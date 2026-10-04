@@ -11,7 +11,7 @@ const cost = n => format.format(n);
 const coords = id => id < 10 ? [11, 11 - id] : id < 20 ?
   [11 - (id - 10), 1] : id < 30 ? [1, id - 19] : [id - 29, 11];
 const name = (index, room) => playerName(index, room);
-const colors = ['#de7e64', '#50a9cd', '#dab757', '#a790d6', '#6aba99', '#e789ac'];
+const colors = ['#ff936a', '#55d5f0', '#ffe052', '#c29aff', '#52e5a3', '#ff8bc5'];
 const pieces = [
   '<path d="M5 17 8 8l4 4 4-7 4 7 4-4 3 9-2 5H7zM7 25h18"/>',
   '<circle cx="11" cy="12" r="6"/><path d="M15 16 26 27m-5-5 3-3m-1 5 3-3"/>',
@@ -103,6 +103,11 @@ export function businessBuildHint(s, player, id) {
 }
 export function businessResponder(s) {
   return s.offer?.to ?? actors(s)[0] ?? s.current;
+}
+export function businessHandoffSeat(before, after, viewer) {
+  const next = businessResponder(after);
+  return after.phase !== 'win' && next !== viewer &&
+    (next !== businessResponder(before) || before.current !== after.current) ? next : viewer;
 }
 export function businessActionContext(s, viewer) {
   if (s.phase === 'win') return 'win';
@@ -328,7 +333,8 @@ export default {
             .map(card => ({ kind, title: card[0], description: entry.split(': ').slice(1).join(': ') })))).at(0) || null;
       if (after.phase === 'win') return;
       const audio = window.arcadeAudio;
-      if (audio) void audio.prepare().then(() => audio.tap()).catch(() => {});
+      if (audio) void audio.prepare().then(() => audio.tap())
+        .catch(error => console.warn('Business audio feedback unavailable', error));
       window.haptics?.select();
     }
     function persist() {
@@ -361,7 +367,7 @@ export default {
         return;
       }
       try {
-        const before = state, prev = state.phase, oldCurrent = state.current, oldActor = actors(state)[0];
+        const before = state, prev = state.phase;
         const next = actBusiness(state, move, actor);
         state = next; highlight(before, next);
         errorText = ''; persist();
@@ -369,10 +375,9 @@ export default {
           celebrate(shell.root, state.winners.length > 1 ?
             `${state.winners.map(i => name(i, room)).join(' & ')} share the win!` :
             `${name(state.winner, room)} wins Business!`);
-        const nextActor = businessResponder(state);
+        const nextActor = businessHandoffSeat(before, state, localViewer);
         if (state.phase === 'win') covered = false;
-        else if (nextActor !== localViewer &&
-          (nextActor !== oldActor || oldCurrent !== state.current)) {
+        else if (nextActor !== localViewer) {
           localViewer = nextActor; covered = true;
         }
       } catch (e) { errorText = e.message; }
@@ -571,6 +576,8 @@ export default {
       text(actionPanel, 'span', `ROUND ${s.turns + 1} · ${s.phase.toUpperCase()}`, 'bs-eyebrow');
       text(actionPanel, 'h4', context === 'trade-response' ? 'A trade awaits your decision' :
         context === 'trade-wait' ? 'Your offer is on the table' : 'Your next move');
+      if (!player.out && s.phase !== 'win')
+        text(actionPanel, 'p', `Available cash · ${cost(player.cash)}`, 'bs-tip');
       const add = (label, move, quiet = false, actor = viewer) =>
         actionPanel.append(button(label, () => request(move, actor), quiet));
       if (can && context === 'trade-response') {
@@ -651,6 +658,13 @@ export default {
       text(caption, 'span', `SPACE ${String(inspected).padStart(2, '0')}${info.group ? ` · ${info.group.toUpperCase()} DISTRICT` : ''}`, 'bs-eyebrow');
       text(caption, 'h4', info.space.name);
       paper.append(caption); inspection.append(paper);
+      if (info.group) {
+        const scene = document.createElement('div');
+        scene.className = 'bs-deed-scene';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = `<svg viewBox="0 0 240 112"><use href="./assets/business/districts.svg#${info.group}"></use></svg>`;
+        inspection.append(scene);
+      }
       if (info.space.price) {
         const highlights = document.createElement('div'); highlights.className = 'bs-deed-facts';
         text(highlights, 'strong', `Price ${cost(info.space.price)}`);

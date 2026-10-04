@@ -137,6 +137,8 @@ its printed price, complete rent ladder, group, building price, mortgage,
 owner and buildings before deciding to buy or bid. Swipe **inside** the
 board to move around all 40 spaces; the board opens at Start and follows
 movement. The deed inspector's Previous/Next controls offer a keyboard-
-and touch-friendly alternative. The skyline and miniature piece emblems
-are original bundled vector artwork; no proprietary cards or board images
-are used.
+and touch-friendly alternative. The vibrant skyline, eight illustrated
+district scenes and miniature piece emblems are original bundled vector
+artwork; no proprietary cards or board images are used. Colorful groups,
+distinct piece shapes, movement cues and contextual action cards make the
+table readable without relying on color alone.
