@@ -3,15 +3,29 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Lossless Telugu movie catalog
+
+- Added a resumable SQLite system of record preserving original CSV bytes,
+  source fields, full TMDB/OMDb responses, identity evidence and dated coverage.
+- Added Telugu-original discovery from 2000 onward, IMDb-based provider
+  crosswalks, explicit request budgets and an OMDb daily safety ceiling.
+- Defined a versioned charades rubric with 68 title-specific editorial reviews,
+  per-component reasoning and revision history; unresolved titles retain
+  uncertainty instead of fabricated final ratings.
+- Protected local credentials/development data in the development server and
+  recorded Bitwarden-backed cross-machine secrets management in the backlog.
+
 ## 2026-10-04 — Vibrant, illustrated Business districts
 
 - Brightened the city table, skyline, district colors, and player pieces;
   added eight original illustrated district scenes to interactive deed cards.
 - Kept long multiplayer names inside the turn banner and fitted the entire
-  board to large desktop tables without clipping edge spaces. Cache v61
+  board to large desktop tables without clipping edge spaces. Cache v62
   includes the district artwork for offline play.
 - Prioritized mobile action buttons ahead of player standings, added cash
   beside decisions, and returned the phone to the roller after trade replies.
+- Clarified that disconnected bankrupt Business seats do not pause the table.
+- Linked debt decisions directly to the relevant cash-raising tools.
 - Design direction across Arcade: fun, vibrant, art-rich, interactive,
   intuitive, and polished; primary gameplay stays ahead of auxiliary tools.
 

@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 112">
   <defs>
-    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#b8edff"/><stop offset="1" stop-color="#effcff"/></linearGradient>
+    <linearGradient id="district-sky" x2="0" y2="1"><stop stop-color="#b8edff"/><stop offset="1" stop-color="#effcff"/></linearGradient>
     <g id="cloud" fill="#fff" opacity=".9"><ellipse rx="23" ry="7"/><circle cx="-8" cy="-5" r="9"/><circle cx="6" cy="-7" r="12"/></g>
     <g id="tree"><path d="M0 0v28" stroke="#805128" stroke-width="5"/><circle cy="-7" r="15" fill="#14b87a"/><circle cx="8" cy="-13" r="11" fill="#6ee784"/></g>
     <g id="windows" fill="#fff5a7"><path d="M0 0h8v12H0zm16 0h8v12h-8zm32 0h8v12h-8zm-32 20h8v12H0zm16 0h8v12h-8zm16 0h8v12h-8z"/></g>
-    <g id="background"><path fill="url(#sky)" d="M0 0h240v112H0z"/><circle cx="207" cy="23" r="14" fill="#ffcf42"/><use href="#cloud" x="38" y="25"/><use href="#cloud" x="142" y="18"/><path d="M0 91q55-11 113 0t127-3v24H0z" fill="#8ce6be"/></g>
+    <g id="background"><path fill="url(#district-sky)" d="M0 0h240v112H0z"/><circle cx="207" cy="23" r="14" fill="#ffcf42"/><use href="#cloud" x="38" y="25"/><use href="#cloud" x="142" y="18"/><path d="M0 91q55-11 113 0t127-3v24H0z" fill="#8ce6be"/></g>
     <g id="street"><path d="M0 101h240v11H0z" fill="#6c8baa"/><path d="M10 107h20m20 0h20m20 0h20m20 0h20m20 0h20m20 0h20" stroke="#fff" stroke-width="2"/></g>
   </defs>
   <symbol id="indigo" viewBox="0 0 240 112">

@@ -23,6 +23,8 @@ test('original board artwork is bundled for offline play', () => {
     const path = `assets/business/${file}`;
     const image = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
     assert.match(image, /<svg\b/);
+    const ids = [...image.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+    assert.equal(new Set(ids).size, ids.length, `${path} must not contain conflicting SVG IDs`);
     assert.ok(precache.includes(`'./${path}'`), `${path} must be precached`);
   }
   const districts = readFileSync(new URL('../assets/business/districts.svg', import.meta.url), 'utf8');

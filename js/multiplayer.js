@@ -984,7 +984,9 @@ export class MultiplayerRoom {
           pending ? '1. Share this guest’s invite QR or link. 2. Scan or paste their answer below in this same tab.' :
           this.activeGame && this.activeGame.playerIds.some(id =>
             !this.members.find(member => member.id === id)?.connected)
-            ? 'Game paused. Reconnect each offline player to their original seat; play resumes when everyone is connected.' :
+            ? this.activeGame.id === 'business'
+              ? 'Reconnect remaining players to their original seats. Bankrupt players do not pause play; hide the lobby to return to the table.'
+              : 'Game paused. Reconnect each offline player to their original seat; play resumes when everyone is connected.' :
           connecting ? 'Answer accepted. Keep this tab open while the guest connects. Game choices appear when connected.' :
           this.activeGame ? 'Your game is in progress. Hide the lobby to return to play.' :
           needsPlayers ? `${preferred.name} needs ${seatLimits(preferred).min}–${seatLimits(preferred).max} players. Select or invite ${seatLimits(preferred).min - selectedPlayers} more to play.` :
