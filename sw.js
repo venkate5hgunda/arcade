@@ -2,14 +2,17 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v62';
-const RUNTIME_CACHE = 'arcade:runtime:v62';
+const STATIC_CACHE = 'arcade:static:v63';
+const RUNTIME_CACHE = 'arcade:runtime:v63';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './css/game-interface.css',
+  './css/hangman.css',
+  './assets/hangman/word-garden.svg',
   './css/board-games.css',
   './css/catan.css',
   './css/business.css',
@@ -48,7 +51,7 @@ const STATIC_ASSETS = [
   './js/vendor/qr-scanner-worker.min.js',
   ...[
     '2048', 'air-hockey', 'blackjack', 'chess', 'connect-four', 'crazy-eights',
-    'catan', 'catan-art', 'business', 'business-engine', 'dumb-charades', 'hangman', 'imposter', 'ludo', 'memory', 'minesweeper', 'uno',
+    'catan', 'catan-art', 'business', 'business-engine', 'dumb-charades', 'hangman', 'hangman-engine', 'imposter', 'ludo', 'memory', 'minesweeper', 'uno',
     'pool', 'rps', 'simon', 'snakes-ladders', 'tictactoe', 'whack-a-mole',
     'word-scramble',
   ].map((id) => `./games/${id}.js`),

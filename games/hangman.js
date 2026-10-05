@@ -1,206 +1,209 @@
-// Hangman — guess the word. 1-2 players.
-// Pure DOM; listens to arcade:themechange to repaint accents.
-
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
-import { nextPlayer } from '../js/game-utils.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { createHangman, guessHangman, validHangmanState, wordCategory, MAX_MISSES } from './hangman-engine.js';
 
-const WORDS = [
-  'ARCADE', 'PUZZLE', 'GAME', 'PLAYER', 'WINNER', 'CHAMPION', 'VICTORY', 'CHALLENGE',
-  'STRATEGY', 'TACTICS', 'SKILL', 'LUCK', 'DICE', 'CARD', 'BOARD', 'PIECE',
-  'SQUARE', 'CIRCLE', 'TRIANGLE', 'DIAMOND', 'HEXAGON', 'OCTAGON', 'POLYGON',
-  'COMPUTER', 'KEYBOARD', 'MOUSE', 'SCREEN', 'BROWSER', 'INTERNET', 'NETWORK',
-  'JAVASCRIPT', 'PYTHON', 'RUST', 'GOLANG', 'HTML', 'CSS', 'REACT', 'VUE',
-  'MOUNTAIN', 'RIVER', 'OCEAN', 'FOREST', 'DESERT', 'ISLAND', 'VOLCANO',
-  'GALAXY', 'PLANET', 'STAR', 'COMET', 'ASTEROID', 'NEBULA', 'UNIVERSE',
-  'MUSIC', 'MELODY', 'RHYTHM', 'HARMONY', 'SYMPHONY', 'CONCERT', 'INSTRUMENT',
-  'PAINTING', 'SCULPTURE', 'CANVAS', 'BRUSH', 'COLOR', 'PALETTE', 'ARTIST',
-  'SCIENCE', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY', 'ASTRONOMY', 'GEOLOGY',
-  'HISTORY', 'ANCIENT', 'MEDIEVAL', 'RENAISSANCE', 'EMPIRE', 'KINGDOM',
-  'MYSTERY', 'DETECTIVE', 'CLUE', 'EVIDENCE', 'SUSPECT', 'ALIBI', 'CASE',
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DRAWING = [
+  '<circle class="hm-part hm-chalk" cx="142" cy="67" r="20"/>',
+  '<path class="hm-part hm-chalk" d="M142 87v49"/>',
+  '<path class="hm-part hm-chalk" d="m142 102-27 23"/>',
+  '<path class="hm-part hm-chalk" d="m142 102 27 23"/>',
+  '<path class="hm-part hm-chalk" d="m142 136-23 35"/>',
+  '<path class="hm-part hm-chalk" d="m142 136 23 35"/>',
 ];
-
-function validState(s) {
-  if (!s || typeof s !== 'object' || Array.isArray(s) || !['1', '2'].includes(s.players) ||
-      !WORDS.includes(s.word) || !Array.isArray(s.guessed) ||
-      !s.guessed.every(ch => typeof ch === 'string' && /^[A-Z]$/.test(ch)) ||
-      new Set(s.guessed).size !== s.guessed.length ||
-      !Number.isInteger(s.wrong) || s.wrong < 0 || s.wrong >= 6 ||
-      s.wrong !== s.guessed.filter(ch => !s.word.includes(ch)).length ||
-      s.word.split('').every(ch => s.guessed.includes(ch)) ||
-      ![1, 2].includes(s.current) || (s.players === '1' && s.current !== 1) ||
-      !s.scores || typeof s.scores !== 'object' || Array.isArray(s.scores) ||
-      s.scores[1] !== 0 || s.scores[2] !== 0) return false;
-  return true;
-}
 
 export default {
   async render(el, game, { navigate, session } = {}) {
-    const shell = createShell(el, game, { title: 'Hangman', meta: 'Guess the word, letter by letter' });
-    const { stage, getResetButton } = shell;
+    const shell = createShell(el, game, { title: 'Hangman', meta: 'A little word detective work' });
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('hm-vibe');
-
     const saved = loadJSON(KEYS.SETTINGS + ':hangman', { players: '1' });
-    const restored = validState(session?.state) ? session.state : null;
-    const settings = restored ? { players: restored.players } : await renderSetup(stage, {
-      title: '📝 Hangman',
-      subtitle: 'Choose your players',
+    const restored = validHangmanState(session?.state) ? structuredClone(session.state) : null;
+    if (session?.state && !restored) console.warn('Saved Hangman round is invalid; starting a new round.');
+    const savedPlayers = ['1', '2'].includes(saved?.players) ? saved.players : '1';
+    if (saved?.players !== savedPlayers) console.warn('Invalid Hangman player setting; using solo play.');
+    const settings = restored ? { players: restored.players } : await renderSetup(shell.stage, {
+      title: 'Hangman',
+      subtitle: session?.state ? 'Your saved round could not be restored. Start a fresh word.' :
+        'Find the hidden word before six misses. Play solo or take turns with a friend.',
       themeClass: 'hm-theme',
-      fields: [{
-        key: 'players', label: 'Players',
-        options: [
-          { value: '1', label: 'Solo' },
-          { value: '2', label: '2 Players' },
-        ],
-        default: saved.players,
-      }],
-      startLabel: 'Start Guessing',
+      fields: [{ key: 'players', label: 'Players', default: savedPlayers,
+        options: [{ value: '1', label: 'Solo' }, { value: '2', label: '2 Players' }] }],
+      startLabel: 'Start guessing',
     });
     saveJSON(KEYS.SETTINGS + ':hangman', settings);
     const playerCount = settings.players === '2' ? 2 : 1;
+    shell.root.querySelector('.game-meta').textContent = playerCount === 2 ?
+      'Two players · alternate guesses' : 'Solo · six misses per word';
     const showTurn = createTurnIndicator(shell.root);
-    shell.root.querySelector('.game-meta').textContent = playerCount === 2 ? 'Two players · Take turns guessing' : 'Single player · Guess the word';
-
-    let word = '', guessed = new Set(), wrong = 0, maxWrong = 6, gameOver = false;
-    let current = 1, scores = { 1: 0, 2: 0 };
-    let busy = false, disposed = false, roundId = 0;
-    function checkpoint() {
-      session?.save({ players: settings.players, word, guessed: [...guessed], wrong, current, scores: { ...scores } });
+    let state = restored || createHangman(settings.players);
+    let outcome = null, busy = false, disposed = false, roundId = 0;
+    let feedback = restored ? 'Your word is restored. Pick up where you left off.' :
+      'Pick a letter below, or type it on your keyboard.';
+    const garden = document.createElement('div');
+    garden.className = 'hm-garden';
+    garden.innerHTML = `
+      <header class="hm-banner">
+        <p class="hm-eyebrow">THE WORD GARDEN</p>
+        <h3>A little guess. A big discovery.</h3>
+        <p>Find every letter. You have six chances to miss.</p>
+      </header>
+      <div class="hm-layout">
+        <div class="hm-play">
+          <section class="hm-word-panel game-ui-panel">
+            <p class="hm-word-meta"></p>
+            <div class="hm-word" role="group"></div>
+          </section>
+          <section class="hm-key-panel game-ui-panel" aria-label="Choose a letter">
+            <div class="hm-keyboard"></div>
+            <p class="hm-key-help">Tap a letter or type A–Z. Every matching letter is revealed.</p>
+          </section>
+        </div>
+        <aside>
+          <section class="hm-round game-ui-panel" aria-label="Round progress">
+            <div class="hm-progress"><strong></strong><div class="hm-lives" aria-hidden="true"></div></div>
+            <svg class="hm-drawing" viewBox="0 0 220 210" aria-hidden="true">
+              <path class="hm-drawing-frame" d="M25 185h170M57 185V27h85M57 51l25-24"/>
+              <g class="hm-drawing-parts"></g>
+              <path d="M20 195h180" stroke="#47bd92" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <p class="hm-status" role="status" aria-live="polite" aria-atomic="true"></p>
+            <button class="hm-replay game-ui-action" type="button" hidden>Next word</button>
+          </section>
+          <details class="hm-clue game-ui-panel">
+            <summary>Need a clue?</summary>
+            <p class="hm-category"></p>
+            <p>No penalty. Use the theme to narrow your guesses.</p>
+          </details>
+        </aside>
+      </div>`;
+    shell.stage.append(garden);
+    const wordEl = garden.querySelector('.hm-word');
+    const keyboard = garden.querySelector('.hm-keyboard');
+    const status = garden.querySelector('.hm-status');
+    const replay = garden.querySelector('.hm-replay');
+    const buttons = new Map();
+    for (const letter of LETTERS) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'hm-key'; button.textContent = letter;
+      button.addEventListener('click', () => void onGuess(letter));
+      keyboard.append(button); buttons.set(letter, button);
     }
 
-    const wordEl = document.createElement('div');
-    wordEl.className = 'hm-word';
-    stage.appendChild(wordEl);
-
-    const keyboard = document.createElement('div');
-    keyboard.className = 'hm-keyboard';
-    stage.appendChild(keyboard);
-
-    const figure = document.createElement('div');
-    figure.className = 'hm-figure';
-    stage.appendChild(figure);
-
-    const status = document.createElement('div');
-    status.className = 'hm-status';
-    stage.appendChild(status);
+    function checkpoint() { session?.save(structuredClone(state)); }
+    function render() {
+      wordEl.replaceChildren();
+      wordEl.setAttribute('aria-label', `${state.word.length}-letter word`);
+      garden.querySelector('.hm-word-meta').textContent = `${state.word.length} letters · ${playerCount === 2 ?
+        `${playerName(state.current - 1)}${outcome ? '' : ' to guess'}` : 'Your word to discover'}`;
+      [...state.word].forEach((letter, i) => {
+        const found = state.guessed.includes(letter), revealed = Boolean(outcome) || found;
+        const tile = document.createElement('span');
+        tile.className = `hm-letter${found ? ' is-found' : outcome ? ' is-revealed' : ''}`;
+        tile.textContent = revealed ? letter : '_';
+        tile.setAttribute('role', 'img');
+        tile.setAttribute('aria-label', `Letter ${i + 1}: ${revealed ? letter : 'not yet found'}`);
+        wordEl.append(tile);
+      });
+      for (const [letter, button] of buttons) {
+        const used = state.guessed.includes(letter), correct = state.word.includes(letter);
+        button.disabled = used || Boolean(outcome) || busy;
+        button.className = `hm-key${used ? correct ? ' correct' : ' wrong' : ''}`;
+        button.setAttribute('aria-label', used ? `${letter}: ${correct ? 'found' : 'not in the word'}` : `Guess ${letter}`);
+      }
+      keyboard.setAttribute('aria-busy', String(busy));
+      garden.querySelector('.hm-progress strong').textContent = `${MAX_MISSES - state.wrong} misses left`;
+      const lives = garden.querySelector('.hm-lives');
+      lives.replaceChildren();
+      for (let i = 0; i < MAX_MISSES; i++) {
+        const leaf = document.createElement('span');
+        leaf.className = `hm-life${i < state.wrong ? ' is-lost' : ''}`;
+        lives.append(leaf);
+      }
+      garden.querySelector('.hm-drawing-parts').innerHTML = DRAWING.slice(0, state.wrong).join('');
+      garden.querySelector('.hm-category').textContent = `The word belongs to: ${wordCategory(state.word)}.`;
+      status.textContent = busy ? 'Getting your letter ready…' : feedback;
+      status.dataset.outcome = outcome || '';
+      replay.hidden = !outcome;
+      if (playerCount === 2) showTurn(state.current - 1, !outcome);
+    }
 
     function newGame() {
-      roundId++;
+      roundId++; busy = false; outcome = null;
       shell.root.querySelector('.arcade-victory')?.remove();
-      busy = false;
-      word = WORDS[Math.floor(Math.random() * WORDS.length)];
-      guessed.clear(); wrong = 0; gameOver = false;
-      current = 1; scores = { 1: 0, 2: 0 };
-      checkpoint();
-      render();
+      state = createHangman(settings.players);
+      feedback = 'A fresh word is ready. Pick your first letter.';
+      garden.querySelector('.hm-clue').open = false;
+      checkpoint(); render();
     }
 
-    function render() {
-      // Word display
-      wordEl.textContent = word.split('').map(ch => guessed.has(ch) ? ch : '₋').join(' ');
-
-      // Keyboard
-      keyboard.innerHTML = '';
-      const rows = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
-      for (const row of rows) {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'hm-row';
-        for (const ch of row) {
-          const btn = document.createElement('button');
-          btn.className = 'hm-key';
-          btn.textContent = ch;
-          btn.disabled = guessed.has(ch) || gameOver;
-          if (guessed.has(ch)) btn.classList.add(word.includes(ch) ? 'correct' : 'wrong');
-          btn.addEventListener('click', () => onGuess(ch));
-          rowDiv.appendChild(btn);
-        }
-        keyboard.appendChild(rowDiv);
-      }
-
-      // Hangman figure
-      drawFigure();
-
-      // Status
-      if (!gameOver) {
-        const p = playerCount === 2 ? ` · P${current}'s turn` : '';
-        status.textContent = `Wrong guesses: ${wrong}/${maxWrong}${p}`;
-      }
-      if (playerCount === 2) showTurn(current - 1, !gameOver);
-    }
-
-    function drawFigure() {
-      const parts = [
-        // head
-        () => { figure.innerHTML += '<div class="hm-part head"></div>'; },
-        // body
-        () => { figure.innerHTML += '<div class="hm-part body"></div>'; },
-        // left arm
-        () => { figure.innerHTML += '<div class="hm-part arm left"></div>'; },
-        // right arm
-        () => { figure.innerHTML += '<div class="hm-part arm right"></div>'; },
-        // left leg
-        () => { figure.innerHTML += '<div class="hm-part leg left"></div>'; },
-        // right leg
-        () => { figure.innerHTML += '<div class="hm-part leg right"></div>'; },
-      ];
-      figure.innerHTML = '<div class="hm-gallows"></div>';
-      for (let i = 0; i < wrong; i++) parts[i]();
-    }
-
-    async function onGuess(ch) {
-      if (disposed || busy || gameOver || guessed.has(ch)) return;
-      busy = true;
-      const startedRound = roundId;
+    async function onGuess(letter) {
+      if (disposed || busy || outcome || state.guessed.includes(letter)) return;
+      const focusedKey = keyboard.contains(document.activeElement);
+      busy = true; const startedRound = roundId; render();
       const audio = window.arcadeAudio;
-      if (audio) await audio.prepare();
-      if (disposed || gameOver || startedRound !== roundId) return;
+      let soundReady = false;
+      if (audio) {
+        try { soundReady = await audio.prepare(); }
+        catch (error) { console.warn('Hangman sound unavailable; guessing remains enabled.', error); }
+      }
+      if (disposed || startedRound !== roundId) return;
       busy = false;
-      guessed.add(ch);
-      const correct = word.includes(ch);
-      if (audio) audio.tap();
-
-      if (!correct) {
-        wrong++;
-        if (audio) audio.buzz();
-        if (window.haptics) window.haptics.failure();
+      const actor = state.current;
+      const result = guessHangman(state, letter);
+      state = result.state; outcome = result.outcome;
+      if (result.correct) {
+        feedback = `${letter} is in the word${result.occurrences > 1 ? ` ${result.occurrences} times` : ''}. Nice find!`;
+        if (soundReady) audio.chime();
+        window.haptics?.success();
       } else {
-        if (audio) audio.chime();
-        if (window.haptics) window.haptics.success();
+        feedback = `${letter} is not in the word. ${MAX_MISSES - state.wrong} misses left.`;
+        if (soundReady) audio.buzz();
+        window.haptics?.failure();
       }
-
-      // Check win
-      const allGuessed = word.split('').every(ch => guessed.has(ch));
-      if (allGuessed) {
-        gameOver = true;
-        scores[current]++;
-        celebrate(shell.root, playerCount === 1 ? 'You found the word!' : `${playerName(current - 1)} found the word!`);
-        status.textContent = `🎉 You found "${word}"!`;
-      } else if (wrong >= maxWrong) {
-        gameOver = true;
-        if (audio) audio.buzzer();
-        if (window.haptics) window.haptics.failure();
-        status.textContent = `💀 Game Over! The word was "${word}"`;
-      } else if (playerCount === 2) {
-        current = nextPlayer(current, 2);
-      }
-      if (gameOver) session?.finish();
-      else checkpoint();
+      if (outcome === 'win') {
+        feedback = playerCount === 1 ? `You found ${state.word}! Ready for another word?` :
+          `${playerName(actor - 1)} found ${state.word}!`;
+        celebrate(shell.root, playerCount === 1 ? 'You found the word!' : `${playerName(actor - 1)} found the word!`);
+      } else if (outcome === 'loss') {
+        feedback = `The word was ${state.word}. A fresh word is another chance.`;
+        if (soundReady) audio.buzzer();
+      } else if (playerCount === 2) feedback += ` ${playerName(state.current - 1)} is next.`;
+      if (outcome) session?.finish(); else checkpoint();
       render();
+      if (focusedKey) {
+        if (outcome) replay.focus({ preventScroll: true });
+        else {
+          const start = LETTERS.indexOf(letter);
+          for (let step = 1; step <= LETTERS.length; step++) {
+            const next = buttons.get(LETTERS[(start + step) % LETTERS.length]);
+            if (!next.disabled) { next.focus({ preventScroll: true }); break; }
+          }
+        }
+      }
     }
 
-    getResetButton().addEventListener('click', newGame);
-
+    const onKey = event => {
+      if (disposed || !shell.root.isConnected || event.ctrlKey || event.metaKey || event.altKey || event.isComposing ||
+        event.target instanceof Element && (event.target.closest('input, textarea, select') || event.target.isContentEditable) ||
+        document.querySelector('dialog[open], [role="dialog"]:not([hidden]):not([aria-hidden="true"])')) return;
+      if (/^[a-z]$/i.test(event.key)) {
+        event.preventDefault(); void onGuess(event.key.toUpperCase());
+      }
+    };
     const onTheme = () => render();
+    shell.getResetButton().addEventListener('click', newGame);
+    replay.addEventListener('click', () => { newGame(); buttons.get('A').focus({ preventScroll: true }); });
+    window.addEventListener('keydown', onKey);
     window.addEventListener('arcade:themechange', onTheme);
-    if (restored) {
-      word = restored.word; guessed = new Set(restored.guessed);
-      wrong = restored.wrong; current = restored.current; scores = { ...restored.scores };
-      render();
-    } else newGame();
-    return { dispose: () => { disposed = true; window.removeEventListener('arcade:themechange', onTheme); } };
+    checkpoint(); render();
+    return { dispose: () => {
+      disposed = true; roundId++;
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('arcade:themechange', onTheme);
+    } };
   },
 };

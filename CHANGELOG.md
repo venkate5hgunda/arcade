@@ -3,6 +3,19 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-04 — Flexible game interfaces and Hangman's word garden
+
+- Established opt-in game interface tokens and action/panel primitives, with
+  theme-aware surfaces and readable primary buttons; each game keeps its own art.
+- Aligned Business's interface typography, controls, panels and phone handoff
+  with Arcade without changing its illustrated board, rules or multiplayer.
+- Rebuilt Hangman with original garden artwork, responsive letter tiles and
+  touch keyboard, chalk progress, named turns, physical A–Z controls, optional
+  expandable topic hints, clear results and an in-stage next-word action.
+- Preserved the 85-word pool, six-miss limit, alternating two-player rules and
+  existing checkpoint shape; hardened invalid restoration and pending audio/reset
+  handling, and precached the new interface and artwork for offline play.
+
 ## 2026-10-04 — Provider-neutral LLM annotation and review
 
 - Added offline request preparation and a resumable, budgeted two-pass
