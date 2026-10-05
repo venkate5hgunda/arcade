@@ -14,7 +14,7 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
   shell.style.setProperty('--accent', game.color);
   shell.innerHTML = `
     <div class="game-head">
-      <button class="back-btn" type="button" data-nav="back">${iconMarkup('tabler:arrow-left')} Back to games</button>
+      <button class="back-btn game-ui-action game-ui-action--secondary" type="button" data-nav="back">${iconMarkup('tabler:arrow-left')} Back to games</button>
       <div class="game-head-center">
         <div class="game-head-identity">
           ${game.icon ? `<span class="game-head-art">${iconMarkup(game.icon, 'catalog-icon')}</span>` : ''}
@@ -24,7 +24,7 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
           </div>
         </div>
       </div>
-      <button class="reset-btn" type="button" data-action="reset">${iconMarkup('tabler:refresh')} ${resetLabel}</button>
+      <button class="reset-btn game-ui-action game-ui-action--secondary" type="button" data-action="reset">${iconMarkup('tabler:refresh')} ${resetLabel}</button>
     </div>
     <div class="game-stage"></div>`;
 

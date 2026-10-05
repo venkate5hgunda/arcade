@@ -182,13 +182,13 @@ export function createBusinessRollCycle() {
 }
 function button(text, action, quiet = false) {
   const b = document.createElement('button');
-  b.type = 'button'; b.className = `bs-button${quiet ? ' bs-button--quiet' : ''}`;
+  b.type = 'button'; b.className = `bs-button game-ui-action${quiet ? ' bs-button--quiet game-ui-action--secondary' : ''}`;
   b.textContent = text; b.addEventListener('click', action);
   return b;
 }
 function details(title, className) {
   const d = document.createElement('details');
-  d.className = className;
+  d.className = `${className} game-ui-panel`;
   d.innerHTML = `<summary>${title}</summary>`;
   return d;
 }
@@ -239,8 +239,8 @@ export default {
       chooser.className = 'bs-entry';
       chooser.innerHTML = `<span class="bs-eyebrow">THE CITY IS YOURS</span>
         <h3>Make your move.</h3><p>Trade Indian cities, collect rent and build an empire together.</p>
-        <button class="bs-button bs-online" type="button">Create or join an online room ↗</button>
-        <button class="bs-button bs-button--quiet bs-local" type="button">Pass &amp; play on this phone</button>
+        <button class="bs-button game-ui-action bs-online" type="button">Create or join an online room ↗</button>
+        <button class="bs-button game-ui-action game-ui-action--secondary bs-button--quiet bs-local" type="button">Pass &amp; play on this phone</button>
         <details><summary>How does online play work?</summary>
         <p>The host invites friends using a link; guests send an answer link back. Up to six people get one seat each. Keep tabs open to play.</p></details>
         <p class="bs-entry-error" role="alert"></p>`;
@@ -573,7 +573,7 @@ export default {
       board.append(center); frame.append(board);
       const sidebar = document.createElement('div'); sidebar.className = 'bs-priority';
       const tools = document.createElement('aside'); tools.className = 'bs-tools';
-      const actionPanel = document.createElement('section'); actionPanel.className = 'bs-actions';
+      const actionPanel = document.createElement('section'); actionPanel.className = 'bs-actions game-ui-panel';
       text(actionPanel, 'span', `ROUND ${s.turns + 1} · ${s.phase.toUpperCase()}`, 'bs-eyebrow');
       text(actionPanel, 'h4', context === 'trade-response' ? 'A trade awaits your decision' :
         context === 'trade-wait' ? 'Your offer is on the table' : 'Your next move');
@@ -660,7 +660,7 @@ export default {
       sidebar.append(actionPanel);
       const info = businessSpaceDetails(s, inspected);
       const inspection = document.createElement('section');
-      inspection.id = 'bs-inspector'; inspection.className = 'bs-inspector';
+      inspection.id = 'bs-inspector'; inspection.className = 'bs-inspector game-ui-panel';
       inspection.style.setProperty('--deed-ink', GROUPS[info.group]?.color ||
         (info.space.kind === 'fortune' ? '#cf8a61' : '#5a8d87'));
       const paper = document.createElement('div'); paper.className = 'bs-inspector-head';

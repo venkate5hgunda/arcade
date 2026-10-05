@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240">
+  <defs>
+    <linearGradient id="garden-sky" x2="0" y2="1"><stop stop-color="#76dbf2"/><stop offset="1" stop-color="#e6fff1"/></linearGradient>
+    <g id="garden-tree"><path d="M0 0v75" stroke="#866045" stroke-width="14"/><circle cy="-12" r="39" fill="#24b987"/><circle cx="20" cy="-33" r="28" fill="#73e89c"/><circle cx="-20" cy="-25" r="24" fill="#47d49a"/></g>
+    <g id="garden-flower"><path d="M0 0v26" stroke="#16895d" stroke-width="4"/><circle cx="-7" r="7" fill="#ff82b0"/><circle cx="7" r="7" fill="#ff82b0"/><circle cy="-7" r="7" fill="#ff82b0"/><circle cy="7" r="7" fill="#ff82b0"/><circle r="5" fill="#ffe172"/></g>
+  </defs>
+  <path d="M0 0h800v240H0z" fill="url(#garden-sky)"/>
+  <circle cx="657" cy="52" r="31" fill="#ffd65b"/>
+  <g fill="#fff" opacity=".8"><ellipse cx="121" cy="58" rx="47" ry="13"/><circle cx="108" cy="48" r="19"/><circle cx="133" cy="43" r="23"/><ellipse cx="421" cy="38" rx="35" ry="11"/><circle cx="410" cy="29" r="16"/><circle cx="431" cy="26" r="19"/></g>
+  <path d="M0 151q110-70 249 0t281-3 270-3v95H0z" fill="#96e5a6"/>
+  <path d="M0 193q157-44 322-2t478-16v65H0z" fill="#43bf88"/>
+  <use href="#garden-tree" x="63" y="135"/><use href="#garden-tree" x="738" y="131"/>
+  <path d="m505 144 93 4 47 68-101-4z" fill="#6251c8" stroke="#433694" stroke-width="4"/>
+  <path d="m598 148 89-13 47 68-89 13z" fill="#edac43" stroke="#ad7132" stroke-width="4"/>
+  <path d="m514 136 84 6 41 64-89-6z" fill="#fff9dd"/><path d="m598 142 79-13 45 67-83 10z" fill="#fff3be"/>
+  <path d="m598 142 41 64" stroke="#d8b479" stroke-width="3"/>
+  <path d="m535 157 41 3m-30 10 42 3m26-13 46-7m-36 20 46-7" stroke="#a4bbba" stroke-width="4" stroke-linecap="round"/>
+  <use href="#garden-flower" x="105" y="197"/><use href="#garden-flower" x="175" y="216"/><use href="#garden-flower" x="727" y="212"/>
+  <path d="m309 107 13-10 13 10m28-34 13-10 13 10" stroke="#466c91" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>
