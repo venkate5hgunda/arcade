@@ -360,3 +360,11 @@ See `CHANGELOG.md` for the full history of decisions and assumptions.
 - **UNO-inspired** uses a single-round house ruleset: number-only opening
   card and no draw-card stacking or multi-round point scoring.
   If nobody can draw or play, the fewest cards wins (ties remain ties).
+
+## License
+
+Original project code and assets are licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 Venkatesh Gunda.
+Third-party code, assets, and content remain subject to their respective licenses,
+including the artwork listed in [Icon credits](#icon-credits) and the license
+notices in `js/vendor/`.
