@@ -1,9 +1,11 @@
 """Tests for size-aware, lossless year-partitioned movie exports."""
 
+import hashlib
 import json
 from pathlib import Path
 import shutil
 import unittest
+from unittest.mock import patch
 import uuid
 
 from dev.movies.catalog import dump
@@ -32,16 +34,17 @@ class MoviePartitionsTests(unittest.TestCase):
         # When max_bytes == exact_target, both fit in 10-year window 1990-1999
         index = write_partitions([rec1, rec2], self.scratch_dir, max_bytes=exact_target)
         self.assertEqual(len(index["files"]), 1)
-        self.assertEqual(index["files"][0]["path"], "1990-1999.jsonl")
+        self.assertTrue(index["files"][0]["path"].startswith("1990-1999."))
+        self.assertTrue(index["files"][0]["path"].endswith(".jsonl"))
         self.assertEqual(index["files"][0]["bytes"], exact_target)
         self.assertEqual(index["files"][0]["records"], 2)
 
         # When max_bytes == exact_target - 1, 10-year window is crowded and splits
         index2 = write_partitions([rec1, rec2], self.scratch_dir, max_bytes=exact_target - 1)
         # In decade 1990-1999, splits to 5-year [1990-1994], which has both records and is crowded (len1+len2 > exact_target-1)
-        # 5-year [1990-1994] splits to 2+2+1: [1990-1991] which is crowded, then to 1-year: 1990.jsonl and 1991.jsonl
-        paths = [f["path"] for f in index2["files"]]
-        self.assertEqual(paths, ["1990.jsonl", "1991.jsonl"])
+        # 5-year [1990-1994] splits to 2+2+1: [1990-1991] which is crowded, then to 1-year: 1990 and 1991
+        stems = [f["path"].split(".")[0] for f in index2["files"]]
+        self.assertEqual(stems, ["1990", "1991"])
 
     def test_multi_byte_text(self):
         # Telugu title with multi-byte UTF-8 sequences
@@ -62,7 +65,7 @@ class MoviePartitionsTests(unittest.TestCase):
         self.assertEqual(len(index["files"]), 1)
         file_info = index["files"][0]
         self.assertEqual(file_info["bytes"], actual_bytes)
-        self.assertEqual(file_info["path"], "1950-1959.jsonl")
+        self.assertTrue(file_info["path"].startswith("1950-1959."))
 
         # Read back and verify exact byte and json equivalence
         content = (self.scratch_dir / file_info["path"]).read_bytes()
@@ -116,29 +119,22 @@ class MoviePartitionsTests(unittest.TestCase):
         records = [r_1960, r_1971, r_1976, r_1980, r_1984]
         max_bytes = 400
         index = write_partitions(records, self.scratch_dir, max_bytes=max_bytes)
-        paths = [f["path"] for f in index["files"]]
+        stems = [f["path"].split(".")[0] for f in index["files"]]
 
-        # 1960-1969 fits in width 10: "1960-1969.jsonl"
-        self.assertIn("1960-1969.jsonl", paths)
-        # 1970s split into width 5: "1970-1974.jsonl" and "1975-1979.jsonl"
-        self.assertIn("1970-1974.jsonl", paths)
-        self.assertIn("1975-1979.jsonl", paths)
-        # 1980s: decade crowded (250 > 200 if we test 2-year)
-        # Let's verify width 2 specifically with targeted records:
+        # 1960-1969 fits in width 10: "1960-1969.<hash>.jsonl"
+        self.assertIn("1960-1969", stems)
+        # 1970s split into width 5: "1970-1974.<hash>.jsonl" and "1975-1979.<hash>.jsonl"
+        self.assertIn("1970-1974", stems)
+        self.assertIn("1975-1979", stems)
 
         rec_w2_a = make_rec("w2a", 1990, 80)
         rec_w2_b = make_rec("w2b", 1992, 80)
         rec_w2_c = make_rec("w2c", 1994, 80)
-        # Total in [1990-1994] is ~390 bytes. With max_bytes=200:
-        # [1990-1994] is crowded -> splits to 2+2+1:
-        # [1990-1991] has rec_w2_a (~130 bytes <= 200) -> 1990-1991.jsonl (width 2)
-        # [1992-1993] has rec_w2_b (~130 bytes <= 200) -> 1992-1993.jsonl (width 2)
-        # [1994-1994] has rec_w2_c (~130 bytes <= 200) -> 1994.jsonl (width 1)
         idx_w = write_partitions([rec_w2_a, rec_w2_b, rec_w2_c], self.scratch_dir, max_bytes=200)
-        paths_w = [f["path"] for f in idx_w["files"]]
-        self.assertIn("1990-1991.jsonl", paths_w)
-        self.assertIn("1992-1993.jsonl", paths_w)
-        self.assertIn("1994.jsonl", paths_w)
+        stems_w = [f["path"].split(".")[0] for f in idx_w["files"]]
+        self.assertIn("1990-1991", stems_w)
+        self.assertIn("1992-1993", stems_w)
+        self.assertIn("1994", stems_w)
 
     def test_unknown_years(self):
         rec_undated1 = {"id": "u1", "title": "Undated 1", "year": None}
@@ -146,11 +142,11 @@ class MoviePartitionsTests(unittest.TestCase):
         len1 = len((dump(rec_undated1) + "\n").encode("utf-8"))
         len2 = len((dump(rec_undated2) + "\n").encode("utf-8"))
 
-        # Case 1: fits in undated.jsonl
+        # Case 1: fits in undated.<hash>.jsonl
         index = write_partitions([rec_undated1, rec_undated2], self.scratch_dir, max_bytes=len1 + len2)
         self.assertEqual(len(index["files"]), 1)
         f0 = index["files"][0]
-        self.assertEqual(f0["path"], "undated.jsonl")
+        self.assertTrue(f0["path"].startswith("undated."))
         self.assertIsNone(f0["start_year"])
         self.assertIsNone(f0["end_year"])
         self.assertEqual(f0["records"], 2)
@@ -158,8 +154,8 @@ class MoviePartitionsTests(unittest.TestCase):
 
         # Case 2: crowded undated splits into parts
         index2 = write_partitions([rec_undated1, rec_undated2], self.scratch_dir, max_bytes=max(len1, len2))
-        paths = [f["path"] for f in index2["files"]]
-        self.assertEqual(paths, ["undated.part01.jsonl", "undated.part02.jsonl"])
+        stems2 = [".".join(f["path"].split(".")[:2]) for f in index2["files"]]
+        self.assertEqual(stems2, ["undated.part01", "undated.part02"])
         self.assertIsNone(index2["files"][0]["start_year"])
         self.assertIsNone(index2["files"][0]["end_year"])
 
@@ -174,8 +170,8 @@ class MoviePartitionsTests(unittest.TestCase):
         # max_bytes allows 1 record per part
         max_bytes = max(len1, len2, len3)
         index = write_partitions([rec1, rec2, rec3], self.scratch_dir, max_bytes=max_bytes)
-        paths = [f["path"] for f in index["files"]]
-        self.assertEqual(paths, ["2023.part01.jsonl", "2023.part02.jsonl", "2023.part03.jsonl"])
+        stems = [".".join(f["path"].split(".")[:2]) for f in index["files"]]
+        self.assertEqual(stems, ["2023.part01", "2023.part02", "2023.part03"])
         for f_info in index["files"]:
             self.assertEqual(f_info["start_year"], 2023)
             self.assertEqual(f_info["end_year"], 2023)
@@ -197,18 +193,18 @@ class MoviePartitionsTests(unittest.TestCase):
         self.assertEqual(len(files), 3)
 
         # Part 1: small_rec1
-        self.assertEqual(files[0]["path"], "2010.part01.jsonl")
+        self.assertTrue(files[0]["path"].startswith("2010.part01."))
         self.assertFalse(files[0]["oversize"])
         self.assertEqual(files[0]["records"], 1)
 
         # Part 2: oversized_rec alone with oversize=True
-        self.assertEqual(files[1]["path"], "2010.part02.jsonl")
+        self.assertTrue(files[1]["path"].startswith("2010.part02."))
         self.assertTrue(files[1]["oversize"])
         self.assertEqual(files[1]["records"], 1)
         self.assertGreater(files[1]["bytes"], max_bytes)
 
         # Part 3: small_rec2
-        self.assertEqual(files[2]["path"], "2010.part03.jsonl")
+        self.assertTrue(files[2]["path"].startswith("2010.part03."))
         self.assertFalse(files[2]["oversize"])
         self.assertEqual(files[2]["records"], 1)
 
@@ -236,18 +232,19 @@ class MoviePartitionsTests(unittest.TestCase):
         # Run 1: 1990-1999 as single file
         rec1 = {"id": "m1", "title": "A", "year": 1990}
         rec2 = {"id": "m2", "title": "B", "year": 1995}
-        write_partitions([rec1, rec2], self.scratch_dir, max_bytes=1000)
-        self.assertTrue((self.scratch_dir / "1990-1999.jsonl").is_file())
+        index1 = write_partitions([rec1, rec2], self.scratch_dir, max_bytes=1000)
+        file1 = index1["files"][0]["path"]
+        self.assertTrue((self.scratch_dir / file1).is_file())
 
         # Create an unrelated user file in the directory
         unrelated = self.scratch_dir / "notes.txt"
         unrelated.write_text("do not touch")
 
-        # Run 2: max_bytes=50 so 1990-1999 (74 bytes) splits into 1990-1994.jsonl and 1995-1999.jsonl
-        write_partitions([rec1, rec2], self.scratch_dir, max_bytes=50)
-        self.assertFalse((self.scratch_dir / "1990-1999.jsonl").exists())  # stale cleaned
-        self.assertTrue((self.scratch_dir / "1990-1994.jsonl").is_file())
-        self.assertTrue((self.scratch_dir / "1995-1999.jsonl").is_file())
+        # Run 2: max_bytes=50 so 1990-1999 (74 bytes) splits into 1990-1994 and 1995-1999
+        index2 = write_partitions([rec1, rec2], self.scratch_dir, max_bytes=50)
+        self.assertFalse((self.scratch_dir / file1).exists())  # stale cleaned
+        for f_info in index2["files"]:
+            self.assertTrue((self.scratch_dir / f_info["path"]).is_file())
         self.assertTrue(unrelated.is_file())  # unrelated file untouched!
         self.assertEqual(unrelated.read_text(), "do not touch")
 
@@ -265,8 +262,8 @@ class MoviePartitionsTests(unittest.TestCase):
             write_partitions([BadRecord()], self.scratch_dir, max_bytes=50)
 
         # Previous generation remains intact and valid
-        self.assertTrue((self.scratch_dir / "1990-1994.jsonl").is_file())
-        self.assertTrue((self.scratch_dir / "1995-1999.jsonl").is_file())
+        for f_info in index2["files"]:
+            self.assertTrue((self.scratch_dir / f_info["path"]).is_file())
         self.assertTrue((self.scratch_dir / "index.json").is_file())
         # No staging files left behind
         stage_files = list(self.scratch_dir.glob(".*stage*"))
@@ -282,6 +279,41 @@ class MoviePartitionsTests(unittest.TestCase):
         # Ensure no empty .jsonl files were created
         jsonl_files = list(self.scratch_dir.glob("*.jsonl"))
         self.assertEqual(jsonl_files, [])
+
+    def test_fault_injection_at_index_publication(self):
+        # Run 1: initial generation
+        rec1 = {"id": "m1", "title": "Version 1", "year": 1990}
+        index1 = write_partitions([rec1], self.scratch_dir, max_bytes=1000)
+        file1_path = self.scratch_dir / index1["files"][0]["path"]
+        self.assertTrue(file1_path.is_file())
+        file1_bytes = file1_path.read_bytes()
+        self.assertEqual(hashlib.sha256(file1_bytes).hexdigest(), index1["files"][0]["sha256"])
+
+        # Run 2: content changes, but stem stays 1990-1999
+        rec2 = {"id": "m1", "title": "Version 2 (Modified)", "year": 1990}
+
+        orig_replace = Path.replace
+
+        def failing_replace(self_path, target_path):
+            if Path(target_path).name == "index.json":
+                raise OSError("Simulated disk error during index.json replacement")
+            return orig_replace(self_path, target_path)
+
+        with patch.object(Path, "replace", side_effect=failing_replace, autospec=True):
+            with self.assertRaises(OSError):
+                write_partitions([rec2], self.scratch_dir, max_bytes=1000)
+
+        # OLD index.json must remain completely intact and valid
+        current_index = json.loads((self.scratch_dir / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(current_index, index1)
+
+        # Every file referenced by the OLD index.json must still exist and be valid
+        for file_info in current_index["files"]:
+            ref_path = self.scratch_dir / file_info["path"]
+            self.assertTrue(ref_path.is_file())
+            content = ref_path.read_bytes()
+            self.assertEqual(len(content), file_info["bytes"])
+            self.assertEqual(hashlib.sha256(content).hexdigest(), file_info["sha256"])
 
 
 if __name__ == "__main__":
