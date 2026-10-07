@@ -95,6 +95,16 @@ export const GAMES = [
     description: 'One player gets a secret word, everyone else gets a related clue. Blend in and deduce.',
   },
   {
+    id: 'mafia',
+    name: 'Mafia',
+    tagline: 'The city has a secret',
+    players: { min: 5, max: 10, type: 'group' },
+    category: 'Party',
+    color: '#c34cba',
+    icon: 'game-icons:spy',
+    description: 'A moonlit social-deduction mystery for 5–10 friends in a private online room. Investigate, protect, debate, vote.',
+  },
+  {
     id: 'dumb-charades',
     name: 'Dumb Charades',
     tagline: 'Act it, guess it',
