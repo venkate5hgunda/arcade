@@ -53,8 +53,8 @@ def _partition_items_to_parts(start_year, end_year, items, max_bytes, prefix):
 
     pad = max(2, len(str(len(chunks))))
     for idx, (chunk_items, is_oversize) in enumerate(chunks, 1):
-        name = f"{prefix}.part{idx:0{pad}d}.jsonl"
-        yield (name, start_year, end_year, chunk_items, is_oversize)
+        stem = f"{prefix}.part{idx:0{pad}d}"
+        yield (stem, start_year, end_year, chunk_items, is_oversize)
 
 
 def _partition_period(start_year, end_year, items_by_year, max_bytes):
@@ -74,8 +74,8 @@ def _partition_period(start_year, end_year, items_by_year, max_bytes):
     width = end_year - start_year + 1
 
     if total_bytes <= max_bytes:
-        name = f"{start_year}-{end_year}.jsonl" if width > 1 else f"{start_year}.jsonl"
-        yield (name, start_year, end_year, period_items, False)
+        stem = f"{start_year}-{end_year}" if width > 1 else f"{start_year}"
+        yield (stem, start_year, end_year, period_items, False)
         return
 
     if width == 10:
@@ -103,7 +103,9 @@ def write_partitions(records, directory, max_bytes=8 * 1024 * 1024):
     into numbered parts. Single records exceeding max_bytes are placed alone with
     oversize=True.
 
-    Writes index.json last and returns the index dict.
+    Partition files use immutable content-addressed generation filenames
+    (<stem>.<sha256[:12]>.jsonl) so an index publication failure leaves previous
+    generations fully intact. Writes index.json last and returns the index dict.
     """
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
@@ -125,61 +127,70 @@ def write_partitions(records, directory, max_bytes=8 * 1024 * 1024):
         else:
             undated_records.append(item)
 
-    file_specs = []
+    partition_chunks = []
 
     # Process dated records decade by decade
     decades = sorted({(y // 10) * 10 for y in dated_records.keys()})
     for decade in decades:
-        file_specs.extend(_partition_period(decade, decade + 9, dated_records, max_bytes))
+        partition_chunks.extend(_partition_period(decade, decade + 9, dated_records, max_bytes))
 
     # Process undated records
     if undated_records:
         undated_bytes = sum(item[2] for item in undated_records)
         if undated_bytes <= max_bytes:
-            file_specs.append(("undated.jsonl", None, None, undated_records, False))
+            partition_chunks.append(("undated", None, None, undated_records, False))
         else:
-            file_specs.extend(_partition_items_to_parts(None, None, undated_records, max_bytes, prefix="undated"))
+            partition_chunks.extend(_partition_items_to_parts(None, None, undated_records, max_bytes, prefix="undated"))
+
+    # Compute content hashes and immutable filenames
+    file_specs = []
+    for stem, start_year, end_year, chunk_items, is_oversize in partition_chunks:
+        hasher = hashlib.sha256()
+        chunk_total_bytes = 0
+        for item in chunk_items:
+            raw_bytes = item[1]
+            hasher.update(raw_bytes)
+            chunk_total_bytes += len(raw_bytes)
+        digest = hasher.hexdigest()
+        filename = f"{stem}.{digest[:12]}.jsonl"
+        file_specs.append((stem, filename, start_year, end_year, chunk_items, chunk_total_bytes, digest, is_oversize))
 
     # Sort file specs deterministically
     def _sort_key(spec):
-        name, start_year, end_year, _, _ = spec
+        stem, filename, start_year, end_year, _, _, _, _ = spec
         is_undated = 1 if start_year is None else 0
         s_yr = start_year if start_year is not None else 0
         e_yr = end_year if end_year is not None else 0
-        return (is_undated, s_yr, e_yr, name)
+        return (is_undated, s_yr, e_yr, stem, filename)
 
     file_specs.sort(key=_sort_key)
 
     token = f"{os.getpid()}_{time.time_ns()}"
     staged_files = []
+    newly_published = []
     files_index = []
 
     try:
-        for name, start_year, end_year, chunk_items, is_oversize in file_specs:
-            target_path = directory / name
-            stage_path = directory / f".{name}.stage_{token}"
+        for stem, filename, start_year, end_year, chunk_items, chunk_bytes, digest, is_oversize in file_specs:
+            target_path = directory / filename
+            stage_path = directory / f".{filename}.stage_{token}"
 
-            hasher = hashlib.sha256()
-            total_file_bytes = 0
             with stage_path.open("wb") as out:
                 for item in chunk_items:
-                    raw_bytes = item[1]
-                    out.write(raw_bytes)
-                    hasher.update(raw_bytes)
-                    total_file_bytes += len(raw_bytes)
+                    out.write(item[1])
 
             staged_files.append((stage_path, target_path))
             files_index.append({
-                "path": name,
+                "path": filename,
                 "start_year": start_year,
                 "end_year": end_year,
                 "records": len(chunk_items),
-                "bytes": total_file_bytes,
-                "sha256": hasher.hexdigest(),
+                "bytes": chunk_bytes,
+                "sha256": digest,
                 "oversize": is_oversize,
             })
 
-        # Read previous index for stale file cleanup
+        # Read previous index for safe stale cleanup
         index_path = directory / "index.json"
         prev_files = set()
         if index_path.is_file():
@@ -195,6 +206,7 @@ def write_partitions(records, directory, max_bytes=8 * 1024 * 1024):
         # Publish all partition files
         for stage_path, target_path in staged_files:
             stage_path.replace(target_path)
+            newly_published.append(target_path)
 
         # Build final index
         index_dict = {
@@ -235,4 +247,11 @@ def write_partitions(records, directory, max_bytes=8 * 1024 * 1024):
                 index_stage.unlink(missing_ok=True)
             except OSError:
                 pass
+        # If index publication failed, remove any newly published files not belonging to previous index
+        for pub_path in newly_published:
+            if pub_path.name not in prev_files:
+                try:
+                    pub_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
         raise
