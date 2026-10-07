@@ -14,4 +14,8 @@ Run `npm run movies:build` to rebuild from local data, or
 Run `npm run test:movies` for the movie pipeline tests.
 Run `npm run movies:annotate -- prepare --limit 5` to prepare offline LLM
 annotation requests; the movie guide documents the provider-neutral adapter,
-separate review pass, explicit promotion and remaining provider-integration work.
+separate review pass and explicit promotion. Native Gemini automation lives in
+`movies/gemini_annotation.py`; daily all-years ingestion and annotation plus
+weekly provider refresh live in `movies/maintenance.py`. Run
+`python3 -m dev.movies.maintenance install` to install the local macOS schedule.
+Size-aware year-partitioned JSONL exports retain one authoritative SQLite cache.

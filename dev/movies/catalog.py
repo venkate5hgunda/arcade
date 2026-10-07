@@ -226,6 +226,10 @@ class APIError(RuntimeError):
         self.provider_message = provider_message
 
 
+class DiscoveryChanged(APIError):
+    pass
+
+
 class Client:
     def __init__(self, db, provider, key, max_calls=100, refresh=False, delay=0.25):
         self.db, self.provider, self.key = db, provider, key
@@ -254,6 +258,17 @@ class Client:
                 (request_key,)).fetchone()
             if cached:
                 return json.loads(cached["body"]), cached["id"]
+            if self.provider == "omdb":
+                rejected = self.db.execute(
+                    "SELECT id,body FROM responses WHERE request_key=? AND status=200 ORDER BY id DESC LIMIT 1",
+                    (request_key,)).fetchone()
+                if rejected:
+                    try:
+                        payload = json.loads(rejected["body"])
+                    except json.JSONDecodeError:
+                        payload = None
+                    if isinstance(payload, dict) and payload.get("Error") == "Incorrect IMDb ID.":
+                        return payload, rejected["id"]
 
     def reserve(self):
         if not self.key:
@@ -297,7 +312,7 @@ class Client:
         except json.JSONDecodeError:
             payload = None
         not_found = (isinstance(payload, dict) and self.provider == "omdb"
-                     and payload.get("Error") == "Movie not found!")
+                     and payload.get("Error") in ("Movie not found!", "Incorrect IMDb ID."))
         usable = (status == 200 and isinstance(payload, dict)
                   and (payload.get("Response") != "False" or not_found)
                   and payload.get("success") is not False)
@@ -531,6 +546,13 @@ def hydrate_omdb(db, client, movies):
                 continue
             raise
         if payload.get("Response") == "False":
+            if payload.get("Error") == "Incorrect IMDb ID.":
+                record_match(db, movie["id"], "omdb", response_id, "needs_review",
+                             "OMDb rejected the IMDb ID; raw failure retained, trying exact title/year instead.")
+                print(f"OMDb rejected an IMDb ID for {movie['title']}; using title/year lookup.", file=sys.stderr)
+                payload, response_id = client.get(
+                    "/", {"t": movie["title"], "y": movie["year"], "type": "movie", "plot": "full"})
+        if payload.get("Response") == "False":
             record_match(db, movie["id"], "omdb", response_id, "not_found",
                          "No result for exact title and year; source retained.")
             continue
@@ -548,11 +570,36 @@ def hydrate_omdb(db, client, movies):
                      reason if status == "linked" else "Title/year/language/type mismatch or identity collision; not merged.")
 
 
-def discover_tmdb(db, client, start_year, end_year):
+def register_tmdb_movie(db, result, response_id, scope):
+    external_id = result["id"]
+    if type(external_id) is not int or external_id <= 0 or not result.get("title"):
+        raise APIError("TMDB discovery has an invalid identity/title; raw response retained.")
+    released = dt.date.fromisoformat(result["release_date"]) if result.get("release_date") else None
+    year = released.year if released else None
+    existing = db.execute(
+        "SELECT movie_id FROM identities WHERE provider='tmdb' AND external_id=?",
+        (str(external_id),)).fetchone()
+    seeds = db.execute(
+        "SELECT id,title FROM movies m WHERE id LIKE 'seed:%' AND year=? AND NOT EXISTS "
+        "(SELECT 1 FROM identities i WHERE i.movie_id=m.id AND i.provider='tmdb')", (year,)).fetchall()
+    matching = [seed for seed in seeds if title_key(seed["title"]) == title_key(result["title"])]
+    movie_id = existing["movie_id"] if existing else matching[0]["id"] if len(matching) == 1 else f"tmdb:{external_id}"
+    db.execute("INSERT OR IGNORE INTO movies VALUES (?,?,?,?,?)",
+               (movie_id, result["title"], year, "te", now()))
+    if movie_id.startswith("tmdb:"):
+        db.execute("UPDATE movies SET title=?,year=? WHERE id=?", (result["title"], year, movie_id))
+    if not link(db, movie_id, "tmdb", external_id, {"response_id": response_id, "scope": scope}):
+        raise APIError("TMDB discovery identity collision; raw response retained for review.")
+    return movie_id
+
+
+def discover_tmdb(db, client, start_year, end_year, months=None, through_date=None):
     """Month shards avoid the 500-page cap; incomplete scopes never count as covered."""
-    today = dt.date.today()
+    today = through_date or dt.date.today()
     for year in range(start_year, end_year + 1):
         for month in range(1, 13):
+            if months is not None and (year, month) not in months:
+                continue
             first = dt.date(year, month, 1)
             if first > today:
                 continue
@@ -574,7 +621,7 @@ def discover_tmdb(db, client, start_year, end_year):
                 if expected_results is None:
                     expected_results = payload["total_results"]
                 elif expected_results != payload["total_results"]:
-                    raise APIError(f"{scope}: discovery result count changed during pagination; refresh required.")
+                    raise DiscoveryChanged(f"{scope}: discovery result count changed during pagination; refresh required.")
                 if pages > 500:
                     raise APIError(f"{scope}: exceeds TMDB's page cap; split this interval before proceeding.")
                 receipts.append(response_id)
@@ -586,27 +633,14 @@ def discover_tmdb(db, client, start_year, end_year):
                         raise APIError(f"{scope}: release date outside requested interval.")
                     tmdb_id = str(result["id"])
                     if tmdb_id in seen_ids:
-                        raise APIError(f"{scope}: duplicate paginated movie ID; coverage cannot be verified.")
+                        raise DiscoveryChanged(f"{scope}: duplicate paginated movie ID; coverage cannot be verified.")
                     seen_ids.add(tmdb_id)
-                    existing = db.execute(
-                        "SELECT movie_id FROM identities WHERE provider='tmdb' AND external_id=?", (tmdb_id,)).fetchone()
-                    seeds = db.execute("SELECT id,title FROM movies WHERE id LIKE 'seed:%' AND year=?",
-                                       (released.year,)).fetchall()
-                    matching_seeds = [seed for seed in seeds
-                                      if title_key(seed["title"]) == title_key(result["title"])]
-                    movie_id = (existing["movie_id"] if existing else
-                                matching_seeds[0]["id"] if len(matching_seeds) == 1 else f"tmdb:{tmdb_id}")
-                    db.execute("INSERT OR IGNORE INTO movies VALUES (?,?,?,?,?)",
-                               (movie_id, result["title"], released.year, "te", now()))
-                    if movie_id.startswith("tmdb:"):
-                        db.execute("UPDATE movies SET title=?,year=? WHERE id=?",
-                                   (result["title"], released.year, movie_id))
-                    link(db, movie_id, "tmdb", tmdb_id, {"response_id": response_id, "scope": scope})
+                    register_tmdb_movie(db, result, response_id, scope)
                     count += 1
                 db.commit()
                 page += 1
             if count != payload["total_results"]:
-                raise APIError(f"{scope}: result count changed; refresh this scope to verify coverage.")
+                raise DiscoveryChanged(f"{scope}: result count changed; refresh this scope to verify coverage.")
             db.execute("INSERT OR REPLACE INTO coverage VALUES (?,?,?,?)",
                        (scope, "complete", dump({"count": count, "response_ids": receipts,
                                                 "requested_through": str(today)}), now()))
@@ -669,7 +703,7 @@ def annotate(db, seeds):
         evidence = by_native_id.get(native_ids.get(movie["id"])) or curated.get(
             (title_key(movie["title"]), movie["year"]))
         if not evidence:
-            evidence = automated.get(native_ids.get(movie["id"]))
+            evidence = automated.get(movie["id"])
         prompt_title = evidence["title"] if evidence else movie["title"]
         words = prompt_title.split()
         length_score = 1 if len(words) <= 2 else 2 if len(words) <= 4 else 4 if len(words) <= 6 else 5
@@ -716,8 +750,8 @@ def annotate(db, seeds):
                 "local LLM job snapshot database" if evidence.get("automation")
                 else "original curatorial snapshot database")
             receipt = db.execute("SELECT * FROM responses WHERE id=? AND provider='tmdb' AND path=? AND fetched_at=?",
-                                 (evidence["evidence"]["response_id"], "/movie/" + str(evidence["tmdb_id"]),
-                                  evidence["evidence"]["fetched_at"])).fetchone()
+                                 (evidence["evidence"].get("response_id"), "/movie/" + str(evidence.get("tmdb_id")),
+                                  evidence["evidence"].get("fetched_at"))).fetchone()
             if receipt:
                 annotation["evidence"]["request_key"] = receipt["request_key"]
                 annotation["evidence"]["body_sha256"] = receipt["body_sha256"]
@@ -732,6 +766,8 @@ def annotate(db, seeds):
 
 
 def export(db, directory, run_errors=None):
+    from .partitions import write_partitions
+
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     db.execute("BEGIN")
@@ -772,7 +808,8 @@ def export(db, directory, run_errors=None):
         ("coverage.jsonl", (dict(row) for row in db.execute("SELECT * FROM coverage ORDER BY scope"))),
         ("redirects.jsonl", (dict(row) for row in db.execute("SELECT * FROM redirects ORDER BY alias_id"))),
     ]
-    for table in ("llm_jobs", "llm_calls", "llm_promotions"):
+    for table in ("llm_jobs", "llm_calls", "llm_promotions", "llm_batches", "llm_batch_items",
+                  "llm_daily_budget", "maintenance_budgets"):
         if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
             outputs.append((table + ".jsonl", (dict(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid"))))
     for name, rows in outputs:
@@ -782,8 +819,11 @@ def export(db, directory, run_errors=None):
             for row in rows:
                 output.write(dump(row) + "\n")
         temporary.replace(target)
+    period_partitions = write_partitions(catalog, directory / "periods")
     manifest = {
         "schema_version": 1, "exported_at": now(), "movies": len(catalog),
+        "period_partitions": {"directory": "periods", "index_file": "periods/index.json",
+                              **period_partitions},
         "source_records": db.execute("SELECT count(*) FROM source_rows").fetchone()[0],
         "source_records_with_warnings": db.execute(
             "SELECT count(*) FROM source_rows WHERE issues_json!='[]'").fetchone()[0],
