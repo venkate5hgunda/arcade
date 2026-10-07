@@ -12,9 +12,9 @@ const ICE_TIMEOUT = 20000;
 const CONNECT_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
 const GAME_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
-const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'catan', 'uno', 'crazy-eights', 'business']);
-const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'catan', 'uno', 'business']);
-const PRIVATE_GAMES = new Set(['catan', 'uno', 'crazy-eights', 'business']);
+const REMOTE_GAMES = new Set(['tictactoe', 'connect-four', 'chess', 'rps', 'snakes-ladders', 'ludo', 'catan', 'uno', 'crazy-eights', 'business', 'mafia']);
+const GROUP_GAMES = new Set(['snakes-ladders', 'ludo', 'catan', 'uno', 'business', 'mafia']);
+const PRIVATE_GAMES = new Set(['catan', 'uno', 'crazy-eights', 'business', 'mafia']);
 const PUBLIC_GAMES = new Set([...REMOTE_GAMES].filter(id => !PRIVATE_GAMES.has(id)));
 const HOST_BACKUP_KEY = 'arcade:room:host:v1';
 const encoder = new TextEncoder();
@@ -593,7 +593,7 @@ export class MultiplayerRoom {
           this.checkAction(msg.action);
           if (msg.action.type === 'room-state') fail('Only the host can send game state.');
           if (this.isRestored && this.readyGameId !== this.activeGame.id &&
-              !['ct-sync', 'uno-sync', 'crazy-eights-sync', 'bs-sync', 'room-sync'].includes(msg.action.type)) {
+              !['ct-sync', 'uno-sync', 'crazy-eights-sync', 'bs-sync', 'mafia-sync', 'room-sync'].includes(msg.action.type)) {
             this.send(peer.channel, 'error', { message: 'The host must resume the saved game before play continues.' });
           } else if (msg.action.type === 'room-sync' && PUBLIC_GAMES.has(this.activeGame.id)) {
             if (this.savedGame) this.sendRoomState(id);
@@ -820,8 +820,8 @@ export class MultiplayerRoom {
   sendAction(action) {
     this.checkAction(action);
     if (!this.activeGame?.playerIds.includes(this.peerId)) fail('You are not playing this game.');
-    if (this.activeGame.id !== 'business' &&
-        !['ct-sync', 'uno-sync', 'crazy-eights-sync', 'bs-sync', 'room-sync'].includes(action.type) &&
+    if (!['business', 'mafia'].includes(this.activeGame.id) &&
+        !['ct-sync', 'uno-sync', 'crazy-eights-sync', 'bs-sync', 'mafia-sync', 'room-sync'].includes(action.type) &&
         this.activeGame.playerIds.some(id => !this.members.find(member => member.id === id)?.connected))
       fail('A player is disconnected. Wait for them to reconnect before continuing.');
     if (this.role === 'host') {

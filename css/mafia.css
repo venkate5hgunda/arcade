@@ -1,0 +1,37 @@
+.mafia-game .game-stage{display:grid;gap:1rem;max-width:1080px;margin:auto;color:#25183f}
+.mafia-game .game-head{--accent:#c34cba}
+.mafia-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:1.3fr .85fr;align-items:center;gap:1.3rem;min-height:270px;padding:clamp(1.3rem,3vw,2.6rem);border-radius:25px;background:#242154 url('../assets/mafia/nocturne.svg') center/cover;color:white;box-shadow:0 14px 38px #34235039}
+.mafia-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#181739df 0%,#221944b5 47%,#21164638 100%)}
+.mafia-hero--discussion,.mafia-hero--vote{background-position:center bottom}
+.mafia-eyebrow,.mafia-role-label{font-size:.72rem;font-weight:900;letter-spacing:.2em;color:#ffda94}
+.mafia-headline h3{font-size:clamp(2rem,4.8vw,3.7rem);line-height:1.05;margin:.65rem 0;letter-spacing:-.05em;color:white}
+.mafia-announcement{font-size:1.05rem;max-width:38ch;line-height:1.5;color:#fff4e5}
+.mafia-role{display:flex;flex-direction:column;gap:.35rem;border:1px solid #ffffff88;border-radius:20px;padding:1.1rem;max-width:320px;background:#171633dc;box-shadow:0 12px 30px #0c0c244f;backdrop-filter:blur(10px);transform:rotate(1deg)}
+.mafia-role--doctor{border-color:#7af6d5}.mafia-role--detective{border-color:#9bd5ff}.mafia-role--mafia{border-color:#ff8cb9}
+.mafia-role-sigil{font-size:3.5rem;line-height:1;color:#ffd27d;text-shadow:0 0 24px #ffbb79}
+.mafia-role strong{font-size:1.6rem;color:white}.mafia-role small{line-height:1.45;color:#fff4e5;font-size:.91rem}
+.mafia-panel,.mafia-roster,.mafia-guide{border:1px solid #8c5aaf54;border-radius:22px;background:#fff8f1;padding:clamp(1.1rem,2.5vw,1.9rem);box-shadow:0 6px 22px #49214c12}
+.mafia-panel h3,.mafia-panel h4,.mafia-roster h4{font-size:1.4rem;margin:0 0 .45rem;color:#36234e}
+.mafia-panel p{line-height:1.55;margin:.45rem 0 1rem}
+.mafia-button{appearance:none;border:2px solid #6f287c;background:#762b82;color:#fff;border-radius:13px;padding:.85rem 1.2rem;font:inherit;font-weight:800;cursor:pointer;min-height:48px;transition:transform .15s,box-shadow .15s,background .15s}
+.mafia-button:hover{transform:translateY(-2px);box-shadow:0 5px 16px #54205848;background:#5f1d6b}
+.mafia-button:focus-visible{outline:3px solid #f3a900;outline-offset:3px}
+.mafia-button--quiet{background:#fff;color:#53225d}
+.mafia-button--quiet:hover{background:#fae4f4}
+.mafia-targets{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.1rem 0}
+.mafia-target[aria-pressed="true"],.mafia-targets .mafia-button[aria-pressed="true"]{background:#f9ba37;border-color:#653858;color:#221937;box-shadow:0 3px 0 #9d6724}
+.mafia-error{padding:.8rem;border-radius:9px;color:#8a1722;background:#ffe1e3;font-weight:700}
+.mafia-wait{color:#57345f;font-weight:650}
+.mafia-roster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.7rem}
+.mafia-person{display:flex;align-items:center;gap:.8rem;padding:.7rem;border-radius:13px;background:#f1e7f2;border:1px solid #d9b9de}
+.mafia-person--out{opacity:.66;filter:grayscale(.55)}
+.mafia-person-symbol{font-size:1.8rem;color:#8b3688}
+.mafia-person strong,.mafia-person small{display:block;line-height:1.3}
+.mafia-person small{font-size:.78rem;color:#604a6c}
+.mafia-reveal{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+.mafia-reveal span{background:#efdcf1;border-radius:8px;padding:.5rem}
+.mafia-guide summary,.mafia-clues summary{cursor:pointer;font-weight:800;color:#653167}
+.mafia-guide p,.mafia-clues p{line-height:1.5}
+@media(max-width:650px){.mafia-hero{grid-template-columns:1fr;padding:1.3rem;min-height:unset}.mafia-role{max-width:none;transform:none}.mafia-game .game-stage{gap:.75rem}.mafia-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mafia-person{padding:.55rem;gap:.35rem}.mafia-person strong{overflow-wrap:anywhere}.mafia-button{width:100%}.mafia-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.mafia-targets .mafia-button{padding:.65rem .3rem}}
+@media(max-width:360px){.mafia-roster-grid,.mafia-targets{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.mafia-button{transition:none}.mafia-button:hover{transform:none}}

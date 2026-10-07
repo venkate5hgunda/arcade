@@ -14,6 +14,7 @@ export const RESUME_MINUTES = Object.freeze({
   hangman: 10,
   imposter: 15,
   ludo: 30,
+  mafia: 120,
   memory: 12,
   minesweeper: 15,
   pool: 15,

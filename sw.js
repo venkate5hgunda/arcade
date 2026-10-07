@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v63';
-const RUNTIME_CACHE = 'arcade:runtime:v63';
+const STATIC_CACHE = 'arcade:static:v64';
+const RUNTIME_CACHE = 'arcade:runtime:v64';
 
 const STATIC_ASSETS = [
   './',
@@ -16,9 +16,11 @@ const STATIC_ASSETS = [
   './css/board-games.css',
   './css/catan.css',
   './css/business.css',
+  './css/mafia.css',
   './assets/business/cityscape.svg',
   './assets/business/symbols.svg',
   './assets/business/districts.svg',
+  './assets/mafia/nocturne.svg',
   './css/physical-games.css',
   './css/card-games.css',
   './css/multiplayer.css',
@@ -51,7 +53,7 @@ const STATIC_ASSETS = [
   './js/vendor/qr-scanner-worker.min.js',
   ...[
     '2048', 'air-hockey', 'blackjack', 'chess', 'connect-four', 'crazy-eights',
-    'catan', 'catan-art', 'business', 'business-engine', 'dumb-charades', 'hangman', 'hangman-engine', 'imposter', 'ludo', 'memory', 'minesweeper', 'uno',
+    'catan', 'catan-art', 'business', 'business-engine', 'dumb-charades', 'hangman', 'hangman-engine', 'imposter', 'mafia', 'mafia-engine', 'ludo', 'memory', 'minesweeper', 'uno',
     'pool', 'rps', 'simon', 'snakes-ladders', 'tictactoe', 'whack-a-mole',
     'word-scramble',
   ].map((id) => `./games/${id}.js`),
