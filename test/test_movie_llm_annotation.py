@@ -99,12 +99,54 @@ class LLMAnnotationTests(unittest.TestCase):
 
     def test_candidate_guards(self):
         for field, value in (("adult", True), ("original_language", "ta"),
-                             ("release_date", "2999-01-01"), ("release_date", "")):
+                             ("release_date", "2999-01-01")):
             original = self.payload.copy()
             self.payload[field] = value
             self.add_snapshot()
             self.assertEqual(self.jobs(), [])
             self.payload = original
+
+    def test_undated_identity_withholds_recognition(self):
+        self.payload["release_date"] = ""
+        self.add_snapshot()
+        request = llm.request_for(self.jobs()[0], "annotate")
+        with self.assertRaisesRegex(ValueError, "withholding recognition"):
+            llm.validate_output(request, proposal(request))
+        llm.validate_output(request, proposal(request, recognition=None))
+
+    def test_source_only_review_preserves_raw_fields_and_withholds_uncertain_recognition(self):
+        source = self.path / "source.csv"
+        source.write_text("Title,Year,Cast,Extra\nSource Test,1930,Source Cast,opaque original field\n")
+        catalog.import_csv(self.db, source)
+        job = next(job for job in self.jobs() if job["movie_id"] != "tmdb:42")
+        request = llm.request_for(job, "annotate")
+        self.assertIsNone(request["input"]["tmdb_id"])
+        self.assertEqual(request["input"]["source_rows"][0]["raw"]["Extra"], "opaque original field")
+        self.assertTrue(request["input"]["recognition_must_be_unknown"])
+        output = proposal(request, recognition=None)
+        output["recognition"]["evidence"] = ["source_rows"]
+        llm.validate_output(request, output)
+
+        def respond(*args, **kwargs):
+            incoming = json.loads(kwargs["input"])
+            result = adapter_result(incoming, recognition=None)
+            if incoming["stage"] == "annotate":
+                envelope = json.loads(result.stdout)
+                envelope["output"] = output
+                result.stdout = json.dumps(envelope)
+            return result
+
+        with patch.object(llm.subprocess, "run", side_effect=respond):
+            llm.run_jobs(self.db, [job], self.path / "adapter.py", 10, 10)
+        llm.promote(self.db, [job["job_key"]])
+        catalog.annotate(self.db, [])
+        rating = json.loads(self.db.execute(
+            "SELECT annotation_json FROM annotations WHERE movie_id=? ORDER BY id DESC LIMIT 1",
+            (job["movie_id"],)).fetchone()[0])
+        self.assertEqual(rating["status"], "needs_review")
+        self.assertEqual(rating["automation"]["review_decision"], "approve")
+        self.assertIsNone(rating["difficulty"])
+        self.assertFalse(rating["evidence"]["snapshot_available_locally"])
 
     def test_budget_resume_and_no_repeat_calls(self):
         (calls, partial), count = self.run_jobs(max_calls=1)

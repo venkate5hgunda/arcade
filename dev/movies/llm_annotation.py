@@ -46,7 +46,7 @@ COMPONENT = object_schema({
     "evidence": {**TEXTS, "minItems": 1},
 })
 ANNOTATION_SCHEMA = object_schema({
-    "job_key": TEXT, "movie_id": TEXT, "tmdb_id": {"type": "integer", "minimum": 1},
+    "job_key": TEXT, "movie_id": TEXT, "tmdb_id": {"type": ["integer", "null"], "minimum": 1},
     "prompt_title": TEXT, "confidence": {"enum": ["low", "medium", "high"]},
     "actability": object_schema({**COMPONENT["properties"], "gestures": TEXTS}),
     "recognition": COMPONENT, "reason": TEXT, "uncertainties": TEXTS,
@@ -90,7 +90,19 @@ def snapshot_input(db, movie):
         "AND r.path='/movie/'||i.external_id ORDER BY r.id DESC LIMIT 1",
         (movie["id"],)).fetchone()
     if not row:
-        return None
+        sources = [dict(raw=json.loads(r["raw_json"]), issues=json.loads(r["issues_json"]))
+                   for r in db.execute(
+                       "SELECT raw_json,issues_json FROM source_rows WHERE movie_id=? "
+                       "ORDER BY source_sha,row_number", (movie["id"],))]
+        if not sources:
+            return None
+        return {
+            "movie": {key: movie[key] for key in ("id", "title", "year", "language")},
+            "tmdb_id": None, "tmdb": {}, "source_rows": sources,
+            "snapshot": {"source_sha256": catalog.digest(catalog.dump(sources))},
+            "source_only": True,
+            "recognition_must_be_unknown": any(source["issues"] for source in sources),
+        }
     payload = json.loads(row["body"])
     if str(payload.get("id")) != row["external_id"]:
         raise ValueError("Trusted snapshot disagrees with native identity.")
@@ -112,6 +124,7 @@ def snapshot_input(db, movie):
                             "ORDER BY source_sha,row_number", (movie["id"],))],
         "snapshot": {key: row[key] for key in ("fetched_at", "request_key", "body_sha256")}
         | {"response_id": row["id"]},
+        "recognition_must_be_unknown": not bool(payload.get("release_date")),
     }
 
 
@@ -125,10 +138,11 @@ def prepare(db, seeds, limit, profile, adapter_sha="unconfigured", retry=False):
             continue
         context = snapshot_input(db, movie)
         if (not context or str(context["tmdb_id"]) in native or context["tmdb"].get("adult")
-                or context["tmdb"].get("original_language") != "te"):
+                or (not context.get("source_only") and context["tmdb"].get("original_language") != "te")):
             continue
         release = context["tmdb"].get("release_date", "")
-        if not release or release > str(catalog.dt.date.today()):
+        if (release and release > str(catalog.dt.date.today())) or (
+                movie["year"] is not None and movie["year"] > catalog.dt.date.today().year):
             continue
         candidates.append(context)
     candidates.sort(key=lambda c: (-c["tmdb"].get("vote_count", 0), c["movie"]["id"]))
@@ -159,6 +173,10 @@ def request_for(job, stage, proposal=None):
     request = {"protocol": job["protocol"], "profile": job["profile"],
                "stage": stage, "job_key": job["job_key"], "input": context,
                "instructions": INSTRUCTIONS, "output_schema": ANNOTATION_SCHEMA}
+    request["allowed_evidence"] = (
+        ["movie." + key for key in context["movie"]]
+        + ["tmdb." + key for key in context["tmdb"]]
+        + (["source_rows"] if context["source_rows"] else []))
     if stage == "review":
         request.update(
             proposal=proposal, proposal_sha256=catalog.digest(catalog.dump(proposal)),
@@ -235,6 +253,8 @@ def validate_output(request, output):
         raise ValueError("Known actability requires a gesture route.")
     if any(output[name]["value"] is None for name in DIMENSIONS) and not output["uncertainties"]:
         raise ValueError("Unknown dimensions require explicit uncertainties.")
+    if context.get("recognition_must_be_unknown") and output["recognition"]["value"] is not None:
+        raise ValueError("Identity/year uncertainties require withholding recognition.")
 
 
 def invoke(db, job, request, adapter, timeout):
@@ -370,9 +390,9 @@ def promoted_reviews(db):
         components = {
             name: {**proposal[name], "method": "llm-" + proposal[name]["basis"]}
             for name in DIMENSIONS}
-        reviews[str(context["tmdb_id"])] = {
+        reviews[context["movie"]["id"]] = {
             "title": proposal["prompt_title"], "year": context["movie"]["year"],
-            "tmdb_id": context["tmdb_id"], "difficulty": {**components, "reason": proposal["reason"]},
+            "difficulty": {**components, "reason": proposal["reason"]},
             "confidence": proposal["confidence"], "source": "Explicitly promoted LLM annotation and model review",
             "evidence": context["snapshot"],
             "automation": {
@@ -385,6 +405,8 @@ def promoted_reviews(db):
                 "human_verified": False,
             },
         }
+        if context["tmdb_id"] is not None:
+            reviews[context["movie"]["id"]]["tmdb_id"] = context["tmdb_id"]
     return reviews
 
 

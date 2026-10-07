@@ -156,6 +156,26 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT count(*) FROM matches WHERE status='provider_error'").fetchone()[0], 1)
         self.assertEqual(self.db.execute("SELECT count(*) FROM matches WHERE status='linked'").fetchone()[0], 1)
 
+    def test_invalid_imdb_id_is_cached_and_falls_back_to_exact_title_year(self):
+        client = self.client(provider="tmdb")
+        _, receipt = client.save("/movie/42", {}, (200, catalog.dump({"imdb_id": "bad-id"})))
+        catalog.record_match(self.db, self.movie["id"], "tmdb", receipt, "hydrated", "Fixture.")
+        payloads = [
+            Response({"Response": "False", "Error": "Incorrect IMDb ID."}),
+            Response({"Response": "True", "Title": "Eega", "Year": "2012",
+                      "Language": "Telugu", "Type": "movie", "imdbID": "tt2258337"}),
+        ]
+        omdb = self.client()
+        with patch.object(catalog.urllib.request, "urlopen", side_effect=payloads) as request:
+            catalog.hydrate_omdb(self.db, omdb, [self.movie])
+            catalog.hydrate_omdb(self.db, omdb, [self.movie])
+            self.assertIsNotNone(omdb.cached("/", {"i": "bad-id", "plot": "full"}))
+            self.assertEqual(request.call_count, 2)
+        self.assertEqual(self.db.execute(
+            "SELECT external_id FROM identities WHERE provider='omdb'").fetchone()[0], "tt2258337")
+        self.assertEqual(self.db.execute(
+            "SELECT count(*) FROM matches WHERE provider='omdb' AND status='needs_review'").fetchone()[0], 1)
+
     def test_request_budget_and_missing_key(self):
         with self.assertRaises(catalog.APIError):
             catalog.Client(self.db, "tmdb", "", delay=0).get("/discover/movie")

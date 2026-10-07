@@ -21,10 +21,14 @@ python3 -m dev.movies --tmdb --max-calls 100
 python3 -m dev.movies --tmdb-sources --max-calls 500
 # Earlier decades can be discovered independently:
 python3 -m dev.movies --tmdb --start-year 1931 --end-year 1999
+# Quota-aware all-years discovery, hydration and Gemini annotation:
+python3 -m dev.movies.maintenance run
+# Install daily 11:00 local maintenance on this Mac:
+python3 -m dev.movies.maintenance install
 npm run test:movies
 ```
 
-Set `OMDB_API_KEY` and/or `TMDB_API_KEY` in `.env`. They are **different services**:
+Set `OMDB_API_KEY`, `TMDB_API_KEY` and `GEMINI_API_KEY` in `.env`. They are **different services**:
 an OMDb key will not authenticate with TMDB. TMDB accepts its v3 API key or its
 read-access bearer token. `TMDB_READ_TOKEN` is used when `TMDB_API_KEY` is empty.
 Environment variables take precedence over `.env`.
@@ -50,6 +54,8 @@ Identical requests within a batch share one live request and response receipt.
 OMDb's per-record `Error getting data.` response is logged and retained as an
 auditable `provider_error`; other records can proceed. These records are skipped
 on ordinary reruns and retried only with explicit `--refresh`.
+An `Incorrect IMDb ID.` result is negatively cached and retained for identity
+review; hydration falls back to exact title/year without stopping other movies.
 
 TMDB discovers by primary release date, one calendar month at a time, paging all
 results. There is no popularity floor. Adult/video entries are preserved for
@@ -63,8 +69,11 @@ cached field locally; only genuinely uncached endpoints require new calls.
 
 `coverage` records dated, completed scopes with response IDs and counts.
 The catalog is **not** claimed to be a complete filmography: TMDB omissions,
-undated films, Telugu dubs originally in another language and future releases
-need separate strategies. Refresh discovery explicitly to pick up late additions.
+Telugu dubs originally in another language and missing provider entries need
+separate strategies. Scheduled maintenance also scans every Telugu-original
+TMDB page without a date restriction, preserving undated and future entries.
+The 2000+ cutoff is a future UI preset, not a limit on scheduled indexing.
+Refresh discovery explicitly to pick up late additions.
 OMDb can enrich named titles/IMDb IDs, but cannot enumerate all Telugu releases.
 
 CSV identities use source hash + record ordinal: apparent duplicates are retained
@@ -111,6 +120,41 @@ There are 159 complete editorial difficulty ratings and 4,894 records without
 a final score, including nine reviews with unresolved familiarity. OMDb remains
 paused at its persistent daily safety ceiling.
 
+### Progressive runs: 7 October 2026
+
+The next all-years run grew the store to 5,601 records, with 3,682 TMDB and
+800 OMDb identities and 8,148 raw provider responses. It stopped after its
+1,000-request TMDB run budget; OMDb stopped on an invalid IMDb ID, now handled
+by the exact-title fallback. These counts are a checkpoint, not a live total.
+The first successful native Gemini run annotated 40 movies in two Flash
+batches, then reviewed them together with Pro. It promoted 39 approvals and
+retained one rejected proposal, without replacing editorial reviews.
+
+## Daily maintenance and weekly refresh
+
+`maintenance.py` resumes dated scopes from 1931, scans all Telugu-original
+entries, hydrates native details, reconciles supplied source records and enriches
+known titles with OMDb. Daily ceilings are 5,000 TMDB, 950 OMDb and 1,000 Gemini
+generation attempts, with durable UTC-day reservations before network calls.
+Failures and schema retries consume budget. External use of these keys cannot
+be counted by this local ledger; cross-machine quota coordination is backlog.
+
+Once backfill finishes, provider discovery/hydration refreshes weekly. A refresh
+can span multiple quota days without restarting its oldest scopes. Pending
+annotations still run daily between refresh cycles. Errors, changing discovery
+pagination and the TMDB 500-page cap prevent an unsupported exhaustion claim.
+All original raw snapshots and failure receipts remain available.
+
+The macOS LaunchAgent runs at 11:00 local and at login/load for catch-up, using
+absolute interpreter/project paths and reading ignored `.env` at runtime.
+It requires this Mac and the user login session; it is not a hosted scheduler.
+Sleeping calendar events are coalesced by launchd. Inspect registration using
+`launchctl print gui/$(id -u)/org.arcade.movies.maintenance`; logs are in
+`.local/maintenance/stdout.log` and `stderr.log`. Uninstall explicitly with
+`python3 -m dev.movies.maintenance uninstall`. A shared filesystem lock prevents
+overlapping maintenance/Gemini runs; do not run ordinary catalog exports alongside
+them. Installer flags expose provider budgets, refresh interval and Gemini cap.
+
 ## Difficulty rubric: `charades-v1`
 
 Audience: Telugu-film-aware casual adult players. Rules: no speaking, mouthing,
@@ -156,10 +200,30 @@ replaces editorial reasoning.
 ## LLM annotation and review
 
 `llm_annotation.py` automates a separate annotation inference and critical review
-inference using the existing rubric. The provider connection is intentionally
-not implemented until endpoint, authentication and model details are supplied;
-that integration is recorded in `BACKLOG.md`. No LLM calls occur in an ordinary
-catalog build or offline preparation.
+inference using the existing rubric. The provider-neutral adapter remains
+available; `gemini_annotation.py` implements the configured native Gemini
+connection. No LLM calls occur in an ordinary catalog build or offline preparation.
+
+```sh
+# Annotate existing records; model-review approvals activate automatically:
+python3 -m dev.movies.gemini_annotation --limit 10000 --daily-calls 1000
+# Bounded acceptance run, or retain approvals without activating them:
+python3 -m dev.movies.gemini_annotation --limit 40 --no-promote
+```
+
+Native batches use `gemini-3.8-flash` for annotation and
+`gemini-3.1-pro-preview` for separate critical review. At most two requests run
+simultaneously. Batch sizing targets 35% of the limiting input/output capacity,
+accepts 20–50%, and adapts from measured output and thinking usage. It does not
+pad prompts to meet a token target. Exact count/order/identity and output schemas
+are checked locally. Invalid/truncated generations recursively halve to single
+movies, with at most three singleton attempts per run; HTTP/auth/quota failures
+stop the provider rather than triggering expensive batch-splitting retries.
+Reviews requesting revisions can be retried up to three successful proposals;
+human-review decisions are not automatically revised. Native batch envelopes,
+usage, per-movie projections and every attempted call are durably indexed.
+Unknown-outcome calls are not repeated without `--recover-interrupted`, which
+warns that earlier calls may already have been billed.
 
 ```sh
 # Prepare five real, snapshot-bound requests without calling any model:
@@ -181,8 +245,10 @@ python3 -m dev.movies.llm_annotation promote --all-reviewed
 
 The queue prioritizes cached vote counts for review order **only**, never for
 rating values. It excludes curated editorial identities (including incomplete
-reviews), untrusted candidates, adult films, future/undated releases and movies
-without a trusted Telugu-original TMDB snapshot. It uses preserved source fields,
+reviews), untrusted candidates, adult films and future releases. Source-only
+records use preserved CSV fields and a source fingerprint, never a fabricated
+TMDB identity. Undated native films and flagged source records must withhold
+recognition; uncertain dimensions cannot produce a final difficulty. It uses preserved source fields,
 native titles/aliases, overview, genres, credits and global metrics without any
 new TMDB/OMDb request. Original full provider payloads remain in the catalog.
 
@@ -255,6 +321,13 @@ trusted full payload, response ID, fetch timestamp and HTTP status. Unresolved
 candidate matches never become trusted provider data. The separate
 `responses.jsonl` retains every raw snapshot, including candidates and errors.
 `manifest.json` includes pending/reviewed annotation counts and discovery scopes.
+`periods/index.json` indexes lossless per-movie JSONL files grouped in natural
+10-, 5-, 2- or 1-year periods according to actual UTF-8 size (8 MiB default).
+Crowded years split into numbered files; oversized single records are explicitly
+flagged. Unknown years have their own partitions. Content-addressed filenames
+and index-last publication preserve the previous generation on publication
+failure. SQLite remains the one authoritative cache; partitions are exports,
+not independent databases. Full annotation and provider data stay on each movie.
 It also records linked movie counts per provider, each provider's latest run
 status, live-call count and stopping reason. OMDb quota-limited hydration remains
 explicitly partial even when a later offline rebuild succeeds.
@@ -263,6 +336,8 @@ explicitly partial even when a later offline rebuild succeeds.
 
 `catalog.py` contains the coupled ingestion, identity, cache and annotation flow;
 `__main__.py` is the module entry point. `sources/` preserves supplied inputs,
+`maintenance.py` owns scheduling/quota cursors, `gemini_annotation.py` native
+batching, `llm_annotation.py` validation/audits, and `partitions.py` period exports.
 `editorial/` holds versioned review definitions, and `.local/` holds the private
 SQLite system of record and regenerable `export/` snapshots. Do not commit
 `.local/` or credentials. The source schema and original CSV bytes are unchanged

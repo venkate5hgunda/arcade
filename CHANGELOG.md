@@ -3,6 +3,31 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — All-years movie maintenance and Gemini review
+
+- Added resumable daily all-years TMDB discovery, including undated/future
+  records, native hydration and OMDb enrichment, transitioning to weekly refresh.
+- Added a local macOS 11:00 LaunchAgent, overlap locking, durable daily budgets
+  and explicit provider/coverage failures; invalid IMDb IDs now use audited
+  exact-title/year fallback rather than blocking the rest of the catalog.
+- Connected batched `gemini-3.8-flash` annotation and
+  `gemini-3.1-pro-preview` critical review with two concurrent calls, adaptive
+  token sizing, schema-size retries and a 1,000-generation daily budget.
+- Retained native model receipts, usage, per-rating reasons and uncertainty;
+  source-only and undated records can be reviewed without invented identities.
+- Exported lossless, size-aware year-period files with atomic content-addressed
+  publication; SQLite remains authoritative. The first live batch promoted 39
+  model-reviewed proposals and preserved one rejection and editorial precedence.
+
+## 2026-10-07 — Multiplayer Mafia
+
+- Added a complete 5–10 player online social-deduction game with Mafia, town,
+  Doctor and Detective roles, private night actions, discussion, voting,
+  elimination, faction wins, reconnect and replay.
+- Added original illustrated artwork, responsive controls, distinct game icon,
+  rules/help and offline asset registration. Private snapshots keep other roles
+  and actions hidden from peers; the browser host remains trusted.
+
 ## 2026-10-04 — Flexible game interfaces and Hangman's word garden
 
 - Established opt-in game interface tokens and action/panel primitives, with
