@@ -101,7 +101,7 @@ export const GAMES = [
     players: { min: 5, max: 10, type: 'group' },
     category: 'Party',
     color: '#c34cba',
-    icon: 'game-icons:spy',
+    icon: 'game-icons:mafia',
     description: 'A moonlit social-deduction mystery for 5–10 friends in a private online room. Investigate, protect, debate, vote.',
   },
   {
