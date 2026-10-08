@@ -37,7 +37,9 @@ export async function loadApprovedMovies(fetcher = fetch) {
         typeof movie.title !== 'string' || !movie.title.trim() ||
         !(movie.year === null || Number.isInteger(movie.year)) ||
         !Number.isInteger(movie.difficulty) || movie.difficulty < 1 || movie.difficulty > 5 ||
-        !['editorial', 'llm_reviewed'].includes(movie.approval)) {
+        !['editorial', 'llm_reviewed'].includes(movie.approval) ||
+        !(movie.cast === undefined || (Array.isArray(movie.cast) && movie.cast.every(name => typeof name === 'string' && name.trim()))) ||
+        !(movie.summary === undefined || (typeof movie.summary === 'string' && movie.summary.trim()))) {
       throw new Error('Invalid approved movie record.');
     }
     ids.add(movie.id);
@@ -142,9 +144,47 @@ export function movieSetupError(movies, values) {
   return filterMovies(movies, values).length ? '' : 'No approved movies match these filters. Choose other years or difficulty.';
 }
 
+const CREDIT_LINKS = {
+  tmdb: ['TMDB', 'https://www.themoviedb.org/'],
+  omdb: ['OMDb', 'https://www.omdbapi.com/'],
+  source: ['Telugu movie dataset', null],
+};
+
+export function movieCast(movie) {
+  const cast = Array.isArray(movie?.cast) ? movie.cast : String(movie?.cast ?? '').split(',');
+  return cast.map(name => name.trim()).filter(Boolean).slice(0, 3);
+}
+
+function creditLink(source, movie) {
+  if (source === 'wikipedia') {
+    const title = movie.credits?.wikipedia;
+    return title ? `<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(' ', '_'))}" target="_blank" rel="noopener noreferrer">Wikipedia</a> (CC BY-SA)` : 'Wikipedia (CC BY-SA)';
+  }
+  const [label, url] = CREDIT_LINKS[source] ?? [];
+  if (!label) return '';
+  return url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
+}
+
+/** Cast chips, a short summary and the source credit for a movie card. */
+export function movieBrief(movie, { compact = false } = {}) {
+  if (!movie) return '';
+  const cast = movieCast(movie);
+  const summary = movie.summary ?? movie.story;
+  if (!cast.length && !summary) return '';
+  const credits = [...new Set([movie.credits?.cast, movie.credits?.summary].filter(Boolean))]
+    .map(source => creditLink(source, movie)).filter(Boolean);
+  const source = movie.source ? `<a href="${escapeHTML(movie.source)}" target="_blank" rel="noopener noreferrer">Wikipedia</a>` : '';
+  const credit = credits.length ? credits.join(' · ') : source;
+  return `<div class="movie-brief${compact ? ' movie-brief-compact' : ''}">
+    ${cast.length ? `<div class="movie-brief-cast" aria-label="Starring"><span class="movie-brief-label">Starring</span>${cast.map(name => `<span class="movie-brief-chip">${escapeHTML(name)}</span>`).join('')}</div>` : ''}
+    ${summary ? `<p class="movie-brief-summary">${escapeHTML(summary)}</p>` : ''}
+    ${credit ? `<p class="movie-brief-credit">via ${credit}</p>` : ''}
+  </div>`;
+}
+
 export function movieDetails(movie) {
   if (!movie) return '';
-  const starter = movie.story ? `<p>${escapeHTML(movie.cast)}</p><p>${escapeHTML(movie.story)}</p>` : '';
+  const starter = movieBrief(movie);
   const rating = movie.difficulty ? `<p>Difficulty ${movie.difficulty}/5 · ${DIFFICULTIES[movie.difficulty - 1]} · ${movie.approval === 'editorial' ? 'Editorial' : 'Model approved'}</p>
     <details><summary>Why this rating?</summary><p>${escapeHTML(movie.reason)}</p>
     ${['actability', 'recognition', 'title_complexity'].map(key => {

@@ -3,6 +3,22 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-08 — Movie cast and summaries; Wikidata catalogue growth
+
+- Dumb Charades: the actor's card shows "Starring" chips for the top three
+  billed actors and a one-sentence summary under the title; the post-turn
+  reveal (and Imposter results) show the same, with a source credit.
+- Public movie records gain `cast`, `summary` and `credits`. Precedence: TMDB,
+  then OMDb, then Wikipedia, then the supplied dataset (cast only).
+- New `dev/movies/wikidata.py`: a Wikidata census of Telugu films links
+  existing records by native ID or unique exact title/year, adds new TMDB-backed
+  films, and stores full Wikipedia extracts and pageviews. It runs daily inside
+  maintenance; ambiguous matches go to a review queue, never merged.
+- Annotation evidence for older, source-only films now includes Wikipedia and
+  OMDb facts, so they can finally be rated. Trivial CSV issues no longer force
+  "unknown" recognition. Ratings survive evidence-only refreshes (flagged)
+  instead of disappearing from the game.
+
 ## 2026-10-08 — Live-linked setup controls
 
 - `renderSetup` now re-syncs dependent fields on every change: range sliders

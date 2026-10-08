@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { loadApprovedMovies, filterMovies, uniquePrompts, movieSetupError, escapeHTML, movieDetails, difficultyLabel, movieFilterFields } from '../js/movie-library.js';
+import { loadApprovedMovies, filterMovies, uniquePrompts, movieSetupError, escapeHTML, movieDetails, movieBrief, difficultyLabel, movieFilterFields } from '../js/movie-library.js';
 import { validCheckpoint as validCharades } from '../games/dumb-charades.js';
 import { validCheckpoint as validImposter } from '../games/imposter.js';
 
@@ -75,4 +75,16 @@ test('year slider and multiple difficulty choices preserve inclusive boundaries 
   assert.equal(difficultyLabel(['1', '3']), 'Easy + Moderate');
   assert.deepEqual(movieFilterFields({ yearRange: [1980, 2000], difficulties: ['1', '3'] }, movies).map(field => field.default),
     [[1980, 2000], ['1', '3']]);
+});
+
+test('movie brief shows top three cast, summary and per-source credits safely', () => {
+  const html = movieBrief({
+    cast: ['A', 'B', 'C', 'D<script>'], summary: 'Plot <b>here</b>.',
+    credits: { cast: 'tmdb', summary: 'wikipedia', wikipedia: 'Eega (film)' },
+  });
+  assert.equal((html.match(/movie-brief-chip/g) || []).length, 3);
+  assert.ok(!html.includes('<b>') && html.includes('Plot &lt;b&gt;'));
+  assert.ok(html.includes('https://en.wikipedia.org/wiki/Eega_(film)') && html.includes('CC BY-SA'));
+  assert.ok(html.includes('themoviedb.org'));
+  assert.equal(movieBrief({ title: 'No details' }), '');
 });

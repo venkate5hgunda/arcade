@@ -199,8 +199,12 @@ class LLMAnnotationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "stale"):
             llm.promote(self.db, [job["job_key"]])
         catalog.annotate(self.db, [])
-        self.assertNotIn("automation", self.latest_annotation())
+        self.assertTrue(self.latest_annotation()["automation"]["evidence_drift"],
+                        "a refreshed snapshot for the same identity keeps the reviewed rating")
         self.assertNotEqual(job["job_key"], self.jobs()[0]["job_key"])
+        self.db.execute("UPDATE movies SET title='A Different Movie' WHERE id='tmdb:42'")
+        catalog.annotate(self.db, [])
+        self.assertNotIn("automation", self.latest_annotation())
 
     def test_rejection_requires_explicit_retry(self):
         job = self.jobs()[0]

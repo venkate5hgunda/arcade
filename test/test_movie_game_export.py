@@ -26,9 +26,11 @@ class GameExportTests(unittest.TestCase):
         self.assertEqual(records[0]["difficulty"], 2)
         self.assertEqual(set(records[0]), {
             "id", "title", "year", "difficulty", "approval", "confidence",
-            "rubric", "reason", "components", "genres"})
+            "rubric", "reason", "components", "genres", "summary", "credits"})
+        self.assertEqual(records[0]["credits"], {"summary": "tmdb"})
         serialized = catalog.dump(records)
-        for private in ("Synthetic test evidence.", "future_field", "source_rows", "body_sha256"):
+        self.assertEqual(records[0]["summary"], "Synthetic test evidence.")
+        for private in ("future_field", "source_rows", "body_sha256"):
             self.assertNotIn(private, serialized)
         index = game_export.publish(self.db, self.path / "public")
         self.assertEqual(index["records"], 1)
@@ -41,14 +43,17 @@ class GameExportTests(unittest.TestCase):
         catalog.annotate(self.db, [])
         self.assertEqual(game_export.approved_movies(self.db), [])
 
-    def test_current_complete_model_approval_is_revoked_after_evidence_changes(self):
+    def test_evidence_drift_keeps_rating_but_identity_change_revokes_it(self):
         job = self.jobs()[0]
         self.run_jobs([job])
         llm.promote(self.db, [job["job_key"]])
         catalog.annotate(self.db, [])
         self.assertEqual(len(game_export.approved_movies(self.db)), 1)
-        self.payload["overview"] = "Changed evidence revokes the prior score."
+        self.payload["overview"] = "Refreshed overview."
         self.add_snapshot()
+        catalog.annotate(self.db, [])
+        self.assertEqual(game_export.approved_movies(self.db)[0]["summary"], "Refreshed overview.")
+        self.db.execute("UPDATE movies SET title='A Different Movie' WHERE id='tmdb:42'")
         catalog.annotate(self.db, [])
         self.assertEqual(game_export.approved_movies(self.db), [])
 

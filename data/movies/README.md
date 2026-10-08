@@ -11,13 +11,15 @@ provider entries and future releases are excluded. Recognition is an audience
 hypothesis, not a measured popularity fact.
 
 Each public record contains identity, prompt title/year, rating, rubric, approval
-kind, confidence, per-component reasoning/gestures and genre labels. Private
-source rows, provider response bodies, synopses, credentials and model request
-receipts are not published. All original evidence and revision history stay in
+kind, confidence, per-component reasoning/gestures, genre labels and, when known,
+`cast` (top three), a one-sentence `summary` and `credits` (`{cast, summary,
+wikipedia}` sources for attribution). Private source rows, full provider response
+bodies, credentials and model request receipts are not published. All original evidence and revision history stay in
 the ignored local SQLite system of record.
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
-Metadata source: https://www.themoviedb.org/ .
+Metadata sources: https://www.themoviedb.org/ , https://www.omdbapi.com/ ,
+Wikidata (CC0) and English Wikipedia (CC BY-SA; article named per record).
 Usage terms: https://developer.themoviedb.org/docs/faq .
 
 Dumb Charades and Imposter load these partitions, support year/difficulty

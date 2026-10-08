@@ -121,7 +121,7 @@ test('charades only shows movie details after the turn ends', async () => {
     const card = container.children[0].querySelector('.game-stage').children[0];
     assert.match(card.innerHTML, new RegExp(movie.story));
     assert.match(card.innerHTML, new RegExp(String(movie.year)));
-    assert.ok(card.innerHTML.includes(movie.cast));
+    assert.ok(card.innerHTML.includes(movie.cast.split(',')[0]));
     game.dispose();
 
     state = { ...base, phase: 'acting', deadline: Date.now() + 60_000 };
@@ -129,8 +129,8 @@ test('charades only shows movie details after the turn ends', async () => {
     const actingGame = await charades.render(actingContainer, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const actingCard = actingContainer.children[0].querySelector('.game-stage').children[0];
     assert.ok(actingCard.innerHTML.includes(movie.title));
-    assert.ok(!actingCard.innerHTML.includes(movie.story));
-    assert.ok(!actingCard.innerHTML.includes(movie.cast));
+    assert.ok(actingCard.innerHTML.includes(movie.story), 'the actor sees the plot to help mime it');
+    for (const name of movie.cast.split(',').slice(0, 3)) assert.ok(actingCard.innerHTML.includes(name.trim()));
     actingGame.dispose();
 
     state = { ...base, category: 'classic', phase: 'scoring', word: 'SWIMMING', wordsUsed: ['SWIMMING'] };
@@ -182,7 +182,7 @@ test('imposter resumed reveals stay face-down; only results show film details', 
     resultCard.querySelector('#submitVote').handlers.get('click')();
     assert.equal(finished, 1);
     assert.ok(resultCard.innerHTML.includes(movie.story));
-    assert.ok(resultCard.innerHTML.includes(movie.cast));
+    assert.ok(resultCard.innerHTML.includes(movie.cast.split(',')[0]));
     assert.ok(resultCard.innerHTML.includes(String(movie.year)));
     resultGame.dispose();
   } finally {

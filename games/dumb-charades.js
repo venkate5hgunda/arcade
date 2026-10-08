@@ -7,7 +7,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
-import { escapeHTML, loadMovieScreen, filterMovies, uniquePrompts, movieFilterFields, movieSetupError, movieDetails, difficultyLabel } from '../js/movie-library.js';
+import { escapeHTML, loadMovieScreen, filterMovies, uniquePrompts, movieFilterFields, movieSetupError, movieDetails, movieBrief, difficultyLabel } from '../js/movie-library.js';
 
 const WORDS = [
   'MOVIE', 'BRUSH TEETH', 'ELEPHANT', 'SWIMMING', 'COOKING', 'DRIVING',
@@ -139,10 +139,11 @@ export default {
           <div class="dc-acting">
             <h3>Act This Out:</h3>
             <p class="dc-word">${escapeHTML(currentWord)}</p>
-            <p class="dc-hint">No speaking! No mouthing words!</p>
             <div class="dc-timer-display">${timeLeft}s</div>
             <button class="dc-btn" id="guessed">Team Guessed It!</button>
             <button class="dc-btn dc-btn-secondary" id="skip">Skip</button>
+            <p class="dc-hint">No speaking! No mouthing words!</p>
+            ${movieBrief(movieFor(category, currentWord, selectedMovies), { compact: true })}
           </div>`;
         card.querySelector('#guessed').addEventListener('click', () => guessed(true));
         card.querySelector('#skip').addEventListener('click', () => guessed(false));
