@@ -508,38 +508,125 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
 .setup-options { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .setup-discrete-options { display: grid; grid-template-columns: 1fr; width: 100%; max-width: 320px; margin: 0 auto; }
 .setup-discrete-readout { color: var(--text); font-weight: 800; font-size: 1.1rem; }
-.setup-discrete-options input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+@property --clock-track { syntax: "<length>"; inherits: true; initial-value: 12px; }
+/* Bars thicken in place while pressed; no protruding thumb or knob. */
+.setup-slider-bar,
+.setup-range-track {
+  --bar: 10px;
+  --bar-active: 26px;
+  --grip: 28px;
+  position: relative;
+  height: 48px;
+  min-width: 0;
+  touch-action: pan-y;
+}
+.setup-slider-bar.engaged, .setup-slider-bar:has(:focus-visible),
+.setup-range-track.engaged, .setup-range-track:has(:focus-visible) { --bar: var(--bar-active); }
+.setup-slider-bar::before, .setup-slider-bar::after,
+.setup-range-track::before, .setup-range-track::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  height: var(--bar);
+  translate: 0 -50%;
+  border-radius: 999px;
+  pointer-events: none;
+  transition: height .42s cubic-bezier(.34, 1.56, .64, 1), box-shadow .3s ease;
+}
+.setup-slider-bar::before, .setup-range-track::before {
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+.setup-slider-bar::after, .setup-range-track::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, var(--bg)), var(--accent));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.setup-slider-bar::after { left: 0; width: calc(var(--grip) + var(--fill, 0) * (100% - var(--grip))); }
+.setup-range-track::after {
+  left: calc(var(--range-from, 0) * (100% - var(--grip)));
+  width: calc(var(--grip) + (var(--range-to, 1) - var(--range-from, 0)) * (100% - var(--grip)));
+}
+.setup-slider-bar.engaged::after, .setup-range-track.engaged::after {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), 0 6px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.setup-slider-bar:has(:focus-visible)::after, .setup-range-track:has(:focus-visible)::after {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+}
+.setup-slider-bar input, .setup-range-track input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 48px;
+  margin: 0;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+.setup-range-track input { pointer-events: none; }
+.setup-slider-bar input::-webkit-slider-runnable-track, .setup-range-track input::-webkit-slider-runnable-track { height: 48px; background: transparent; border: 0; }
+.setup-slider-bar input::-moz-range-track, .setup-range-track input::-moz-range-track { height: 48px; background: transparent; border: 0; }
+.setup-slider-bar input::-webkit-slider-thumb, .setup-range-track input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--grip);
+  height: 48px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.setup-slider-bar input::-moz-range-thumb, .setup-range-track input::-moz-range-thumb {
+  width: var(--grip);
+  height: 48px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .setup-slider-bar::before, .setup-slider-bar::after,
+  .setup-range-track::before, .setup-range-track::after { transition: none; }
+}
 .setup-options select { width: 100%; max-width: 320px; min-height: 48px; padding: 10px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font: inherit; }
 .setup-clock-options { flex-direction: column; align-items: center; gap: 10px; padding: 10px 0 14px; }
 .setup-clock {
   --clock-size: 216px;
-  --clock-track: 14px;
+  --clock-radius: calc(var(--clock-size) / 2 - 14px);
+  --clock-track: 12px;
   position: relative;
   width: var(--clock-size);
   height: var(--clock-size);
   border-radius: 50%;
   touch-action: none;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   outline: none;
+  transition: --clock-track .42s cubic-bezier(.34, 1.56, .64, 1);
 }
-.setup-clock.dragging { cursor: grabbing; }
+.setup-clock.dragging, .setup-clock.keyboard { --clock-track: 26px; }
 .setup-clock-track,
 .setup-clock-arc {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  mask: radial-gradient(farthest-side, transparent calc(100% - var(--clock-track) - 1px), #000 calc(100% - var(--clock-track)));
+  mask: radial-gradient(farthest-side,
+    transparent calc(var(--clock-radius) - var(--clock-track) / 2 - .5px),
+    #000 calc(var(--clock-radius) - var(--clock-track) / 2 + .5px),
+    #000 calc(var(--clock-radius) + var(--clock-track) / 2 - .5px),
+    transparent calc(var(--clock-radius) + var(--clock-track) / 2 + .5px));
   pointer-events: none;
 }
-.setup-clock-track { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.setup-clock-track { background: color-mix(in srgb, var(--text) 10%, transparent); }
 .setup-clock-arc {
   background: conic-gradient(
     color-mix(in srgb, var(--accent) 35%, transparent) 0deg,
     var(--accent) var(--clock-angle),
     transparent var(--clock-angle));
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent));
 }
 .setup-clock-arc--lapped {
   background: conic-gradient(
@@ -550,36 +637,36 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
 .setup-clock-tick {
   position: absolute;
   left: calc(50% - 2px);
-  top: calc(var(--clock-track) / 2 - 2px);
+  top: calc(var(--clock-size) / 2 - var(--clock-radius) - 2px);
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 35%, transparent);
-  transform-origin: 2px calc(var(--clock-size) / 2 - var(--clock-track) / 2 + 2px);
+  transform-origin: 2px calc(var(--clock-radius) + 2px);
   transform: rotate(var(--tick));
+  z-index: 1;
   pointer-events: none;
 }
+/* Rounded end cap of the arc, flush with the ring (not a protruding knob). */
 .setup-clock-knob {
   position: absolute;
-  left: calc(50% - 14px);
-  top: calc(var(--clock-track) / 2 - 14px);
-  width: 28px;
-  height: 28px;
+  left: calc(50% - var(--clock-track) / 2);
+  top: calc(var(--clock-size) / 2 - var(--clock-radius) - var(--clock-track) / 2);
+  width: var(--clock-track);
+  height: var(--clock-track);
   border-radius: 50%;
-  background: var(--bg);
-  border: 6px solid var(--accent);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 45%, #0003);
-  transform-origin: 14px calc(var(--clock-size) / 2 - var(--clock-track) / 2 + 14px);
+  background: var(--accent);
+  transform-origin: calc(var(--clock-track) / 2) calc(var(--clock-radius) + var(--clock-track) / 2);
   transform: rotate(var(--clock-angle));
-  transition: scale .15s ease;
-  z-index: 2;
   pointer-events: none;
 }
-.setup-clock.dragging .setup-clock-knob { scale: 1.15; }
-.setup-clock:focus-visible .setup-clock-knob { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 3px; }
+.setup-clock:not([data-turn="1"]) .setup-clock-knob { background: color-mix(in srgb, var(--accent) 70%, #fff); }
+.setup-clock.dragging .setup-clock-arc,
+.setup-clock.dragging .setup-clock-knob { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 55%, transparent)); }
+.setup-clock.keyboard .setup-clock-track { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .setup-clock-face {
   position: absolute;
-  inset: calc(var(--clock-track) + 16px);
+  inset: 34px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -609,7 +696,7 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
 .setup-clock-lap.done { background: color-mix(in srgb, var(--accent) 55%, transparent); }
 .setup-clock-lap.active { width: 24px; background: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
-  .setup-clock-knob, .setup-clock-lap { transition: none; }
+  .setup-clock, .setup-clock-lap { transition: none; }
 }
 .setup-year-range { display: grid; grid-template-columns: 1fr; width: 100%; gap: 4px; padding: 10px 16px; }
 .setup-range-readout {
@@ -622,46 +709,6 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
-.setup-range-track { position: relative; height: 48px; min-width: 0; }
-.setup-range-track::before {
-  content: "";
-  position: absolute;
-  inset: 20px 0;
-  border-radius: 8px;
-  background: linear-gradient(to right, var(--border) var(--range-from), var(--accent) var(--range-from), var(--accent) var(--range-to), var(--border) var(--range-to));
-}
-.setup-range-track input {
-  appearance: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 48px;
-  margin: 0;
-  background: transparent;
-  pointer-events: none;
-}
-.setup-range-track input::-webkit-slider-thumb {
-  appearance: none;
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--bg);
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 2px 8px #0003;
-  cursor: grab;
-  pointer-events: auto;
-}
-.setup-range-track input::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border: 3px solid var(--bg);
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 2px 8px #0003;
-  cursor: grab;
-  pointer-events: auto;
-}
-.setup-range-track input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 .setup-range-bounds { display: flex; justify-content: space-between; color: var(--text-soft); font-size: .8rem; }
 .setup-multi-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 .setup-option.setup-choice-chip { --level-accent: var(--accent); display: flex; align-items: center; gap: 7px; min-height: 48px; padding: 10px; font-size: .82rem; text-align: left; }

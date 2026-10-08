@@ -3,6 +3,13 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — Bars thicken in place while pressed
+
+- Removed protruding slider thumbs and the dial knob. Player sliders, the year
+  range and the rotary ring now show a rounded fill that springs from a slim bar
+  to a thick one in place while pressed (or focused by keyboard), then relaxes
+  on release. Thumb hit areas stay 28×48px for touch.
+
 ## 2026-10-07 — Fluid spring-physics setup controls
 
 - Added `js/motion.js`: a damped-spring animator (slight overshoot on settle)

@@ -132,13 +132,13 @@ test('setup collapses configuration, summarizes choices, and preserves customiza
     assert.equal(card.querySelector('.setup-preview').textContent, 'Players: 4 players · Style: Illustrated');
     const fields = card.querySelector('.setup-fields');
     assert.equal(fields.children[0].children.at(-1).textContent, 'Pass the device between turns.');
-    const input = fields.children[0].querySelector('.setup-options').children[1];
+    const input = fields.children[0].querySelector('.setup-options').children[1].children[0];
     assert.equal(input.value, '1');
     assert.equal(input.attributes['aria-valuetext'], '4 players');
     input.value = '0';
     input.listeners.input();
     assert.equal(card.querySelector('.setup-preview').textContent, 'Players: 3 players · Style: Illustrated');
-    assert.equal(fields.children[0].querySelector('.setup-options').children[1], input,
+    assert.equal(fields.children[0].querySelector('.setup-options').children[1].children[0], input,
       'slider input updates without replacing the focused control');
     card.querySelector('.setup-start-btn').listeners.click();
     assert.deepEqual(await result, { players: '3', style: 'illustrated' });
@@ -364,7 +364,7 @@ test('compact numeric sliders and categorical dropdowns keep each game allowed c
       ],
     });
     const card = stage.children[0], fields = card.querySelector('.setup-fields');
-    const slider = fields.children[0].querySelector('.setup-options').children[1];
+    const slider = fields.children[0].querySelector('.setup-options').children[1].children[0];
     slider.value = '2'; slider.listeners.input();
     const select = fields.children[1].querySelector('.setup-options').children[0];
     assert.equal(select.tag, 'select');
