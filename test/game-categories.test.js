@@ -107,7 +107,7 @@ test('charades only shows movie details after the turn ends', async () => {
     const container = dom.makeElement();
     let state = { ...base, phase: 'scoring' };
     const session = { get state() { return state; }, save(next) { state = next; } };
-    const game = await charades.render(container, { color: '#fff' }, { session });
+    const game = await charades.render(container, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const card = container.children[0].querySelector('.game-stage').children[0];
     assert.match(card.innerHTML, new RegExp(movie.story));
     assert.match(card.innerHTML, new RegExp(String(movie.year)));
@@ -116,7 +116,7 @@ test('charades only shows movie details after the turn ends', async () => {
 
     state = { ...base, phase: 'acting', deadline: Date.now() + 60_000 };
     const actingContainer = dom.makeElement();
-    const actingGame = await charades.render(actingContainer, { color: '#fff' }, { session });
+    const actingGame = await charades.render(actingContainer, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const actingCard = actingContainer.children[0].querySelector('.game-stage').children[0];
     assert.ok(actingCard.innerHTML.includes(movie.title));
     assert.ok(!actingCard.innerHTML.includes(movie.story));
@@ -125,7 +125,7 @@ test('charades only shows movie details after the turn ends', async () => {
 
     state = { ...base, category: 'classic', phase: 'scoring', word: 'SWIMMING', wordsUsed: ['SWIMMING'] };
     const classicContainer = dom.makeElement();
-    const classicGame = await charades.render(classicContainer, { color: '#fff' }, { session });
+    const classicGame = await charades.render(classicContainer, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const classicCard = classicContainer.children[0].querySelector('.game-stage').children[0];
     assert.ok(classicCard.innerHTML.includes('SWIMMING'));
     assert.ok(!classicCard.innerHTML.includes(movie.story));
@@ -146,7 +146,7 @@ test('imposter resumed reveals stay face-down; only results show film details', 
     let finished = 0;
     const session = { get state() { return state; }, save(next) { state = next; }, finish() { finished++; } };
     const container = dom.makeElement();
-    const game = await imposter.render(container, { color: '#fff' }, { session });
+    const game = await imposter.render(container, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const card = container.children[0].querySelector('.game-stage').children[0];
     assert.equal(state.phase, 'setup');
     assert.ok(!card.innerHTML.includes(movie.title));
@@ -162,7 +162,7 @@ test('imposter resumed reveals stay face-down; only results show film details', 
 
     state = { ...state, phase: 'vote', currentPlayer: 3, votes: [1, 0, 0, null] };
     const resultContainer = dom.makeElement();
-    const resultGame = await imposter.render(resultContainer, { color: '#fff' }, { session });
+    const resultGame = await imposter.render(resultContainer, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const resultCard = resultContainer.children[0].querySelector('.game-stage').children[0];
     assert.ok(!resultCard.innerHTML.includes(movie.story));
     resultCard.querySelector('#submitVote').handlers.get('click')(); // no selection yet

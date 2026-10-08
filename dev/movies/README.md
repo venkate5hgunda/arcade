@@ -34,8 +34,9 @@ read-access bearer token. `TMDB_READ_TOKEN` is used when `TMDB_API_KEY` is empty
 Environment variables take precedence over `.env`.
 Do not paste credentials into chat or commit `.env`. Use `npm start`, which
 blocks private files; generic static servers can expose `.env` and the database.
-The development server binds localhost. Game content is unchanged: catalog
-exports are intentionally not exposed to the browser until reviewed for play.
+The development server binds localhost. Private catalog exports are never
+served. Complete editorial and model-approved prompts are projected into
+`data/movies/` for Dumb Charades and Imposter; no human approval gate is required.
 
 ## Persistence and progressive coverage
 
@@ -191,9 +192,8 @@ it from global votes. Incomplete dimensions remain null with a bounded range.
 Curatorial receipt IDs refer to the original snapshot database, not arbitrary
 IDs on another development machine. Available local snapshots are verified by
 native path and fetch timestamp and include request/body hashes.
-All other titles are honestly marked `needs_review`; their final score is withheld.
-A Telugu-aware reviewer must inspect meanings, aliases and audience familiarity
-before these enter difficulty-filtered gameplay. Changes to this file append
+All other titles are honestly marked `needs_review`; their final score is withheld
+until annotation and review supply a complete, approved rating. Changes to this file append
 new annotation revisions on the next build; provider metadata never silently
 replaces editorial reasoning.
 
@@ -297,10 +297,39 @@ current source/identity/snapshot. Stale proposals cannot be promoted, and a late
 snapshot change removes stale automated scores on the next catalog rebuild while
 preserving their history. Curated editorial reviews always take precedence.
 Activated complete scores use status `llm_reviewed`, carry call IDs, model/profile
-provenance and `human_verified: false`, and still require gameplay review.
+provenance and `human_verified: false`. Per the gameplay policy, a complete
+model approval is sufficient: `gameplay_approved: true`, `review_required: false`.
+Incomplete scores remain withheld; a model approval does not fabricate a missing
+dimension and does not claim human verification.
 Unknown dimensions retain null final scores and bounded ranges. Code computes
 title complexity and the weighted final score; the model cannot choose them.
 The manifest separates `difficulty_editorial` from `difficulty_llm_reviewed`.
+
+## Public gameplay publication
+
+`npm run movies:publish` rebuilds current annotations and writes minimal public
+year-period partitions under `data/movies/`. Production catalog/maintenance/
+Gemini exports also refresh this projection automatically. Commit and push
+`data/movies/index.json` and its referenced partitions together to publish the
+snapshot remotely; the scheduler updates local assets but does not perform Git
+operations on an unattended developer worktree.
+
+Only complete editorial or promoted model-review-approved scores are included.
+Adult provider entries and future releases remain excluded. Public records
+include title/year, rating, rubric, approval kind, confidence, component
+reasoning/gestures and genres. Raw CSV rows, provider payloads, synopses, model
+requests and credentials remain private. Full source fidelity is preserved in
+SQLite and the ignored private exports, not duplicated into browser assets.
+
+Dumb Charades and Imposter load the approved library rather than the four-title
+starter set. Their configuration provides a 2000+ preset, all years, older films,
+custom inclusive year ranges and difficulty 1–5. Empty/invalid selections disable
+Start with an explanation. Equal title/year records share a prompt to avoid
+duplicate selection bias; every approved identity remains in the public files.
+Title/year labels distinguish remakes. Reasons remain hidden while acting or
+revealing roles and appear in expandable post-turn/post-round details.
+The service worker refreshes the index network-first and caches all referenced
+partitions before publishing a cached index, supporting complete offline play.
 
 ## Attribution and usage
 
@@ -338,6 +367,7 @@ explicitly partial even when a later offline rebuild succeeds.
 `__main__.py` is the module entry point. `sources/` preserves supplied inputs,
 `maintenance.py` owns scheduling/quota cursors, `gemini_annotation.py` native
 batching, `llm_annotation.py` validation/audits, and `partitions.py` period exports.
+`game_export.py` owns the minimal public gameplay projection.
 `editorial/` holds versioned review definitions, and `.local/` holds the private
 SQLite system of record and regenerable `export/` snapshots. Do not commit
 `.local/` or credentials. The source schema and original CSV bytes are unchanged

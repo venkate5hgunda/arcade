@@ -3,6 +3,19 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — Approved Telugu movies available in games
+
+- Published 4,613 complete approved movie records in public year-period files,
+  without raw source/provider payloads, synopses, credentials or model requests.
+- Made model approval sufficient for gameplay, preserving honest human-verification
+  labels and withholding incomplete/rejected ratings.
+- Connected Dumb Charades and Imposter to the full approved library, with 2000+,
+  all-years, older-film, custom timespan and difficulty filters.
+- Added explicit empty-selection/loading errors, safe text rendering, year-qualified
+  prompts, post-turn reasoning and generation-consistent offline caching.
+- Production maintenance exports refresh the local public projection; source fidelity
+  and immutable audit receipts remain in the private authoritative SQLite store.
+
 ## 2026-10-07 — All-years movie maintenance and Gemini review
 
 - Added resumable daily all-years TMDB discovery, including undated/future

@@ -738,7 +738,8 @@ def annotate(db, seeds):
             "reason": evidence["difficulty"]["reason"] if evidence else
             "Final rating withheld: title length alone cannot support a defensible charades rating.",
             "sources": [evidence["source"]] if evidence else ["Source title; not independently verified"],
-            "review_required": True,
+            "review_required": not complete,
+            "gameplay_approved": bool(complete and evidence),
         }
         if evidence and evidence.get("tmdb_id"):
             annotation["identity_basis"] = {"provider": "tmdb", "external_id": evidence["tmdb_id"]}
@@ -857,6 +858,9 @@ def export(db, directory, run_errors=None):
     temporary.write_text(json.dumps(manifest, indent=2) + "\n")
     temporary.replace(directory / "manifest.json")
     db.commit()
+    if directory.resolve() == DEFAULT_EXPORT.resolve():
+        from .game_export import publish
+        publish(db)
     return manifest
 
 

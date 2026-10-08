@@ -21,8 +21,9 @@
   actability with player outcomes; preserve rubric versions and reason history.
 - Resolve the nine explicitly uncertain familiarity estimates in the first
   native-ID-backed batch; continue reviewing prioritized cached identities.
-- Add a review workbench for unresolved identity matches and missing ratings;
-  publish only approved prompts to games, with safe rendering and attribution.
+- Add a review workbench for unresolved identity matches and missing ratings.
+  Complete editorial or model-approved prompts already enter games automatically;
+  human review is optional calibration, not a gameplay gate.
 - Add shared cross-machine provider quota tracking and hosted scheduling if the
   local Mac cannot provide sufficient uptime; exhaust newly required nested provider endpoints only when
   existing snapshots cannot supply the feature.
