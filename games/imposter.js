@@ -117,10 +117,18 @@ function setupFields(saved, movies) {
     {
       key: 'imposterRange', label: 'Imposters', type: 'range', min: 1, max: MAX_IMPOSTERS,
       default: [Math.max(1, Math.min(range[0], range[1], MAX_IMPOSTERS)) || 1, Math.max(1, Math.min(Math.max(range[0], range[1]), MAX_IMPOSTERS)) || 1],
-      format: ([low, high]) => low === high ? plural(low) : `${low}–${high} imposters, random`,
+      toggle: {
+        key: 'imposterRandom', label: 'Random',
+        default: saved.imposterRandom ?? String(range[0] !== range[1]),
+        lockedTitle: 'Add players to allow a random count',
+      },
+      limit: values => ({ max: maxImposters(Number(values.players)) }),
+      limitNote: (values, [, most]) => most < MAX_IMPOSTERS ?
+        `${values.players} players allow up to ${plural(most)}${most === 1 ? ' — add players for more.' : '.'}` : '',
+      format: ([low, high]) => low === high ? plural(low) : `${low}–${high} imposters`,
       valueText: count => plural(count), handleLabels: ['Fewest imposters', 'Most imposters'],
       boundLabels: ['1', String(MAX_IMPOSTERS)],
-      help: 'Put both ends together for an exact count, or spread them for a secret random count each round.',
+      help: 'Turn on Random to pick a secret count within a range each round.',
     },
     {
       key: 'intel', label: 'Imposters can see', type: 'multiple', when: values => values.mode === 'classic',
@@ -131,6 +139,8 @@ function setupFields(saved, movies) {
       ],
       default: Array.isArray(saved.intel) ? saved.intel.filter(item => INTEL.includes(item)) : [...INTEL],
       allLabel: 'Category + hint + team', noneLabel: 'Nothing',
+      optionState: (option, values) => option.value === 'team' && values.imposterRange[1] < 2 ?
+        { disabled: true, fixed: true, title: 'Only matters with two or more imposters' } : {},
       help: 'Turn things off to make it harder for imposters.',
     },
     {
@@ -141,22 +151,28 @@ function setupFields(saved, movies) {
       ],
       default: categories.length ? categories : [...WORD_CATEGORY_IDS],
       allLabel: 'Everything', noneLabel: 'None', format: list => list.length === WORD_CATEGORY_IDS.length && !list.includes(MOVIES) ? 'All words' : '',
+      error: values => categoryError(movies, values),
       help: 'Each round picks a category at random, then a word from it.',
     },
-    ...movieFilterFields(saved, movies, values => values.categories?.includes(MOVIES)),
+    ...movieFilterFields(saved, movies, values => values.categories?.includes(MOVIES), movieSettings),
   ];
 }
 
+function categoryError(movies, values) {
+  if (!values.categories?.length) return 'Pick at least one word category.';
+  if (values.mode === 'pair' && values.categories.length === 1 && values.categories[0] === MOVIES &&
+      uniquePrompts(filterMovies(movies, movieSettings(values))).length < 2) return 'Pair mode needs at least two matching movies, or another category.';
+  return '';
+}
+
+// The setup form prevents these live; this guards saved or scripted settings.
 export function setupError(movies, values) {
   const players = Number(values.players);
-  if (!values.categories?.length) return 'Pick at least one word category.';
+  const categoryProblem = categoryError(movies, values);
+  if (categoryProblem) return categoryProblem;
   const limit = maxImposters(players);
   if (values.imposterRange[1] > limit) return `With ${players} players, use at most ${limit} imposter${limit === 1 ? '' : 's'}.`;
-  const movieError = movieSetupError(movies, movieSettings(values));
-  if (movieError) return movieError;
-  if (values.mode === 'pair' && values.categories.length === 1 && values.categories[0] === MOVIES &&
-      uniquePrompts(filterMovies(movies, movieSettings(values))).length < 2) return 'Pair mode needs at least two matching movies.';
-  return '';
+  return movieSetupError(movies, movieSettings(values));
 }
 
 export default {

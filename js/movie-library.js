@@ -94,7 +94,9 @@ export function uniquePrompts(movies) {
   return [...new Map(movies.map(movie => [movie.prompt ?? movie.title, movie])).values()];
 }
 
-export function movieFilterFields(saved = {}, movies = [], when = values => values.category === 'telugu-movies') {
+// `settings` maps the setup values into filterMovies() settings, so games
+// that store the movie category differently share the live counts and errors.
+export function movieFilterFields(saved = {}, movies = [], when = values => values.category === 'telugu-movies', settings = values => values) {
   const years = movies.map(movie => movie.year).filter(Number.isInteger);
   const min = years.length ? Math.min(...years) : 1931;
   const max = years.length ? Math.max(...years) : new Date().getFullYear();
@@ -113,7 +115,13 @@ export function movieFilterFields(saved = {}, movies = [], when = values => valu
     { key: 'difficulties', label: 'Difficulty', type: 'multiple', when,
       options: DIFFICULTIES.map((label, index) => ({ value: String(index + 1), label, badge: String(index + 1) })),
       default: difficulties.filter(value => ['1', '2', '3', '4', '5'].includes(value)),
-      help: 'Pick one or more levels. 1 is easiest; 5 is hardest.' },
+      optionState: (option, values) => {
+        const count = uniquePrompts(filterMovies(movies, { ...settings(values), difficulties: [option.value] })).length;
+        return { detail: count ? `${count.toLocaleString()} movie${count === 1 ? '' : 's'}` : 'None in these years', disabled: !count,
+          title: count ? '' : 'No movies at this level in the chosen years' };
+      },
+      error: values => movieSetupError(movies, settings(values)),
+      help: 'Pick one or more levels. 1 is easiest; 5 is hardest. Counts follow the chosen years.' },
   ];
 }
 

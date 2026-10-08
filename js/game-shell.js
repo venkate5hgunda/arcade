@@ -134,6 +134,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
     for (const f of fields) {
       const value = f.default ?? f.options?.[0].value ?? '';
       values[f.key] = Array.isArray(value) ? [...value] : value;
+      if (f.toggle) values[f.toggle.key] = String(f.toggle.default ?? 'false');
     }
     const configurable = fields.filter(f => ['number', 'range', 'multiple', 'clock'].includes(f.type) || f.options.length > 1);
 
@@ -152,16 +153,24 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
       </details>` : ''}
       <button class="setup-start-btn" type="button">${startLabel} ${iconMarkup('tabler:arrow-right')}</button>`;
     stage.appendChild(card);
-    const feedback = validate || summary ? document.createElement('p') : null;
+    const feedback = validate || summary || fields.some(f => f.error) ? document.createElement('p') : null;
     if (feedback) {
       feedback.className = 'setup-field-help';
       feedback.setAttribute('aria-live', 'polite');
       card.appendChild(feedback);
     }
+    const visibleFields = () => configurable.filter(f => !f.when || f.when(values));
+    // Field errors show beside the field as soon as a choice conflicts; the
+    // first one also explains why Start is disabled.
+    function currentError() {
+      return visibleFields().map(f => f.error?.(values) || '').find(Boolean) || validate?.(values) || '';
+    }
     function updateFeedback() {
-      if (!feedback) return;
-      const error = validate?.(values) ?? '';
-      feedback.textContent = error || summary?.(values) || '';
+      const error = currentError();
+      if (feedback) {
+        feedback.textContent = error || summary?.(values) || '';
+        feedback.classList.toggle('setup-feedback-error', !!error);
+      }
       card.querySelector('.setup-start-btn').disabled = !!error;
     }
 
@@ -183,9 +192,23 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
     }
     const sectionValues = new Map();
     const openSections = new Set();
+    // Dependent fields re-sync whenever any value changes: limits, option
+    // states and inline errors stay wired to the choices they depend on.
+    const syncers = new Map();
+    const intents = {};
+    let renderedKeys = null, building = false;
+    function changed(sourceKey) {
+      if (building || !fieldsEl) { if (!fieldsEl) updateFeedback(); return false; }
+      const visible = visibleFields();
+      if (visible.map(f => f.key).join() !== renderedKeys) { renderFields(); return true; }
+      for (const sync of syncers.values()) sync(sourceKey);
+      updatePreview(visible);
+      updateFeedback();
+      return false;
+    }
     function updatePreview(visible) {
       card.querySelector('.setup-preview').textContent = visible.slice(0, 3).map(f => `${f.label}: ${valueLabel(f)}`)
-        .join(' · ') + (visible.length > 3 ? ` · ${visible.length - 3} more options in configuration` : '');
+        .join(' · ') + (visible.length > 3 ? ` · ${visible.length - 3} more option${visible.length === 4 ? '' : 's'} in configuration` : '');
       for (const f of visible) if (sectionValues.has(f.key)) sectionValues.get(f.key).textContent = valueLabel(f);
     }
 
@@ -213,7 +236,10 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
       if (!fieldsEl) { updateFeedback(); return; }
       fieldsEl.innerHTML = '';
       sectionValues.clear();
-      const visible = configurable.filter(f => !f.when || f.when(values));
+      syncers.clear();
+      building = true;
+      const visible = visibleFields();
+      renderedKeys = visible.map(f => f.key).join();
       for (const f of visible) {
         const group = document.createElement(f.collapsible ? 'details' : 'div');
         group.className = 'setup-field' + (f.collapsible ? ' setup-section' : '');
@@ -257,8 +283,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             values[f.key] = option.value;
             readout.textContent = option.label;
             input.setAttribute('aria-valuetext', option.label);
-            updatePreview(visible);
-            updateFeedback();
+            changed(f.key);
           }
           const spring = createSpring(show, { ...SPRING.settle, precision: 0.002 });
           const settle = index => spring.to(Math.max(0, Math.min(last, index)), SPRING.settle);
@@ -294,8 +319,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           select.value = values[f.key];
           select.addEventListener('change', () => {
             values[f.key] = select.value;
-            updatePreview(visible);
-            updateFeedback();
+            changed(f.key);
           });
           optionsEl.appendChild(select);
         }
@@ -354,8 +378,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             values[f.key] = String(value);
             clock.setAttribute('aria-valuenow', values[f.key]);
             clock.setAttribute('aria-valuetext', f.unit === 's' ? `${value} seconds` : clockLabel(f, value));
-            updatePreview(visible);
-            updateFeedback();
+            changed(f.key);
           }
           const spring = createSpring(render, { ...SPRING.settle, precision: 0.05 });
           function settle(angle, options = SPRING.settle) {
@@ -440,29 +463,86 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           track.className = 'setup-range-track';
           engageOnPress(track);
           optionsEl.appendChild(track);
+          for (const side of ['low', 'high']) {
+            const blocked = document.createElement('span');
+            blocked.className = `setup-range-blocked setup-range-blocked--${side}`;
+            blocked.setAttribute('aria-hidden', 'true');
+            track.appendChild(blocked);
+          }
+          const note = document.createElement('p');
+          note.className = 'setup-field-note';
+          note.setAttribute('aria-live', 'polite');
+          const { toggle } = f;
+          let switchEl = null;
+          if (toggle) {
+            const head = document.createElement('div');
+            head.className = 'setup-field-head';
+            const label = group.querySelector('.setup-field-label');
+            label.replaceWith(head);
+            head.appendChild(label);
+            switchEl = document.createElement('button');
+            switchEl.type = 'button';
+            switchEl.className = 'setup-switch';
+            switchEl.setAttribute('role', 'switch');
+            switchEl.innerHTML = `<span class="setup-switch-label">${toggle.label}</span>
+              <span class="setup-switch-track" aria-hidden="true"><span class="setup-switch-thumb"></span></span>`;
+            head.appendChild(switchEl);
+          }
+          // Allowed span inside the track; other fields can narrow it live.
+          const limits = () => {
+            const limit = f.limit?.(values) ?? {};
+            const lo = Math.max(f.min, Math.min(f.max, limit.min ?? f.min));
+            return [lo, Math.max(lo, Math.min(f.max, limit.max ?? f.max))];
+          };
+          const spread = () => !toggle || values[toggle.key] === 'true';
+          const single = () => { const [lo, hi] = limits(); return !spread() || (toggle && lo === hi); };
+          const gap = () => toggle && !single() ? 1 : 0;
+          function shape(pair) {
+            const [lo, hi] = limits();
+            const clamp = value => Math.max(lo, Math.min(hi, Math.round(value)));
+            if (single()) { const value = clamp(pair[0]); return [value, value]; }
+            let low = clamp(Math.min(pair[0], pair[1])), high = clamp(Math.max(pair[0], pair[1]));
+            if (high - low < gap()) { if (high < hi) high += 1; else low -= 1; }
+            return [low, high];
+          }
+          intents[f.key] = [...values[f.key]];
           const positions = [...values[f.key]];
           const springs = [];
           const inputs = [0, 1].map(index => {
             const input = document.createElement('input');
             input.type = 'range';
             input.min = String(f.min); input.max = String(f.max); input.step = 'any';
-            input.setAttribute('aria-label', (f.handleLabels ?? ['From year', 'Through year'])[index]);
             springs[index] = createSpring(position => {
               positions[index] = position;
+              if (index === 0 && single()) positions[1] = position;
               updateRange();
             }, { ...SPRING.settle, precision: 0.01 });
-            const bound = next => index === 0 ? Math.min(next, positions[1]) : Math.max(next, positions[0]);
-            const settle = year => springs[index].to(Math.round(bound(Math.max(f.min, Math.min(f.max, year)))), SPRING.settle);
-            input.addEventListener('input', () => springs[index].jump(bound(Number(input.value))));
+            const bound = next => {
+              const [lo, hi] = limits();
+              const value = Math.max(lo, Math.min(hi, next));
+              if (single()) return value;
+              return index === 0 ? Math.min(value, positions[1] - gap()) : Math.max(value, positions[0] + gap());
+            };
+            const settle = next => {
+              const target = Math.round(bound(next));
+              springs[index].to(target, SPRING.settle);
+              const intent = [0, 1].map(other => Math.round(springs[other].target ?? positions[other]));
+              intent[index] = target;
+              intents[f.key] = single() ? [target, target] : intent;
+            };
+            input.addEventListener('input', () => {
+              springs[index].jump(bound(Number(input.value)));
+              intents[f.key] = [...values[f.key]];
+            });
             input.addEventListener('change', () => settle(Number(input.value)));
             input.addEventListener('pointerdown', () => {
               springs[index].stop();
               inputs.forEach((other, otherIndex) => { other.style.zIndex = otherIndex === index ? '3' : '2'; });
             });
             input.addEventListener('keydown', event => {
-              const year = Math.round(springs[index].target ?? positions[index]);
-              const next = { ArrowRight: year + 1, ArrowUp: year + 1, ArrowLeft: year - 1, ArrowDown: year - 1,
-                PageUp: year + 10, PageDown: year - 10, Home: f.min, End: f.max }[event.key];
+              const value = Math.round(springs[index].target ?? positions[index]);
+              const next = { ArrowRight: value + 1, ArrowUp: value + 1, ArrowLeft: value - 1, ArrowDown: value - 1,
+                PageUp: value + 10, PageDown: value - 10, Home: f.min, End: f.max }[event.key];
               if (next === undefined) return;
               event.preventDefault();
               settle(next);
@@ -470,22 +550,67 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             track.appendChild(input);
             return input;
           });
+          const span = f.max - f.min || 1;
           function updateRange() {
-            const years = positions.map(Math.round);
-            const changed = years[0] !== values[f.key][0] || years[1] !== values[f.key][1];
-            values[f.key] = years;
-            readout.textContent = f.format ? f.format(years) : `${years[0]} – ${years[1]}`;
-            const span = f.max - f.min || 1;
-            track.style.setProperty('--range-from', String((positions[0] - f.min) / span));
-            track.style.setProperty('--range-to', String((positions[1] - f.min) / span));
+            const chosen = shape(positions);
+            const isChanged = chosen[0] !== values[f.key][0] || chosen[1] !== values[f.key][1];
+            values[f.key] = chosen;
+            readout.textContent = f.format ? f.format(chosen) : `${chosen[0]} – ${chosen[1]}`;
+            const alone = single();
+            track.style.setProperty('--range-from', String(alone ? 0 : (positions[0] - f.min) / span));
+            track.style.setProperty('--range-to', String(((alone ? positions[0] : positions[1]) - f.min) / span));
+            const [lo, hi] = limits();
+            const labels = f.handleLabels ?? ['From year', 'Through year'];
             inputs?.forEach((input, index) => {
               input.value = String(positions[index]);
-              input.setAttribute('aria-valuemin', String(index === 0 ? f.min : years[0]));
-              input.setAttribute('aria-valuemax', String(index === 0 ? years[1] : f.max));
-              input.setAttribute('aria-valuetext', f.valueText ? f.valueText(years[index]) : String(years[index]));
+              input.setAttribute('aria-label', alone ? f.label : labels[index]);
+              input.setAttribute('aria-valuemin', String(index === 0 || alone ? lo : chosen[0]));
+              input.setAttribute('aria-valuemax', String(index === 0 && !alone ? chosen[1] : hi));
+              input.setAttribute('aria-valuetext', f.valueText ? f.valueText(chosen[index]) : String(chosen[index]));
             });
-            if (changed) { updatePreview(visible); updateFeedback(); }
+            if (isChanged) changed(f.key);
           }
+          function paintLimits() {
+            const [lo, hi] = limits();
+            const locked = lo === hi;
+            track.style.setProperty('--limit-lo', String((lo - f.min) / span));
+            track.style.setProperty('--limit-hi', String((hi - f.min) / span));
+            track.classList.toggle('limited-low', lo > f.min);
+            track.classList.toggle('limited-high', hi < f.max);
+            track.classList.toggle('locked', locked);
+            group.classList.toggle('setup-field--locked', locked);
+            inputs[0].disabled = locked;
+            inputs[1].disabled = locked;
+            inputs[1].hidden = single();
+            const message = f.limitNote?.(values, [lo, hi]) ?? '';
+            note.textContent = message;
+            note.hidden = !message;
+            if (switchEl) {
+              switchEl.disabled = locked;
+              switchEl.setAttribute('aria-checked', String(spread() && !locked));
+              switchEl.title = locked ? (toggle.lockedTitle ?? '') : '';
+            }
+          }
+          switchEl?.addEventListener('click', () => {
+            window.arcadeAudio?.prepare();
+            window.arcadeAudio?.tap();
+            window.haptics?.select();
+            const value = values[f.key][0];
+            const [, hi] = limits();
+            values[toggle.key] = spread() ? 'false' : 'true';
+            intents[f.key] = spread() ? (value < hi ? [value, value + 1] : [value - 1, value]) : [value, value];
+            if (spread()) springs[1].jump(positions[0]);
+            changed(null);
+          });
+          syncers.set(f.key, source => {
+            paintLimits();
+            if (source === f.key) return;
+            const next = shape(intents[f.key]);
+            if (next[0] === Math.round(springs[0].target ?? positions[0]) &&
+                (single() || next[1] === Math.round(springs[1].target ?? positions[1]))) return;
+            springs[0].to(next[0], SPRING.settle);
+            if (!single()) springs[1].to(next[1], SPRING.settle);
+          });
           springs.forEach((spring, index) => spring.jump(positions[index]));
           const bounds = document.createElement('div');
           bounds.className = 'setup-range-bounds';
@@ -494,6 +619,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           first.textContent = lowLabel; last.textContent = highLabel;
           bounds.appendChild(first); bounds.appendChild(last);
           optionsEl.appendChild(bounds);
+          optionsEl.appendChild(note);
         }
         if (f.type === 'number') {
           const input = document.createElement('input');
@@ -501,7 +627,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           input.min = String(f.min); input.max = String(f.max); input.step = '1';
           input.value = values[f.key];
           input.setAttribute('aria-label', f.label);
-          input.addEventListener('input', () => { values[f.key] = input.value; updateFeedback(); });
+          input.addEventListener('input', () => { values[f.key] = input.value; changed(f.key); });
           optionsEl.appendChild(input);
         }
         if (f.type === 'multiple') optionsEl.classList.add('setup-multi-options');
@@ -518,12 +644,13 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
               window.arcadeAudio?.tap();
               window.haptics?.select();
               values[f.key] = [...next];
-              renderFields();
+              changed(f.key);
             });
             bulk.appendChild(action);
           }
           optionsEl.appendChild(bulk);
         }
+        const chips = [];
         for (const opt of ['clock', 'discrete', 'select'].includes(f.type) ? [] : f.options ?? []) {
           const selected = f.type === 'multiple' ? values[f.key].includes(opt.value) : values[f.key] === opt.value;
           const btn = document.createElement('button');
@@ -543,6 +670,18 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             btn.dataset.level = opt.badge;
             btn.setAttribute('aria-label', `${opt.badge} · ${opt.label}`);
           }
+          let detail = null;
+          if (f.optionState && f.type === 'multiple' && !opt.icon) {
+            const text = document.createElement('span');
+            text.className = 'setup-chip-text';
+            text.textContent = opt.label;
+            detail = document.createElement('small');
+            detail.className = 'setup-chip-detail';
+            text.appendChild(detail);
+            btn.textContent = '';
+            btn.appendChild(text);
+          }
+          chips.push({ btn, opt, detail });
           btn.addEventListener('click', () => {
             window.arcadeAudio?.prepare();
             window.arcadeAudio?.tap();
@@ -551,15 +690,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
               const next = values[f.key].includes(opt.value) ?
                 values[f.key].filter(value => value !== opt.value) : [...values[f.key], opt.value];
               values[f.key] = f.options.filter(option => next.includes(option.value)).map(option => option.value);
-              if (configurable.some(other => other !== f && other.when)) {
-                renderFields();
-                fieldsEl.querySelector(`[data-setup-key="${f.key}"] [data-value="${opt.value}"]`)?.focus();
-                return;
-              }
-              btn.classList.toggle('active', values[f.key].includes(opt.value));
-              btn.setAttribute('aria-pressed', String(values[f.key].includes(opt.value)));
-              updatePreview(visible);
-              updateFeedback();
+              if (changed(f.key)) fieldsEl.querySelector(`[data-setup-key="${f.key}"] [data-value="${opt.value}"]`)?.focus();
               return;
             }
             values[f.key] = opt.value;
@@ -568,6 +699,25 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           });
           optionsEl.appendChild(btn);
         }
+        // Options can report live availability, e.g. matching-movie counts.
+        if (chips.length && (f.type === 'multiple' || f.optionState)) {
+          syncers.set(`${f.key}:options`, () => {
+            for (const { btn, opt, detail } of chips) {
+              const selected = f.type === 'multiple' ? values[f.key].includes(opt.value) : values[f.key] === opt.value;
+              const state = f.optionState?.(opt, values) ?? {};
+              btn.classList.toggle('active', selected);
+              btn.setAttribute('aria-pressed', String(selected));
+              // `fixed` options cannot change at all; others stay removable once chosen.
+              btn.disabled = !!state.disabled && (!selected || !!state.fixed);
+              btn.classList.toggle('setup-option-unavailable', !!state.disabled);
+              btn.title = state.title ?? '';
+              if (detail) {
+                detail.textContent = state.detail ?? '';
+                detail.hidden = !state.detail;
+              }
+            }
+          });
+        }
         group.dataset.setupKey = f.key;
         if (f.help) {
           const hint = document.createElement('p');
@@ -575,8 +725,22 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           hint.textContent = f.help;
           group.appendChild(hint);
         }
+        if (f.error) {
+          const error = document.createElement('p');
+          error.className = 'setup-field-error';
+          error.setAttribute('aria-live', 'polite');
+          group.appendChild(error);
+          syncers.set(`${f.key}:error`, () => {
+            const message = f.error(values) || '';
+            error.textContent = message;
+            error.hidden = !message;
+            group.classList.toggle('has-error', !!message);
+          });
+        }
         fieldsEl.appendChild(group);
       }
+      building = false;
+      for (const sync of syncers.values()) sync(null);
       updatePreview(visible);
       updateFeedback();
     }
