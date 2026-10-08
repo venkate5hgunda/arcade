@@ -12,7 +12,7 @@ import plistlib
 import subprocess
 import sys
 
-from . import catalog
+from . import catalog, wikidata
 
 LABEL = "org.arcade.movies.maintenance"
 STATE_KEY = "maintenance:v1"
@@ -253,13 +253,27 @@ def annotation_work(db, state, daily_calls):
         return [f"Gemini annotation: {error}"]
 
 
+def wikidata_work(db, state, tmdb_budget):
+    """Weekly Wikidata census + new Wikipedia articles/pageviews; grows the catalog via TMDB IDs."""
+    key = os.environ.get("TMDB_API_KEY") or os.environ.get("TMDB_READ_TOKEN")
+    tmdb = catalog.Client(db, "tmdb", key, max_calls=min(tmdb_budget, 1000)) if key else None
+    try:
+        state["wikidata"] = {**wikidata.run(db, tmdb), "finished_at": catalog.now()}
+        return []
+    except (catalog.APIError, OSError, ValueError, KeyError) as error:
+        state["wikidata"] = {"error": str(error), "finished_at": catalog.now()}
+        return [f"wikidata: {error}"]
+
+
 def run(db, export_dir, tmdb_budget=5000, omdb_budget=950, refresh_days=7, gemini_daily_calls=1000):
     initialize(db)
     old = db.execute("SELECT value FROM metadata WHERE key=?", (STATE_KEY,)).fetchone()
     state = json.loads(old[0]) if old else new_cycle("backfill", dt.date.today(), catalog.now())
     if state["mode"] == "idle":
         if catalog.now() < state["next_refresh_at"]:
-            errors = annotation_work(db, state, gemini_daily_calls)
+            catalog.load_env()
+            errors = wikidata_work(db, state, tmdb_budget)
+            errors += annotation_work(db, state, gemini_daily_calls)
             save_state(db, state)
             catalog.annotate(db, json.loads(catalog.ANNOTATIONS.read_text()))
             manifest = catalog.export(db, export_dir, errors)
@@ -304,6 +318,7 @@ def run(db, export_dir, tmdb_budget=5000, omdb_budget=950, refresh_days=7, gemin
         anchor = finished if state["kind"] == "backfill" else dt.datetime.fromisoformat(state["started_at"])
         state.update(mode="idle", completed_at=catalog.now(),
                      next_refresh_at=max(finished, anchor + dt.timedelta(days=refresh_days)).isoformat())
+    errors.extend(wikidata_work(db, state, tmdb_budget))
     state["last_run_finished_at"] = catalog.now()
     errors.extend(annotation_work(db, state, gemini_daily_calls))
     save_state(db, state)

@@ -230,23 +230,12 @@ crew wins once every imposter is out; imposters win when they equal the crew.
 ### Telugu movie catalogue
 
 Dumb Charades and Imposter offer **Telugu movies** alongside their existing
-prompt categories. The current offline starter set contains four verified
-films since 2000. Year, principal cast and a short original storyline appear
-after the round, never on a face-down handoff or the imposter's hidden card.
-
-Expanding this into a comprehensive catalogue needs an editorial/data pass,
-not generated guesses: define whether "Telugu movie" includes bilingual,
-dubbed, direct-to-streaming and unreleased titles; obtain a year-by-year film
-index; ingest **CC0 structured facts** (e.g. [Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing))
-with stable identifiers, original language, release date, cast and source
-provenance; then manually reconcile missing and duplicate entries against
-release sources. Write original short storylines, review names and Telugu
-transliterations, and flag missing fields rather than filling them in. Measure
-coverage and missing metadata by release year, check duplicates, validate
-source/license provenance and spot-check a sample of each year's entries
-before publishing versioned, offline-friendly chunks. Avoid bulk copying
-third-party synopses or bundling restricted API datasets (see
-[TMDb API terms](https://www.themoviedb.org/api-terms-of-use)).
+prompt categories, drawn from the approved catalogue in `data/movies/` (see
+`dev/movies/README.md`). In Dumb Charades the actor's card shows the top three
+billed actors and a one-sentence summary under the title to help them mime it;
+both reappear on the post-turn reveal. Imposter shows them only in the results,
+never on a face-down handoff or a hidden role card. Each card credits its
+source (TMDB, OMDb, Wikipedia under CC BY-SA, or the supplied dataset).
 
 ## Playing together on separate devices
 

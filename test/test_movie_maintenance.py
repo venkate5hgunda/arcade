@@ -99,12 +99,21 @@ class MaintenanceTests(unittest.TestCase):
         maintenance.save_state(self.db, state)
         result = {"provider_error": None, "singleton_failures": [], "promoted": 3}
         with patch("dev.movies.gemini_annotation.annotate_existing", return_value=result) as annotate:
-            with patch.object(catalog, "import_csv") as ingest:
+            with patch.object(catalog, "import_csv") as ingest, \
+                    patch("dev.movies.wikidata.run", return_value={"added": 2}) as enrich:
                 output = maintenance.run(self.db, self.path / "export", gemini_daily_calls=17)
+        enrich.assert_called_once()
         annotate.assert_called_once_with(self.db, daily_calls=17)
         ingest.assert_not_called()
         self.assertEqual(output["annotations"]["promoted"], 3)
         self.assertTrue((self.path / "export/periods/index.json").is_file())
+
+    def test_wikidata_failure_is_reported_without_stopping_the_run(self):
+        state = {}
+        with patch("dev.movies.wikidata.run", side_effect=catalog.APIError("wikidata HTTP 503")):
+            errors = maintenance.wikidata_work(self.db, state, 100)
+        self.assertEqual(errors, ["wikidata: wikidata HTTP 503"])
+        self.assertIn("error", state["wikidata"])
 
 
 if __name__ == "__main__":

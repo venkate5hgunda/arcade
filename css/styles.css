@@ -1822,3 +1822,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .resume-game { transition: none; }
 }
+
+/* Movie brief — cast chips + summary on charades/imposter cards */
+.movie-brief { margin: 14px auto 6px; max-width: 420px; text-align: left; display: grid; gap: 8px; }
+.movie-brief-cast { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.movie-brief-label { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); margin-right: 2px; }
+.movie-brief-chip {
+  padding: 4px 10px; border-radius: 999px; font-size: .82rem; font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg)); color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.movie-brief-summary {
+  margin: 0; padding: 10px 12px; border-radius: 12px; font-size: .92rem; line-height: 1.45;
+  background: var(--bg); border-left: 4px solid var(--accent); color: var(--text);
+}
+.movie-brief-credit { margin: 0; font-size: .72rem; color: var(--text-soft); text-align: right; }
+.movie-brief-credit a { color: inherit; }
+.movie-brief-compact .movie-brief-summary { font-size: .86rem; }
+.dc-vibe .movie-brief-chip { background: color-mix(in srgb, #ec4899 16%, var(--bg)); border-color: #ec489966; }
+.dc-vibe .movie-brief-summary { border-left-color: #ec4899; }

@@ -131,6 +131,38 @@ The first successful native Gemini run annotated 40 movies in two Flash
 batches, then reviewed them together with Pro. It promoted 39 approvals and
 retained one rejected proposal, without replacing editorial reviews.
 
+## Wikidata and Wikipedia enrichment
+
+`python3 -m dev.movies.wikidata` (also a daily maintenance stage) runs one
+SPARQL census of Telugu-language films (P364 = Q8097) with English labels,
+publication dates, enwiki articles, TMDB (P4947) and IMDb (P345) IDs. The
+census is refetched weekly; every raw response is retained. Items link to the
+catalogue by native TMDB/IMDb ID first, otherwise by a unique exact normalized
+title plus publication year. Ambiguous or colliding matches never merge; they go
+to the `wikidata:review` metadata queue. Unlinked items with a TMDB ID are
+hydrated from TMDB and added only when TMDB agrees on title/year and they are
+not a transliteration near-duplicate (±1 year); article-only films become
+`wikidata:{QID}` records. Each linked article's full plain-text extract and
+60-day pageviews are stored once (`wikipedia`, `wikipedia-pageviews` matches).
+
+Annotation evidence for source-only and non-Telugu-original TMDB records now
+includes `wikidata.*`, `wikipedia.*` (intro, plot, cast, pageviews) and linked
+`omdb.*` facts. Only identity-doubt CSV issues (unreliable year, repeated
+title/year) without a Wikidata link force unknown recognition. A promoted rating
+survives later evidence drift (refreshed snapshots, new supplementary facts) when
+the movie identity, TMDB ID and source rows are unchanged; it is flagged
+`automation.evidence_drift` and re-annotated in the background. Identity changes
+still revoke it.
+
+First run (8 October 2026): 7,306 Wikidata items; 3,608 linked; 338 new TMDB
+films added; 330 queued for review; 2,760 articles hydrated (2,752 with
+pageviews). Public coverage of the 4,759 approved films: cast 4,648, summary
+4,033 (pre-2000: 2,074 and 1,450 of 2,130). Records missing a field borrow it
+from an unreconciled twin with the same normalized (or transliteration-
+equivalent) title and the same year, since the game already merges those into
+one prompt. Remaining gaps: 360 films whose Wikidata item has only a Telugu
+Wikipedia article, and about 300 without any confident Wikidata match.
+
 ## Daily maintenance and weekly refresh
 
 `maintenance.py` resumes dated scopes from 1931, scans all Telugu-original
@@ -293,9 +325,10 @@ There is no unbounded revision loop. Call budgets and per-call timeouts are
 explicit; budget exhaustion exits nonzero with completed work preserved.
 
 Promotion requires a validated approval bound to the exact proposal and still-
-current source/identity/snapshot. Stale proposals cannot be promoted, and a later
-snapshot change removes stale automated scores on the next catalog rebuild while
-preserving their history. Curated editorial reviews always take precedence.
+current source/identity/snapshot. Stale proposals cannot be promoted. A later
+identity/title/source change removes stale automated scores on the next catalog
+rebuild while preserving their history; evidence-only drift keeps the score
+(flagged) until the background re-annotation replaces it. Curated editorial reviews always take precedence.
 Activated complete scores use status `llm_reviewed`, carry call IDs, model/profile
 provenance and `human_verified: false`. Per the gameplay policy, a complete
 model approval is sufficient: `gameplay_approved: true`, `review_required: false`.
@@ -317,8 +350,12 @@ operations on an unattended developer worktree.
 Only complete editorial or promoted model-review-approved scores are included.
 Adult provider entries and future releases remain excluded. Public records
 include title/year, rating, rubric, approval kind, confidence, component
-reasoning/gestures and genres. Raw CSV rows, provider payloads, synopses, model
-requests and credentials remain private. Full source fidelity is preserved in
+reasoning/gestures, genres, the top three billed `cast`, a single-sentence
+`summary` (at most 220 characters) and `credits` naming their sources. Cast
+precedence: TMDB billing order, OMDb Actors, Wikipedia Cast section, supplied
+CSV. Summary precedence: TMDB overview, OMDb plot, Wikipedia plot, then intro;
+Wikipedia credits include the article title (CC BY-SA). Raw CSV rows, full
+provider payloads, model requests and credentials remain private. Full source fidelity is preserved in
 SQLite and the ignored private exports, not duplicated into browser assets.
 
 Dumb Charades and Imposter load the approved library rather than the four-title

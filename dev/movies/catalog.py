@@ -27,6 +27,8 @@ DEFAULT_DB = MODULE_DIR / ".local/movies.sqlite"
 DEFAULT_EXPORT = MODULE_DIR / ".local/export"
 ANNOTATIONS = MODULE_DIR / "editorial/annotations.json"
 RUBRIC = "charades-v1"
+KEYLESS = ("wikidata", "wikipedia")
+USER_AGENT = "ArcadeMovieCatalog/1 (https://github.com/venkate5hgunda/arcade; personal project)"
 APPENDS = (
     "credits,alternative_titles,translations,keywords,release_dates,"
     "external_ids,images,videos,recommendations,similar"
@@ -271,7 +273,7 @@ class Client:
                         return payload, rejected["id"]
 
     def reserve(self):
-        if not self.key:
+        if not self.key and self.provider not in KEYLESS:
             raise APIError(f"Missing {self.provider.upper()}_API_KEY in .env.")
         if self.calls >= self.max_calls:
             raise APIError(f"{self.provider}: request budget reached ({self.max_calls}); rerun to resume.")
@@ -282,8 +284,13 @@ class Client:
 
     def fetch(self, path, params):
         query = dict(params)
-        headers = {"Accept": "application/json", "User-Agent": "ArcadeMovieCatalog/1"}
-        if self.provider == "omdb":
+        headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+        if self.provider == "wikidata":
+            base = "https://query.wikidata.org" + path
+            headers["Accept"] = "application/sparql-results+json"
+        elif self.provider == "wikipedia":
+            base = "https://en.wikipedia.org" + path
+        elif self.provider == "omdb":
             base = "https://www.omdbapi.com/"
             query["apikey"] = self.key
         else:
@@ -293,16 +300,24 @@ class Client:
             else:
                 headers["Authorization"] = "Bearer " + self.key
         request = urllib.request.Request(base + "?" + urllib.parse.urlencode(query), headers=headers)
-        time.sleep(self.delay)
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                status, body = response.status, response.read().decode("utf-8")
-        except urllib.error.HTTPError as error:
-            status, body = error.code, error.read().decode("utf-8")
-        except (urllib.error.URLError, TimeoutError):
-            # urllib exceptions may contain a credential-bearing URL.
-            raise APIError(f"{self.provider}: network request failed; retry later.") from None
-        return status, body
+        # Keyless public APIs ask clients to back off on 429/503 and honour Retry-After.
+        attempts = 6 if self.provider in KEYLESS else 1
+        for attempt in range(attempts):
+            time.sleep(self.delay)
+            try:
+                with urllib.request.urlopen(request, timeout=180 if self.provider == "wikidata" else 30) as response:
+                    return response.status, response.read().decode("utf-8")
+            except urllib.error.HTTPError as error:
+                status, body = error.code, error.read().decode("utf-8", "replace")
+                if status not in (429, 503) or attempt == attempts - 1:
+                    return status, body
+                retry_after = error.headers.get("Retry-After", "")
+                time.sleep(min(120, int(retry_after) if retry_after.isdigit() else 5 * 2 ** attempt))
+            except (urllib.error.URLError, TimeoutError):
+                # urllib exceptions may contain a credential-bearing URL.
+                if attempt == attempts - 1:
+                    raise APIError(f"{self.provider}: network request failed; retry later.") from None
+                time.sleep(5 * 2 ** attempt)
 
     def save(self, path, params, response):
         status, body = response
@@ -315,7 +330,8 @@ class Client:
                      and payload.get("Error") in ("Movie not found!", "Incorrect IMDb ID."))
         usable = (status == 200 and isinstance(payload, dict)
                   and (payload.get("Response") != "False" or not_found)
-                  and payload.get("success") is not False)
+                  and payload.get("success") is not False
+                  and not (self.provider == "wikipedia" and "error" in payload))
         cursor = self.db.execute(
             "INSERT INTO responses(request_key,provider,path,params_json,fetched_at,status,"
             "body,body_sha256,usable) VALUES (?,?,?,?,?,?,?,?,?)",

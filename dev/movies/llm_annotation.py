@@ -90,18 +90,24 @@ def snapshot_input(db, movie):
         "AND r.path='/movie/'||i.external_id ORDER BY r.id DESC LIMIT 1",
         (movie["id"],)).fetchone()
     if not row:
+        from . import wikidata
         sources = [dict(raw=json.loads(r["raw_json"]), issues=json.loads(r["issues_json"]))
                    for r in db.execute(
                        "SELECT raw_json,issues_json FROM source_rows WHERE movie_id=? "
                        "ORDER BY source_sha,row_number", (movie["id"],))]
-        if not sources:
+        extra = wikidata.evidence(db, movie["id"])
+        if not sources and "wikipedia" not in extra:
             return None
+        # Only identity doubts (unreliable year, duplicate rows) block a familiarity
+        # hypothesis, and a linked Wikidata film with a matching year resolves them.
+        doubtful = any(issue.startswith(wikidata.IDENTITY_ISSUES)
+                       for source in sources for issue in source["issues"])
         return {
             "movie": {key: movie[key] for key in ("id", "title", "year", "language")},
-            "tmdb_id": None, "tmdb": {}, "source_rows": sources,
-            "snapshot": {"source_sha256": catalog.digest(catalog.dump(sources))},
+            "tmdb_id": None, "tmdb": {}, "source_rows": sources, **extra,
+            "snapshot": {"source_sha256": catalog.digest(catalog.dump([sources, extra]))},
             "source_only": True,
-            "recognition_must_be_unknown": any(source["issues"] for source in sources),
+            "recognition_must_be_unknown": doubtful and "wikidata" not in extra,
         }
     payload = json.loads(row["body"])
     if str(payload.get("id")) != row["external_id"]:
@@ -115,9 +121,16 @@ def snapshot_input(db, movie):
                      for person in credits.get("cast", [])[:12]]
     facts["directors"] = [person["name"] for person in credits.get("crew", [])
                           if person.get("job") == "Director"]
+    language = {}
+    if payload.get("original_language") != "te":
+        # Wikidata-sourced Telugu films that TMDB labels with another original language.
+        qid = db.execute("SELECT external_id FROM identities WHERE provider='wikidata' AND movie_id=?",
+                         (movie["id"],)).fetchone()
+        if qid:
+            language = {"wikidata": {"qid": qid[0], "original_language": "Telugu (P364)"}}
     return {
         "movie": {key: movie[key] for key in ("id", "title", "year", "language")},
-        "tmdb_id": int(row["external_id"]), "tmdb": facts,
+        "tmdb_id": int(row["external_id"]), "tmdb": facts, **language,
         "source_rows": [dict(raw=json.loads(r["raw_json"]), issues=json.loads(r["issues_json"]))
                         for r in db.execute(
                             "SELECT raw_json,issues_json FROM source_rows WHERE movie_id=? "
@@ -138,7 +151,8 @@ def prepare(db, seeds, limit, profile, adapter_sha="unconfigured", retry=False):
             continue
         context = snapshot_input(db, movie)
         if (not context or str(context["tmdb_id"]) in native or context["tmdb"].get("adult")
-                or (not context.get("source_only") and context["tmdb"].get("original_language") != "te")):
+                or (not context.get("source_only") and context["tmdb"].get("original_language") != "te"
+                    and "wikidata" not in context)):
             continue
         release = context["tmdb"].get("release_date", "")
         if (release and release > str(catalog.dt.date.today())) or (
@@ -176,7 +190,9 @@ def request_for(job, stage, proposal=None):
     request["allowed_evidence"] = (
         ["movie." + key for key in context["movie"]]
         + ["tmdb." + key for key in context["tmdb"]]
-        + (["source_rows"] if context["source_rows"] else []))
+        + (["source_rows"] if context["source_rows"] else [])
+        + [f"{provider}.{key}" for provider in ("wikidata", "wikipedia", "omdb")
+           for key in context.get(provider, {})])
     if stage == "review":
         request.update(
             proposal=proposal, proposal_sha256=catalog.digest(catalog.dump(proposal)),
@@ -343,11 +359,20 @@ def run_jobs(db, jobs, adapter, timeout, max_calls, retry=False):
     return calls, False
 
 
-def checked_job(db, job):
+def same_identity(old, current):
+    """Supplementary evidence or a refreshed snapshot may drift; identity and prompt may not."""
+    return bool(current) and all(old.get(key) == current.get(key) for key in ("movie", "tmdb_id")) and (
+        [row["raw"] for row in old.get("source_rows", [])] == [row["raw"] for row in current.get("source_rows", [])])
+
+
+def checked_job(db, job, allow_drift=False):
     movie = db.execute("SELECT * FROM movies WHERE id=?", (job["movie_id"],)).fetchone()
     context = snapshot_input(db, movie)
     if not context or catalog.digest(catalog.dump(context)) != job["input_sha256"]:
-        raise ValueError("Job is stale: identity, title, source or trusted snapshot changed.")
+        old = json.loads(job["input_json"])
+        if not (allow_drift and same_identity(old, context)):
+            raise ValueError("Job is stale: identity, title, source or trusted snapshot changed.")
+        context = old
     annotation = latest_call(db, job["job_key"], "annotate")
     review = latest_call(db, job["job_key"], "review")
     if not annotation or not review or not annotation["output_json"] or not review["output_json"]:
@@ -384,9 +409,11 @@ def promoted_reviews(db):
             "ORDER BY p.created_at,p.rowid").fetchall():
         movie = db.execute("SELECT * FROM movies WHERE id=?", (job["movie_id"],)).fetchone()
         current = snapshot_input(db, movie)
-        if not current or catalog.digest(catalog.dump(current)) != job["input_sha256"]:
+        drifted = not current or catalog.digest(catalog.dump(current)) != job["input_sha256"]
+        if drifted and not same_identity(json.loads(job["input_json"]), current):
             continue
-        context, proposal, annotation, review = checked_job(db, job)
+        # A drifted rating stays playable until a re-annotation on new evidence is promoted.
+        context, proposal, annotation, review = checked_job(db, job, allow_drift=True)
         components = {
             name: {**proposal[name], "method": "llm-" + proposal[name]["basis"]}
             for name in DIMENSIONS}
@@ -405,6 +432,8 @@ def promoted_reviews(db):
                 "human_verified": False,
             },
         }
+        if drifted:
+            reviews[context["movie"]["id"]]["automation"]["evidence_drift"] = True
         if context["tmdb_id"] is not None:
             reviews[context["movie"]["id"]]["tmdb_id"] = context["tmdb_id"]
     return reviews

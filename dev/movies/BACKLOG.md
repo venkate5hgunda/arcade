@@ -21,6 +21,15 @@
   actability with player outcomes; preserve rubric versions and reason history.
 - Resolve the nine explicitly uncertain familiarity estimates in the first
   native-ID-backed batch; continue reviewing prioritized cached identities.
+- Resolve the `wikidata:review` queue (ambiguous title/year matches, TMDB
+  disagreements, transliteration near-duplicates) and decide on Wikidata items
+  with several articles. Consider Telugu Wikipedia (te.wikipedia) extracts for
+  the 360 films without an English article, review the ~109 ±1-year
+  transliteration candidates, and refresh pageviews periodically. Most English
+  cast lists sit in column templates that plain-text extracts drop; parse the
+  Cast section wikitext if Wikipedia cast becomes a primary source.
+- Review TMDB/OMDb terms for publishing short overview snippets in public
+  assets; keep per-record credits visible wherever summaries are shown.
 - Add a review workbench for unresolved identity matches and missing ratings.
   Complete editorial or model-approved prompts already enter games automatically;
   human review is optional calibration, not a gameplay gate.
