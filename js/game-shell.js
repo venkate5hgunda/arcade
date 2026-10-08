@@ -167,14 +167,26 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
 
     const fieldsEl = card.querySelector('.setup-fields');
 
+    function valueLabel(f) {
+      const value = values[f.key];
+      if (f.type === 'range') return f.format ? f.format(value) : value.join('–');
+      if (f.type === 'clock') return clockLabel(f, value);
+      if (f.type === 'multiple') {
+        const custom = f.format?.(value);
+        if (custom) return custom;
+        if (value.length === f.options.length) return f.allLabel ?? 'All levels';
+        const chosen = f.options.filter(option => value.includes(option.value));
+        if (!chosen.length) return f.noneLabel ?? 'None';
+        return chosen.length > 2 ? `${chosen.length} of ${f.options.length}` : chosen.map(option => option.label).join(' + ');
+      }
+      return f.options?.find(opt => opt.value === value)?.label ?? value;
+    }
+    const sectionValues = new Map();
+    const openSections = new Set();
     function updatePreview(visible) {
-      card.querySelector('.setup-preview').textContent = visible.slice(0, 3).map(f => {
-        const value = values[f.key];
-        const label = f.type === 'range' ? value.join('–') : f.type === 'clock' ? clockLabel(f, value) : f.type === 'multiple' ?
-          (value.length === f.options.length ? 'All levels' : f.options.filter(option => value.includes(option.value)).map(option => option.label).join(' + ') || 'None') :
-          f.options?.find(opt => opt.value === value)?.label ?? value;
-        return `${f.label}: ${label}`;
-      }).join(' · ') + (visible.length > 3 ? ` · ${visible.length - 3} more options in configuration` : '');
+      card.querySelector('.setup-preview').textContent = visible.slice(0, 3).map(f => `${f.label}: ${valueLabel(f)}`)
+        .join(' · ') + (visible.length > 3 ? ` · ${visible.length - 3} more options in configuration` : '');
+      for (const f of visible) if (sectionValues.has(f.key)) sectionValues.get(f.key).textContent = valueLabel(f);
     }
 
     function detentFeedback() {
@@ -200,14 +212,27 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
     function renderFields() {
       if (!fieldsEl) { updateFeedback(); return; }
       fieldsEl.innerHTML = '';
+      sectionValues.clear();
       const visible = configurable.filter(f => !f.when || f.when(values));
-      updatePreview(visible);
       for (const f of visible) {
-        const group = document.createElement('div');
-        group.className = 'setup-field';
-        group.innerHTML = `<span class="setup-field-label">${f.label}</span>
+        const group = document.createElement(f.collapsible ? 'details' : 'div');
+        group.className = 'setup-field' + (f.collapsible ? ' setup-section' : '');
+        group.innerHTML = f.collapsible ?
+          `<summary class="setup-section-summary"><span class="setup-field-label">${f.label}</span></summary>
+          <div class="setup-options" role="group" aria-label="${f.label}"></div>` :
+          `<span class="setup-field-label">${f.label}</span>
           <div class="setup-options" role="group" aria-label="${f.label}"></div>`;
         const optionsEl = group.querySelector('.setup-options');
+        if (f.collapsible) {
+          const current = document.createElement('span');
+          current.className = 'setup-section-value';
+          group.querySelector('summary')?.appendChild(current);
+          sectionValues.set(f.key, current);
+          group.open = openSections.has(f.key);
+          group.addEventListener('toggle', () => {
+            if (group.open) openSections.add(f.key); else openSections.delete(f.key);
+          });
+        }
         if (f.type === 'discrete') {
           optionsEl.classList.add('setup-discrete-options');
           const readout = document.createElement('output');
@@ -421,7 +446,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             const input = document.createElement('input');
             input.type = 'range';
             input.min = String(f.min); input.max = String(f.max); input.step = 'any';
-            input.setAttribute('aria-label', index === 0 ? 'From year' : 'Through year');
+            input.setAttribute('aria-label', (f.handleLabels ?? ['From year', 'Through year'])[index]);
             springs[index] = createSpring(position => {
               positions[index] = position;
               updateRange();
@@ -449,7 +474,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             const years = positions.map(Math.round);
             const changed = years[0] !== values[f.key][0] || years[1] !== values[f.key][1];
             values[f.key] = years;
-            readout.textContent = `${years[0]} – ${years[1]}`;
+            readout.textContent = f.format ? f.format(years) : `${years[0]} – ${years[1]}`;
             const span = f.max - f.min || 1;
             track.style.setProperty('--range-from', String((positions[0] - f.min) / span));
             track.style.setProperty('--range-to', String((positions[1] - f.min) / span));
@@ -457,7 +482,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
               input.value = String(positions[index]);
               input.setAttribute('aria-valuemin', String(index === 0 ? f.min : years[0]));
               input.setAttribute('aria-valuemax', String(index === 0 ? years[1] : f.max));
-              input.setAttribute('aria-valuetext', String(years[index]));
+              input.setAttribute('aria-valuetext', f.valueText ? f.valueText(years[index]) : String(years[index]));
             });
             if (changed) { updatePreview(visible); updateFeedback(); }
           }
@@ -465,7 +490,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           const bounds = document.createElement('div');
           bounds.className = 'setup-range-bounds';
           const first = document.createElement('span'), last = document.createElement('span');
-          first.textContent = String(f.min); last.textContent = String(f.max);
+          const [lowLabel, highLabel] = f.boundLabels ?? [String(f.min), String(f.max)];
+          first.textContent = lowLabel; last.textContent = highLabel;
           bounds.appendChild(first); bounds.appendChild(last);
           optionsEl.appendChild(bounds);
         }
@@ -479,13 +505,40 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           optionsEl.appendChild(input);
         }
         if (f.type === 'multiple') optionsEl.classList.add('setup-multi-options');
+        if (f.type === 'multiple' && f.bulk) {
+          const bulk = document.createElement('div');
+          bulk.className = 'setup-bulk-actions';
+          for (const [label, next] of [['Select all', f.options.map(option => option.value)], ['Clear', []]]) {
+            const action = document.createElement('button');
+            action.type = 'button';
+            action.className = 'setup-bulk-action';
+            action.textContent = label;
+            action.addEventListener('click', () => {
+              window.arcadeAudio?.prepare();
+              window.arcadeAudio?.tap();
+              window.haptics?.select();
+              values[f.key] = [...next];
+              renderFields();
+            });
+            bulk.appendChild(action);
+          }
+          optionsEl.appendChild(bulk);
+        }
         for (const opt of ['clock', 'discrete', 'select'].includes(f.type) ? [] : f.options ?? []) {
           const selected = f.type === 'multiple' ? values[f.key].includes(opt.value) : values[f.key] === opt.value;
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'setup-option' + (f.type === 'multiple' ? ' setup-choice-chip' : '') + (selected ? ' active' : '');
           btn.setAttribute('aria-pressed', String(selected));
+          if (btn.dataset) btn.dataset.value = opt.value;
           btn.textContent = opt.label;
+          if (opt.icon) {
+            const icon = document.createElement('span');
+            icon.className = 'setup-chip-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = opt.icon;
+            btn.prepend?.(icon);
+          }
           if (opt.badge) {
             btn.dataset.level = opt.badge;
             btn.setAttribute('aria-label', `${opt.badge} · ${opt.label}`);
@@ -498,6 +551,11 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
               const next = values[f.key].includes(opt.value) ?
                 values[f.key].filter(value => value !== opt.value) : [...values[f.key], opt.value];
               values[f.key] = f.options.filter(option => next.includes(option.value)).map(option => option.value);
+              if (configurable.some(other => other !== f && other.when)) {
+                renderFields();
+                fieldsEl.querySelector(`[data-setup-key="${f.key}"] [data-value="${opt.value}"]`)?.focus();
+                return;
+              }
               btn.classList.toggle('active', values[f.key].includes(opt.value));
               btn.setAttribute('aria-pressed', String(values[f.key].includes(opt.value)));
               updatePreview(visible);
@@ -519,6 +577,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
         }
         fieldsEl.appendChild(group);
       }
+      updatePreview(visible);
       updateFeedback();
     }
 

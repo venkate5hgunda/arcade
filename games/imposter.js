@@ -1,190 +1,360 @@
-// Imposter — find the spy among you. 3-8 players.
-// Pure DOM; listens to arcade:themechange.
+// Imposter — find the spies among you. 3-20 players, pass-and-play.
+// Classic: imposters know their role and may see the category/hint.
+// Pair: imposters secretly get a close decoy word and don't know their role.
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
+import { playerName } from '../js/player-names.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
+import { IMPOSTER_CATEGORIES, WORD_CATEGORY_IDS, LEGACY_EVERYDAY } from '../js/imposter-words.js';
 import { escapeHTML, loadMovieScreen, filterMovies, uniquePrompts, movieFilterFields, movieSetupError, movieDetails, difficultyLabel } from '../js/movie-library.js';
 
-const WORD_PAIRS = [
-  { word: 'COFFEE', clue: 'Hot drink' },
-  { word: 'PIZZA', clue: 'Italian food' },
-  { word: 'GUITAR', clue: 'String instrument' },
-  { word: 'SOCCER', clue: 'Ball sport' },
-  { word: 'LAPTOP', clue: 'Portable computer' },
-  { word: 'SUNGLASSES', clue: 'Eye wear' },
-  { word: 'BACKPACK', clue: 'Carry bag' },
-  { word: 'SMARTPHONE', clue: 'Mobile device' },
-  { word: 'BICYCLE', clue: 'Two wheels' },
-  { word: 'CAMERA', clue: 'Photo device' },
-  { word: 'HEADPHONES', clue: 'Audio gear' },
-  { word: 'WALLET', clue: 'Money holder' },
-  { word: 'UMBRELLA', clue: 'Rain shield' },
-  { word: 'KEYBOARD', clue: 'Typing tool' },
-  { word: 'MICROWAVE', clue: 'Kitchen appliance' },
-  { word: 'TELESCOPE', clue: 'Star viewer' },
-  { word: 'MICROSCOPE', clue: 'Tiny viewer' },
-  { word: 'HAMMOCK', clue: 'Outdoor bed' },
-  { word: 'LANTERN', clue: 'Light source' },
-  { word: 'COMPASS', clue: 'Direction finder' },
-];
+export const MIN_PLAYERS = 3;
+export const MAX_PLAYERS = 20;
+export const MAX_IMPOSTERS = 6;
+const MOVIES = 'telugu-movies';
+const LEGACY = 'everyday';
+const INTEL = ['category', 'hint', 'team'];
+const MODES = ['classic', 'pair'];
+const CATEGORY_IDS = [...WORD_CATEGORY_IDS, MOVIES];
+const byId = new Map(IMPOSTER_CATEGORIES.map(category => [category.id, category]));
 
-const CATEGORIES = ['everyday', 'telugu-movies'];
-const pairsFor = (category, movies) => category === 'telugu-movies'
-  ? uniquePrompts(movies).map(movie => ({ word: movie.prompt ?? movie.title, clue: movie.clue }))
-  : WORD_PAIRS;
+export const maxImposters = players => Math.max(1, Math.min(MAX_IMPOSTERS, Math.floor((players - 1) / 2)));
+const nameOf = index => playerName(index);
+const categoryLabel = id => id === MOVIES ? 'Telugu movies' : id === LEGACY ? 'Everyday words' : byId.get(id)?.label ?? id;
+const movieSettings = s => ({ ...s, category: s.categories?.includes(MOVIES) ? MOVIES : '' });
+const random = list => list[Math.floor(Math.random() * list.length)];
 
-export function validCheckpoint(s, movies = TELUGU_MOVIES) {
-  if (!s || !CATEGORIES.includes(s.category ?? 'everyday')) return false;
-  if (movieSetupError(movies, s)) return false;
-  const pairs = pairsFor(s.category ?? 'everyday', filterMovies(movies, s));
-  if (s.category === 'telugu-movies' && s.period === undefined && !s.yearRange && !s.difficulties) pairs.push(...TELUGU_MOVIES.map(movie => ({ word: movie.title, clue: movie.clue })));
-  return Number.isInteger(s.players) && s.players >= 3 && s.players <= 8 &&
-    ['setup', 'reveal', 'discuss', 'vote'].includes(s.phase) &&
-    Number.isInteger(s.currentPlayer) && s.currentPlayer >= 0 && s.currentPlayer < s.players &&
-    Number.isInteger(s.imposterIndex) && s.imposterIndex >= 0 && s.imposterIndex < s.players &&
-    pairs.some((pair) => pair.word === s.word && pair.clue === s.clue) &&
-    Array.isArray(s.votes) && s.votes.length === s.players &&
-    s.votes.every((v, i) => v === null || (Number.isInteger(v) && v >= 0 && v < s.players && v !== i)) &&
-    (s.phase !== 'vote' || s.votes.slice(s.currentPlayer + 1).every((v) => v === null));
+// A movie's decoy is another film at the same difficulty with the nearest year.
+function movieDecoy(movie, pool) {
+  const others = pool.filter(entry => (entry.prompt ?? entry.title) !== (movie.prompt ?? movie.title));
+  if (!others.length) return '';
+  const distance = entry => (entry.difficulty === movie.difficulty ? 0 : 1000) + Math.abs((entry.year ?? 0) - (movie.year ?? 0));
+  const best = Math.min(...others.map(distance));
+  const closest = others.filter(entry => distance(entry) === best);
+  return (closest[0].prompt ?? closest[0].title);
+}
+
+export function drawWord(categories, movies) {
+  const usable = categories.filter(id => id !== MOVIES || movies.length);
+  const id = random(usable);
+  if (id === MOVIES) {
+    const movie = random(movies);
+    return { category: MOVIES, word: movie.prompt ?? movie.title, hint: movie.clue, decoy: movieDecoy(movie, movies) };
+  }
+  const entry = random(byId.get(id).words);
+  return { category: id, ...entry };
+}
+
+function wordExists(s, movies) {
+  if (s.category === LEGACY) return s.legacy && LEGACY_EVERYDAY.some(entry => entry.word === s.word && entry.hint === s.hint);
+  if (s.category === MOVIES) {
+    const pool = uniquePrompts(filterMovies(movies, movieSettings(s)));
+    if (s.legacy && s.period === undefined && !s.yearRange && !s.difficulties) pool.push(...TELUGU_MOVIES);
+    return pool.some(movie => ((movie.prompt ?? movie.title) === s.word || movie.title === s.word) && movie.clue === s.hint);
+  }
+  return !!byId.get(s.category)?.words.some(entry => entry.word === s.word && entry.hint === s.hint && entry.decoy === s.decoy);
+}
+
+// Saves from before multi-imposter support had one imposterIndex and clue.
+function migrate(s) {
+  if (!s || s.imposters || !Number.isInteger(s.imposterIndex)) return s;
+  const category = s.category ?? LEGACY;
+  if (![LEGACY, MOVIES].includes(category)) return null;
+  return {
+    ...s, legacy: true, mode: 'classic', intel: [...INTEL], imposterRange: [1, 1], imposters: [s.imposterIndex],
+    categories: [category], category, hint: s.clue, decoy: '', out: [], history: [], round: 1, starter: 0,
+  };
+}
+
+export function validCheckpoint(raw, movies = TELUGU_MOVIES) {
+  const s = migrate(raw);
+  if (!s) return false;
+  const n = s.players;
+  const seat = value => Number.isInteger(value) && value >= 0 && value < n;
+  const unique = list => Array.isArray(list) && new Set(list).size === list.length;
+  if (!Number.isInteger(n) || n < MIN_PLAYERS || n > MAX_PLAYERS || !MODES.includes(s.mode)) return false;
+  if (!Array.isArray(s.intel) || !s.intel.every(item => INTEL.includes(item))) return false;
+  if (!unique(s.categories) || !s.categories.length || !s.categories.every(id => CATEGORY_IDS.includes(id) || (s.legacy && id === LEGACY))) return false;
+  if (!s.categories.includes(s.category)) return false;
+  if (s.categories.includes(MOVIES) && movieSetupError(movies, movieSettings(s))) return false;
+  if (!unique(s.imposters) || !s.imposters.length || s.imposters.length > maxImposters(n) || !s.imposters.every(seat)) return false;
+  if (!unique(s.out) || !s.out.every(seat) || !Array.isArray(s.history)) return false;
+  const living = index => !s.out.includes(index);
+  const imposterCount = s.imposters.filter(living).length;
+  if (!imposterCount || imposterCount >= n - s.out.length - imposterCount) return false;
+  if (!['setup', 'reveal', 'discuss', 'vote', 'verdict'].includes(s.phase)) return false;
+  if (['setup', 'reveal'].includes(s.phase) && s.out.length) return false;
+  if (!seat(s.currentPlayer) || !living(s.currentPlayer) || !Number.isInteger(s.round) || s.round < 1) return false;
+  if (typeof s.word !== 'string' || typeof s.hint !== 'string' || typeof s.decoy !== 'string') return false;
+  if (s.mode === 'pair' && !s.decoy) return false;
+  if (!wordExists(s, movies)) return false;
+  if (!Array.isArray(s.votes) || s.votes.length !== n) return false;
+  if (!s.votes.every((vote, voter) => vote === null || (living(voter) && seat(vote) && living(vote) && vote !== voter))) return false;
+  return s.phase !== 'vote' || s.votes.slice(s.currentPlayer + 1).every(vote => vote === null);
+}
+
+function setupFields(saved, movies) {
+  const players = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, Number(saved.players) || 4));
+  const range = Array.isArray(saved.imposterRange) ? saved.imposterRange.map(Number) : [1, 1];
+  const categories = Array.isArray(saved.categories) ? saved.categories.filter(id => CATEGORY_IDS.includes(id)) :
+    saved.category === MOVIES ? [MOVIES] : [...WORD_CATEGORY_IDS];
+  const plural = count => `${count} imposter${count === 1 ? '' : 's'}`;
+  return [
+    {
+      key: 'players', label: 'Players',
+      options: Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => ({ value: String(i + MIN_PLAYERS), label: `${i + MIN_PLAYERS} Players` })),
+      default: String(players),
+    },
+    {
+      key: 'mode', label: 'Mode',
+      options: [{ value: 'classic', label: 'Classic' }, { value: 'pair', label: 'Pair (decoy word)' }],
+      default: MODES.includes(saved.mode) ? saved.mode : 'classic',
+      help: 'Classic tells imposters who they are. Pair mode gives imposters a close but different word, and nobody is told their role.',
+    },
+    {
+      key: 'imposterRange', label: 'Imposters', type: 'range', min: 1, max: MAX_IMPOSTERS,
+      default: [Math.max(1, Math.min(range[0], range[1], MAX_IMPOSTERS)) || 1, Math.max(1, Math.min(Math.max(range[0], range[1]), MAX_IMPOSTERS)) || 1],
+      format: ([low, high]) => low === high ? plural(low) : `${low}–${high} imposters, random`,
+      valueText: count => plural(count), handleLabels: ['Fewest imposters', 'Most imposters'],
+      boundLabels: ['1', String(MAX_IMPOSTERS)],
+      help: 'Put both ends together for an exact count, or spread them for a secret random count each round.',
+    },
+    {
+      key: 'intel', label: 'Imposters can see', type: 'multiple', when: values => values.mode === 'classic',
+      options: [
+        { value: 'category', label: 'Category' },
+        { value: 'hint', label: 'Hint' },
+        { value: 'team', label: 'Fellow imposters' },
+      ],
+      default: Array.isArray(saved.intel) ? saved.intel.filter(item => INTEL.includes(item)) : [...INTEL],
+      allLabel: 'Category + hint + team', noneLabel: 'Nothing',
+      help: 'Turn things off to make it harder for imposters.',
+    },
+    {
+      key: 'categories', label: 'Categories', type: 'multiple', collapsible: true, bulk: true,
+      options: [
+        ...IMPOSTER_CATEGORIES.map(category => ({ value: category.id, label: category.label, icon: category.emoji })),
+        { value: MOVIES, label: 'Telugu movies', icon: '🎬' },
+      ],
+      default: categories.length ? categories : [...WORD_CATEGORY_IDS],
+      allLabel: 'Everything', noneLabel: 'None', format: list => list.length === WORD_CATEGORY_IDS.length && !list.includes(MOVIES) ? 'All words' : '',
+      help: 'Each round picks a category at random, then a word from it.',
+    },
+    ...movieFilterFields(saved, movies, values => values.categories?.includes(MOVIES)),
+  ];
+}
+
+export function setupError(movies, values) {
+  const players = Number(values.players);
+  if (!values.categories?.length) return 'Pick at least one word category.';
+  const limit = maxImposters(players);
+  if (values.imposterRange[1] > limit) return `With ${players} players, use at most ${limit} imposter${limit === 1 ? '' : 's'}.`;
+  const movieError = movieSetupError(movies, movieSettings(values));
+  if (movieError) return movieError;
+  if (values.mode === 'pair' && values.categories.length === 1 && values.categories[0] === MOVIES &&
+      uniquePrompts(filterMovies(movies, movieSettings(values))).length < 2) return 'Pair mode needs at least two matching movies.';
+  return '';
 }
 
 export default {
   async render(el, game, { navigate, session, movieLibrary } = {}) {
-    const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spy' });
+    const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spies' });
     const showTurn = createTurnIndicator(shell.root);
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('imp-vibe');
     const movies = movieLibrary ?? await loadMovieScreen(stage);
 
-    const saved = loadJSON(KEYS.SETTINGS + ':imposter', { players: '4', category: 'everyday' });
-    const checkpoint = validCheckpoint(session?.state, movies) ? session.state : null;
-    const settings = checkpoint ? { ...checkpoint, players: String(checkpoint.players), category: checkpoint.category ?? 'everyday' } : await renderSetup(stage, {
+    const saved = loadJSON(KEYS.SETTINGS + ':imposter', { players: '4' });
+    const checkpoint = validCheckpoint(session?.state, movies) ? migrate(session.state) : null;
+    const settings = checkpoint ? { ...checkpoint, players: String(checkpoint.players) } : await renderSetup(stage, {
       title: '🕵️ Imposter',
-      subtitle: 'How many players are passing the device?',
+      subtitle: 'Pick your table, then deal secret cards',
       themeClass: 'imp-theme',
-      fields: [
-        {
-          key: 'players', label: 'Players',
-          options: Array.from({ length: 6 }, (_, i) => ({ value: String(i + 3), label: `${i + 3} Players` })),
-          default: saved.players,
-        },
-        {
-          key: 'category', label: 'Category',
-          options: [{ value: 'everyday', label: 'Everyday words' }, { value: 'telugu-movies', label: 'Telugu movies' }],
-          default: CATEGORIES.includes(saved.category) ? saved.category : 'everyday',
-        },
-        ...movieFilterFields(saved, movies),
-      ],
-      validate: values => movieSetupError(movies, values),
-      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} movies ready · ${difficultyLabel(values.difficulties)}` : '',
+      fields: setupFields(saved, movies),
+      validate: values => setupError(movies, values),
+      summary: values => {
+        const words = values.categories.reduce((total, id) => total + (id === MOVIES ?
+          uniquePrompts(filterMovies(movies, movieSettings(values))).length : byId.get(id).words.length), 0);
+        return `${words.toLocaleString()} words across ${values.categories.length} categor${values.categories.length === 1 ? 'y' : 'ies'}` +
+          (values.categories.includes(MOVIES) ? ` · Movies: ${difficultyLabel(values.difficulties)}` : '');
+      },
       startLabel: 'Deal the Cards',
     });
-    saveJSON(KEYS.SETTINGS + ':imposter', settings);
-    const playerCount = Math.max(3, Math.min(8, parseInt(settings.players, 10) || 4));
-    const category = settings.category;
-    const selectedMovies = uniquePrompts(filterMovies(movies, settings));
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulties ?? settings.difficulty)}` : 'Everyday words'} · One spy`;
+    if (!checkpoint) saveJSON(KEYS.SETTINGS + ':imposter', settings);
+    const playerCount = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, parseInt(settings.players, 10) || 4));
+    const mode = MODES.includes(settings.mode) ? settings.mode : 'classic';
+    const intel = mode === 'classic' ? settings.intel ?? [...INTEL] : [];
+    const categories = settings.categories;
+    const range = settings.imposterRange ?? [1, 1];
+    const limit = maxImposters(playerCount);
+    const randomCount = range[0] !== range[1];
+    const selectedMovies = categories.includes(MOVIES) ? uniquePrompts(filterMovies(movies, movieSettings(settings))) : [];
+    const countLabel = randomCount ? `${range[0]}–${Math.min(range[1], limit)} imposters` : `${range[0]} imposter${range[0] === 1 ? '' : 's'}`;
+    shell.root.querySelector('.game-meta').textContent =
+      `${playerCount} players · ${mode === 'pair' ? 'Pair mode' : 'Classic'} · ${countLabel}`;
 
-    let phase = 'setup'; // setup -> reveal -> discuss -> vote -> result
-    let currentPlayer = 0;
-    let imposterIndex = -1;
-    let word = '', clue = '';
-    let votes = [];
+    let phase = 'setup'; // setup -> reveal -> discuss -> vote -> verdict -> ... -> result
+    let currentPlayer = 0, round = 1, starter = 0;
+    let imposters = [], out = [], history = [], votes = [];
+    let word = '', hint = '', decoy = '', category = categories[0];
+    let lastVerdict = null;
+
+    const living = () => Array.from({ length: playerCount }, (_, i) => i).filter(i => !out.includes(i));
+    const isImposter = index => imposters.includes(index);
+    const livingImposters = () => imposters.filter(index => !out.includes(index));
+    const winner = () => !livingImposters().length ? 'town' :
+      livingImposters().length >= living().length - livingImposters().length ? 'imposters' : null;
 
     function checkpointGame() {
       if (phase === 'result') { session?.finish(); return; }
       session?.save({
-        players: playerCount, category, period: settings.period,
-        fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty,
-        yearRange: settings.yearRange, difficulties: settings.difficulties,
-        phase, currentPlayer, imposterIndex, word, clue, votes: [...votes],
+        players: playerCount, mode, intel: [...intel], imposterRange: [...range], categories: [...categories],
+        yearRange: settings.yearRange, difficulties: settings.difficulties, period: settings.period,
+        fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty, legacy: settings.legacy,
+        phase, currentPlayer, round, starter, imposters: [...imposters], out: [...out], history: history.map(entry => ({ ...entry })),
+        word, hint, decoy, category, votes: [...votes],
       });
     }
 
     const card = document.createElement('div');
     card.className = 'imp-card';
     stage.appendChild(card);
-
     const status = document.createElement('div');
     status.className = 'imp-status';
     stage.appendChild(status);
 
+    const feedback = kind => {
+      const audio = window.arcadeAudio;
+      audio?.prepare?.();
+      audio?.tap?.();
+      if (kind === 'select') window.haptics?.select();
+    };
+    const names = list => list.map(index => escapeHTML(nameOf(index))).join(', ');
+
+    function revealCard() {
+      const spy = isImposter(currentPlayer);
+      const who = `<h3>${escapeHTML(nameOf(currentPlayer))}</h3>`;
+      if (mode === 'pair') {
+        return `<div class="imp-reveal">
+          ${who}
+          <p class="imp-role">🤫 Your secret word</p>
+          <p class="imp-word"><strong>${escapeHTML(spy ? decoy : word)}</strong></p>
+          <p class="imp-hint">Most players share your word, but someone's is slightly different. Describe yours carefully.</p>`;
+      }
+      if (!spy) {
+        return `<div class="imp-reveal">
+          ${who}
+          <p class="imp-role">👤 You're in the crew</p>
+          <p class="imp-word">Word: <strong>${escapeHTML(word)}</strong></p>
+          <p class="imp-intel"><span>Category</span>${escapeHTML(categoryLabel(category))}</p>
+          <p class="imp-hint">Prove you know it without giving it away.</p>`;
+      }
+      const partners = imposters.filter(index => index !== currentPlayer);
+      const lines = [
+        intel.includes('category') ? `<p class="imp-intel"><span>Category</span>${escapeHTML(categoryLabel(category))}</p>` : '',
+        intel.includes('hint') ? `<p class="imp-intel imp-clue"><span>Hint</span>${escapeHTML(hint)}</p>` : '',
+        intel.includes('team') ? `<p class="imp-intel"><span>Team</span>${partners.length ? `With ${names(partners)}` : 'You are the only imposter'}</p>` : '',
+      ].join('');
+      return `<div class="imp-reveal imposter">
+        ${who}
+        <p class="imp-role">🕵️ You are an imposter</p>
+        ${lines || '<p class="imp-intel"><span>Intel</span>None. Listen closely and bluff.</p>'}
+        <p class="imp-hint">Blend in. Don't get voted out.</p>`;
+    }
+
+    function tallies() {
+      const counts = Array(playerCount).fill(0);
+      votes.forEach(vote => { if (vote !== null) counts[vote]++; });
+      return counts;
+    }
+
+    function verdictMarkup(verdict) {
+      if (!verdict) return '';
+      if (verdict.out === null) return '<p class="imp-verdict">🤝 Tied vote. Nobody leaves this round.</p>';
+      return `<p class="imp-verdict ${isImposter(verdict.out) ? 'caught' : 'innocent'}">
+        <strong>${escapeHTML(nameOf(verdict.out))}</strong> was voted out and
+        ${isImposter(verdict.out) ? 'was an imposter! 🎯' : 'was innocent. 😬'}</p>`;
+    }
+
     function render() {
-      showTurn(currentPlayer, phase === 'setup' || phase === 'reveal' || phase === 'vote');
+      const turnPhase = ['setup', 'reveal', 'vote'].includes(phase);
+      showTurn(currentPlayer, turnPhase, turnPhase ? nameOf(currentPlayer) : null);
       card.innerHTML = '';
+      status.textContent = '';
       if (phase === 'setup') {
         card.innerHTML = `
           <div class="imp-setup">
-            <h3>Pass the device to Player ${currentPlayer + 1}</h3>
-            <p class="imp-hint">Tap "Show My Card" when ready</p>
+            <p class="imp-step">Card ${currentPlayer + 1} of ${playerCount}</p>
+            <h3>Pass the device to ${escapeHTML(nameOf(currentPlayer))}</h3>
+            <p class="imp-hint">Make sure nobody else can see, then tap "Show My Card".</p>
             <button class="imp-btn" id="showCard">Show My Card</button>
           </div>`;
         card.querySelector('#showCard').addEventListener('click', showCard);
       } else if (phase === 'reveal') {
-        const isImposter = currentPlayer === imposterIndex;
-        card.innerHTML = `
-          <div class="imp-reveal ${isImposter ? 'imposter' : ''}">
-            <h3>Player ${currentPlayer + 1}</h3>
-            ${isImposter ? `
-              <p class="imp-role">🕵️ YOU ARE THE IMPOSTER</p>
-              <p class="imp-clue">Clue: ${escapeHTML(clue)}</p>
-              <p class="imp-hint">Blend in! Don't let them catch you.</p>
-            ` : `
-              <p class="imp-role">👤 YOU ARE A PLAYER</p>
-              <p class="imp-word">Word: <strong>${escapeHTML(word)}</strong></p>
-              <p class="imp-hint">Convince others you know the word.</p>
-            `}
-            <button class="imp-btn" id="nextPlayer">${currentPlayer < playerCount - 1 ? 'Pass to Next Player' : 'Start Discussion'}</button>
-          </div>`;
+        card.innerHTML = `${revealCard()}
+          <button class="imp-btn" id="nextPlayer">${currentPlayer < playerCount - 1 ? 'Hide & Pass On' : 'Hide & Start Discussion'}</button>
+        </div>`;
         card.querySelector('#nextPlayer').addEventListener('click', nextPlayerReveal);
       } else if (phase === 'discuss') {
+        const left = livingImposters().length;
         card.innerHTML = `
           <div class="imp-discuss">
-            <h3>Discussion Phase</h3>
-            <p>Everyone talks about the word. The imposter must pretend to know it.</p>
+            <p class="imp-step">Round ${round}</p>
+            ${verdictMarkup(lastVerdict)}
+            <h3>Discussion</h3>
+            <p><strong>${escapeHTML(nameOf(starter))}</strong> gives the first clue, then go around the table.</p>
+            <p class="imp-hint">${living().length} players remain · ${randomCount ? 'Imposter count is secret' : `${left} imposter${left === 1 ? '' : 's'} left`}</p>
             <button class="imp-btn" id="startVote">Start Voting</button>
           </div>`;
         card.querySelector('#startVote').addEventListener('click', startVote);
       } else if (phase === 'vote') {
         card.innerHTML = `
           <div class="imp-vote">
-            <h3>Vote for the Imposter</h3>
-            <p>Player ${currentPlayer + 1}, select who you think is the imposter:</p>
+            <p class="imp-step">Round ${round} vote</p>
+            <h3>${escapeHTML(nameOf(currentPlayer))}, who is suspicious?</h3>
             <div class="imp-vote-options">
               ${Array.from({ length: playerCount }, (_, i) => `
-                <button class="imp-vote-btn ${votes[currentPlayer] === i ? 'selected' : ''}" data-vote="${i}" ${i === currentPlayer ? 'disabled' : ''}>
-                  Player ${i + 1}
-                </button>
-              `).join('')}
+                <button class="imp-vote-btn ${votes[currentPlayer] === i ? 'selected' : ''} ${out.includes(i) ? 'out' : ''}" data-vote="${i}" ${i === currentPlayer || out.includes(i) ? 'disabled' : ''} aria-pressed="${votes[currentPlayer] === i}">
+                  ${escapeHTML(nameOf(i))}${out.includes(i) ? ' · out' : ''}
+                </button>`).join('')}
             </div>
-            <button class="imp-btn" id="submitVote" ${votes[currentPlayer] === null ? 'disabled' : ''}>Submit Vote</button>
+            <button class="imp-btn" id="submitVote" ${votes[currentPlayer] === null ? 'disabled' : ''}>Lock In Vote</button>
           </div>`;
         card.querySelectorAll('.imp-vote-btn').forEach(btn => {
-          btn.addEventListener('click', () => selectVote(parseInt(btn.dataset.vote)));
+          btn.addEventListener('click', () => selectVote(parseInt(btn.dataset.vote, 10)));
         });
         card.querySelector('#submitVote').addEventListener('click', submitVote);
-      } else if (phase === 'result') {
-        const movie = category === 'telugu-movies' ? selectedMovies.find(entry => (entry.prompt ?? entry.title) === word || entry.title === word) : null;
-        const voteCounts = Array(playerCount).fill(0);
-        votes.forEach(v => { if (v !== null) voteCounts[v]++; });
-        const maxVotes = Math.max(...voteCounts);
-        const votedOut = voteCounts.indexOf(maxVotes);
-        const imposterCaught = votedOut === imposterIndex;
-        const tie = voteCounts.filter(v => v === maxVotes).length > 1;
-
+      } else if (phase === 'verdict') {
         card.innerHTML = `
-          <div class="imp-result ${imposterCaught ? 'win' : 'lose'}">
-            <h3>${imposterCaught && !tie ? '🎉 Imposter Caught!' : tie ? '🤝 Tie - Imposter Escapes!' : '🕵️ Imposter Escapes!'}</h3>
-            <p>The imposter was <strong>Player ${imposterIndex + 1}</strong>.</p>
-            <p>The word was: <strong>${escapeHTML(word)}</strong></p>
+          <div class="imp-discuss">
+            <p class="imp-step">Round ${round - 1} result</p>
+            ${verdictMarkup(lastVerdict)}
+            <p class="imp-hint">The game continues. Imposters are still hiding.</p>
+            <button class="imp-btn" id="nextRound">Next Round</button>
+          </div>`;
+        card.querySelector('#nextRound').addEventListener('click', nextRound);
+      } else if (phase === 'result') {
+        const movie = category === MOVIES ? selectedMovies.find(entry => (entry.prompt ?? entry.title) === word || entry.title === word) : null;
+        const town = winner() === 'town';
+        const counts = tallies();
+        const maxVotes = Math.max(...counts);
+        card.innerHTML = `
+          <div class="imp-result ${town ? 'win' : 'lose'}">
+            ${verdictMarkup(lastVerdict)}
+            <h3>${town ? '🎉 The crew caught every imposter!' : '🕵️ The imposters win!'}</h3>
+            <p>Imposter${imposters.length === 1 ? '' : 's'}: <strong>${names(imposters)}</strong></p>
+            <p>The word was <strong>${escapeHTML(word)}</strong>${mode === 'pair' ? ` · decoy <strong>${escapeHTML(decoy)}</strong>` : ''}</p>
+            <p class="imp-hint">${escapeHTML(categoryLabel(category))} · Hint: ${escapeHTML(hint)}</p>
             ${movieDetails(movie)}
-            <p>Clue: ${escapeHTML(clue)}</p>
+            ${history.length ? `<ol class="imp-history">${history.map(entry => `<li>Round ${entry.round}: ${entry.out === null ? 'tie' :
+              `${escapeHTML(nameOf(entry.out))} out${isImposter(entry.out) ? ' 🎯' : ''}`}</li>`).join('')}</ol>` : ''}
+            <p class="imp-step">Final vote</p>
             <div class="imp-vote-breakdown">
-              ${voteCounts.map((c, i) => `<span class="imp-vote-bar" style="--count:${c}; --max:${maxVotes}"><span>P${i + 1}</span><strong>${c}</strong></span>`).join('')}
+              ${counts.map((count, i) => out.includes(i) && !count ? '' : `<span class="imp-vote-bar ${isImposter(i) ? 'spy' : ''}" style="--count:${count}; --max:${maxVotes || 1}"><span>${escapeHTML(nameOf(i))}</span><strong>${count}</strong></span>`).join('')}
             </div>
             <button class="imp-btn" id="playAgain">Play Again</button>
           </div>`;
@@ -194,11 +364,16 @@ export default {
 
     function newGame() {
       shell.root.querySelector('.arcade-victory')?.remove();
-      const pairs = pairsFor(category, selectedMovies);
-      const pair = pairs[Math.floor(Math.random() * pairs.length)];
-      word = pair.word; clue = pair.clue;
-      imposterIndex = Math.floor(Math.random() * playerCount);
-      currentPlayer = 0;
+      ({ word, hint, decoy, category } = drawWord(categories, selectedMovies));
+      const count = Math.min(limit, range[0] + Math.floor(Math.random() * (Math.min(range[1], limit) - range[0] + 1)));
+      const seats = Array.from({ length: playerCount }, (_, i) => i);
+      for (let i = seats.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [seats[i], seats[j]] = [seats[j], seats[i]];
+      }
+      imposters = seats.slice(0, Math.max(1, count)).sort((a, b) => a - b);
+      out = []; history = []; lastVerdict = null;
+      round = 1; currentPlayer = 0; starter = Math.floor(Math.random() * playerCount);
       phase = 'setup';
       votes = Array(playerCount).fill(null);
       checkpointGame();
@@ -207,23 +382,19 @@ export default {
 
     function showCard() {
       phase = 'reveal';
-      const audio = window.arcadeAudio;
-      if (audio) { audio.prepare(); audio.tap(); }
-      if (window.haptics) window.haptics.select();
+      feedback('select');
       // A refresh must always return to the face-down handoff, never expose a role.
       render();
     }
 
     function nextPlayerReveal() {
-      const audio = window.arcadeAudio;
-      if (audio) audio.tap();
-      if (window.haptics) window.haptics.select();
+      feedback('select');
       if (currentPlayer < playerCount - 1) {
         currentPlayer++;
         phase = 'setup';
       } else {
         phase = 'discuss';
-        currentPlayer = 0;
+        currentPlayer = starter;
       }
       checkpointGame();
       render();
@@ -231,38 +402,59 @@ export default {
 
     function startVote() {
       phase = 'vote';
-      currentPlayer = 0;
-      const audio = window.arcadeAudio;
-      if (audio) audio.tap();
+      votes = Array(playerCount).fill(null);
+      currentPlayer = living()[0];
+      feedback();
       checkpointGame();
       render();
     }
 
     function selectVote(vote) {
+      if (vote === currentPlayer || out.includes(vote)) return;
       votes[currentPlayer] = vote;
-      const audio = window.arcadeAudio;
-      if (audio) audio.tap();
-      if (window.haptics) window.haptics.select();
+      feedback('select');
       checkpointGame();
       render();
     }
 
     function submitVote() {
       if (!Number.isInteger(votes[currentPlayer])) return;
-      const audio = window.arcadeAudio;
-      if (currentPlayer < playerCount - 1) {
-        currentPlayer++;
-        if (audio) audio.tap();
-      } else {
-        phase = 'result';
-        const voteCounts = Array(playerCount).fill(0);
-        votes.forEach(v => { if (v !== null) voteCounts[v]++; });
-        const maxVotes = Math.max(...voteCounts);
-        const votedOut = voteCounts.indexOf(maxVotes);
-        const imposterCaught = votedOut === imposterIndex && voteCounts.filter(v => v === maxVotes).length === 1;
-        if (imposterCaught) celebrate(shell.root, 'The table caught the imposter!');
-        else { audio?.buzz(); window.haptics?.failure(); }
+      const next = living().find(index => index > currentPlayer);
+      if (next !== undefined) {
+        currentPlayer = next;
+        feedback();
+        checkpointGame();
+        render();
+        return;
       }
+      const counts = tallies();
+      const maxVotes = Math.max(...counts);
+      const leaders = counts.flatMap((count, index) => count === maxVotes ? [index] : []);
+      const eliminated = leaders.length === 1 ? leaders[0] : null;
+      if (eliminated !== null) out.push(eliminated);
+      lastVerdict = { round, out: eliminated };
+      history.push(lastVerdict);
+      round++;
+      const result = winner();
+      if (result) {
+        phase = 'result';
+        if (result === 'town') celebrate(shell.root, 'The crew caught every imposter!');
+        else { window.arcadeAudio?.buzz?.(); window.haptics?.failure?.(); }
+      } else {
+        phase = 'verdict';
+        if (eliminated !== null && isImposter(eliminated)) window.haptics?.success?.();
+        currentPlayer = living()[0];
+      }
+      checkpointGame();
+      render();
+    }
+
+    function nextRound() {
+      feedback();
+      phase = 'discuss';
+      const alive = living();
+      starter = alive[Math.floor(Math.random() * alive.length)];
+      currentPlayer = starter;
       checkpointGame();
       render();
     }
@@ -272,8 +464,10 @@ export default {
     const onTheme = () => render();
     window.addEventListener('arcade:themechange', onTheme);
     if (checkpoint) {
-      currentPlayer = checkpoint.currentPlayer; imposterIndex = checkpoint.imposterIndex;
-      word = checkpoint.word; clue = checkpoint.clue; votes = [...checkpoint.votes];
+      ({ currentPlayer, round, starter, word, hint, decoy, category } = checkpoint);
+      imposters = [...checkpoint.imposters]; out = [...checkpoint.out];
+      history = checkpoint.history.map(entry => ({ ...entry })); votes = [...checkpoint.votes];
+      lastVerdict = history.at(-1) ?? null;
       phase = checkpoint.phase === 'reveal' ? 'setup' : checkpoint.phase;
       checkpointGame();
       render();
