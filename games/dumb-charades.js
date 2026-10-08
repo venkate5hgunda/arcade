@@ -32,8 +32,10 @@ export function validCheckpoint(s, movies = TELUGU_MOVIES) {
   if (!s || !CATEGORIES.includes(s.category ?? 'classic')) return false;
   if (movieSetupError(movies, s)) return false;
   const prompts = [...promptsFor(s.category ?? 'classic', filterMovies(movies, s)),
-    ...(s.category === 'telugu-movies' && s.period === undefined ? movies.map(movie => movie.title) : [])];
-  return [2, 4, 6, 8].includes(s.players) && [30, 45, 60, 90].includes(s.duration) &&
+    ...(s.category === 'telugu-movies' && s.period === undefined && !s.yearRange && !s.difficulties ? movies.map(movie => movie.title) : [])];
+  const validDuration = s.duration === 45 ||
+    Number.isInteger(s.duration) && s.duration >= 30 && s.duration <= 360 && s.duration % 30 === 0;
+  return [2, 4, 6, 8].includes(s.players) && validDuration &&
     ['setup', 'acting', 'scoring'].includes(s.phase) &&
     (s.team === 0 || s.team === 1) &&
     Number.isInteger(s.actor) && s.actor >= 0 && s.actor < s.players / 2 &&
@@ -70,19 +72,23 @@ export default {
           default: saved.players,
         },
         {
-          key: 'timer', label: 'Turn Timer',
-          options: [30, 45, 60, 90].map(n => ({ value: String(n), label: `${n}s` })),
-          default: saved.timer,
+          key: 'timer', label: 'Turn timer', type: 'clock',
+          options: Array.from({ length: 12 }, (_, index) => {
+            const seconds = (index + 1) * 30;
+            return { value: String(seconds), label: `${seconds}s` };
+          }),
+          default: Number(saved.timer) >= 30 && Number(saved.timer) <= 360 && Number(saved.timer) % 30 === 0 ? saved.timer : '60',
+          help: '¼ turn = 30 seconds. Three rings, up to 360 seconds.',
         },
         {
           key: 'category', label: 'Category',
           options: [{ value: 'classic', label: 'Classic prompts' }, { value: 'telugu-movies', label: 'Telugu movies' }],
           default: CATEGORIES.includes(saved.category) ? saved.category : 'classic',
         },
-        ...movieFilterFields(saved),
+        ...movieFilterFields(saved, movies),
       ],
       validate: values => movieSetupError(movies, values),
-      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} approved movie prompts · ${difficultyLabel(values.difficulty)}` : '',
+      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} movies ready · ${difficultyLabel(values.difficulties)}` : '',
       startLabel: 'Start Acting',
     });
     saveJSON(KEYS.SETTINGS + ':dumb-charades', settings);
@@ -91,7 +97,7 @@ export default {
     const category = settings.category;
     const selectedMovies = uniquePrompts(filterMovies(movies, settings));
     const prompts = promptsFor(category, selectedMovies);
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulty)}` : 'Classic prompts'}`;
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulties ?? settings.difficulty)}` : 'Classic prompts'}`;
 
     let phase = 'setup'; // setup -> acting -> scoring -> next
     let currentTeam = 0, currentActor = 0;
@@ -104,6 +110,7 @@ export default {
       session?.save({
         players: playerCount, duration: timerDuration, category,
         period: settings.period, fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty,
+        yearRange: settings.yearRange, difficulties: settings.difficulties,
         phase, team: currentTeam,
         actor: currentActor, score: [score[0], score[1]], word: currentWord,
         wordsUsed: [...wordsUsed], guessedCorrect, deadline,

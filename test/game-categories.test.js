@@ -25,6 +25,10 @@ test('charades checkpoints keep their category and reject mismatched prompts', (
   };
   assert.ok(validCharades(state));
   assert.ok(validCharades({ ...state, phase: 'acting', deadline: Date.now() + 60_000 }));
+  assert.ok(validCharades({ ...state, duration: 120 }));
+  assert.ok(validCharades({ ...state, duration: 360 }));
+  assert.ok(!validCharades({ ...state, duration: 390 }));
+  assert.ok(validCharades({ ...state, duration: 45 }));
   assert.ok(validCharades({ ...state, phase: 'setup', word: '' }));
   assert.ok(!validCharades({ ...state, category: 'classic' }));
   assert.ok(!validCharades({ ...state, category: 'other' }));

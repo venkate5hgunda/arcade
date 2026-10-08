@@ -4,6 +4,9 @@ const ROOT = new URL('../data/movies/', import.meta.url);
 const DIFFICULTIES = ['Easy', 'Approachable', 'Moderate', 'Hard', 'Very hard'];
 
 export function difficultyLabel(value) {
+  if (Array.isArray(value)) {
+    return value.length === 5 ? 'All difficulties' : value.map(level => DIFFICULTIES[Number(level) - 1]).filter(Boolean).join(' + ') || 'Choose difficulty';
+  }
   return DIFFICULTIES[Number(value) - 1] ? `${value}/5 · ${DIFFICULTIES[Number(value) - 1]}` : 'All difficulties';
 }
 
@@ -74,11 +77,14 @@ export async function loadMovieScreen(stage) {
 
 export function filterMovies(movies, settings = {}) {
   return movies.filter(movie => {
-    if (settings.difficulty && settings.difficulty !== 'all' && movie.difficulty !== Number(settings.difficulty)) return false;
-    if (settings.period === '2000' && !(movie.year >= 2000)) return false;
-    if (settings.period === '1990' && !(movie.year >= 1990)) return false;
-    if (settings.period === 'older' && !(movie.year !== null && movie.year < 2000)) return false;
-    if (settings.period === 'custom' &&
+    if (Array.isArray(settings.difficulties) && !settings.difficulties.includes(String(movie.difficulty))) return false;
+    if (Array.isArray(settings.yearRange) &&
+        !(movie.year !== null && movie.year >= settings.yearRange[0] && movie.year <= settings.yearRange[1])) return false;
+    if (!Array.isArray(settings.difficulties) && settings.difficulty && settings.difficulty !== 'all' && movie.difficulty !== Number(settings.difficulty)) return false;
+    if (!Array.isArray(settings.yearRange) && settings.period === '2000' && !(movie.year >= 2000)) return false;
+    if (!Array.isArray(settings.yearRange) && settings.period === '1990' && !(movie.year >= 1990)) return false;
+    if (!Array.isArray(settings.yearRange) && settings.period === 'older' && !(movie.year !== null && movie.year < 2000)) return false;
+    if (!Array.isArray(settings.yearRange) && settings.period === 'custom' &&
         !(movie.year !== null && movie.year >= Number(settings.fromYear) && movie.year <= Number(settings.toYear))) return false;
     return true;
   });
@@ -88,28 +94,41 @@ export function uniquePrompts(movies) {
   return [...new Map(movies.map(movie => [movie.prompt ?? movie.title, movie])).values()];
 }
 
-export function movieFilterFields(saved = {}) {
+export function movieFilterFields(saved = {}, movies = []) {
   const when = values => values.category === 'telugu-movies';
+  const years = movies.map(movie => movie.year).filter(Number.isInteger);
+  const min = years.length ? Math.min(...years) : 1931;
+  const max = years.length ? Math.max(...years) : new Date().getFullYear();
+  const legacyRange = saved.period === 'all' ? [min, max] : saved.period === 'older' ? [min, 1999] :
+    saved.period === 'custom' ? [Number(saved.fromYear), Number(saved.toYear)] :
+      [saved.period === '1990' ? 1990 : 2000, max];
+  const range = Array.isArray(saved.yearRange) ? saved.yearRange : legacyRange;
+  const clamp = year => Math.max(min, Math.min(max, Number.isFinite(year) ? year : max));
+  const lower = clamp(Number(range[0])), upper = clamp(Number(range[1]));
+  const difficulties = Array.isArray(saved.difficulties) ? saved.difficulties :
+    ['1', '2', '3', '4', '5'].includes(saved.difficulty) ? [saved.difficulty] : ['1', '2', '3', '4', '5'];
   return [
-    { key: 'period', label: 'Movie years', when,
-      options: [{ value: '2000', label: '2000 and newer' }, { value: 'all', label: 'All years' },
-        { value: '1990', label: '1990 and newer' }, { value: 'older', label: 'Before 2000' },
-        { value: 'custom', label: 'Custom timespan' }],
-      default: ['2000', 'all', '1990', 'older', 'custom'].includes(saved.period) ? saved.period : '2000' },
-    { key: 'fromYear', label: 'From year', type: 'number', min: 1900, max: 2999,
-      when: values => when(values) && values.period === 'custom', default: saved.fromYear ?? '2000' },
-    { key: 'toYear', label: 'Through year', type: 'number', min: 1900, max: 2999,
-      when: values => when(values) && values.period === 'custom', default: saved.toYear ?? String(new Date().getFullYear()) },
-    { key: 'difficulty', label: 'Movie difficulty', when,
-      options: [{ value: 'all', label: 'All difficulties' },
-        ...DIFFICULTIES.map((label, index) => ({ value: String(index + 1), label: `${index + 1} · ${label}` }))],
-      default: ['all', '1', '2', '3', '4', '5'].includes(saved.difficulty) ? saved.difficulty : 'all' },
+    { key: 'yearRange', label: 'Movie years', type: 'range', when, min, max,
+      default: [Math.min(lower, upper), Math.max(lower, upper)],
+      help: 'Drag either end to choose your years. Arrow keys fine-tune one year at a time.' },
+    { key: 'difficulties', label: 'Difficulty', type: 'multiple', when,
+      options: DIFFICULTIES.map((label, index) => ({ value: String(index + 1), label, badge: String(index + 1) })),
+      default: difficulties.filter(value => ['1', '2', '3', '4', '5'].includes(value)),
+      help: 'Pick one or more levels. 1 is easiest; 5 is hardest.' },
   ];
 }
 
 export function movieSetupError(movies, values) {
   if (values.category !== 'telugu-movies') return '';
-  if (values.period === 'custom' && (!/^\d{4}$/.test(values.fromYear) || !/^\d{4}$/.test(values.toYear) ||
+  if (values.yearRange !== undefined && (!Array.isArray(values.yearRange) || values.yearRange.length !== 2 ||
+      !values.yearRange.every(Number.isInteger) || values.yearRange[0] > values.yearRange[1])) {
+    return 'Choose a valid year range.';
+  }
+  if (values.difficulties !== undefined && (!Array.isArray(values.difficulties) ||
+      !values.difficulties.length || values.difficulties.some(value => !['1', '2', '3', '4', '5'].includes(value)))) {
+    return 'Select at least one difficulty level.';
+  }
+  if (!values.yearRange && values.period === 'custom' && (!/^\d{4}$/.test(values.fromYear) || !/^\d{4}$/.test(values.toYear) ||
       Number(values.fromYear) < 1900 || Number(values.toYear) > 2999 || Number(values.fromYear) > Number(values.toYear))) {
     return 'Choose a valid timespan with the first year no later than the last.';
   }

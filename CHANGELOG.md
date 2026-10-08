@@ -3,6 +3,24 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — Simpler movie choices and saved-game cleanup
+
+- Replaced year preset buttons and numeric fields with a two-handle range slider
+  and live selected-year readout; retained the 2000+ starting range.
+- Applied discrete player/numeric sliders and compact dropdowns to shared setup
+  screens across games, retaining each game's exact allowed choices.
+- Made difficulty chips multi-select, with level badges, selected checkmarks,
+  live matching counts and clear empty-selection guidance.
+- Added a rotary Charades clock: 90-degree detents change the timer by 30 seconds
+  from 30 through 360 seconds, with three concentric gradient rings showing full
+  turns, a centered minutes:seconds readout and tap, drag, keyboard and
+  click/haptic feedback.
+- Preserved legacy saved rounds/settings, including 45-second rounds.
+- Extended Charades resume expiry to eight minutes so six-minute turns are not
+  interrupted by the old five-minute session window.
+- Added a keyboard/touch-friendly Delete button beside each unfinished game,
+  persisting deletion without opening the game or removing other saved rounds.
+
 ## 2026-10-07 — Approved Telugu movies available in games
 
 - Published 4,613 complete approved movie records in public year-period files,

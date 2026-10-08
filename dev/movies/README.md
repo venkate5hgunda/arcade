@@ -322,14 +322,23 @@ requests and credentials remain private. Full source fidelity is preserved in
 SQLite and the ignored private exports, not duplicated into browser assets.
 
 Dumb Charades and Imposter load the approved library rather than the four-title
-starter set. Their configuration provides a 2000+ preset, all years, older films,
-custom inclusive year ranges and difficulty 1–5. Empty/invalid selections disable
+starter set. Their configuration provides a two-handle year range (defaulting
+to 2000 onward) and compact difficulty chips supporting any combination of
+levels 1–5. Live counts and selected years update as either handle moves.
+Empty/invalid selections disable
 Start with an explanation. Equal title/year records share a prompt to avoid
 duplicate selection bias; every approved identity remains in the public files.
 Title/year labels distinguish remakes. Reasons remain hidden while acting or
 revealing roles and appear in expandable post-turn/post-round details.
 The service worker refreshes the index network-first and caches all referenced
 partitions before publishing a cached index, supporting complete offline play.
+Charades uses a clock timer: each 90-degree detent is 30 seconds, with choices
+30 through 360 seconds across three full turns. Concentric gradient rings fill
+as each turn completes. Clockwise adds time; counterclockwise removes it.
+Time is shown in the dial's center as minutes:seconds; arrow keys and direct
+taps on clock marks also work. Existing 45-second saved
+rounds still resume unchanged. Older year/difficulty settings are migrated to
+the new controls without discarding active rounds.
 
 ## Attribution and usage
 
