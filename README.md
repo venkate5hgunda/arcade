@@ -220,8 +220,9 @@ longer-term goals (distinct from the current single-round/high-score play).
 Imposter ships an original catalogue of 630 words across 21 categories
 (`js/imposter-words.js`); each entry has a hint and a close decoy word.
 Setup offers Classic or **Pair** mode (imposters secretly get the decoy and are
-not told their role), a fixed or random imposter count (1–6, at most fewer
-than half the table), toggles for what imposters see (category, hint, fellow
+not told their role), an imposter slider with a **Random** switch for a
+secret count within a range (1–6, at most fewer than half the table; the
+slider locks live when the player count allows only one), toggles for what imposters see (category, hint, fellow
 imposters), and a collapsible category picker that can mix in Telugu movies.
 Games run in rounds: the top vote is eliminated, ties spare everyone, and the
 crew wins once every imposter is out; imposters win when they equal the crew.

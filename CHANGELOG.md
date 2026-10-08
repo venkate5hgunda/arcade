@@ -3,6 +3,23 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-08 — Live-linked setup controls
+
+- `renderSetup` now re-syncs dependent fields on every change: range sliders
+  accept a `limit(values)` (hatched out-of-range zones, auto-clamp, and the
+  user's choice is restored when limits relax), lock with a note when only one
+  value is valid, and options can be disabled live via `optionState`.
+  Per-field `error(values)` shows inline and disables Start immediately.
+- Imposter: a **Random** switch sits next to the imposter slider (off = one
+  exact count, on = a random range). The slider and switch lock when the
+  player count allows only one imposter; "Fellow imposters" is disabled then;
+  clearing every category errors inline.
+- Movie filters (Dumb Charades, Imposter): each difficulty chip shows how many
+  movies match the chosen years and is disabled when there are none.
+- Chess: "Play As" only appears against the computer.
+- Reviewed every game; Business, Catan, Ludo and the rest have no
+  cross-field rules, and room lobbies already limit games by seat count.
+
 ## 2026-10-08 — Imposter: word catalogue, Pair mode and imposter options
 
 - Added `js/imposter-words.js`: 630 original words in 21 categories (food,

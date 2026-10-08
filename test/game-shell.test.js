@@ -89,7 +89,7 @@ class SetupElement {
     this.html = html;
     this.children = [];
     this.parts = {};
-    for (const name of ['setup-preview', 'setup-fields', 'setup-start-btn', 'setup-options']) {
+    for (const name of ['setup-preview', 'setup-fields', 'setup-start-btn', 'setup-options', 'setup-field-label']) {
       if (html.includes(`class="${name}"`)) this.parts[`.${name}`] = new SetupElement();
     }
   }
@@ -100,6 +100,7 @@ class SetupElement {
       ?.querySelector('.setup-options').children.find(child => child.attributes['aria-pressed'] === 'true') ?? null;
   }
   appendChild(node) { this.children.push(node); }
+  replaceWith(node) { this.replaced = node; }
   setAttribute(key, value) { this.attributes[key] = value; }
   addEventListener(event, listener) { this.listeners[event] = listener; }
   focus() { this.focused = true; }
@@ -230,7 +231,7 @@ test('range handles cannot cross and multiple levels toggle without losing other
     const card = stage.children[0];
     const fields = card.querySelector('.setup-fields');
     const range = fields.children[0].querySelector('.setup-options');
-    const [lower, upper] = range.children[1].children;
+    const [lower, upper] = range.children[1].children.filter(child => child.tag === 'input');
     upper.value = '1990';
     upper.listeners.input();
     assert.equal(upper.value, '2000');
@@ -246,6 +247,72 @@ test('range handles cannot cross and multiple levels toggle without losing other
     assert.match(card.querySelector('.setup-preview').textContent, /1980–2000.*Approachable/);
     card.querySelector('.setup-start-btn').listeners.click();
     assert.deepEqual(await result, { years: [1980, 2000], levels: ['2'] });
+  } finally {
+    globalThis.document = previousDocument;
+    globalThis.window = previousWindow;
+  }
+});
+
+test('dependent limits clamp live, lock a slider with one valid value, and restore intent', async () => {
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  try {
+    globalThis.document = { createElement: tag => new SetupElement(tag) };
+    globalThis.window = {};
+    const stage = new SetupElement();
+    const result = renderSetup(stage, {
+      fields: [
+        { key: 'players', label: 'Players', default: '8',
+          options: [3, 4, 5, 6, 7, 8].map(n => ({ value: String(n), label: `${n} players` })) },
+        { key: 'count', label: 'Imposters', type: 'range', min: 1, max: 6, default: [3, 3],
+          toggle: { key: 'random', label: 'Random', default: 'false' },
+          limit: values => ({ max: Math.max(1, Math.floor((Number(values.players) - 1) / 2)) }),
+          limitNote: (values, [, most]) => most < 6 ? `${values.players} players allow up to ${most}` : '' },
+        { key: 'tags', label: 'Tags', type: 'multiple', default: ['a'],
+          options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }],
+          optionState: (option, values) => ({ detail: option.value === 'a' ? 'None' : '4 left', disabled: option.value === 'a' && values.players === '3' }),
+          error: values => values.tags.length ? '' : 'Pick a tag.' },
+      ],
+    });
+    const card = stage.children[0];
+    const fields = card.querySelector('.setup-fields');
+    const players = fields.children[0].querySelector('.setup-options').children[1].children[0];
+    const countGroup = fields.children[1];
+    const countOptions = countGroup.querySelector('.setup-options');
+    const [lower, upper] = countOptions.children[1].children.filter(child => child.tag === 'input');
+    const note = countOptions.children.at(-1);
+    const toggle = countGroup.querySelector('.setup-field-label').replaced.children[1];
+    assert.equal(upper.hidden, true, 'exact count uses one handle');
+    assert.equal(toggle.attributes['aria-checked'], 'false');
+
+    players.value = '2'; players.listeners.input();                  // 5 players: at most 2
+    assert.equal(lower.value, '2');
+    assert.equal(lower.attributes['aria-valuemax'], '2');
+    assert.equal(note.textContent, '5 players allow up to 2');
+    players.value = '0'; players.listeners.input();                  // 3 players: locked at 1
+    assert.equal(lower.disabled, true);
+    assert.equal(toggle.disabled, true);
+    const tags = fields.children[2].querySelector('.setup-options').children;
+    assert.equal(tags[0].disabled, false, 'a selected option stays removable even when unavailable');
+    assert.equal(tags[1].children.at(-1).children.at(-1).textContent, '4 left');
+    players.value = '5'; players.listeners.input();                  // 8 players: intent 3 returns
+    assert.equal(lower.value, '3');
+    assert.equal(lower.disabled, false);
+
+    toggle.listeners.click();
+    assert.equal(toggle.attributes['aria-checked'], 'true');
+    assert.equal(upper.hidden, false);
+    tags[0].listeners.click();
+    const error = fields.children[2].children.find(child => child.className === 'setup-field-error');
+    assert.equal(error.textContent, 'Pick a tag.');
+    assert.equal(card.querySelector('.setup-start-btn').disabled, true);
+    tags[1].listeners.click();
+    assert.equal(error.hidden, true);
+    card.querySelector('.setup-start-btn').listeners.click();
+    const values = await result;
+    assert.equal(values.random, 'true');
+    assert.deepEqual(values.count, [2, 3], 'random spreads downward from the cap');
+    assert.deepEqual(values.tags, ['b']);
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;

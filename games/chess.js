@@ -367,7 +367,7 @@ export default {
           default: saved.mode,
         },
         {
-          key: 'side', label: 'Play As (vs Computer)',
+          key: 'side', label: 'Play As', when: values => values.mode === 'ai',
           options: [{ value: 'w', label: '⚪ White' }, { value: 'b', label: '⚫ Black' }],
           default: saved.side,
         },
