@@ -66,6 +66,7 @@ function withDOM() {
       innerHTML: '', textContent: '',
       appendChild(child) { children.push(child); },
       after() {},
+      remove() {},
       setAttribute() {},
       addEventListener(event, handler) { handlers.set(event, handler); },
       querySelector(selector) {
@@ -90,14 +91,17 @@ function withDOM() {
     addEventListener(event, handler) { listeners.set(event, handler); },
     removeEventListener(event) { listeners.delete(event); },
   };
-  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  globalThis.window = { addEventListener() {}, removeEventListener() {}, setTimeout() {} };
   globalThis.localStorage = { getItem() { return null; }, setItem() {} };
+  const previousElement = globalThis.Element;
+  globalThis.Element = Object;
   return {
     makeElement, listeners,
     restore() {
       globalThis.document = previous.document;
       globalThis.window = previous.window;
       globalThis.localStorage = previous.localStorage;
+      globalThis.Element = previousElement;
     },
   };
 }
@@ -166,7 +170,7 @@ test('imposter resumed reveals stay face-down; only results show film details', 
     assert.ok(!card.innerHTML.includes(movie.clue));
     game.dispose();
 
-    state = { ...state, phase: 'vote', currentPlayer: 3, votes: [1, 0, 0, null] };
+    state = { ...state, phase: 'vote', currentPlayer: 3, votes: [1, 0, 1, null] };
     const resultContainer = dom.makeElement();
     const resultGame = await imposter.render(resultContainer, { color: '#fff' }, { session, movieLibrary: TELUGU_MOVIES });
     const resultCard = resultContainer.children[0].querySelector('.game-stage').children[0];
@@ -174,7 +178,7 @@ test('imposter resumed reveals stay face-down; only results show film details', 
     resultCard.querySelector('#submitVote').handlers.get('click')(); // no selection yet
     assert.equal(state.phase, 'vote');
     const voteButtons = resultCard.querySelectorAll('.imp-vote-btn');
-    voteButtons[0].handlers.get('click')();
+    voteButtons[1].handlers.get('click')();
     resultCard.querySelector('#submitVote').handlers.get('click')();
     assert.equal(finished, 1);
     assert.ok(resultCard.innerHTML.includes(movie.story));

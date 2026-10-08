@@ -88,11 +88,11 @@ export const GAMES = [
     id: 'imposter',
     name: 'Imposter',
     tagline: 'Find the spy among you',
-    players: { min: 3, max: 8, type: 'group' },
+    players: { min: 3, max: 20, type: 'group' },
     category: 'Party',
     color: '#a855f7',
     icon: 'game-icons:spy',
-    description: 'One player gets a secret word, everyone else gets a related clue. Blend in and deduce.',
+    description: 'Everyone shares a secret word except the imposters. 630+ words in 21 categories, Pair mode decoys, and up to 6 imposters.',
   },
   {
     id: 'mafia',

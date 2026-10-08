@@ -20,6 +20,6 @@ test('local seat names persist while room seats use the roster', () => {
     assert.equal(playerName(0, room), 'Ravi');
     assert.equal(playerName(1, room), 'Lila');
     assert.throws(() => savePlayerNames(['x'.repeat(25)]), /24 characters/);
-    assert.throws(() => playerName(8), RangeError);
+    assert.throws(() => playerName(20), RangeError);
   } finally { globalThis.localStorage = old; }
 });

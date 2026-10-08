@@ -26,7 +26,7 @@ a generic static server to avoid exposing private development data.
 | Island Charter | 3–4 | Board | ✅ Implemented |
 | Business | 2–6 | Board | ✅ Implemented |
 | Chess | 1–2 | Board | ✅ Implemented |
-| Imposter | 3–8 | Party | ✅ Implemented |
+| Imposter | 3–20 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
 | Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
 | Blackjack | 1 | Cards | ✅ Implemented |
@@ -214,6 +214,17 @@ Chess; **120 min** for Island Charter; and **240 min** for Business.
 
 **Future enhancement:** Solo campaigns with progressive stages, unlocks and
 longer-term goals (distinct from the current single-round/high-score play).
+
+### Imposter options
+
+Imposter ships an original catalogue of 630 words across 21 categories
+(`js/imposter-words.js`); each entry has a hint and a close decoy word.
+Setup offers Classic or **Pair** mode (imposters secretly get the decoy and are
+not told their role), a fixed or random imposter count (1–6, at most fewer
+than half the table), toggles for what imposters see (category, hint, fellow
+imposters), and a collapsible category picker that can mix in Telugu movies.
+Games run in rounds: the top vote is eliminated, ties spare everyone, and the
+crew wins once every imposter is out; imposters win when they equal the crew.
 
 ### Telugu movie catalogue
 

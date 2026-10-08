@@ -1,6 +1,6 @@
 import { KEYS, loadJSON, saveJSON } from './storage.js';
 
-const MAX_PLAYERS = 8;
+const MAX_PLAYERS = 20;
 const MAX_LENGTH = 24;
 
 export function playerName(index, room = null) {

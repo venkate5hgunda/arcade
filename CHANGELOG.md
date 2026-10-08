@@ -3,6 +3,23 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-08 — Imposter: word catalogue, Pair mode and imposter options
+
+- Added `js/imposter-words.js`: 630 original words in 21 categories (food,
+  animals, places, desi life, science and more), each with a hint and a close
+  decoy. Reference word lists online were used for inspiration only.
+- New setup: Classic or Pair mode (imposters get a decoy word and no role), an
+  imposter range slider (equal ends = exact count, spread = random each round,
+  max 6 and fewer than half the players), "Imposters can see" toggles for
+  category, hint and fellow imposters, and a collapsible category menu with
+  emoji tiles plus Select all / Clear. Telugu movies remain a category, with a
+  nearby film of the same difficulty as the Pair-mode decoy.
+- Players now go up to 20 (custom player names too). Voting runs in rounds with
+  eliminations, tie handling, round history and a final vote tally.
+- `renderSetup` gained collapsible sections, bulk actions, option icons,
+  custom range/multi-select labels, and re-renders dependent fields when a
+  multi-select changes. Legacy Imposter saves still resume.
+
 ## 2026-10-07 — Bars thicken in place while pressed
 
 - Removed protruding slider thumbs and the dial knob. Player sliders, the year

@@ -94,8 +94,7 @@ export function uniquePrompts(movies) {
   return [...new Map(movies.map(movie => [movie.prompt ?? movie.title, movie])).values()];
 }
 
-export function movieFilterFields(saved = {}, movies = []) {
-  const when = values => values.category === 'telugu-movies';
+export function movieFilterFields(saved = {}, movies = [], when = values => values.category === 'telugu-movies') {
   const years = movies.map(movie => movie.year).filter(Number.isInteger);
   const min = years.length ? Math.min(...years) : 1931;
   const max = years.length ? Math.max(...years) : new Date().getFullYear();
