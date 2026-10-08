@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { clockField, createShell, renderSetup } from '../js/game-shell.js';
+import { createSpring, detent } from '../js/motion.js';
 import { room } from '../js/multiplayer.js';
 
 test('top reset control briefly confirms a local reset or room request', () => {
@@ -251,7 +252,7 @@ test('range handles cannot cross and multiple levels toggle without losing other
   }
 });
 
-test('clock dial snaps each quarter-turn to 30 seconds in both directions and supports keyboard', async () => {
+test('clock dial selects any time, resists gently at quarter marks and reverses at limits', async () => {
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;
   try {
@@ -260,64 +261,91 @@ test('clock dial snaps each quarter-turn to 30 seconds in both directions and su
     globalThis.window = { haptics: { select() { clicks++; }, medium() {} } };
     const stage = new SetupElement();
     const result = renderSetup(stage, {
-      fields: [{ key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3, default: '30' }],
+      fields: [{ key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3, min: 10, default: '30' }],
     });
     const card = stage.children[0];
-    const options = card.querySelector('.setup-fields').children[0].querySelector('.setup-options');
-    const clock = options.children[0];
-    const point = (x, y) => ({ pointerId: 1, button: 0, clientX: x, clientY: y, preventDefault() {} });
-    clock.listeners.pointerdown(point(50, 0));
-    clock.listeners.pointermove(point(100, 50));
-    assert.equal(clock.attributes['aria-valuenow'], '60');
-    clock.listeners.pointermove(point(50, 100));
-    assert.equal(clock.attributes['aria-valuenow'], '90');
-    clock.listeners.pointermove(point(0, 50));
-    assert.equal(clock.attributes['aria-valuenow'], '120');
-    clock.listeners.pointermove(point(50, 100));
-    assert.equal(clock.attributes['aria-valuenow'], '90');
-    clock.listeners.pointerup(point(50, 100));
-    clock.listeners.keydown({ key: 'ArrowLeft', preventDefault() {} });
-    assert.equal(clock.attributes['aria-valuenow'], '60');
+    const clock = card.querySelector('.setup-fields').children[0].querySelector('.setup-options').children[0];
+    const at = degrees => {
+      const radians = degrees * Math.PI / 180;
+      return { pointerId: 1, button: 0, clientX: 50 + 40 * Math.sin(radians), clientY: 50 - 40 * Math.cos(radians), preventDefault() {} };
+    };
+    const value = () => Number(clock.attributes['aria-valuenow']);
     const readout = clock.children.flatMap(child => [child, ...child.children]).find(child => child.tag === 'output');
-    assert.equal(readout.textContent, '1:00');
-    assert.equal(clicks, 5);
-    clock.listeners.keydown({ key: 'End', preventDefault() {} });
-    assert.equal(clock.attributes['aria-valuenow'], '360');
-    assert.equal(clock.attributes['aria-valuemax'], '360');
-    clock.listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
-    assert.equal(clock.attributes['aria-valuenow'], '360');
-    clock.listeners.keydown({ key: 'Home', preventDefault() {} });
-    assert.equal(clock.attributes['aria-valuenow'], '30');
-    clock.listeners.pointerdown(point(50, 0));
-    clock.listeners.pointermove(point(0, 50));
-    clock.listeners.pointerup(point(0, 50));
-    assert.equal(clock.attributes['aria-valuenow'], '30', 'dragging against the minimum is not interpreted as a tap');
-    clock.listeners.pointerdown(point(50, 0));
-    for (let turn = 0; turn < 3; turn++) {
-      for (const [x, y] of [[100, 50], [50, 100], [0, 50], [50, 0]]) clock.listeners.pointermove(point(x, y));
-    }
-    assert.equal(clock.attributes['aria-valuenow'], '360');
-    clock.listeners.pointermove(point(0, 50));
-    assert.equal(clock.attributes['aria-valuenow'], '330', 'reversing after the maximum detent immediately removes 30 seconds');
+
+    clock.listeners.pointerdown(at(90));
+    clock.listeners.pointermove(at(127));
+    assert.equal(value(), 42, 'free values between quarter marks (37 degrees = 12 seconds)');
+    clock.listeners.pointermove(at(178));
+    assert.ok(value() > 59 && value() < 60.5, 'approaching a mark is pulled toward it');
+    clock.listeners.pointermove(at(188));
+    assert.equal(value(), 62, 'detent is sticky but can be pushed through');
+    clock.listeners.pointermove(at(197));
+    assert.equal(value(), 66);
+    clock.listeners.pointerup(at(197));
+    assert.equal(value(), 66, 'released away from a mark keeps the exact chosen time');
+    assert.equal(readout.textContent, '1:06');
+    assert.ok(clicks >= 1, 'crossing a quarter mark gives a detent tick');
+
+    clock.listeners.pointerdown(at(197));
+    clock.listeners.pointermove(at(182));
+    clock.listeners.pointerup(at(182));
+    assert.equal(value(), 60, 'released within the detent settles onto the mark');
+
+    clock.listeners.pointerdown(at(180));
+    for (let angle = 225; angle <= 180 + 1440; angle += 45) clock.listeners.pointermove(at(angle));
+    assert.equal(value(), 360, 'clamped to three turns');
+    clock.listeners.pointermove(at(135));
+    assert.ok(value() < 360, 'reversing after the maximum removes time immediately');
     clock.listeners.pointercancel();
+
     clock.listeners.keydown({ key: 'Home', preventDefault() {} });
+    assert.equal(value(), 10);
+    clock.listeners.keydown({ key: 'PageUp', preventDefault() {} });
     clock.listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
+    assert.equal(value(), 45);
+    assert.match(card.querySelector('.setup-preview').textContent, /Turn timer: 0:45/);
     card.querySelector('.setup-start-btn').listeners.click();
-    assert.deepEqual(await result, { timer: '60' });
+    assert.deepEqual(await result, { timer: '45' });
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
   }
 });
 
-test('clock dial step size and maximum turns are configurable per game', () => {
+test('clock dial step size, minimum and maximum turns are configurable per game', () => {
   const field = clockField({ key: 'rounds', label: 'Rounds', type: 'clock', step: 1, stepDegrees: 30, maxTurns: 2, unit: '', default: '99' });
-  assert.equal(field.options.length, 24);
-  assert.equal(field.options[0].value, '1');
-  assert.equal(field.options.at(-1).value, '24');
-  assert.equal(field.default, '1', 'invalid defaults fall back to the first detent');
-  assert.equal(clockField({ step: 30 }).options.at(-1).value, '360', 'defaults to 90-degree detents and three turns');
+  assert.equal(field.min, 1);
+  assert.equal(field.max, 24);
+  assert.equal(field.default, '24', 'out-of-range defaults are clamped');
+  assert.equal(clockField({ step: 30 }).max, 360, 'defaults to 90-degree steps and three turns');
+  assert.equal(clockField({ step: 30, maxTurns: 1, default: '47' }).default, '47');
   assert.throws(() => clockField({ stepDegrees: 70 }), /divide 360/);
+});
+
+test('springs settle with momentum and detents soften motion near marks', () => {
+  const frames = [];
+  const previous = { raf: globalThis.requestAnimationFrame, caf: globalThis.cancelAnimationFrame };
+  let now = 0;
+  globalThis.requestAnimationFrame = callback => frames.push(callback);
+  globalThis.cancelAnimationFrame = () => {};
+  try {
+    const seen = [];
+    let rested = false;
+    const spring = createSpring(value => seen.push(value));
+    spring.jump(0);
+    spring.to(100, { stiffness: 170, damping: 19, onRest: () => { rested = true; } });
+    while (frames.length && now < 5000) { now += 16; frames.shift()(now); }
+    assert.ok(rested);
+    assert.equal(seen.at(-1), 100);
+    assert.ok(Math.max(...seen) > 100, 'slightly underdamped settle has a soft overshoot');
+    assert.ok(seen.length > 10, 'animated over multiple frames');
+  } finally {
+    globalThis.requestAnimationFrame = previous.raf;
+    globalThis.cancelAnimationFrame = previous.caf;
+  }
+  assert.equal(detent(95, 90, 10), 90 + 10 * 0.5 ** 3);
+  assert.equal(detent(120, 90, 10), 120);
+  assert.equal(detent(37, 90, 0), 37);
 });
 
 test('compact numeric sliders and categorical dropdowns keep each game allowed choices', async () => {
