@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { loadApprovedMovies, filterMovies, uniquePrompts, movieSetupError, escapeHTML, movieDetails, difficultyLabel } from '../js/movie-library.js';
+import { loadApprovedMovies, filterMovies, uniquePrompts, movieSetupError, escapeHTML, movieDetails, difficultyLabel, movieFilterFields } from '../js/movie-library.js';
 import { validCheckpoint as validCharades } from '../games/dumb-charades.js';
 import { validCheckpoint as validImposter } from '../games/imposter.js';
 
@@ -55,4 +55,24 @@ test('provider/model text is escaped and unavailable data is not silently replac
   assert.equal(escapeHTML('<script>"&'), '&lt;script&gt;&quot;&amp;');
   assert.ok(!movieDetails({ year: 2000, story: '<img>', cast: '<script>' }).includes('<img>'));
   await assert.rejects(loadApprovedMovies(async () => ({ ok: false, status: 503 })), /503/);
+});
+
+test('year slider and multiple difficulty choices preserve inclusive boundaries and legacy settings', () => {
+  const movies = [
+    { year: 1980, difficulty: 1 }, { year: 2000, difficulty: 2 },
+    { year: 2010, difficulty: 4 }, { year: null, difficulty: 1 },
+  ];
+  const fields = movieFilterFields({ period: 'older', difficulty: '2' }, movies);
+  assert.deepEqual(fields[0].default, [1980, 1999]);
+  assert.deepEqual(fields[1].default, ['2']);
+  assert.equal(fields[0].type, 'range');
+  assert.equal(fields[1].type, 'multiple');
+  const selection = { category: 'telugu-movies', yearRange: [1980, 2000], difficulties: ['1', '2'] };
+  assert.deepEqual(filterMovies(movies, selection), movies.slice(0, 2));
+  assert.equal(movieSetupError(movies, selection), '');
+  assert.match(movieSetupError(movies, { ...selection, difficulties: [] }), /at least one/);
+  assert.match(movieSetupError(movies, { ...selection, yearRange: [2000, 1980] }), /valid year/);
+  assert.equal(difficultyLabel(['1', '3']), 'Easy + Moderate');
+  assert.deepEqual(movieFilterFields({ yearRange: [1980, 2000], difficulties: ['1', '3'] }, movies).map(field => field.default),
+    [[1980, 2000], ['1', '3']]);
 });

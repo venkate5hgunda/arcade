@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameSession, recentUnfinishedGame, unfinishedGames, RESUME_MINUTES } from '../js/game-session.js';
+import { createGameSession, recentUnfinishedGame, unfinishedGames, deleteGameSession, RESUME_MINUTES } from '../js/game-session.js';
 import { KEYS, loadJSON, saveJSON } from '../js/storage.js';
 import { GAMES } from '../js/game-catalog.js';
 import { initialGameFromHash } from '../js/router.js';
@@ -28,6 +28,30 @@ test('only an unfinished checkpoint returns to its actual saved round', () => {
   session.finish();
   assert.equal(recentUnfinishedGame(), null);
   assert.equal(createGameSession('chess').state, null);
+});
+
+test('deleting a saved game persists, preserves other games, and reports storage failures', () => {
+  values.clear();
+  createGameSession('chess').save({ turn: 'w' });
+  createGameSession('ludo').save({ turn: 1 });
+  assert.equal(deleteGameSession('chess'), true);
+  assert.equal(createGameSession('chess').state, null);
+  assert.deepEqual(unfinishedGames(), ['ludo']);
+  const write = localStorage.setItem;
+  const warn = console.warn;
+  const warnings = [];
+  try {
+    localStorage.setItem = () => { throw new Error('Storage blocked'); };
+    console.warn = message => warnings.push(message);
+    assert.equal(deleteGameSession('ludo'), false);
+    assert.deepEqual(unfinishedGames(), ['ludo']);
+    assert.match(warnings[0], /Could not delete/);
+  } finally {
+    localStorage.setItem = write;
+    console.warn = warn;
+  }
+  assert.equal(deleteGameSession('ludo'), true);
+  assert.deepEqual(unfinishedGames(), []);
 });
 
 test('expired and malformed checkpoints are deleted without erasing fresh games', () => {
@@ -105,6 +129,15 @@ test('a timed round cannot outlive its own clock even within its resume window',
   });
   assert.equal(recentUnfinishedGame(now), null);
   assert.equal(loadJSON(KEYS.GAME_SESSIONS, null), null);
+});
+
+test('a six-minute Charades turn is not expired before its clock finishes', () => {
+  values.clear();
+  const now = Date.now();
+  saveJSON(KEYS.GAME_SESSIONS, {
+    'dumb-charades': { state: { phase: 'acting', duration: 360, deadline: now + 20_000 }, savedAt: now - 340_000 },
+  });
+  assert.deepEqual(unfinishedGames(now), ['dumb-charades']);
 });
 
 test('each catalog game expires at its own configured inactivity boundary', () => {

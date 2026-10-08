@@ -4,7 +4,7 @@
 
 import { loadJSON, remove, saveJSON, KEYS } from './storage.js';
 import { loadGameModule, getGame, CATEGORIES, gamesByCategory, playerLabel } from './game-catalog.js';
-import { createGameSession, unfinishedGames } from './game-session.js';
+import { createGameSession, unfinishedGames, deleteGameSession } from './game-session.js';
 import { room } from './multiplayer.js';
 import { iconMarkup } from './icons.js';
 
@@ -169,6 +169,22 @@ function wireGrid() {
   }
 
   landing.addEventListener('click', (e) => {
+    const deleteButton = e.target.closest('[data-delete-session]');
+    if (deleteButton) {
+      const game = getGame(deleteButton.dataset.deleteSession);
+      const status = landing.querySelector('.resume-notice');
+      if (!deleteGameSession(game.id)) {
+        status.textContent = `Could not delete ${game.name}. Check browser storage permissions and try again.`;
+        return;
+      }
+      renderResumeGames();
+      status.textContent = `${game.name} saved game deleted.`;
+      const next = landing.querySelector('[data-delete-session]') || landing.querySelector('.catalog-toolbar h2');
+      next.setAttribute('tabindex', next.tagName === 'BUTTON' ? '0' : '-1');
+      next.focus();
+      window.haptics?.select();
+      return;
+    }
     const btn = e.target.closest('.game-card-btn[data-game], .resume-game[data-game]');
     if (!btn) return;
     window.arcadeAudio?.prepare();
@@ -202,11 +218,14 @@ function renderResumeGames() {
   section.dataset.games = ids;
   section.hidden = games.length === 0;
   section.querySelector('.resume-games').innerHTML = games.map((game) => `
+    <div class="resume-game-item" style="--accent:${game.color}">
     <button class="resume-game" type="button" data-game="${game.id}" style="--accent:${game.color}" aria-label="Resume ${game.name}">
       <span class="resume-icon">${iconMarkup(game.icon, 'catalog-icon')}</span>
       <span class="resume-game-copy"><strong>${game.name}</strong><small>Continue playing</small></span>
       ${iconMarkup('tabler:arrow-right')}
-    </button>`).join('');
+    </button>
+    <button class="resume-delete" type="button" data-delete-session="${game.id}" aria-label="Delete saved ${game.name} game" title="Delete saved game">Delete</button>
+    </div>`).join('');
 }
 
 function renderLanding() {
@@ -228,6 +247,7 @@ function renderLanding() {
         </div>
         <div class="resume-games"></div>
       </section>
+      <p class="resume-notice" role="status" aria-live="polite"></p>
       <section id="recent-section" class="recent-section" hidden>
         <h2 class="section-heading">${iconMarkup('tabler:history')} Recently played</h2>
         <div id="recent-grid" class="game-grid recent-grid" role="list"></div>

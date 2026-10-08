@@ -10,7 +10,7 @@ export const RESUME_MINUTES = Object.freeze({
   chess: 45,
   'connect-four': 12,
   'crazy-eights': 15,
-  'dumb-charades': 5,
+  'dumb-charades': 8,
   hangman: 10,
   imposter: 15,
   ludo: 30,
@@ -63,6 +63,17 @@ export function unfinishedGames(now = Date.now()) {
 
 export function recentUnfinishedGame(now = Date.now()) {
   return unfinishedGames(now)[0] ?? null;
+}
+
+export function deleteGameSession(id) {
+  const saved = sessions();
+  if (!Object.hasOwn(saved, id)) return true;
+  delete saved[id];
+  if (!saveJSON(KEYS.GAME_SESSIONS, saved)) {
+    console.warn(`Could not delete ${id} saved game.`);
+    return false;
+  }
+  return true;
 }
 
 export function createGameSession(id) {

@@ -40,7 +40,7 @@ export function validCheckpoint(s, movies = TELUGU_MOVIES) {
   if (!s || !CATEGORIES.includes(s.category ?? 'everyday')) return false;
   if (movieSetupError(movies, s)) return false;
   const pairs = pairsFor(s.category ?? 'everyday', filterMovies(movies, s));
-  if (s.category === 'telugu-movies' && s.period === undefined) pairs.push(...TELUGU_MOVIES.map(movie => ({ word: movie.title, clue: movie.clue })));
+  if (s.category === 'telugu-movies' && s.period === undefined && !s.yearRange && !s.difficulties) pairs.push(...TELUGU_MOVIES.map(movie => ({ word: movie.title, clue: movie.clue })));
   return Number.isInteger(s.players) && s.players >= 3 && s.players <= 8 &&
     ['setup', 'reveal', 'discuss', 'vote'].includes(s.phase) &&
     Number.isInteger(s.currentPlayer) && s.currentPlayer >= 0 && s.currentPlayer < s.players &&
@@ -77,17 +77,17 @@ export default {
           options: [{ value: 'everyday', label: 'Everyday words' }, { value: 'telugu-movies', label: 'Telugu movies' }],
           default: CATEGORIES.includes(saved.category) ? saved.category : 'everyday',
         },
-        ...movieFilterFields(saved),
+        ...movieFilterFields(saved, movies),
       ],
       validate: values => movieSetupError(movies, values),
-      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} approved movie prompts · ${difficultyLabel(values.difficulty)}` : '',
+      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} movies ready · ${difficultyLabel(values.difficulties)}` : '',
       startLabel: 'Deal the Cards',
     });
     saveJSON(KEYS.SETTINGS + ':imposter', settings);
     const playerCount = Math.max(3, Math.min(8, parseInt(settings.players, 10) || 4));
     const category = settings.category;
     const selectedMovies = uniquePrompts(filterMovies(movies, settings));
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulty)}` : 'Everyday words'} · One spy`;
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulties ?? settings.difficulty)}` : 'Everyday words'} · One spy`;
 
     let phase = 'setup'; // setup -> reveal -> discuss -> vote -> result
     let currentPlayer = 0;
@@ -100,6 +100,7 @@ export default {
       session?.save({
         players: playerCount, category, period: settings.period,
         fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty,
+        yearRange: settings.yearRange, difficulties: settings.difficulties,
         phase, currentPlayer, imposterIndex, word, clue, votes: [...votes],
       });
     }
