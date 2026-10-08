@@ -182,6 +182,20 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
       window.arcadeAudio?.tap();
       window.haptics?.select();
     }
+    // Thickens a slider bar in place while it is pressed.
+    function engageOnPress(element) {
+      const release = () => {
+        element.classList.remove('engaged');
+        globalThis.removeEventListener?.('pointerup', release);
+        globalThis.removeEventListener?.('pointercancel', release);
+      };
+      element.addEventListener('pointerdown', () => {
+        element.classList.add('engaged');
+        globalThis.addEventListener?.('pointerup', release);
+        globalThis.addEventListener?.('pointercancel', release);
+      });
+      element.addEventListener('focusout', release);
+    }
 
     function renderFields() {
       if (!fieldsEl) { updateFeedback(); return; }
@@ -204,8 +218,12 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           input.setAttribute('aria-label', f.label);
           const last = f.options.length - 1;
           let shown = null;
+          const bar = document.createElement('div');
+          bar.className = 'setup-slider-bar';
+          engageOnPress(bar);
           function show(position) {
             input.value = String(position);
+            bar.style.setProperty('--fill', String(last ? Math.max(0, Math.min(1, position / last)) : 0));
             const index = Math.max(0, Math.min(last, Math.round(position)));
             if (index === shown) return;
             if (shown !== null) detentFeedback();
@@ -230,7 +248,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             event.preventDefault();
             settle(next);
           });
-          optionsEl.appendChild(readout); optionsEl.appendChild(input);
+          bar.appendChild(input);
+          optionsEl.appendChild(readout); optionsEl.appendChild(bar);
           const bounds = document.createElement('div');
           bounds.className = 'setup-range-bounds';
           const first = document.createElement('span'), lastLabel = document.createElement('span');
@@ -330,6 +349,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             if (event.button !== 0 || drag) return;
             event.preventDefault();
             clock.focus();
+            clock.classList.remove('keyboard');
             const base = spring.target ?? toAngle(Number(values[f.key]));
             drag = { id: event.pointerId, previous: pointerAngle(event), raw: base, travel: 0, samples: [] };
             clock.classList.add('dragging');
@@ -369,7 +389,9 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           });
           clock.addEventListener('pointercancel', () => { if (drag) settle(spring.value ?? 0); endDrag(); });
           clock.addEventListener('lostpointercapture', endDrag);
+          clock.addEventListener('blur', () => clock.classList.remove('keyboard'));
           clock.addEventListener('keydown', event => {
+            clock.classList.add('keyboard');
             const value = Number(values[f.key]);
             const next = { ArrowRight: value + keyStep, ArrowUp: value + keyStep, ArrowLeft: value - keyStep,
               ArrowDown: value - keyStep, PageUp: value + step, PageDown: value - step, Home: min, End: max }[event.key];
@@ -391,6 +413,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           optionsEl.appendChild(readout);
           const track = document.createElement('div');
           track.className = 'setup-range-track';
+          engageOnPress(track);
           optionsEl.appendChild(track);
           const positions = [...values[f.key]];
           const springs = [];
@@ -428,8 +451,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             values[f.key] = years;
             readout.textContent = `${years[0]} – ${years[1]}`;
             const span = f.max - f.min || 1;
-            track.style.setProperty('--range-from', `${(positions[0] - f.min) / span * 100}%`);
-            track.style.setProperty('--range-to', `${(positions[1] - f.min) / span * 100}%`);
+            track.style.setProperty('--range-from', String((positions[0] - f.min) / span));
+            track.style.setProperty('--range-to', String((positions[1] - f.min) / span));
             inputs?.forEach((input, index) => {
               input.value = String(positions[index]);
               input.setAttribute('aria-valuemin', String(index === 0 ? f.min : years[0]));
