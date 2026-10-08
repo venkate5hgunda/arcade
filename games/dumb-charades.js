@@ -33,8 +33,7 @@ export function validCheckpoint(s, movies = TELUGU_MOVIES) {
   if (movieSetupError(movies, s)) return false;
   const prompts = [...promptsFor(s.category ?? 'classic', filterMovies(movies, s)),
     ...(s.category === 'telugu-movies' && s.period === undefined && !s.yearRange && !s.difficulties ? movies.map(movie => movie.title) : [])];
-  const validDuration = s.duration === 45 ||
-    Number.isInteger(s.duration) && s.duration >= 30 && s.duration <= 360 && s.duration % 30 === 0;
+  const validDuration = Number.isInteger(s.duration) && s.duration >= 10 && s.duration <= 360;
   return [2, 4, 6, 8].includes(s.players) && validDuration &&
     ['setup', 'acting', 'scoring'].includes(s.phase) &&
     (s.team === 0 || s.team === 1) &&
@@ -72,9 +71,9 @@ export default {
           default: saved.players,
         },
         {
-          key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3,
-          default: Number(saved.timer) >= 30 && Number(saved.timer) <= 360 && Number(saved.timer) % 30 === 0 ? saved.timer : '60',
-          help: 'Turn clockwise to add 30 seconds per quarter turn, up to three full turns.',
+          key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3, min: 10,
+          default: saved.timer ?? '60',
+          help: 'Spin to any time. Quarter turns are 30 seconds, with a gentle stop at each mark; up to three turns.',
         },
         {
           key: 'category', label: 'Category',

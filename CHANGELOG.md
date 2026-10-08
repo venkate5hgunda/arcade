@@ -3,6 +3,18 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — Fluid spring-physics setup controls
+
+- Added `js/motion.js`: a damped-spring animator (slight overshoot on settle)
+  and a soft cubic detent; reduced-motion users get immediate updates.
+- Rotary dial now accepts any value (Charades: 10–360 seconds). Quarter marks
+  have gentle friction that can be pushed through; releasing within 5 degrees
+  of a mark settles onto it smoothly, otherwise the exact value is kept.
+- Flicks carry momentum on release; holding still before lifting does not.
+- Player/numeric sliders and the year range glide continuously while dragged
+  and spring onto the nearest valid option or whole year after release.
+- Detent ticks give audio and haptic feedback as marks are crossed.
+
 ## 2026-10-07 — Modern single-ring rotary dial
 
 - Replaced the concentric-ring timer with a single modern ring: gradient progress

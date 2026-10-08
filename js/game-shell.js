@@ -7,6 +7,7 @@ import { openNameEditor } from './player-names.js';
 import { room } from './multiplayer.js';
 import { GAME_HELP, openGameHelp } from './game-help.js';
 import { iconMarkup } from './icons.js';
+import { createSpring, detent, SPRING } from './motion.js';
 
 export function createShell(container, game, { title, meta, resetLabel = 'Reset' } = {}) {
   const shell = document.createElement('div');
@@ -97,16 +98,25 @@ export function wireBack(shell, navigate) {
 // fields: [{ key, label, help?, options: [{ value, label }], default }]
 // Returns a Promise that resolves with { [key]: value } when the user starts.
 // Rotary dial config: each `stepDegrees` of rotation adds `step` to the value,
-// starting from `step`, for up to `maxTurns` full revolutions.
-export function clockField({ step = 30, stepDegrees = 90, maxTurns = 3, unit = 's', ...field }) {
+// for up to `maxTurns` revolutions. Any value between `min` and the maximum is
+// selectable at `resolution`; quarter marks have a soft, push-through detent of
+// `snapDegrees`.
+export function clockField({ step = 30, stepDegrees = 90, maxTurns = 3, min, resolution = 1,
+  snapDegrees = 10, keyStep, unit = 's', format, ...field }) {
   if (360 % stepDegrees) throw new Error('Clock stepDegrees must divide 360.');
-  const count = Math.round(maxTurns * 360 / stepDegrees);
-  const options = Array.from({ length: count }, (_, index) => {
-    const value = (index + 1) * step;
-    return { value: String(value), label: `${value}${unit}` };
-  });
-  const fallback = options.find(option => option.value === String(field.default)) ? String(field.default) : options[0].value;
-  return { ...field, type: 'clock', step, stepDegrees, maxTurns, options, default: fallback };
+  const max = Math.round(maxTurns * 360 / stepDegrees * step);
+  const lower = min ?? resolution;
+  const requested = Number(field.default);
+  const value = Number.isFinite(requested) ?
+    Math.max(lower, Math.min(max, Math.round(requested / resolution) * resolution)) : step;
+  return { ...field, type: 'clock', step, stepDegrees, maxTurns, min: lower, max, resolution,
+    snapDegrees, keyStep: keyStep ?? Math.max(resolution, step / 6), unit, format, default: String(value) };
+}
+
+export function clockLabel(field, value) {
+  value = Number(value);
+  if (field.format) return field.format(value);
+  return field.unit === 's' ? `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}` : `${value}${field.unit}`;
 }
 
 export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Start', themeClass = '', validate, summary } = {}) {
@@ -160,11 +170,17 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
     function updatePreview(visible) {
       card.querySelector('.setup-preview').textContent = visible.slice(0, 3).map(f => {
         const value = values[f.key];
-        const label = f.type === 'range' ? value.join('–') : f.type === 'multiple' ?
+        const label = f.type === 'range' ? value.join('–') : f.type === 'clock' ? clockLabel(f, value) : f.type === 'multiple' ?
           (value.length === f.options.length ? 'All levels' : f.options.filter(option => value.includes(option.value)).map(option => option.label).join(' + ') || 'None') :
           f.options?.find(opt => opt.value === value)?.label ?? value;
         return `${f.label}: ${label}`;
       }).join(' · ') + (visible.length > 3 ? ` · ${visible.length - 3} more options in configuration` : '');
+    }
+
+    function detentFeedback() {
+      window.arcadeAudio?.prepare();
+      window.arcadeAudio?.tap();
+      window.haptics?.select();
     }
 
     function renderFields() {
@@ -184,25 +200,43 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           readout.className = 'setup-discrete-readout';
           const input = document.createElement('input');
           input.type = 'range';
-          input.min = '0'; input.max = String(f.options.length - 1); input.step = '1';
+          input.min = '0'; input.max = String(f.options.length - 1); input.step = 'any';
           input.setAttribute('aria-label', f.label);
-          input.value = String(Math.max(0, f.options.findIndex(option => option.value === values[f.key])));
-          function updateChoice() {
-            const option = f.options[Number(input.value)];
+          const last = f.options.length - 1;
+          let shown = null;
+          function show(position) {
+            input.value = String(position);
+            const index = Math.max(0, Math.min(last, Math.round(position)));
+            if (index === shown) return;
+            if (shown !== null) detentFeedback();
+            shown = index;
+            const option = f.options[index];
             values[f.key] = option.value;
             readout.textContent = option.label;
             input.setAttribute('aria-valuetext', option.label);
             updatePreview(visible);
             updateFeedback();
           }
-          input.addEventListener('input', updateChoice);
+          const spring = createSpring(show, { ...SPRING.settle, precision: 0.002 });
+          const settle = index => spring.to(Math.max(0, Math.min(last, index)), SPRING.settle);
+          input.addEventListener('pointerdown', () => spring.stop());
+          input.addEventListener('input', () => spring.jump(Number(input.value)));
+          input.addEventListener('change', () => settle(Math.round(Number(input.value))));
+          input.addEventListener('keydown', event => {
+            const current = Math.round(spring.target ?? 0);
+            const next = { ArrowRight: current + 1, ArrowUp: current + 1, ArrowLeft: current - 1, ArrowDown: current - 1,
+              Home: 0, End: last, PageUp: current + 2, PageDown: current - 2 }[event.key];
+            if (next === undefined) return;
+            event.preventDefault();
+            settle(next);
+          });
           optionsEl.appendChild(readout); optionsEl.appendChild(input);
           const bounds = document.createElement('div');
           bounds.className = 'setup-range-bounds';
-          const first = document.createElement('span'), last = document.createElement('span');
-          first.textContent = f.options[0].label; last.textContent = f.options.at(-1).label;
-          bounds.appendChild(first); bounds.appendChild(last); optionsEl.appendChild(bounds);
-          updateChoice();
+          const first = document.createElement('span'), lastLabel = document.createElement('span');
+          first.textContent = f.options[0].label; lastLabel.textContent = f.options.at(-1).label;
+          bounds.appendChild(first); bounds.appendChild(lastLabel); optionsEl.appendChild(bounds);
+          spring.jump(Math.max(0, f.options.findIndex(option => option.value === values[f.key])));
         }
         if (f.type === 'select') {
           const select = document.createElement('select');
@@ -223,15 +257,18 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
         }
         if (f.type === 'clock') {
           optionsEl.classList.add('setup-clock-options');
-          const { stepDegrees, maxTurns } = f;
-          const stepsPerTurn = 360 / stepDegrees;
+          const { step, stepDegrees, maxTurns, min, max, resolution, snapDegrees, keyStep } = f;
+          const toAngle = value => value / step * stepDegrees;
+          const toValue = angle => Math.max(min, Math.min(max, Math.round(angle / stepDegrees * step / resolution) * resolution));
+          const minAngle = toAngle(min), maxAngle = toAngle(max);
+          const clampAngle = angle => Math.max(minAngle, Math.min(maxAngle, angle));
           const clock = document.createElement('div');
           clock.className = 'setup-clock';
           clock.tabIndex = 0;
           clock.setAttribute('role', 'slider');
           clock.setAttribute('aria-label', f.label);
-          clock.setAttribute('aria-valuemin', f.options[0].value);
-          clock.setAttribute('aria-valuemax', f.options.at(-1).value);
+          clock.setAttribute('aria-valuemin', String(min));
+          clock.setAttribute('aria-valuemax', String(max));
           const part = (className, parent = clock) => {
             const el = document.createElement('span');
             el.className = className;
@@ -241,9 +278,9 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           };
           part('setup-clock-track');
           const arc = part('setup-clock-arc');
-          if (stepsPerTurn <= 24) {
-            for (let tick = 0; tick < stepsPerTurn; tick++) {
-              part('setup-clock-tick').style.setProperty('--tick', `${tick * stepDegrees}deg`);
+          if (360 / stepDegrees <= 24) {
+            for (let mark = 0; mark < 360; mark += stepDegrees) {
+              part('setup-clock-tick').style.setProperty('--tick', `${mark}deg`);
             }
           }
           const knob = part('setup-clock-knob');
@@ -253,35 +290,37 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           face.appendChild(readout);
           const laps = maxTurns > 1 ? part('setup-clock-laps', face) : null;
           const lapDots = laps ? Array.from({ length: maxTurns }, () => part('setup-clock-lap', laps)) : [];
-          const indexOf = () => Math.max(0, f.options.findIndex(option => option.value === values[f.key]));
-          const format = value => f.format?.(Number(value)) ??
-            `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
-          function updateClock(index) {
-            const bounded = Math.max(0, Math.min(f.options.length - 1, index));
-            const changed = values[f.key] !== f.options[bounded].value;
-            values[f.key] = f.options[bounded].value;
-            const total = (bounded + 1) * stepDegrees;
-            const turn = Math.ceil(total / 360);
-            const within = total - (turn - 1) * 360;
-            clock.style.setProperty('--clock-angle', `${within}deg`);
+          let shownMark = null;
+          function render(angle) {
+            const shown = clampAngle(angle);
+            const turn = Math.max(1, Math.ceil(shown / 360 - 1e-6));
+            clock.style.setProperty('--clock-angle', `${shown - (turn - 1) * 360}deg`);
             clock.dataset.turn = String(turn);
             lapDots.forEach((dot, lap) => {
               dot.classList.toggle('done', lap < turn - 1);
               dot.classList.toggle('active', lap === turn - 1);
             });
             arc.classList.toggle('setup-clock-arc--lapped', turn > 1);
+            readout.textContent = clockLabel(f, toValue(shown));
+            const mark = Math.round(shown / stepDegrees);
+            if (shownMark !== null && mark !== shownMark) detentFeedback();
+            shownMark = mark;
+          }
+          function commit(value) {
+            values[f.key] = String(value);
             clock.setAttribute('aria-valuenow', values[f.key]);
-            clock.setAttribute('aria-valuetext', f.options[bounded].label);
-            readout.textContent = format(Number(values[f.key]));
+            clock.setAttribute('aria-valuetext', f.unit === 's' ? `${value} seconds` : clockLabel(f, value));
             updatePreview(visible);
             updateFeedback();
-            if (changed) {
-              window.arcadeAudio?.prepare();
-              window.arcadeAudio?.tap();
-              window.haptics?.select();
-            }
           }
-          function angle(event) {
+          const spring = createSpring(render, { ...SPRING.settle, precision: 0.05 });
+          function settle(angle, options = SPRING.settle) {
+            const mark = Math.round(angle / stepDegrees) * stepDegrees;
+            const value = toValue(Math.abs(angle - mark) <= snapDegrees / 2 ? mark : angle);
+            commit(value);
+            spring.to(toAngle(value), options);
+          }
+          function pointerAngle(event) {
             const bounds = clock.getBoundingClientRect();
             return (Math.atan2(event.clientY - bounds.top - bounds.height / 2,
               event.clientX - bounds.left - bounds.width / 2) * 180 / Math.PI + 90 + 360) % 360;
@@ -291,42 +330,59 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             if (event.button !== 0 || drag) return;
             event.preventDefault();
             clock.focus();
-            drag = { id: event.pointerId, previous: angle(event), rotation: 0, travel: 0, index: indexOf() };
+            const base = spring.target ?? toAngle(Number(values[f.key]));
+            drag = { id: event.pointerId, previous: pointerAngle(event), raw: base, travel: 0, samples: [] };
             clock.classList.add('dragging');
             clock.setPointerCapture(event.pointerId);
           });
           clock.addEventListener('pointermove', event => {
             if (!drag || drag.id !== event.pointerId) return;
-            const current = angle(event);
+            const current = pointerAngle(event);
             const delta = ((current - drag.previous + 540) % 360) - 180;
-            drag.travel += Math.abs(delta);
-            drag.rotation = Math.max(-drag.index * stepDegrees,
-              Math.min((f.options.length - 1 - drag.index) * stepDegrees, drag.rotation + delta));
             drag.previous = current;
-            updateClock(drag.index + Math.round(drag.rotation / stepDegrees));
+            drag.travel += Math.abs(delta);
+            drag.raw = clampAngle(drag.raw + delta);
+            const angle = clampAngle(detent(drag.raw, stepDegrees, snapDegrees));
+            if (Number.isFinite(event.timeStamp)) {
+              drag.samples.push({ time: event.timeStamp, angle });
+              while (drag.samples.length > 2 && event.timeStamp - drag.samples[0].time > 90) drag.samples.shift();
+            }
+            commit(toValue(angle));
+            spring.to(angle, SPRING.follow);
           });
-          const stopDrag = () => { drag = null; clock.classList.remove('dragging'); };
+          const endDrag = () => { drag = null; clock.classList.remove('dragging'); };
           clock.addEventListener('pointerup', event => {
             if (!drag || drag.id !== event.pointerId) return;
             if (drag.travel < 8) {
-              const step = Math.round(angle(event) / stepDegrees) || stepsPerTurn;
-              const turn = Math.floor(indexOf() / stepsPerTurn);
-              updateClock(turn * stepsPerTurn + step - 1);
+              const turnStart = Math.floor(Math.max(0, (spring.target ?? 0) - 1e-6) / 360) * 360;
+              settle(clampAngle(turnStart + (pointerAngle(event) || 360)));
+            } else {
+              const [first, latest] = [drag.samples[0], drag.samples.at(-1)];
+              const idle = latest && Number.isFinite(event.timeStamp) ? event.timeStamp - latest.time : 0;
+              const seconds = first && latest !== first && idle < 60 ? (latest.time - first.time) / 1000 : 0;
+              const velocity = seconds > 0 ? (latest.angle - first.angle) / seconds : 0;
+              const angle = clampAngle(detent(drag.raw, stepDegrees, snapDegrees));
+              settle(clampAngle(angle + velocity * 0.12));
             }
-            stopDrag();
+            endDrag();
             clock.releasePointerCapture(event.pointerId);
           });
-          clock.addEventListener('pointercancel', stopDrag);
-          clock.addEventListener('lostpointercapture', stopDrag);
+          clock.addEventListener('pointercancel', () => { if (drag) settle(spring.value ?? 0); endDrag(); });
+          clock.addEventListener('lostpointercapture', endDrag);
           clock.addEventListener('keydown', event => {
-            const delta = ['ArrowUp', 'ArrowRight'].includes(event.key) ? 1 :
-              ['ArrowDown', 'ArrowLeft'].includes(event.key) ? -1 : 0;
-            if (!delta && !['Home', 'End'].includes(event.key)) return;
+            const value = Number(values[f.key]);
+            const next = { ArrowRight: value + keyStep, ArrowUp: value + keyStep, ArrowLeft: value - keyStep,
+              ArrowDown: value - keyStep, PageUp: value + step, PageDown: value - step, Home: min, End: max }[event.key];
+            if (next === undefined) return;
             event.preventDefault();
-            updateClock(event.key === 'Home' ? 0 : event.key === 'End' ? f.options.length - 1 : indexOf() + delta);
+            const bounded = Math.max(min, Math.min(max, next));
+            commit(bounded);
+            spring.to(toAngle(bounded), SPRING.settle);
           });
           optionsEl.appendChild(clock);
-          updateClock(indexOf());
+          const initial = Number(values[f.key]);
+          commit(initial);
+          spring.jump(toAngle(initial));
         }
         if (f.type === 'range') {
           optionsEl.classList.add('setup-year-range');
@@ -336,39 +392,53 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           const track = document.createElement('div');
           track.className = 'setup-range-track';
           optionsEl.appendChild(track);
+          const positions = [...values[f.key]];
+          const springs = [];
           const inputs = [0, 1].map(index => {
             const input = document.createElement('input');
             input.type = 'range';
-            input.min = String(f.min); input.max = String(f.max); input.step = '1';
+            input.min = String(f.min); input.max = String(f.max); input.step = 'any';
             input.setAttribute('aria-label', index === 0 ? 'From year' : 'Through year');
-            input.addEventListener('input', () => {
-              const [lower, upper] = values[f.key];
-              const next = Number(input.value);
-              values[f.key] = index === 0 ? [Math.min(next, upper), upper] : [lower, Math.max(next, lower)];
+            springs[index] = createSpring(position => {
+              positions[index] = position;
               updateRange();
-              updatePreview(visible);
-              updateFeedback();
-            });
+            }, { ...SPRING.settle, precision: 0.01 });
+            const bound = next => index === 0 ? Math.min(next, positions[1]) : Math.max(next, positions[0]);
+            const settle = year => springs[index].to(Math.round(bound(Math.max(f.min, Math.min(f.max, year)))), SPRING.settle);
+            input.addEventListener('input', () => springs[index].jump(bound(Number(input.value))));
+            input.addEventListener('change', () => settle(Number(input.value)));
             input.addEventListener('pointerdown', () => {
+              springs[index].stop();
               inputs.forEach((other, otherIndex) => { other.style.zIndex = otherIndex === index ? '3' : '2'; });
+            });
+            input.addEventListener('keydown', event => {
+              const year = Math.round(springs[index].target ?? positions[index]);
+              const next = { ArrowRight: year + 1, ArrowUp: year + 1, ArrowLeft: year - 1, ArrowDown: year - 1,
+                PageUp: year + 10, PageDown: year - 10, Home: f.min, End: f.max }[event.key];
+              if (next === undefined) return;
+              event.preventDefault();
+              settle(next);
             });
             track.appendChild(input);
             return input;
           });
           function updateRange() {
-            const [lower, upper] = values[f.key];
-            readout.textContent = `${lower} – ${upper}`;
+            const years = positions.map(Math.round);
+            const changed = years[0] !== values[f.key][0] || years[1] !== values[f.key][1];
+            values[f.key] = years;
+            readout.textContent = `${years[0]} – ${years[1]}`;
             const span = f.max - f.min || 1;
-            track.style.setProperty('--range-from', `${(lower - f.min) / span * 100}%`);
-            track.style.setProperty('--range-to', `${(upper - f.min) / span * 100}%`);
-            inputs.forEach((input, index) => {
-              input.value = String(index === 0 ? lower : upper);
-              input.setAttribute('aria-valuemin', String(index === 0 ? f.min : lower));
-              input.setAttribute('aria-valuemax', String(index === 0 ? upper : f.max));
-              input.setAttribute('aria-valuetext', `${input.value}`);
+            track.style.setProperty('--range-from', `${(positions[0] - f.min) / span * 100}%`);
+            track.style.setProperty('--range-to', `${(positions[1] - f.min) / span * 100}%`);
+            inputs?.forEach((input, index) => {
+              input.value = String(positions[index]);
+              input.setAttribute('aria-valuemin', String(index === 0 ? f.min : years[0]));
+              input.setAttribute('aria-valuemax', String(index === 0 ? years[1] : f.max));
+              input.setAttribute('aria-valuetext', String(years[index]));
             });
+            if (changed) { updatePreview(visible); updateFeedback(); }
           }
-          updateRange();
+          springs.forEach((spring, index) => spring.jump(positions[index]));
           const bounds = document.createElement('div');
           bounds.className = 'setup-range-bounds';
           const first = document.createElement('span'), last = document.createElement('span');
