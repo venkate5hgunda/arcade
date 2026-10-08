@@ -332,9 +332,9 @@ Title/year labels distinguish remakes. Reasons remain hidden while acting or
 revealing roles and appear in expandable post-turn/post-round details.
 The service worker refreshes the index network-first and caches all referenced
 partitions before publishing a cached index, supporting complete offline play.
-Charades uses a clock timer: each 90-degree detent is 30 seconds, with choices
-30 through 360 seconds across three full turns. Concentric gradient rings fill
-as each turn completes. Clockwise adds time; counterclockwise removes it.
+Charades uses a rotary timer: each 90-degree detent is 30 seconds, from 30
+through 360 seconds across up to three full turns, shown on a single progress
+ring with a turn indicator. Clockwise adds time; counterclockwise removes it.
 Time is shown in the dial's center as minutes:seconds; arrow keys and direct
 taps on clock marks also work. Existing 45-second saved
 rounds still resume unchanged. Older year/difficulty settings are migrated to

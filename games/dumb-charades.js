@@ -72,13 +72,9 @@ export default {
           default: saved.players,
         },
         {
-          key: 'timer', label: 'Turn timer', type: 'clock',
-          options: Array.from({ length: 12 }, (_, index) => {
-            const seconds = (index + 1) * 30;
-            return { value: String(seconds), label: `${seconds}s` };
-          }),
+          key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3,
           default: Number(saved.timer) >= 30 && Number(saved.timer) <= 360 && Number(saved.timer) % 30 === 0 ? saved.timer : '60',
-          help: '¼ turn = 30 seconds. Three rings, up to 360 seconds.',
+          help: 'Turn clockwise to add 30 seconds per quarter turn, up to three full turns.',
         },
         {
           key: 'category', label: 'Category',

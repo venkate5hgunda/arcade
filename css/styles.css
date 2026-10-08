@@ -510,75 +510,107 @@ button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
 .setup-discrete-readout { color: var(--text); font-weight: 800; font-size: 1.1rem; }
 .setup-discrete-options input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .setup-options select { width: 100%; max-width: 320px; min-height: 48px; padding: 10px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font: inherit; }
-.setup-clock-options { flex-direction: column; align-items: center; gap: 10px; }
+.setup-clock-options { flex-direction: column; align-items: center; gap: 10px; padding: 10px 0 14px; }
 .setup-clock {
+  --clock-size: 216px;
+  --clock-track: 14px;
   position: relative;
-  width: 224px;
-  height: 224px;
+  width: var(--clock-size);
+  height: var(--clock-size);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--bg) 51%, color-mix(in srgb, var(--accent) 10%, var(--bg-soft)) 52%);
-  box-shadow: 0 12px 28px #0002, inset 0 0 0 1px var(--border);
   touch-action: none;
   cursor: grab;
   user-select: none;
+  -webkit-user-select: none;
+  outline: none;
 }
-.setup-clock:active { cursor: grabbing; }
-.setup-clock-ring {
+.setup-clock.dragging { cursor: grabbing; }
+.setup-clock-track,
+.setup-clock-arc {
   position: absolute;
-  inset: calc(var(--ring-index) * 12px);
+  inset: 0;
   border-radius: 50%;
-  --ring-color: color-mix(in srgb, var(--accent) calc(45% + var(--ring-index) * 25%), var(--text));
-  background: conic-gradient(color-mix(in srgb, var(--accent) 20%, var(--bg)) 0deg, var(--ring-color) var(--ring-fill), var(--border) var(--ring-fill), var(--border) 360deg);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--clock-track) - 1px), #000 calc(100% - var(--clock-track)));
   pointer-events: none;
 }
-.setup-clock:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
-.setup-clock::after {
-  content: "";
-  position: absolute;
-  inset: 48px;
-  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--accent) 12%, var(--bg)), var(--bg) 80%);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
-  border-radius: 50%;
+.setup-clock-track { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.setup-clock-arc {
+  background: conic-gradient(
+    color-mix(in srgb, var(--accent) 35%, transparent) 0deg,
+    var(--accent) var(--clock-angle),
+    transparent var(--clock-angle));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent));
 }
-.setup-clock-hand {
+.setup-clock-arc--lapped {
+  background: conic-gradient(
+    var(--accent) 0deg,
+    color-mix(in srgb, var(--accent) 70%, #fff) var(--clock-angle),
+    color-mix(in srgb, var(--accent) 28%, transparent) var(--clock-angle));
+}
+.setup-clock-tick {
   position: absolute;
-  top: 4px;
-  left: calc(50% - 10px);
-  width: 20px;
-  height: 20px;
-  border: 3px solid var(--bg);
+  left: calc(50% - 2px);
+  top: calc(var(--clock-track) / 2 - 2px);
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 2px 8px #0004;
-  z-index: 2;
-  transform-origin: 50% 108px;
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+  transform-origin: 2px calc(var(--clock-size) / 2 - var(--clock-track) / 2 + 2px);
+  transform: rotate(var(--tick));
+  pointer-events: none;
+}
+.setup-clock-knob {
+  position: absolute;
+  left: calc(50% - 14px);
+  top: calc(var(--clock-track) / 2 - 14px);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 6px solid var(--accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 45%, #0003);
+  transform-origin: 14px calc(var(--clock-size) / 2 - var(--clock-track) / 2 + 14px);
   transform: rotate(var(--clock-angle));
+  transition: scale .15s ease;
+  z-index: 2;
+  pointer-events: none;
 }
-.setup-clock-mark {
+.setup-clock.dragging .setup-clock-knob { scale: 1.15; }
+.setup-clock:focus-visible .setup-clock-knob { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 3px; }
+.setup-clock-face {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  font-size: .8rem;
-  font-weight: 800;
-  color: var(--text);
-  z-index: 1;
-  transform: translate(-50%, -50%) rotate(var(--clock-mark)) translateY(-70px) rotate(calc(-1 * var(--clock-mark)));
+  inset: calc(var(--clock-track) + 16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 10px 30px #0000001f, inset 0 1px 0 #ffffff14;
+  pointer-events: none;
 }
 .setup-clock-readout {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
   color: var(--text);
-  font-size: 2.3rem;
-  font-weight: 850;
-  letter-spacing: -.05em;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.04em;
   font-variant-numeric: tabular-nums;
-  pointer-events: none;
 }
-.setup-clock-units { position: absolute; top: 64%; left: 50%; transform: translateX(-50%); z-index: 3; color: var(--text-soft); font-size: .6rem; font-weight: 700; letter-spacing: .13em; pointer-events: none; }
+.setup-clock-laps { display: flex; gap: 6px; }
+.setup-clock-lap {
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+  transition: background .2s ease, width .2s ease;
+}
+.setup-clock-lap.done { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.setup-clock-lap.active { width: 24px; background: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .setup-clock-knob, .setup-clock-lap { transition: none; }
+}
 .setup-year-range { display: grid; grid-template-columns: 1fr; width: 100%; gap: 4px; padding: 10px 16px; }
 .setup-range-readout {
   justify-self: center;

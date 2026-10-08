@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createShell, renderSetup } from '../js/game-shell.js';
+import { clockField, createShell, renderSetup } from '../js/game-shell.js';
 import { room } from '../js/multiplayer.js';
 
 test('top reset control briefly confirms a local reset or room request', () => {
@@ -82,7 +82,7 @@ class SetupElement {
     this.listeners = {};
     this.parts = {};
     this.style = { setProperty() {} };
-    this.classList = { add() {}, toggle() {} };
+    this.classList = { add() {}, remove() {}, toggle() {} };
   }
   set innerHTML(html) {
     this.html = html;
@@ -260,8 +260,7 @@ test('clock dial snaps each quarter-turn to 30 seconds in both directions and su
     globalThis.window = { haptics: { select() { clicks++; }, medium() {} } };
     const stage = new SetupElement();
     const result = renderSetup(stage, {
-      fields: [{ key: 'timer', label: 'Turn timer', type: 'clock', default: '30',
-        options: Array.from({ length: 12 }, (_, index) => ({ value: String((index + 1) * 30), label: `${(index + 1) * 30}s` })) }],
+      fields: [{ key: 'timer', label: 'Turn timer', type: 'clock', step: 30, stepDegrees: 90, maxTurns: 3, default: '30' }],
     });
     const card = stage.children[0];
     const options = card.querySelector('.setup-fields').children[0].querySelector('.setup-options');
@@ -279,7 +278,8 @@ test('clock dial snaps each quarter-turn to 30 seconds in both directions and su
     clock.listeners.pointerup(point(50, 100));
     clock.listeners.keydown({ key: 'ArrowLeft', preventDefault() {} });
     assert.equal(clock.attributes['aria-valuenow'], '60');
-    assert.equal(clock.children.find(child => child.tag === 'output').textContent, '1:00');
+    const readout = clock.children.flatMap(child => [child, ...child.children]).find(child => child.tag === 'output');
+    assert.equal(readout.textContent, '1:00');
     assert.equal(clicks, 5);
     clock.listeners.keydown({ key: 'End', preventDefault() {} });
     assert.equal(clock.attributes['aria-valuenow'], '360');
@@ -308,6 +308,16 @@ test('clock dial snaps each quarter-turn to 30 seconds in both directions and su
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
   }
+});
+
+test('clock dial step size and maximum turns are configurable per game', () => {
+  const field = clockField({ key: 'rounds', label: 'Rounds', type: 'clock', step: 1, stepDegrees: 30, maxTurns: 2, unit: '', default: '99' });
+  assert.equal(field.options.length, 24);
+  assert.equal(field.options[0].value, '1');
+  assert.equal(field.options.at(-1).value, '24');
+  assert.equal(field.default, '1', 'invalid defaults fall back to the first detent');
+  assert.equal(clockField({ step: 30 }).options.at(-1).value, '360', 'defaults to 90-degree detents and three turns');
+  assert.throws(() => clockField({ stepDegrees: 70 }), /divide 360/);
 });
 
 test('compact numeric sliders and categorical dropdowns keep each game allowed choices', async () => {
