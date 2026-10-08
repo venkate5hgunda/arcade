@@ -3,6 +3,14 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-07 — Modern single-ring rotary dial
+
+- Replaced the concentric-ring timer with a single modern ring: gradient progress
+  arc, detent ticks, glowing knob, centered value and a compact turn indicator.
+- Made the dial configurable per game through `clockField`: `step` (value per
+  detent), `stepDegrees` (rotation per detent, must divide 360) and `maxTurns`
+  (default 3). Charades uses 30 seconds per 90 degrees, up to three turns.
+
 ## 2026-10-07 — Simpler movie choices and saved-game cleanup
 
 - Replaced year preset buttons and numeric fields with a two-handle range slider

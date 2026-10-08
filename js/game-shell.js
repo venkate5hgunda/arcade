@@ -96,8 +96,22 @@ export function wireBack(shell, navigate) {
 //
 // fields: [{ key, label, help?, options: [{ value, label }], default }]
 // Returns a Promise that resolves with { [key]: value } when the user starts.
+// Rotary dial config: each `stepDegrees` of rotation adds `step` to the value,
+// starting from `step`, for up to `maxTurns` full revolutions.
+export function clockField({ step = 30, stepDegrees = 90, maxTurns = 3, unit = 's', ...field }) {
+  if (360 % stepDegrees) throw new Error('Clock stepDegrees must divide 360.');
+  const count = Math.round(maxTurns * 360 / stepDegrees);
+  const options = Array.from({ length: count }, (_, index) => {
+    const value = (index + 1) * step;
+    return { value: String(value), label: `${value}${unit}` };
+  });
+  const fallback = options.find(option => option.value === String(field.default)) ? String(field.default) : options[0].value;
+  return { ...field, type: 'clock', step, stepDegrees, maxTurns, options, default: fallback };
+}
+
 export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Start', themeClass = '', validate, summary } = {}) {
   fields = fields.map(field => {
+    if (field.type === 'clock') return clockField(field);
     if (field.type || !field.options || field.options.length < 2) return field;
     const numeric = field.options.every(option => /^\d+$/.test(option.value));
     const count = ['players', 'count'].includes(field.key);
@@ -209,6 +223,8 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
         }
         if (f.type === 'clock') {
           optionsEl.classList.add('setup-clock-options');
+          const { stepDegrees, maxTurns } = f;
+          const stepsPerTurn = 360 / stepDegrees;
           const clock = document.createElement('div');
           clock.className = 'setup-clock';
           clock.tabIndex = 0;
@@ -216,48 +232,47 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
           clock.setAttribute('aria-label', f.label);
           clock.setAttribute('aria-valuemin', f.options[0].value);
           clock.setAttribute('aria-valuemax', f.options.at(-1).value);
-          const rings = [0, 1, 2].map(index => {
-            const ring = document.createElement('span');
-            ring.className = 'setup-clock-ring';
-            ring.style.setProperty('--ring-index', String(index));
-            ring.setAttribute('aria-hidden', 'true');
-            clock.appendChild(ring);
-            return ring;
-          });
-          const hand = document.createElement('span');
-          hand.className = 'setup-clock-hand';
-          hand.setAttribute('aria-hidden', 'true');
-          clock.appendChild(hand);
-          for (const [index, option] of f.options.slice(0, 4).entries()) {
-            const mark = document.createElement('span');
-            mark.className = 'setup-clock-mark';
-            mark.style.setProperty('--clock-mark', `${(index + 1) * 90}deg`);
-            mark.textContent = option.label;
-            mark.setAttribute('aria-hidden', 'true');
-            clock.appendChild(mark);
+          const part = (className, parent = clock) => {
+            const el = document.createElement('span');
+            el.className = className;
+            el.setAttribute('aria-hidden', 'true');
+            parent.appendChild(el);
+            return el;
+          };
+          part('setup-clock-track');
+          const arc = part('setup-clock-arc');
+          if (stepsPerTurn <= 24) {
+            for (let tick = 0; tick < stepsPerTurn; tick++) {
+              part('setup-clock-tick').style.setProperty('--tick', `${tick * stepDegrees}deg`);
+            }
           }
+          const knob = part('setup-clock-knob');
+          const face = part('setup-clock-face');
           const readout = document.createElement('output');
           readout.className = 'setup-clock-readout';
-          clock.appendChild(readout);
-          const timeLabel = document.createElement('span');
-          timeLabel.className = 'setup-clock-units';
-          timeLabel.textContent = 'MIN : SEC';
-          timeLabel.setAttribute('aria-hidden', 'true');
-          clock.appendChild(timeLabel);
+          face.appendChild(readout);
+          const laps = maxTurns > 1 ? part('setup-clock-laps', face) : null;
+          const lapDots = laps ? Array.from({ length: maxTurns }, () => part('setup-clock-lap', laps)) : [];
           const indexOf = () => Math.max(0, f.options.findIndex(option => option.value === values[f.key]));
+          const format = value => f.format?.(Number(value)) ??
+            `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
           function updateClock(index) {
             const bounded = Math.max(0, Math.min(f.options.length - 1, index));
             const changed = values[f.key] !== f.options[bounded].value;
             values[f.key] = f.options[bounded].value;
-            clock.style.setProperty('--clock-angle', `${(bounded + 1) * 90}deg`);
-            rings.forEach((ring, index) => {
-              const progress = Math.max(0, Math.min(4, bounded + 1 - index * 4));
-              ring.style.setProperty('--ring-fill', `${progress * 90}deg`);
+            const total = (bounded + 1) * stepDegrees;
+            const turn = Math.ceil(total / 360);
+            const within = total - (turn - 1) * 360;
+            clock.style.setProperty('--clock-angle', `${within}deg`);
+            clock.dataset.turn = String(turn);
+            lapDots.forEach((dot, lap) => {
+              dot.classList.toggle('done', lap < turn - 1);
+              dot.classList.toggle('active', lap === turn - 1);
             });
+            arc.classList.toggle('setup-clock-arc--lapped', turn > 1);
             clock.setAttribute('aria-valuenow', values[f.key]);
-            clock.setAttribute('aria-valuetext', `${values[f.key]} seconds`);
-            const seconds = Number(values[f.key]);
-            readout.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+            clock.setAttribute('aria-valuetext', f.options[bounded].label);
+            readout.textContent = format(Number(values[f.key]));
             updatePreview(visible);
             updateFeedback();
             if (changed) {
@@ -277,6 +292,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             event.preventDefault();
             clock.focus();
             drag = { id: event.pointerId, previous: angle(event), rotation: 0, travel: 0, index: indexOf() };
+            clock.classList.add('dragging');
             clock.setPointerCapture(event.pointerId);
           });
           clock.addEventListener('pointermove', event => {
@@ -284,22 +300,22 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
             const current = angle(event);
             const delta = ((current - drag.previous + 540) % 360) - 180;
             drag.travel += Math.abs(delta);
-            drag.rotation = Math.max(-drag.index * 90,
-              Math.min((f.options.length - 1 - drag.index) * 90, drag.rotation + delta));
+            drag.rotation = Math.max(-drag.index * stepDegrees,
+              Math.min((f.options.length - 1 - drag.index) * stepDegrees, drag.rotation + delta));
             drag.previous = current;
-            updateClock(drag.index + Math.round(drag.rotation / 90));
+            updateClock(drag.index + Math.round(drag.rotation / stepDegrees));
           });
+          const stopDrag = () => { drag = null; clock.classList.remove('dragging'); };
           clock.addEventListener('pointerup', event => {
             if (!drag || drag.id !== event.pointerId) return;
             if (drag.travel < 8) {
-              const quarter = Math.round(angle(event) / 90) || 4;
-              const turn = Math.floor(indexOf() / 4);
-              updateClock(turn * 4 + quarter - 1);
+              const step = Math.round(angle(event) / stepDegrees) || stepsPerTurn;
+              const turn = Math.floor(indexOf() / stepsPerTurn);
+              updateClock(turn * stepsPerTurn + step - 1);
             }
-            drag = null;
+            stopDrag();
             clock.releasePointerCapture(event.pointerId);
           });
-          const stopDrag = () => { drag = null; };
           clock.addEventListener('pointercancel', stopDrag);
           clock.addEventListener('lostpointercapture', stopDrag);
           clock.addEventListener('keydown', event => {
