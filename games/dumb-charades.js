@@ -7,6 +7,7 @@ import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
+import { escapeHTML, loadMovieScreen, filterMovies, uniquePrompts, movieFilterFields, movieSetupError, movieDetails, difficultyLabel } from '../js/movie-library.js';
 
 const WORDS = [
   'MOVIE', 'BRUSH TEETH', 'ELEPHANT', 'SWIMMING', 'COOKING', 'DRIVING',
@@ -24,12 +25,14 @@ const WORDS = [
 ];
 
 const CATEGORIES = ['classic', 'telugu-movies'];
-const promptsFor = (category) => category === 'telugu-movies' ? TELUGU_MOVIES.map(movie => movie.title) : WORDS;
-const movieFor = (category, title) => category === 'telugu-movies' ? TELUGU_MOVIES.find(movie => movie.title === title) : null;
+const promptsFor = (category, movies) => category === 'telugu-movies' ? movies.map(movie => movie.prompt ?? movie.title) : WORDS;
+const movieFor = (category, title, movies) => category === 'telugu-movies' ? movies.find(movie => (movie.prompt ?? movie.title) === title || movie.title === title) : null;
 
-export function validCheckpoint(s) {
+export function validCheckpoint(s, movies = TELUGU_MOVIES) {
   if (!s || !CATEGORIES.includes(s.category ?? 'classic')) return false;
-  const prompts = promptsFor(s.category ?? 'classic');
+  if (movieSetupError(movies, s)) return false;
+  const prompts = [...promptsFor(s.category ?? 'classic', filterMovies(movies, s)),
+    ...(s.category === 'telugu-movies' && s.period === undefined ? movies.map(movie => movie.title) : [])];
   return [2, 4, 6, 8].includes(s.players) && [30, 45, 60, 90].includes(s.duration) &&
     ['setup', 'acting', 'scoring'].includes(s.phase) &&
     (s.team === 0 || s.team === 1) &&
@@ -46,16 +49,17 @@ export function validCheckpoint(s) {
 }
 
 export default {
-  async render(el, game, { navigate, session } = {}) {
+  async render(el, game, { navigate, session, movieLibrary } = {}) {
     const shell = createShell(el, game, { title: 'Dumb Charades', meta: 'Act it out · guess it fast' });
     const showTurn = createTurnIndicator(shell.root);
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('dc-vibe');
+    const movies = movieLibrary ?? await loadMovieScreen(stage);
 
     const saved = loadJSON(KEYS.SETTINGS + ':dumb-charades', { players: '4', timer: '60', category: 'classic' });
-    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
-    const settings = checkpoint ? { players: String(checkpoint.players), timer: String(checkpoint.duration), category: checkpoint.category ?? 'classic' } : await renderSetup(stage, {
+    const checkpoint = validCheckpoint(session?.state, movies) ? session.state : null;
+    const settings = checkpoint ? { ...checkpoint, players: String(checkpoint.players), timer: String(checkpoint.duration), category: checkpoint.category ?? 'classic' } : await renderSetup(stage, {
       title: '🎭 Dumb Charades',
       subtitle: 'Set your team size and turn timer',
       themeClass: 'dc-theme',
@@ -75,15 +79,19 @@ export default {
           options: [{ value: 'classic', label: 'Classic prompts' }, { value: 'telugu-movies', label: 'Telugu movies' }],
           default: CATEGORIES.includes(saved.category) ? saved.category : 'classic',
         },
+        ...movieFilterFields(saved),
       ],
+      validate: values => movieSetupError(movies, values),
+      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} approved movie prompts · ${difficultyLabel(values.difficulty)}` : '',
       startLabel: 'Start Acting',
     });
     saveJSON(KEYS.SETTINGS + ':dumb-charades', settings);
     const playerCount = Math.max(2, Math.min(8, parseInt(settings.players, 10) || 4));
     const timerDuration = parseInt(settings.timer, 10) || 60;
     const category = settings.category;
-    const prompts = promptsFor(category);
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn · ${category === 'telugu-movies' ? 'Telugu movies' : 'Classic prompts'}`;
+    const selectedMovies = uniquePrompts(filterMovies(movies, settings));
+    const prompts = promptsFor(category, selectedMovies);
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${timerDuration}s per turn · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulty)}` : 'Classic prompts'}`;
 
     let phase = 'setup'; // setup -> acting -> scoring -> next
     let currentTeam = 0, currentActor = 0;
@@ -94,7 +102,9 @@ export default {
     function checkpointGame() {
       if (phase === 'gameover') { session?.finish(); return; }
       session?.save({
-        players: playerCount, duration: timerDuration, category, phase, team: currentTeam,
+        players: playerCount, duration: timerDuration, category,
+        period: settings.period, fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty,
+        phase, team: currentTeam,
         actor: currentActor, score: [score[0], score[1]], word: currentWord,
         wordsUsed: [...wordsUsed], guessedCorrect, deadline,
       });
@@ -126,7 +136,7 @@ export default {
         card.innerHTML = `
           <div class="dc-acting">
             <h3>Act This Out:</h3>
-            <p class="dc-word">${currentWord}</p>
+            <p class="dc-word">${escapeHTML(currentWord)}</p>
             <p class="dc-hint">No speaking! No mouthing words!</p>
             <div class="dc-timer-display">${timeLeft}s</div>
             <button class="dc-btn" id="guessed">Team Guessed It!</button>
@@ -135,12 +145,12 @@ export default {
         card.querySelector('#guessed').addEventListener('click', () => guessed(true));
         card.querySelector('#skip').addEventListener('click', () => guessed(false));
       } else if (phase === 'scoring') {
-        const movie = movieFor(category, currentWord);
+        const movie = movieFor(category, currentWord, selectedMovies);
         card.innerHTML = `
           <div class="dc-scoring">
             <h3>${guessedCorrect ? '✅ Correct!' : '❌ Skipped'}</h3>
-            <p>The word was: <strong>${currentWord}</strong></p>
-            ${movie ? `<p>${movie.year} · ${movie.cast}</p><p>${movie.story}</p>` : ''}
+            <p>The word was: <strong>${escapeHTML(currentWord)}</strong></p>
+            ${movieDetails(movie)}
             <p>Team ${currentTeam + 1} score: ${score[currentTeam]}</p>
             <button class="dc-btn" id="nextTurn">${currentTeam === 1 ? 'Next Round' : 'Switch Teams'}</button>
           </div>`;

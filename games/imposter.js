@@ -6,6 +6,7 @@ import { createTurnIndicator } from '../js/turn-indicator.js';
 import { celebrate } from '../js/celebration.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
 import { TELUGU_MOVIES } from '../js/party-prompts.js';
+import { escapeHTML, loadMovieScreen, filterMovies, uniquePrompts, movieFilterFields, movieSetupError, movieDetails, difficultyLabel } from '../js/movie-library.js';
 
 const WORD_PAIRS = [
   { word: 'COFFEE', clue: 'Hot drink' },
@@ -31,33 +32,37 @@ const WORD_PAIRS = [
 ];
 
 const CATEGORIES = ['everyday', 'telugu-movies'];
-const pairsFor = (category) => category === 'telugu-movies'
-  ? TELUGU_MOVIES.map(movie => ({ word: movie.title, clue: movie.clue }))
+const pairsFor = (category, movies) => category === 'telugu-movies'
+  ? uniquePrompts(movies).map(movie => ({ word: movie.prompt ?? movie.title, clue: movie.clue }))
   : WORD_PAIRS;
 
-export function validCheckpoint(s) {
+export function validCheckpoint(s, movies = TELUGU_MOVIES) {
   if (!s || !CATEGORIES.includes(s.category ?? 'everyday')) return false;
+  if (movieSetupError(movies, s)) return false;
+  const pairs = pairsFor(s.category ?? 'everyday', filterMovies(movies, s));
+  if (s.category === 'telugu-movies' && s.period === undefined) pairs.push(...TELUGU_MOVIES.map(movie => ({ word: movie.title, clue: movie.clue })));
   return Number.isInteger(s.players) && s.players >= 3 && s.players <= 8 &&
     ['setup', 'reveal', 'discuss', 'vote'].includes(s.phase) &&
     Number.isInteger(s.currentPlayer) && s.currentPlayer >= 0 && s.currentPlayer < s.players &&
     Number.isInteger(s.imposterIndex) && s.imposterIndex >= 0 && s.imposterIndex < s.players &&
-    pairsFor(s.category ?? 'everyday').some((pair) => pair.word === s.word && pair.clue === s.clue) &&
+    pairs.some((pair) => pair.word === s.word && pair.clue === s.clue) &&
     Array.isArray(s.votes) && s.votes.length === s.players &&
     s.votes.every((v, i) => v === null || (Number.isInteger(v) && v >= 0 && v < s.players && v !== i)) &&
     (s.phase !== 'vote' || s.votes.slice(s.currentPlayer + 1).every((v) => v === null));
 }
 
 export default {
-  async render(el, game, { navigate, session } = {}) {
+  async render(el, game, { navigate, session, movieLibrary } = {}) {
     const shell = createShell(el, game, { title: 'Imposter', meta: 'Pass the device · find the spy' });
     const showTurn = createTurnIndicator(shell.root);
     const { stage, getResetButton } = shell;
     if (navigate) wireBack(shell, navigate);
     shell.root.classList.add('imp-vibe');
+    const movies = movieLibrary ?? await loadMovieScreen(stage);
 
     const saved = loadJSON(KEYS.SETTINGS + ':imposter', { players: '4', category: 'everyday' });
-    const checkpoint = validCheckpoint(session?.state) ? session.state : null;
-    const settings = checkpoint ? { players: String(checkpoint.players), category: checkpoint.category ?? 'everyday' } : await renderSetup(stage, {
+    const checkpoint = validCheckpoint(session?.state, movies) ? session.state : null;
+    const settings = checkpoint ? { ...checkpoint, players: String(checkpoint.players), category: checkpoint.category ?? 'everyday' } : await renderSetup(stage, {
       title: '🕵️ Imposter',
       subtitle: 'How many players are passing the device?',
       themeClass: 'imp-theme',
@@ -72,13 +77,17 @@ export default {
           options: [{ value: 'everyday', label: 'Everyday words' }, { value: 'telugu-movies', label: 'Telugu movies' }],
           default: CATEGORIES.includes(saved.category) ? saved.category : 'everyday',
         },
+        ...movieFilterFields(saved),
       ],
+      validate: values => movieSetupError(movies, values),
+      summary: values => values.category === 'telugu-movies' ? `${uniquePrompts(filterMovies(movies, values)).length.toLocaleString()} approved movie prompts · ${difficultyLabel(values.difficulty)}` : '',
       startLabel: 'Deal the Cards',
     });
     saveJSON(KEYS.SETTINGS + ':imposter', settings);
     const playerCount = Math.max(3, Math.min(8, parseInt(settings.players, 10) || 4));
     const category = settings.category;
-    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${category === 'telugu-movies' ? 'Telugu movies' : 'Everyday words'} · One spy`;
+    const selectedMovies = uniquePrompts(filterMovies(movies, settings));
+    shell.root.querySelector('.game-meta').textContent = `${playerCount} players · ${category === 'telugu-movies' ? `Telugu movies · ${difficultyLabel(settings.difficulty)}` : 'Everyday words'} · One spy`;
 
     let phase = 'setup'; // setup -> reveal -> discuss -> vote -> result
     let currentPlayer = 0;
@@ -89,7 +98,9 @@ export default {
     function checkpointGame() {
       if (phase === 'result') { session?.finish(); return; }
       session?.save({
-        players: playerCount, category, phase, currentPlayer, imposterIndex, word, clue, votes: [...votes],
+        players: playerCount, category, period: settings.period,
+        fromYear: settings.fromYear, toYear: settings.toYear, difficulty: settings.difficulty,
+        phase, currentPlayer, imposterIndex, word, clue, votes: [...votes],
       });
     }
 
@@ -119,11 +130,11 @@ export default {
             <h3>Player ${currentPlayer + 1}</h3>
             ${isImposter ? `
               <p class="imp-role">🕵️ YOU ARE THE IMPOSTER</p>
-              <p class="imp-clue">Clue: ${clue}</p>
+              <p class="imp-clue">Clue: ${escapeHTML(clue)}</p>
               <p class="imp-hint">Blend in! Don't let them catch you.</p>
             ` : `
               <p class="imp-role">👤 YOU ARE A PLAYER</p>
-              <p class="imp-word">Word: <strong>${word}</strong></p>
+              <p class="imp-word">Word: <strong>${escapeHTML(word)}</strong></p>
               <p class="imp-hint">Convince others you know the word.</p>
             `}
             <button class="imp-btn" id="nextPlayer">${currentPlayer < playerCount - 1 ? 'Pass to Next Player' : 'Start Discussion'}</button>
@@ -156,7 +167,7 @@ export default {
         });
         card.querySelector('#submitVote').addEventListener('click', submitVote);
       } else if (phase === 'result') {
-        const movie = category === 'telugu-movies' ? TELUGU_MOVIES.find(entry => entry.title === word) : null;
+        const movie = category === 'telugu-movies' ? selectedMovies.find(entry => (entry.prompt ?? entry.title) === word || entry.title === word) : null;
         const voteCounts = Array(playerCount).fill(0);
         votes.forEach(v => { if (v !== null) voteCounts[v]++; });
         const maxVotes = Math.max(...voteCounts);
@@ -168,9 +179,9 @@ export default {
           <div class="imp-result ${imposterCaught ? 'win' : 'lose'}">
             <h3>${imposterCaught && !tie ? '🎉 Imposter Caught!' : tie ? '🤝 Tie - Imposter Escapes!' : '🕵️ Imposter Escapes!'}</h3>
             <p>The imposter was <strong>Player ${imposterIndex + 1}</strong>.</p>
-            <p>The word was: <strong>${word}</strong></p>
-            ${movie ? `<p>${movie.year} · ${movie.cast}</p><p>${movie.story}</p>` : ''}
-            <p>Clue: ${clue}</p>
+            <p>The word was: <strong>${escapeHTML(word)}</strong></p>
+            ${movieDetails(movie)}
+            <p>Clue: ${escapeHTML(clue)}</p>
             <div class="imp-vote-breakdown">
               ${voteCounts.map((c, i) => `<span class="imp-vote-bar" style="--count:${c}; --max:${maxVotes}"><span>P${i + 1}</span><strong>${c}</strong></span>`).join('')}
             </div>
@@ -182,7 +193,7 @@ export default {
 
     function newGame() {
       shell.root.querySelector('.arcade-victory')?.remove();
-      const pairs = pairsFor(category);
+      const pairs = pairsFor(category, selectedMovies);
       const pair = pairs[Math.floor(Math.random() * pairs.length)];
       word = pair.word; clue = pair.clue;
       imposterIndex = Math.floor(Math.random() * playerCount);

@@ -167,7 +167,8 @@ class LLMAnnotationTests(unittest.TestCase):
         self.assertEqual(rating["difficulty"], 2)
         self.assertEqual(rating["status"], "llm_reviewed")
         self.assertFalse(rating["automation"]["human_verified"])
-        self.assertTrue(rating["review_required"])
+        self.assertFalse(rating["review_required"])
+        self.assertTrue(rating["gameplay_approved"])
         self.assertEqual(rating["components"]["actability"]["gestures"],
                          ["An illustrative, nonverbal test gesture."])
         revisions = self.db.execute("SELECT count(*) FROM annotations").fetchone()[0]

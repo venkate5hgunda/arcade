@@ -96,11 +96,11 @@ export function wireBack(shell, navigate) {
 //
 // fields: [{ key, label, help?, options: [{ value, label }], default }]
 // Returns a Promise that resolves with { [key]: value } when the user starts.
-export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Start', themeClass = '' } = {}) {
+export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Start', themeClass = '', validate, summary } = {}) {
   return new Promise((resolve) => {
     const values = {};
-    for (const f of fields) values[f.key] = f.default ?? f.options[0].value;
-    const configurable = fields.filter(f => f.options.length > 1);
+    for (const f of fields) values[f.key] = f.default ?? f.options?.[0].value ?? '';
+    const configurable = fields.filter(f => f.type === 'number' || f.options.length > 1);
 
     const card = document.createElement('div');
     card.className = `setup-card${themeClass ? ' ' + themeClass : ''}`;
@@ -117,22 +117,44 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
       </details>` : ''}
       <button class="setup-start-btn" type="button">${startLabel} ${iconMarkup('tabler:arrow-right')}</button>`;
     stage.appendChild(card);
+    const feedback = validate || summary ? document.createElement('p') : null;
+    if (feedback) {
+      feedback.className = 'setup-field-help';
+      feedback.setAttribute('aria-live', 'polite');
+      card.appendChild(feedback);
+    }
+    function updateFeedback() {
+      if (!feedback) return;
+      const error = validate?.(values) ?? '';
+      feedback.textContent = error || summary?.(values) || '';
+      card.querySelector('.setup-start-btn').disabled = !!error;
+    }
 
     const fieldsEl = card.querySelector('.setup-fields');
 
     function renderFields() {
-      if (!fieldsEl) return;
+      if (!fieldsEl) { updateFeedback(); return; }
       fieldsEl.innerHTML = '';
-      card.querySelector('.setup-preview').textContent = configurable.slice(0, 3).map(f =>
-        `${f.label}: ${f.options.find(opt => opt.value === values[f.key])?.label ?? values[f.key]}`).join(' · ') +
-        (configurable.length > 3 ? ` · ${configurable.length - 3} more options in configuration` : '');
-      for (const f of configurable) {
+      const visible = configurable.filter(f => !f.when || f.when(values));
+      card.querySelector('.setup-preview').textContent = visible.slice(0, 3).map(f =>
+        `${f.label}: ${f.options?.find(opt => opt.value === values[f.key])?.label ?? values[f.key]}`).join(' · ') +
+        (visible.length > 3 ? ` · ${visible.length - 3} more options in configuration` : '');
+      for (const f of visible) {
         const group = document.createElement('div');
         group.className = 'setup-field';
         group.innerHTML = `<span class="setup-field-label">${f.label}</span>
           <div class="setup-options" role="group" aria-label="${f.label}"></div>`;
         const optionsEl = group.querySelector('.setup-options');
-        for (const opt of f.options) {
+        if (f.type === 'number') {
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = String(f.min); input.max = String(f.max); input.step = '1';
+          input.value = values[f.key];
+          input.setAttribute('aria-label', f.label);
+          input.addEventListener('input', () => { values[f.key] = input.value; updateFeedback(); });
+          optionsEl.appendChild(input);
+        }
+        for (const opt of f.options ?? []) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'setup-option' + (values[f.key] === opt.value ? ' active' : '');
@@ -157,11 +179,13 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
         }
         fieldsEl.appendChild(group);
       }
+      updateFeedback();
     }
 
     renderFields();
 
     card.querySelector('.setup-start-btn').addEventListener('click', () => {
+      if (validate?.(values)) { updateFeedback(); return; }
       window.arcadeAudio?.prepare();
       window.arcadeAudio?.chime();
       window.haptics?.medium();

@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v65';
-const RUNTIME_CACHE = 'arcade:runtime:v65';
+const STATIC_CACHE = 'arcade:static:v68';
+const RUNTIME_CACHE = 'arcade:runtime:v68';
 
 const STATIC_ASSETS = [
   './',
@@ -40,6 +40,7 @@ const STATIC_ASSETS = [
   './js/turn-indicator.js',
   './js/celebration.js',
   './js/party-prompts.js',
+  './js/movie-library.js',
   './js/game-utils.js',
   './js/dice.js',
   './js/board-tokens.js',
@@ -79,9 +80,29 @@ const STATIC_ASSETS = [
   ].map((name) => `./assets/icons/tabler/${name}.svg`)
 ];
 
+async function cacheMovieIndex(cache, response) {
+  if (!response.ok) throw new Error(`Movie index HTTP ${response.status}`);
+  const index = await response.clone().json();
+  if (index.format_version !== 1 || !Array.isArray(index.files)) throw new Error('Invalid movie index');
+  const base = new URL('./data/movies/', self.location.href);
+  for (const file of index.files) {
+    if (!/^[\w.-]+\.jsonl$/.test(file.path)) throw new Error('Invalid movie partition path');
+    const url = new URL(file.path, base);
+    if (!await cache.match(url)) {
+      const existing = await caches.match(url);
+      if (existing) await cache.put(url, existing);
+      else await cache.add(url);
+    }
+  }
+  await cache.put(new URL('index.json', base), response.clone());
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting())
+    caches.open(STATIC_CACHE).then(async cache => {
+      await cache.addAll(STATIC_ASSETS);
+      await cacheMovieIndex(cache, await fetch('./data/movies/index.json'));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -100,6 +121,21 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   // Only handle same-origin requests.
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.endsWith('/data/movies/index.json')) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        await cacheMovieIndex(await caches.open(RUNTIME_CACHE), response);
+        return response;
+      } catch (error) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        console.error('Movie library unavailable:', error);
+        throw error;
+      }
+    })());
+    return;
+  }
 
   // HTML navigation: network-first so the latest shell loads, fall back offline.
   if (request.mode === 'navigate') {

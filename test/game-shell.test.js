@@ -173,3 +173,34 @@ test('setup can start with unchanged defaults; acknowledgement-only games have n
     globalThis.window = previousWindow;
   }
 });
+
+test('numeric movie filters report empty selections and prevent starting until valid', async () => {
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  try {
+    globalThis.document = { createElement: tag => new SetupElement(tag) };
+    globalThis.window = {};
+    const stage = new SetupElement();
+    const result = renderSetup(stage, {
+      fields: [{ key: 'year', label: 'From year', type: 'number', min: 1900, max: 2999, default: '1900' }],
+      validate: values => Number(values.year) < 2000 ? 'No approved movies match.' : '',
+      summary: () => 'Approved movie pool ready.',
+    });
+    const card = stage.children[0];
+    const button = card.querySelector('.setup-start-btn');
+    assert.equal(button.disabled, true);
+    assert.equal(card.children.at(-1).textContent, 'No approved movies match.');
+    button.listeners.click();
+    assert.ok(!card.removed);
+    const input = card.querySelector('.setup-fields').children[0].querySelector('.setup-options').children[0];
+    input.value = '2000';
+    input.listeners.input();
+    assert.equal(button.disabled, false);
+    assert.equal(card.children.at(-1).textContent, 'Approved movie pool ready.');
+    button.listeners.click();
+    assert.deepEqual(await result, { year: '2000' });
+  } finally {
+    globalThis.document = previousDocument;
+    globalThis.window = previousWindow;
+  }
+});

@@ -10,6 +10,7 @@
     "start": "python3 dev/serve.py",
     "test:movies": "python3 -m unittest discover -s test -p 'test_movie_*.py'",
     "movies:build": "python3 -m dev.movies",
-    "movies:annotate": "python3 -m dev.movies.llm_annotation"
+    "movies:annotate": "python3 -m dev.movies.llm_annotation",
+    "movies:publish": "python3 -m dev.movies.game_export"
   }
 }
