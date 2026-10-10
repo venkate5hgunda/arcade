@@ -32,8 +32,11 @@ background overrides paired; primary text requires at least 4.5:1 contrast,
 and focus must remain distinguishable in both themes.
 
 Business aliases its existing `--bs-*` interface colors to the shared tokens.
-Its skyline hero, district illustrations, board crest, deeds and medallions
-remain distinct. Hangman uses the same panel/action grammar around its original
+Its neutral turn panel follows Roll → Resolve → Finish; optional tasks replace
+that panel rather than stacking tool accordions below the board. Property
+management selects a deed before showing legal actions, and trading selects
+a partner, sets terms and reviews the offer. District illustrations, skyline
+board, crest, deeds and medallions remain distinct. Hangman uses the same panel/action grammar around its original
 word-garden artwork, responsive letter tiles and chalk progress drawing.
 
 ## Interaction and accessibility

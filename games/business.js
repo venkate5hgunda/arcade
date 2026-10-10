@@ -8,6 +8,8 @@ import { BOARD, DEEDS, GROUPS, CARDS, DEFAULT_OPTIONS, createBusiness, actBusine
 
 const format = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 const cost = n => format.format(n);
+const tradeContents = (ids, cash, cards) =>
+  `${ids.map(id => BOARD[id].name).join(', ') || 'No deeds'} · ${cost(cash)}${cards ? ` · ${cards} Jail card${cards === 1 ? '' : 's'}` : ''}`;
 const coords = id => id < 10 ? [11, 11 - id] : id < 20 ?
   [11 - (id - 10), 1] : id < 30 ? [1, id - 19] : [id - 29, 11];
 const name = (index, room) => playerName(index, room);
@@ -116,6 +118,27 @@ export function businessActionContext(s, viewer) {
   if (s.offer?.from === viewer) return 'trade-wait';
   return businessResponder(s) === viewer ? s.phase : 'waiting';
 }
+export function businessTurnFlow(s, viewer) {
+  const context = businessActionContext(s, viewer);
+  const step = s.phase === 'roll' ? 0 : s.phase === 'finish' || s.phase === 'win' ? 2 : 1;
+  const titles = {
+    roll: s.players[viewer].jailed ? 'Leave Jail' : s.doubles ? 'Doubles! Roll again' : 'Roll to move',
+    buy: 'Buy this property?',
+    auction: 'Bid or pass',
+    award: 'Place your building',
+    debt: 'Settle your payment',
+    finish: 'Ready for the next player',
+    win: 'Final standings',
+    'trade-response': 'Review the trade',
+    'trade-wait': 'Waiting for a trade reply',
+    waiting: `Waiting for Player ${businessResponder(s) + 1}`,
+  };
+  const manage = !s.players[viewer].out && !s.offer &&
+    !['auction', 'award', 'win'].includes(s.phase) &&
+    (s.phase !== 'debt' || s.debt.from === viewer);
+  return { context, step, title: titles[context], manage,
+    trade: manage || context === 'trade-response' };
+}
 const moveKeys = {
   roll: [], buy: [], decline: [], end: [], 'jail-fine': [], 'jail-card': ['card'],
   bid: ['amount'], pass: [], build: ['id', 'kind'], sell: ['id'], liquidate: ['group'],
@@ -183,14 +206,8 @@ export function createBusinessRollCycle() {
 function button(text, action, quiet = false) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = `bs-button game-ui-action${quiet ? ' bs-button--quiet game-ui-action--secondary' : ''}`;
-  b.textContent = text; b.addEventListener('click', action);
+  b.textContent = text; b.dataset.focus = text; b.addEventListener('click', action);
   return b;
-}
-function details(title, className) {
-  const d = document.createElement('details');
-  d.className = `${className} game-ui-panel`;
-  d.innerHTML = `<summary>${title}</summary>`;
-  return d;
 }
 function text(node, tag, value, className) {
   const el = document.createElement(tag);
@@ -238,7 +255,7 @@ export default {
       const chooser = document.createElement('section');
       chooser.className = 'bs-entry';
       chooser.innerHTML = `<span class="bs-eyebrow">THE CITY IS YOURS</span>
-        <h3>Make your move.</h3><p>Trade Indian cities, collect rent and build an empire together.</p>
+        <h2>Make your move.</h2><p>Trade Indian cities, collect rent and build an empire together.</p>
         <button class="bs-button game-ui-action bs-online" type="button">Create or join an online room ↗</button>
         <button class="bs-button game-ui-action game-ui-action--secondary bs-button--quiet bs-local" type="button">Pass &amp; play on this phone</button>
         <details><summary>How does online play work?</summary>
@@ -277,51 +294,76 @@ export default {
         fields: [
           ...(!room ? [{ key: 'count', label: 'Players', default: '2',
             options: [2, 3, 4, 5, 6].map(n => ({ value: String(n), label: `${n} players` })) }] : []),
+          { key: 'turnLimit', label: 'Game length', default: '0', help: 'A turn cap gives everyone a shorter game; highest net worth wins, ties are shared.',
+            options: [['0', 'Last player standing'], ['30', '30 turns'], ['60', '60 turns'], ['120', '120 turns']].map(([value, label]) => ({ value, label })) },
+          { key: 'customRules', label: 'House rules', default: 'false',
+            options: [['false', 'Use Arcade defaults'], ['true', 'Customize rules']].map(([value, label]) => ({ value, label })) },
           { key: 'rollToStart', label: 'Opening roll', default: 'false', help: 'Optional traditional variant: roll a total of 12 to enter; unsuccessful rolls end your turn.',
+            when: values => values.customRules === 'true',
             options: [['false', 'Start immediately'], ['true', 'Roll 12 to enter']].map(([value, label]) => ({ value, label })) },
           { key: 'auctionOnly', label: 'Unowned deeds', default: 'false',
+            when: values => values.customRules === 'true',
             options: [['false', 'Buy or auction'], ['true', 'Auction every deed']].map(([value, label]) => ({ value, label })) },
           { key: 'jackpot', label: 'Rest Stop', default: 'false', help: 'House rule: bank fees collect in a pool won on Rest Stop.',
+            when: values => values.customRules === 'true',
             options: [['false', 'Neutral'], ['true', 'Fines jackpot']].map(([value, label]) => ({ value, label })) },
           { key: 'exactStartBonus', label: 'Exact Start', default: 'false',
+            when: values => values.customRules === 'true',
             options: [['false', 'Normal salary'], ['true', 'Extra salary']].map(([value, label]) => ({ value, label })) },
           { key: 'incomeTax', label: 'Income tax', default: '200', help: 'Published editions conflict; choose an explicit house amount.',
+            when: values => values.customRules === 'true',
             options: [['200', '₹200'], ['2000', '₹2,000']].map(([value, label]) => ({ value, label })) },
           { key: 'jailFine', label: 'Jail fine', default: '500', help: '₹500 is this Arcade edition’s default, not an official fixed amount.',
+            when: values => values.customRules === 'true',
             options: [['200', '₹200'], ['500', '₹500']].map(([value, label]) => ({ value, label })) },
-          { key: 'turnLimit', label: 'Game length', default: '0', help: 'Optional total completed-turn cap; compare net worth, ties are shared.',
-            options: [['0', 'Play to last solvent'], ['30', '30 turns'], ['60', '60 turns'], ['120', '120 turns']].map(([value, label]) => ({ value, label })) },
         ],
       });
-    const options = setting ? { ...DEFAULT_OPTIONS,
+    const options = setting?.customRules === 'true' ? { ...DEFAULT_OPTIONS,
       rollToStart: setting.rollToStart === 'true', auctionOnly: setting.auctionOnly === 'true',
       jackpot: setting.jackpot === 'true', exactStartBonus: setting.exactStartBonus === 'true',
       incomeTax: Number(setting.incomeTax), jailFine: Number(setting.jailFine),
-      turnLimit: Number(setting.turnLimit) } : null;
+      turnLimit: Number(setting.turnLimit) } : setting ?
+      { ...DEFAULT_OPTIONS, turnLimit: Number(setting.turnLimit) } : null;
     const seats = room ? count : localCheckpoint?.players.length || Number(setting.count);
     let state = room?.role === 'guest' ? null : structuredClone(roomSave?.state || localCheckpoint || createBusiness(seats, options || {}));
     let view = state && publicBusiness(state);
     let round = roomSave?.round ?? 0, revision = state?.revision ?? -1;
-    let disposed = false, rolling = false, pending = false, covered = !room, hostDice = null;
+    let disposed = false, rolling = false, pending = false,
+      covered = !room && state?.phase !== 'win', hostDice = null;
     let localViewer = state ? businessResponder(state) : 0, errorText = '';
     let inspected = state?.players[state.current].position ?? 0;
     let boardAnchor = inspected, latestCard = null, recentMove = null, cashBefore = null;
+    let panel = 'turn', propertyMode = 'all', focusPanel = false;
     const tradeDrafts = new Map();
     const rollCycle = createBusinessRollCycle();
     const table = document.createElement('div');
     table.className = 'bs-table';
     shell.stage.append(table);
+    let boardSize = '';
+    const boardResize = new ResizeObserver(([entry]) => {
+      if (disposed || !entry?.target.isConnected) return;
+      const size = `${entry.target.clientWidth},${entry.target.clientHeight}`;
+      if (size === boardSize) return;
+      boardSize = size; boardAnchor = inspected;
+      restoreFocus(null, [0, 0], true);
+    });
     shell.root.querySelector('.game-meta').textContent = room ?
       `Private room · ${seats} players · seat ${mySeat + 1}` : `${seats} players · same-phone play`;
     function highlight(before, after) {
       if (!before || !after || after.revision === before.revision) return;
+      if (before.phase !== after.phase || businessResponder(before) !== businessResponder(after) ||
+        Boolean(before.offer) !== Boolean(after.offer) ||
+        after.phase === 'debt' && after.players[businessResponder(after)].cash >= after.debt.amount) {
+        panel = 'turn'; focusPanel = true;
+      }
       cashBefore = before.players.map(player => player.cash);
       const mover = after.players.findIndex((player, i) => player.position !== before.players[i].position);
       recentMove = mover >= 0 ? {
         seat: mover, from: before.players[mover].position, to: after.players[mover].position,
       } : null;
       if (recentMove) boardAnchor = recentMove.to;
-      inspected = after.players[after.current].position;
+      if (before.current !== after.current) boardAnchor = after.players[after.current].position;
+      if (panel !== 'property') inspected = after.players[after.current].position;
       const oldFirst = before.log[0];
       const recentEntries = [];
       for (const entry of after.log) {
@@ -391,6 +433,9 @@ export default {
       const node = table.querySelector('.bs-roll');
       const token = rollCycle.capture(round, revision);
       rolling = true;
+      table.querySelectorAll('button').forEach(button => {
+        if (!button.classList.contains('bs-roll')) button.disabled = true;
+      });
       try {
         if (node && await rollDice(node, token.controller.signal, values) &&
           await pauseAfterRoll(token.controller.signal) && !disposed &&
@@ -406,11 +451,11 @@ export default {
       rollCycle.cancel();
       rolling = false; hostDice = null;
     }
-    function restoreFocus(key, open, scroll, newBoard) {
-      for (const [className, isOpen] of open) {
-        const d = table.querySelector(className);
-        if (d) d.open = isOpen;
-      }
+    function openPanel(next) {
+      if (rolling || pending) return;
+      panel = next; focusPanel = true; render();
+    }
+    function restoreFocus(key, scroll, newBoard) {
       const viewport = table.querySelector('.bs-board-scroll');
       if (viewport) {
         if (newBoard || boardAnchor !== null) {
@@ -422,53 +467,59 @@ export default {
           boardAnchor = null;
         } else { viewport.scrollLeft = scroll[0]; viewport.scrollTop = scroll[1]; }
       }
-      if (key) (table.querySelector(`[data-focus="${key}"]`) ||
-        table.querySelector('.bs-handoff button, .bs-actions button:not(:disabled)'))?.focus({ preventScroll: true });
+      const heading = table.querySelector('.bs-task h4');
+      if (focusPanel) {
+        (table.querySelector('.bs-handoff button') || heading)?.focus({ preventScroll: true });
+        focusPanel = false;
+      } else if (key) ([...table.querySelectorAll('[data-focus]')].find(node =>
+        node.dataset.focus === key) || table.querySelector('.bs-handoff button') ||
+        heading)?.focus({ preventScroll: true });
     }
     function render() {
       if (disposed) return;
-      const open = [...table.querySelectorAll('details')].map(d =>
-        [`.${d.classList[0]}`, d.open]);
       const key = table.contains(document.activeElement) ? document.activeElement.dataset.focus : null;
       const previousForm = table.querySelector('.bs-trade-form');
-      if (previousForm) {
+      if (previousForm && Number(previousForm.dataset.round) === round) {
         const values = Object.fromEntries([...previousForm.querySelectorAll('[data-bs-field]')]
           .map(input => [input.dataset.bsField, input.value]));
         values.offered = [...previousForm.querySelectorAll('[data-bs-give]:checked')].map(input => Number(input.value));
         values.wanted = [...previousForm.querySelectorAll('[data-bs-want]:checked')].map(input => Number(input.value));
-        tradeDrafts.set(room ? mySeat : localViewer, values);
+        tradeDrafts.set(Number(previousForm.dataset.seat), values);
       }
       const previousBid = table.querySelector('.bs-actions input')?.value;
       const oldScroll = table.querySelector('.bs-board-scroll');
       const scroll = [oldScroll?.scrollLeft || 0, oldScroll?.scrollTop || 0];
+      boardResize.disconnect();
       table.replaceChildren();
       const s = view;
       if (!s) { text(table, 'p', 'Waiting for the host to restore the table…'); return; }
       const expected = businessResponder(s);
       const viewer = room ? mySeat : localViewer;
       const player = s.players[viewer];
-      const context = businessActionContext(s, viewer);
+      const flow = businessTurnFlow(s, viewer);
+      const context = flow.context;
+      if (covered || panel === 'property' && s.deeds[inspected]?.owner !== viewer ||
+        ['manage', 'property'].includes(panel) && !flow.manage ||
+        ['partner', 'trade', 'review'].includes(panel) && !flow.trade) panel = 'turn';
       const disconnected = room && room.activeGame.playerIds.some((id, i) =>
         !s.players[i].out && !room.members.find(m => m.id === id)?.connected);
       const can = !covered && !pending && !rolling && !disconnected && !player.out &&
         s.phase !== 'win';
-      const canManage = can && (s.phase !== 'debt' || s.debt.from === viewer);
+      const canManage = can && flow.manage;
       showTurn(expected, s.phase !== 'win');
       const top = document.createElement('header'); top.className = 'bs-top';
-      text(top, 'p', 'BUSINESS  /  INDIAN CITY EDITION', 'bs-eyebrow');
-      text(top, 'h3', s.phase === 'win' ?
+      if (s.phase === 'win') text(top, 'h3',
         (s.winners.length > 1 ? `${s.winners.map(i => name(i, room)).join(' & ')} share the win` :
-          `${name(s.winner, room)} owns the city`) :
-        s.offer ? `${name(s.offer.to, room)} · trade decision` :
-        `${name(s.current, room)}’s turn · ${s.phase === 'auction' ? 'Auction' :
-          s.phase === 'debt' ? 'Payment due' : s.phase === 'award' ? 'Place building' :
-            s.phase === 'buy' ? 'Property offer' : s.phase === 'finish' ? 'Manage or end turn' : 'Roll'}`);
+          `${name(s.winner, room)} owns the city`));
       const at = BOARD[s.players[s.current].position];
       const nowAt = document.createElement('div');
       nowAt.className = 'bs-current-spot';
       nowAt.innerHTML = artMarkup(at.kind);
       text(nowAt, 'span', `${name(s.current, room)} · space ${at.id}: ${at.name}`);
       top.append(nowAt);
+      const historyButton = button('Recent events', () => openPanel('history'), true);
+      historyButton.disabled = rolling || pending || covered;
+      top.append(historyButton);
       text(top, 'p', s.message, 'bs-message').setAttribute('role', 'status');
       if (s.offer && s.offer.to !== s.current)
         text(top, 'p', `The game turn remains with ${name(s.current, room)} while ${name(s.offer.to, room)} answers.`, 'bs-wait');
@@ -495,7 +546,7 @@ export default {
             s.phase === 'debt' ? 'Settle your payment or raise cash.' :
               'Check the named player has the phone before revealing their controls.');
         veil.append(button(`I am ${name(viewer, room)} · reveal my actions`, () => {
-          covered = false; render();
+          covered = false; focusPanel = true; render();
         }));
         table.append(veil);
       }
@@ -526,11 +577,13 @@ export default {
           (recentMove?.to === space.id ? ' is-arrival' : '');
         square.dataset.space = String(space.id);
         square.setAttribute('aria-pressed', String(inspected === space.id));
-        square.setAttribute('aria-controls', 'bs-inspector');
+        square.dataset.focus = `space-${space.id}`;
+        square.setAttribute('aria-controls', 'bs-task');
+        square.disabled = covered || rolling || pending;
         square.addEventListener('click', () => {
           inspected = space.id;
-          render();
-          table.querySelector('#bs-inspector')?.scrollIntoView({ block: 'nearest',
+          propertyMode = 'all'; openPanel('inspect');
+          table.querySelector('.bs-task')?.scrollIntoView({ block: 'nearest',
             behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
         });
         square.style.gridRow = coords(space.id)[0]; square.style.gridColumn = coords(space.id)[1];
@@ -572,35 +625,46 @@ export default {
       text(center, 'small', `${s.houses}/32 houses · ${s.hotels}/12 hotels${s.options.jackpot ? ` · jackpot ${cost(s.jackpot)}` : ''}`, 'bs-bank-stock');
       board.append(center); frame.append(board);
       const sidebar = document.createElement('div'); sidebar.className = 'bs-priority';
-      const tools = document.createElement('aside'); tools.className = 'bs-tools';
+      const task = document.createElement('section');
+      task.id = 'bs-task'; task.className = 'bs-task game-ui-panel';
+      const steps = document.createElement('ol'); steps.className = 'bs-steps';
+      steps.setAttribute('aria-label', 'Turn progress');
+      ['Roll', 'Resolve', 'Finish'].forEach((label, i) => {
+        const step = text(steps, 'li', `${i + 1} ${label}`);
+        if (i === flow.step) step.setAttribute('aria-current', 'step');
+        if (i < flow.step) step.className = 'is-done';
+      });
+      sidebar.append(steps, task);
+      if (panel !== 'turn') {
+        task.append(button('← Back to turn', () => openPanel('turn'), true));
+      }
       const actionPanel = document.createElement('section'); actionPanel.className = 'bs-actions game-ui-panel';
-      text(actionPanel, 'span', `ROUND ${s.turns + 1} · ${s.phase.toUpperCase()}`, 'bs-eyebrow');
-      text(actionPanel, 'h4', context === 'trade-response' ? 'A trade awaits your decision' :
-        context === 'trade-wait' ? 'Your offer is on the table' : 'Your next move');
+      text(actionPanel, 'span', s.phase === 'win' ? 'MATCH COMPLETE' :
+        `TURN ${s.turns + 1}${s.options.turnLimit ? ` / ${s.options.turnLimit}` : ''}`, 'bs-eyebrow');
+      text(actionPanel, 'h4', context === 'waiting' ? `Waiting for ${name(expected, room)}` : flow.title);
       if (!player.out && s.phase !== 'win')
         text(actionPanel, 'p', `Available cash · ${cost(player.cash)}`, 'bs-tip');
       const add = (label, move, quiet = false, actor = viewer) =>
         actionPanel.append(button(label, () => request(move, actor), quiet));
-      const revealTool = (selector, focus) => {
-        const panel = table.querySelector(selector);
-        panel.open = true;
-        panel.scrollIntoView({ block: 'nearest' });
-        panel.querySelector(focus)?.focus({ preventScroll: true });
-      };
       if (can && context === 'trade-response') {
         const o = s.offer;
-        text(actionPanel, 'p', `${name(o.from, room)} offers ${o.offered.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashOut)} for ${o.wanted.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashIn)}. ${o.cardsOut || o.cardsIn ? 'Jail cards included. ' : ''}${o.interestTo || o.interestFrom ? 'Mortgage transfer fees apply.' : ''}`);
+        text(actionPanel, 'p', `${name(o.from, room)} proposes:`);
+        text(actionPanel, 'p', `You receive: ${tradeContents(o.offered, o.cashOut, o.cardsOut)}`);
+        text(actionPanel, 'p', `You give: ${tradeContents(o.wanted, o.cashIn, o.cardsIn)}`);
+        if (o.interestTo || o.interestFrom)
+          text(actionPanel, 'p', `Bank transfer fees: you pay ${cost(o.interestTo)}, ${name(o.from, room)} pays ${cost(o.interestFrom)}.`, 'bs-tip');
         add('Accept trade', { type: 'accept' });
         add('Reject trade', { type: 'reject' }, true);
-        actionPanel.append(button('Counter with new terms ↓', () =>
-          revealTool('.bs-trade', 'select'), true));
+        actionPanel.append(button('Make a counteroffer', () => openPanel('trade'), true));
       } else if (can && context === 'trade-wait') {
         text(actionPanel, 'p', `Waiting for ${name(s.offer.to, room)} to respond. You may withdraw the offer.`);
         add('Withdraw offer', { type: 'cancel' }, true);
       } else if (can && expected === viewer) {
         if (s.phase === 'roll') {
           if (player.jailed) {
-            add(`Pay ${cost(s.options.jailFine)} · leave Jail`, { type: 'jail-fine' }, true);
+            text(actionPanel, 'p', 'Roll doubles to leave for free, or pay the fine before rolling.', 'bs-tip');
+            if (player.cash >= s.options.jailFine)
+              add(`Pay ${cost(s.options.jailFine)} · leave Jail`, { type: 'jail-fine' }, true);
             for (const card of player.cards) add(`Use ${card} jail card`, { type: 'jail-card', card }, true);
           }
           const b = button(player.jailed ? 'Roll for doubles ⚄' : 'Roll two dice ⚄', roll);
@@ -609,11 +673,14 @@ export default {
           actionPanel.append(b);
         } else if (s.phase === 'buy') {
           const id = s.players[s.current].position;
-          text(actionPanel, 'p', `${BOARD[id].name} · ${cost(BOARD[id].price)}. Inspect all rents and the group below before you decide.`, 'bs-tip');
+          text(actionPanel, 'p', `${BOARD[id].name} · ${cost(BOARD[id].price)}. Own it to collect rent when others land here.`, 'bs-tip');
           if (player.cash >= BOARD[id].price)
             add(`Buy ${BOARD[id].name} · ${cost(BOARD[id].price)}`, { type: 'buy' });
           else text(actionPanel, 'p', 'Not enough cash for direct purchase. Open bidding to all players instead.', 'bs-tip');
           add('Decline · open auction', { type: 'decline' }, true);
+          actionPanel.append(button('View price & rents', () => {
+            inspected = id; openPanel('inspect');
+          }, true));
         } else if (s.phase === 'auction') {
           const a = s.auction;
           text(actionPanel, 'p', `${a.kind === 'deed' ? BOARD[a.id].name : `One ${a.kind}`} · highest ${cost(a.bid)}${a.bidder !== null ? ` by ${name(a.bidder, room)}` : ''}`);
@@ -626,6 +693,7 @@ export default {
             const [wrap, input] = number('Your bid (₹)', player.cash,
               Math.max(minimum, Number(previousBid) || 0));
             input.min = String(minimum);
+            input.dataset.focus = 'auction-bid';
             actionPanel.append(wrap);
             actionPanel.append(button('Place bid', () => request({ type: 'bid', amount: Number(input.value) })));
           } else text(actionPanel, 'p', 'You cannot outbid with your current cash. Pass to continue.', 'bs-tip');
@@ -644,20 +712,32 @@ export default {
             text(actionPanel, 'p', 'Sell buildings, mortgage, or arrange a trade to raise cash. You can also declare bankruptcy.', 'bs-tip');
             const canRaiseFromDeeds = DEEDS.some(id => s.deeds[id].owner === viewer &&
               (s.deeds[id].level > 0 || !s.deeds[id].mortgaged));
-            actionPanel.append(button(canRaiseFromDeeds ? 'Open portfolio · raise cash ↓' :
-              'Arrange a trade · raise cash ↓', () =>
-              revealTool(canRaiseFromDeeds ? '.bs-portfolio' : '.bs-trade', 'button, select'), true));
+            actionPanel.append(button(canRaiseFromDeeds ? 'Raise cash from properties' :
+              'Arrange a trade', () => {
+                propertyMode = 'raise'; openPanel(canRaiseFromDeeds ? 'manage' : 'partner');
+              }));
           }
           actionPanel.append(button('Declare bankruptcy…', () => {
             if (confirm('Declare bankruptcy? Buildings are liquidated and your deeds and cash transfer to your creditor (or bank auctions). This cannot be undone.'))
               request({ type: 'bankrupt' });
           }, true));
-        } else if (s.phase === 'finish') add('End turn →', { type: 'end' });
+        } else if (s.phase === 'finish') {
+          text(actionPanel, 'p', 'Your landing is resolved. End your turn, or optionally manage your properties.', 'bs-tip');
+          add('End turn →', { type: 'end' });
+        }
       } else if (s.phase === 'win') {
-        text(actionPanel, 'p', 'The match has ended. Open a new table to play again.');
+        const standings = document.createElement('dl'); standings.className = 'bs-standings';
+        s.players.map((person, i) => ({ seat: i, worth: netWorth(s, i), out: person.out }))
+          .sort((a, b) => b.worth - a.worth).forEach(({ seat, worth, out }) => {
+            text(standings, 'dt', `${name(seat, room)}${s.winners.includes(seat) ? ' · Winner' : out ? ' · Bankrupt' : ''}`);
+            text(standings, 'dd', cost(worth));
+          });
+        actionPanel.append(standings);
+        text(actionPanel, 'p', 'Use New table to play again.', 'bs-tip');
       } else text(actionPanel, 'p', covered ? 'Reveal your actions after the phone is handed over.' :
         pending ? 'Waiting for the host to accept your move…' : 'Waiting for the highlighted player.', 'bs-tip');
-      sidebar.append(actionPanel);
+      if (can && flow.manage) actionPanel.append(button('More actions', () => openPanel('options'), true));
+      if (panel === 'turn') task.append(actionPanel);
       const info = businessSpaceDetails(s, inspected);
       const inspection = document.createElement('section');
       inspection.id = 'bs-inspector'; inspection.className = 'bs-inspector game-ui-panel';
@@ -723,62 +803,88 @@ export default {
         }, true));
       }
       inspection.append(browse);
-      sidebar.append(inspection);
-      const portfolio = details('Your portfolio · build, sell & mortgage', 'bs-portfolio');
+      if (panel === 'property') {
+        browse.remove();
+        inspection.querySelectorAll('.bs-deed-scene, .bs-rent-grid, .bs-inspector-group, .bs-compact-tiers')
+          .forEach(node => node.remove());
+        inspection.append(button('← Choose another property', () => openPanel('manage'), true));
+      }
+      if (panel === 'inspect' || panel === 'property') task.append(inspection);
+      const portfolio = document.createElement('section'); portfolio.className = 'bs-portfolio';
+      text(portfolio, 'h4', propertyMode === 'raise' ? 'Choose a property to raise cash' : 'Choose a property');
       const ownIds = DEEDS.filter(id => s.deeds[id].owner === viewer);
       text(portfolio, 'p', `Net worth ${cost(netWorth(s, viewer))} · ${ownIds.length} deeds · ${player.cards.length} jail cards`);
       if (!ownIds.length) text(portfolio, 'p', 'Buy deeds as you travel, or win them at auction.');
       for (const id of ownIds) {
         const d = s.deeds[id], sp = BOARD[id];
-        const row = document.createElement('div'); row.className = 'bs-deed';
-        row.style.setProperty('--deed-ink', GROUPS[sp.group]?.color || '#8f9ca9');
-        text(row, 'strong', `${sp.name} · ${cost(sp.price)}`);
-        text(row, 'small', `${d.mortgaged ? 'Mortgaged · no rent' :
+        const choices = businessDeedActions(s, viewer, id).filter(option =>
+          propertyMode !== 'raise' || ['sell', 'mortgage'].includes(option.move.type));
+        const canLiquidate = d.level > 0;
+        if (propertyMode === 'raise' && !choices.length && !canLiquidate) continue;
+        const row = button(`${sp.name} · ${d.mortgaged ? 'Mortgaged' :
           d.level === 5 ? 'Hotel' : d.level ? `${d.level} houses` : 'No buildings'} · ${sp.kind === 'city' ?
-            `rent ${cost(rent(s, id))}` : 'rent varies'}`);
-        const buttons = document.createElement('div'); buttons.className = 'bs-deed-actions';
-        if (canManage && !s.offer && !['auction', 'award'].includes(s.phase)) {
-          const act = (caption, move) => buttons.append(button(caption, () => request(move), true));
-          for (const option of businessDeedActions(s, viewer, id)) act(option.label, option.move);
-          const hint = businessBuildHint(s, viewer, id);
-          if (hint) text(row, 'small', hint, 'bs-deed-hint');
-          if (d.level === 5 && s.houses < 4)
-            text(row, 'small', 'No four bank houses to downgrade. Liquidate the color group to raise cash.', 'bs-deed-hint');
-        }
-        row.append(buttons); portfolio.append(row);
+            `rent ${cost(rent(s, id))}` : 'rent varies'}`, () => {
+          inspected = id; openPanel('property');
+        }, true);
+        row.style.setProperty('--deed-ink', GROUPS[sp.group]?.color || '#8f9ca9');
+        portfolio.append(row);
       }
-      if (canManage && !s.offer && !['auction', 'award'].includes(s.phase)) {
-        for (const group of Object.keys(GROUPS)) {
-          if (DEEDS.some(id => BOARD[id].group === group && s.deeds[id].owner === viewer && s.deeds[id].level > 0))
-            portfolio.append(button(`Liquidate all ${group} buildings`, () => request({ type: 'liquidate', group }), true));
+      if (canManage && info.owner === viewer) {
+        if (panel === 'inspect') inspection.append(button('Manage this property', () => {
+          propertyMode = 'all'; openPanel('property');
+        }, true));
+        if (panel === 'property') {
+          const choices = businessDeedActions(s, viewer, inspected).filter(option =>
+            propertyMode !== 'raise' || ['sell', 'mortgage'].includes(option.move.type));
+          for (const option of choices)
+            inspection.append(button(option.label, () => request(option.move), option.move.type !== 'build'));
+          const hint = businessBuildHint(s, viewer, inspected);
+          if (hint && propertyMode !== 'raise') text(inspection, 'p', hint, 'bs-tip');
+          if (info.level > 0) inspection.append(button(`Sell all ${info.group} buildings…`, () => {
+            if (confirm(`Sell every building in the ${info.group} group for half its building cost?`))
+              request({ type: 'liquidate', group: info.group });
+          }, true));
+          if (!choices.length && !info.level) text(inspection, 'p', 'No property actions are available right now.', 'bs-tip');
         }
       }
-      tools.append(portfolio);
-      const trade = details('Trade with another player', 'bs-trade');
-      if (s.offer) {
-        const o = s.offer;
-        text(trade, 'p', `${name(o.from, room)} offers ${o.offered.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashOut)}${o.cardsOut ? ` + ${o.cardsOut} jail card(s)` : ''} for ${o.wanted.map(id => BOARD[id].name).join(', ') || 'no deeds'} and ${cost(o.cashIn)}${o.cardsIn ? ` + ${o.cardsIn} jail card(s)` : ''}. Mortgaged deed transfers cost the new owner 10% interest.`);
-        if (can && viewer === o.to) {
-          trade.append(button('Accept trade', () => request({ type: 'accept' })));
-          trade.append(button('Reject trade', () => request({ type: 'reject' }), true));
-        }
-        if (can && viewer === o.from) trade.append(button('Withdraw offer', () => request({ type: 'cancel' }), true));
-      }
-      if ((canManage || can && s.offer?.to === viewer) &&
+      if (panel === 'manage') task.append(portfolio);
+      const trade = document.createElement('section'); trade.className = 'bs-trade';
+      text(trade, 'h4', panel === 'partner' ? '1 · Choose a trade partner' :
+        panel === 'review' ? '3 · Review your offer' : '2 · Set the trade terms');
+      if (can && flow.trade &&
         (s.phase !== 'auction' && s.phase !== 'award') && (!s.offer || s.offer.to === viewer)) {
         const form = document.createElement('form'); form.className = 'bs-trade-form';
+        form.dataset.seat = String(viewer); form.dataset.round = String(round);
         const counter = Boolean(s.offer), targets = s.players.flatMap((other, i) =>
           i !== viewer && !other.out && (!counter || i === s.offer.from) ? [[i, name(i, room)]] : []);
         const draft = tradeDrafts.get(viewer);
         const [toLabel, to] = select('Trade partner', targets); form.append(toLabel);
         if (targets.some(([id]) => String(id) === draft?.to)) to.value = draft.to;
         to.dataset.bsField = 'to';
+        to.dataset.focus = 'trade-partner';
+        if (panel === 'partner') {
+          trade.append(toLabel);
+          trade.append(button('Next · set terms', () => {
+            tradeDrafts.set(viewer, { to: to.value, offered: [], wanted: [] });
+            openPanel('trade');
+          }));
+        }
+        toLabel.hidden = true;
+        if (panel === 'partner') toLabel.hidden = false;
+        text(form, 'p', `Trading with ${name(Number(to.value), room)}. Only unimproved deeds can be traded.`, 'bs-tip');
         const [outLabel, cashOut] = number('Your cash to give (₹)', player.cash, Number(draft?.cashOut || 0)); form.append(outLabel);
         const [inLabel, cashIn] = number('Cash requested (₹)', 1e7, Number(draft?.cashIn || 0)); form.append(inLabel);
-        const [cardsOutLabel, cardsOut] = number('Your jail cards to give', player.cards.length, Number(draft?.cardsOut || 0)); form.append(cardsOutLabel);
-        const [cardsInLabel, cardsIn] = number('Jail cards requested', 2, Number(draft?.cardsIn || 0)); form.append(cardsInLabel);
+        const [cardsOutLabel, cardsOut] = number('Your jail cards to give', player.cards.length,
+          Math.min(player.cards.length, Number(draft?.cardsOut || 0))); form.append(cardsOutLabel);
+        const partnerCards = s.players[Number(to.value)].cards.length;
+        const [cardsInLabel, cardsIn] = number('Jail cards requested', partnerCards,
+          Math.min(partnerCards, Number(draft?.cardsIn || 0))); form.append(cardsInLabel);
         for (const [field, input] of [['cashOut', cashOut], ['cashIn', cashIn],
-          ['cardsOut', cardsOut], ['cardsIn', cardsIn]]) input.dataset.bsField = field;
+          ['cardsOut', cardsOut], ['cardsIn', cardsIn]]) {
+          input.dataset.bsField = field; input.dataset.focus = `trade-${field}`;
+        }
+        cardsOutLabel.hidden = !player.cards.length;
+        cardsInLabel.hidden = !s.players[Number(to.value)].cards.length;
         const giving = document.createElement('fieldset'); const legendGive = document.createElement('legend');
         legendGive.textContent = 'Your deeds to give'; giving.append(legendGive);
         const asking = document.createElement('fieldset'); const legendAsk = document.createElement('legend');
@@ -787,6 +893,7 @@ export default {
           const label = document.createElement('label');
           const input = document.createElement('input');
           input.type = 'checkbox'; input.value = String(id);
+          input.dataset.focus = `trade-deed-${id}`;
           input.dataset[field === giving ? 'bsGive' : 'bsWant'] = 'true';
           input.checked = (field === giving ? draft?.offered : draft?.wanted)?.includes(id) || false;
           label.append(input, document.createTextNode(` ${BOARD[id].name}${s.deeds[id].mortgaged ? ' (mortgaged)' : ''}`));
@@ -806,40 +913,67 @@ export default {
           fill();
         });
         fill();
-        form.append(giving, asking);
-        const submit = button(counter ? 'Send counteroffer' : 'Propose trade', () => {
-          const selected = field => [...field.querySelectorAll('input:checked')].map(x => Number(x.value));
-          request({ type: counter ? 'counter' : 'offer', to: Number(to.value),
-            offered: selected(giving), wanted: selected(asking), cashOut: Number(cashOut.value),
-            cashIn: Number(cashIn.value), cardsOut: Number(cardsOut.value), cardsIn: Number(cardsIn.value) });
+        if (giving.querySelector('input')) form.append(giving);
+        if (asking.querySelector('input')) form.append(asking);
+        const submit = button('Next · review offer', () => {
+          if (form.reportValidity()) openPanel('review');
         });
-        form.append(submit); trade.append(form);
+        form.append(submit);
+        if (panel === 'trade') trade.append(form);
+        if (panel === 'review' && draft) {
+          text(trade, 'p', `To ${name(Number(draft.to), room)}`);
+          text(trade, 'p', `You give: ${tradeContents(draft.offered, Number(draft.cashOut), Number(draft.cardsOut))}`);
+          text(trade, 'p', `You receive: ${tradeContents(draft.wanted, Number(draft.cashIn), Number(draft.cardsIn))}`);
+          if ([...draft.offered, ...draft.wanted].some(id => s.deeds[id].mortgaged))
+            text(trade, 'p', 'The new owner pays 10% of the mortgage principal for each mortgaged deed.', 'bs-tip');
+          trade.append(button(counter ? 'Send counteroffer' : 'Send offer', () => {
+            request({ type: counter ? 'counter' : 'offer', to: Number(draft.to),
+              offered: draft.offered, wanted: draft.wanted, cashOut: Number(draft.cashOut),
+              cashIn: Number(draft.cashIn), cardsOut: Number(draft.cardsOut), cardsIn: Number(draft.cardsIn) });
+          }));
+          trade.append(button('← Edit terms', () => openPanel('trade'), true));
+        }
         form.addEventListener('submit', event => { event.preventDefault(); submit.click(); });
       }
-      tools.append(trade);
-      if (!room) {
-        const switcher = details('Pass device · manage another portfolio', 'bs-switch');
-        text(switcher, 'p', 'Non-turn players may trade or manage their deeds. Every switch requires a handoff.');
+      if (['partner', 'trade', 'review'].includes(panel)) task.append(trade);
+      if (panel === 'options') {
+        text(task, 'h4', 'What would you like to do?');
+        if (canManage && ownIds.length) task.append(button('Manage properties', () => {
+          propertyMode = s.phase === 'debt' ? 'raise' : 'all'; openPanel('manage');
+        }, true));
+        if (can && flow.trade) task.append(button('Trade with a player', () => openPanel('partner'), true));
+        if (!room && canManage) task.append(button('Pass phone to another player', () => openPanel('players'), true));
+        task.append(button('Explore the board', () => {
+          inspected = s.players[s.current].position; openPanel('inspect');
+        }, true));
+      }
+      if (!room && panel === 'players') {
+        text(task, 'h4', 'Who needs the phone?');
+        text(task, 'p', 'The turn stays with the current player. Pass back when property management is done.');
         for (let i = 0; i < seats; i++) {
           if (i !== viewer && !s.players[i].out)
-            switcher.append(button(`Hand to ${name(i, room)}`, () => {
-              localViewer = i; covered = true; render();
+            task.append(button(`Hand to ${name(i, room)}`, () => {
+              localViewer = i; covered = true; openPanel('turn');
             }, true));
         }
-        tools.append(switcher);
       }
-      const rules = details('Rules, variants & source notes', 'bs-rules');
-      text(rules, 'p', 'Arcade house edition: ₹15,000 opening cash, ₹1,500 Start salary, 2d6 and a bonus roll for doubles. Three doubles send you directly to Jail. No rent on mortgaged deeds. Buy unowned deeds or auction to all players; build evenly on complete sets. Jailed players collect rent and may trade. Third failed jail roll costs the fine, then moves. Rest Stop is neutral by default.');
-      text(rules, 'p', 'This is an original city board, not a reproduction of a manufacturer board. Cash-based Business sources disagree about taxes, jail, clubs and starting rolls. The current Funskool Gold Quest is a different resource game. See README for full Arcade rules and source links.');
-      tools.append(rules);
-      const journal = details('Recent events', 'bs-history');
-      for (const entry of s.log) text(journal, 'p', entry);
-      tools.append(journal);
-      layout.append(sidebar, frame, tools); table.append(layout);
-      table.querySelectorAll('button, input, select, summary').forEach((node, i) => {
-        node.dataset.focus = String(i);
+      if (panel === 'history') {
+        text(task, 'h4', 'Recent events');
+        for (const entry of s.log) text(task, 'p', entry);
+      }
+      if (pending && panel !== 'turn')
+        text(task, 'p', 'Waiting for the host to accept your move…', 'bs-tip').setAttribute('role', 'status');
+      if (pending) task.querySelectorAll('button').forEach(node => { node.disabled = true; });
+      task.querySelectorAll('h4').forEach(heading => {
+        heading.tabIndex = -1; heading.dataset.focus = 'task-heading';
       });
-      restoreFocus(key, open, scroll, !oldScroll);
+      layout.append(sidebar, frame); table.append(layout);
+      table.querySelectorAll('input, select').forEach(node => {
+        node.disabled = !can;
+      });
+      restoreFocus(key, scroll, !oldScroll);
+      boardSize = `${frame.clientWidth},${frame.clientHeight}`;
+      boardResize.observe(frame);
     }
     function publish() {
       try { persist(); } catch (e) { errorText = e.message; room?.error(e); }
@@ -891,6 +1025,7 @@ export default {
         } else if (a?.type === 'bs-reset' && event.from === room.peerId) {
           cancelRoll(); pending = false;
           state = createBusiness(seats, state.options); round++;
+          panel = 'turn'; focusPanel = true; tradeDrafts.clear();
           boardAnchor = inspected = 0; recentMove = null; latestCard = null; cashBefore = null;
           revision = state.revision; shell.root.querySelector('.arcade-victory')?.remove();
           publish();
@@ -902,6 +1037,7 @@ export default {
         }
         if (a.round > round) {
           cancelRoll(); recentMove = null; latestCard = null;
+          panel = 'turn'; focusPanel = true; tradeDrafts.clear();
           boardAnchor = inspected = a.view.players[a.view.current].position;
         } else highlight(view, a.view);
         round = a.round; revision = a.view.revision; view = a.view;
@@ -912,6 +1048,7 @@ export default {
     function reset() {
       if (room) { if (room.role === 'host') requestReset(); return; }
       cancelRoll(); pending = false;
+      panel = 'turn'; focusPanel = true; tradeDrafts.clear();
       state = createBusiness(seats, state.options); view = publicBusiness(state);
       boardAnchor = inspected = 0; recentMove = null; latestCard = null; cashBefore = null;
       localViewer = 0; covered = true; errorText = ''; round++;
@@ -935,7 +1072,8 @@ export default {
     } else persist();
     render();
     return { dispose: () => {
-      disposed = true; cancelRoll(); off?.(); session?.stop(); shell.root.remove();
+      disposed = true; cancelRoll(); off?.(); boardResize.disconnect();
+      session?.stop(); shell.root.remove();
     } };
   },
 };

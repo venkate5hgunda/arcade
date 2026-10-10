@@ -5,7 +5,8 @@ import { BOARD, DEEDS, CARDS, GROUPS, createBusiness, actBusiness, rent,
   netWorth, actors, publicBusiness, validBusiness } from '../games/business-engine.js';
 import { validBusinessMove, applyRemoteBusinessAction, validBusinessSnapshot,
   businessDeedActions, businessAwardChoices, businessSpaceDetails, businessResponder,
-  businessActionContext, businessHandoffSeat, businessBuildHint, createBusinessRollCycle } from '../games/business.js';
+  businessActionContext, businessHandoffSeat, businessBuildHint, createBusinessRollCycle,
+  businessTurnFlow } from '../games/business.js';
 
 const apply = (s, actor, type, fields = {}) => actBusiness(s, { type, ...fields }, actor, () => 0);
 const visit = (s, id, dice = [1, id - 1]) => {
@@ -16,6 +17,54 @@ const holdings = (s, group, owner) => {
   for (const id of DEEDS.filter(x => BOARD[x].group === group)) s.deeds[id].owner = owner;
   return s;
 };
+
+test('guided turn flow follows roll, resolve and finish without offering blocked tools', () => {
+  let s = createBusiness(3);
+  assert.deepEqual(businessTurnFlow(s, 0), {
+    context: 'roll', step: 0, title: 'Roll to move', manage: true, trade: true,
+  });
+  s = visit(s, 3);
+  assert.equal(businessTurnFlow(s, 0).step, 1);
+  assert.equal(businessTurnFlow(s, 0).title, 'Buy this property?');
+  s = apply(s, 0, 'buy');
+  assert.equal(businessTurnFlow(s, 0).step, 2);
+  s = apply(s, 0, 'end');
+  assert.equal(businessTurnFlow(s, 0).context, 'waiting');
+  assert.equal(businessTurnFlow(s, 0).manage, true, 'out-of-turn management is preserved');
+  s = visit(s, 6);
+  s = apply(s, 1, 'decline');
+  for (let i = 0; i < 3; i++) {
+    assert.equal(businessTurnFlow(s, i).manage, false);
+    assert.equal(businessTurnFlow(s, i).trade, false);
+  }
+});
+
+test('trade replies, debts, jail and bonus rolls supply contextual guidance', () => {
+  const s = createBusiness(3);
+  s.doubles = 1;
+  assert.equal(businessTurnFlow(s, 0).title, 'Doubles! Roll again');
+  s.players[0].jailed = true;
+  assert.equal(businessTurnFlow(s, 0).title, 'Leave Jail');
+  const offered = apply(s, 0, 'offer', { to: 1, offered: [], wanted: [],
+    cashOut: 10, cashIn: 0, cardsOut: 0, cardsIn: 0 });
+  assert.equal(businessTurnFlow(offered, 0).context, 'trade-wait');
+  assert.equal(businessTurnFlow(offered, 0).manage, false);
+  assert.equal(businessTurnFlow(offered, 1).title, 'Review the trade');
+  assert.equal(businessTurnFlow(offered, 1).trade, true);
+  assert.equal(businessTurnFlow(offered, 2).trade, false);
+  let debt = createBusiness(3);
+  debt.players[0].cash = 0;
+  debt = visit(debt, 4, [1, 3]);
+  assert.equal(debt.phase, 'debt');
+  assert.equal(businessTurnFlow(debt, 0).title, 'Settle your payment');
+  assert.equal(businessTurnFlow(debt, 0).manage, true);
+  assert.equal(businessTurnFlow(debt, 1).manage, false);
+  const win = apply(createBusiness(2, { turnLimit: 1 }), 0, 'roll', { dice: [1, 3] });
+  const ended = apply(win, 0, 'end');
+  assert.equal(ended.phase, 'win');
+  assert.equal(businessTurnFlow(ended, 0).manage, false);
+  assert.equal(businessTurnFlow(ended, 0).title, 'Final standings');
+});
 
 test('original board artwork is bundled for offline play', () => {
   const precache = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
