@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Arcade — Games for Everyone</title>
   <meta name="description" content="Step into an offline-ready arcade with pool, air hockey, board games, cards, puzzles, and party games. Play together on one device.">
-  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta id="themeColor" name="theme-color" content="#efe9df">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/styles.css">
@@ -21,18 +20,19 @@
   <link rel="stylesheet" href="css/multiplayer.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="app-header">
     <button class="brand" data-nav="back" type="button" aria-label="Arcade home" title="Return to the arcade home page">
       <img src="assets/logo.svg" class="brand-icon" alt="" width="42" height="42">
       <span class="brand-title">ARCADE<span class="brand-spark">✦</span></span>
     </button>
     <div class="header-actions">
-      <button id="roomToggle" class="icon-btn room-toggle" aria-label="Open multiplayer lobby" title="Open multiplayer room" type="button">
+      <button id="roomToggle" class="icon-btn room-toggle" aria-label="Room" title="Open multiplayer room" type="button">
         <span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/users.svg')"></span>
         <span class="header-action-label">Room</span>
       </button>
       <div class="header-setting">
-        <button id="feedbackToggle" class="icon-btn" aria-label="Sound and vibration settings" aria-expanded="false" aria-controls="feedbackPanel" title="Set sound and vibration" type="button">
+        <button id="feedbackToggle" class="icon-btn" aria-label="Sound & feel settings" aria-expanded="false" aria-controls="feedbackPanel" title="Set sound and vibration" type="button">
           <span class="ui-glyph" aria-hidden="true" style="--icon-url:url('../assets/icons/tabler/volume-2.svg')"></span>
           <span class="header-action-label">Sound<span class="feedback-label-extra"> & feel</span></span>
         </button>
@@ -46,7 +46,7 @@
           <p id="hapticsStatus" class="feedback-audio-status"></p>
         </div>
       </div>
-      <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Theme: Auto. Select Light" title="Theme: Auto (follows your device). Select Light" type="button">
+      <button id="themeToggle" class="icon-btn theme-toggle" title="Theme: Auto (follows your device). Select Light" type="button">
         <svg class="icon sun-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm9-9a1 1 0 1 1 0 2h-2a1 1 0 1 1 0-2zM5 12a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2zm13.07-6.07a1 1 0 0 1 0 1.42l-1.42 1.41a1 1 0 1 1-1.41-1.41l1.41-1.42a1 1 0 0 1 1.42 0zM7.76 16.24a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 1 1-1.41-1.42l1.41-1.41a1 1 0 0 1 1.42 0zM16.24 7.76a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41l-1.41-1.41a1 1 0 0 1 0-1.41zM6.24 6.24a1 1 0 0 1 1.41 0l1.42 1.41a1 1 0 1 1-1.42 1.41L6.24 7.65a1 1 0 0 1 0-1.41z"/></svg>
         <svg class="icon moon-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <span class="theme-label">Theme: </span><span id="themeMode">Auto</span>
@@ -54,7 +54,7 @@
     </div>
   </header>
 
-  <main class="main-content">
+  <main id="main-content" class="main-content" tabindex="-1">
     <div id="game-stage" class="stage-root"></div>
   </main>
 

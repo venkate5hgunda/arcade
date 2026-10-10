@@ -74,7 +74,7 @@ export default {
       if (!room) {
         const message = document.createElement('div');
         message.className = 'mafia-panel';
-        message.innerHTML = '<h3>Gather your town</h3><p>Mafia needs 5–10 people in an online private room. Open the multiplayer lobby, invite everyone, then choose Mafia.</p>';
+        message.innerHTML = '<h2>Gather your town</h2><p>Mafia needs 5–10 people in an online private room. Open the multiplayer lobby, invite everyone, then choose Mafia.</p>';
         message.append(button('Open multiplayer lobby ↗', () =>
           multiplayer.showLobby('mafia').catch(e => { error = e.message; render(); })));
         stage.append(message);
@@ -83,7 +83,7 @@ export default {
       if (!view) {
         const loading = document.createElement('div');
         loading.className = 'mafia-panel';
-        loading.innerHTML = '<h3>Waiting for the host</h3><p>Your private role is being dealt. Keep this tab open; reconnect to your saved seat if needed.</p>';
+        loading.innerHTML = '<h2>Waiting for the host</h2><p>Your private role is being dealt. Keep this tab open; reconnect to your saved seat if needed.</p>';
         stage.append(loading);
         return;
       }
@@ -100,7 +100,7 @@ export default {
       title.className = 'mafia-headline';
       title.innerHTML = `<span class="mafia-eyebrow">${phase === 'night' ? '☾ AFTER DARK' :
         phase === 'over' ? '✧ THE FINAL VERDICT' : '☀ THE CITY AWAKENS'} · DAY ${view.day}</span>
-        <h3>${phase === 'night' ? 'The city sleeps.' : phase === 'discussion' ?
+        <h2>${phase === 'night' ? 'The city sleeps.' : phase === 'discussion' ?
           'Speak your suspicions.' : phase === 'vote' ? 'Cast your secret ballot.' :
           `${view.winner === 'town' ? 'The town prevails.' : 'The shadows prevail.'}`}</h3>
         <p class="mafia-announcement">${escape(view.announcement)}</p>`;

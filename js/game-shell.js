@@ -20,7 +20,7 @@ export function createShell(container, game, { title, meta, resetLabel = 'Reset'
         <div class="game-head-identity">
           ${game.icon ? `<span class="game-head-art">${iconMarkup(game.icon, 'catalog-icon')}</span>` : ''}
           <div>
-            <h2 class="game-title">${title || game.name}</h2>
+            <h1 class="game-title">${title || game.name}</h1>
             ${meta ? `<p class="game-meta">${meta}</p>` : ''}
           </div>
         </div>
@@ -141,7 +141,7 @@ export function renderSetup(stage, { title, subtitle, fields, startLabel = 'Star
     const card = document.createElement('div');
     card.className = `setup-card${themeClass ? ' ' + themeClass : ''}`;
     card.innerHTML = `
-      ${title ? `<h3 class="setup-title">${title}</h3>` : ''}
+      ${title ? `<h2 class="setup-title">${title}</h2>` : ''}
       ${subtitle ? `<p class="setup-subtitle">${subtitle}</p>` : ''}
       <p class="setup-guide">${configurable.length ?
         'Ready with the choices below. Expand configuration to customize, then start playing.' :

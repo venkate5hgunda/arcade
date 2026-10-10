@@ -1,5 +1,6 @@
 .game-shell {
   --game-ui-ink: var(--text);
+  --game-ui-accent-ink: color-mix(in srgb, var(--accent) 24%, var(--game-ui-ink));
   --game-ui-muted: var(--text-soft);
   --game-ui-panel: var(--bg-soft);
   --game-ui-border: var(--border);
@@ -12,6 +13,7 @@
   --game-ui-focus: var(--game-ui-primary);
 }
 [data-theme="dark"] .game-shell { --game-ui-focus: var(--accent); }
+.game-shell .game-head h1 { text-wrap: balance; }
 .game-shell .arcade-turn { max-width: 100%; overflow-wrap: anywhere; }
 
 :where(.game-ui-panel) {
@@ -51,6 +53,11 @@
 .game-ui-action:focus-visible, .setup-start-btn:focus-visible {
   outline: 3px solid var(--game-ui-focus);
   outline-offset: 3px;
+}
+.game-shell :is(button, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid #101222;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
