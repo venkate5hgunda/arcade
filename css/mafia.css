@@ -4,14 +4,14 @@
 .mafia-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#181739df 0%,#221944b5 47%,#21164638 100%)}
 .mafia-hero--discussion,.mafia-hero--vote{background-position:center bottom}
 .mafia-eyebrow,.mafia-role-label{font-size:.72rem;font-weight:900;letter-spacing:.2em;color:#ffda94}
-.mafia-headline h3{font-size:clamp(2rem,4.8vw,3.7rem);line-height:1.05;margin:.65rem 0;letter-spacing:-.05em;color:white}
+.mafia-headline h2{font-size:clamp(2rem,4.8vw,3.7rem);line-height:1.05;margin:.65rem 0;letter-spacing:-.05em;color:white}
 .mafia-announcement{font-size:1.05rem;max-width:38ch;line-height:1.5;color:#fff4e5}
 .mafia-role{display:flex;flex-direction:column;gap:.35rem;border:1px solid #ffffff88;border-radius:20px;padding:1.1rem;max-width:320px;background:#171633dc;box-shadow:0 12px 30px #0c0c244f;backdrop-filter:blur(10px);transform:rotate(1deg)}
 .mafia-role--doctor{border-color:#7af6d5}.mafia-role--detective{border-color:#9bd5ff}.mafia-role--mafia{border-color:#ff8cb9}
 .mafia-role-sigil{font-size:3.5rem;line-height:1;color:#ffd27d;text-shadow:0 0 24px #ffbb79}
 .mafia-role strong{font-size:1.6rem;color:white}.mafia-role small{line-height:1.45;color:#fff4e5;font-size:.91rem}
 .mafia-panel,.mafia-roster,.mafia-guide{border:1px solid #8c5aaf54;border-radius:22px;background:#fff8f1;padding:clamp(1.1rem,2.5vw,1.9rem);box-shadow:0 6px 22px #49214c12}
-.mafia-panel h3,.mafia-panel h4,.mafia-roster h4{font-size:1.4rem;margin:0 0 .45rem;color:#36234e}
+.mafia-panel h2,.mafia-panel h3,.mafia-panel h4,.mafia-roster h4{font-size:1.4rem;margin:0 0 .45rem;color:#36234e}
 .mafia-panel p{line-height:1.55;margin:.45rem 0 1rem}
 .mafia-button{appearance:none;border:2px solid #6f287c;background:#762b82;color:#fff;border-radius:13px;padding:.85rem 1.2rem;font:inherit;font-weight:800;cursor:pointer;min-height:48px;transition:transform .15s,box-shadow .15s,background .15s}
 .mafia-button:hover{transform:translateY(-2px);box-shadow:0 5px 16px #54205848;background:#5f1d6b}

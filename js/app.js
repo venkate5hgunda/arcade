@@ -27,7 +27,7 @@ room.on((event) => {
   const connected = room.members.filter((member) => member.connected).length;
   roomToggle.classList.toggle('is-connected', connected > 1);
   roomToggle.setAttribute('aria-label', room.role
-    ? `Open multiplayer lobby, ${connected} connected` : 'Open multiplayer lobby');
+    ? `Room, open multiplayer lobby, ${connected} connected` : 'Room, open multiplayer lobby');
   roomToggle.title = room.role ? `Open room · ${connected} connected` : 'Open multiplayer room';
 });
 if (room.isRestored || new URL(location.href).searchParams.has('invite') ||

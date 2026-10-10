@@ -6,7 +6,7 @@ export function chooseCardTable(stage, room = defaultRoom, game) {
   entry.innerHTML = `
     <span class="cg-eyebrow">THE TABLE IS OPEN</span>
     <span class="card-room-entry-art" aria-hidden="true">♠ <i>✦</i> ♥</span>
-    <h3></h3>
+    <h2></h2>
     <p>Play from separate devices. Each player sees only their own cards.</p>
     <button class="cg-button card-room-entry-online" type="button">Play in a room ↗</button>
     <button class="cg-button cg-button--quiet card-room-entry-local" type="button">Pass &amp; play on this device</button>
@@ -14,7 +14,7 @@ export function chooseCardTable(stage, room = defaultRoom, game) {
       <small>Create or join a room, exchange an invite and answer, then let the host start the game. Keep both tabs open. Some networks may block direct connections.</small>
     </details>
     <p class="card-room-entry-error" role="alert"></p>`;
-  entry.querySelector('h3').textContent = game.name;
+  entry.querySelector('h2').textContent = game.name;
   stage.append(entry);
   return new Promise(resolve => {
     const route = location.hash;

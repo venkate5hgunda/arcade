@@ -10,15 +10,16 @@ let mode = 'auto';
 function apply() {
   const theme = mode === 'auto' ? (media?.matches ? 'dark' : 'light') : mode;
   document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.style.colorScheme = theme;
+  const themeColor = document.getElementById('themeColor');
+  if (themeColor) themeColor.content = theme === 'dark' ? '#101222' : '#efe9df';
   window.dispatchEvent(new CustomEvent('arcade:themechange', { detail: theme }));
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
     toggle.dataset.mode = mode;
     const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
     const shown = mode[0].toUpperCase() + mode.slice(1);
-    const label = `Theme: ${shown}${mode === 'auto' ? ' (follows your device)' : ''}. Select ${next[0].toUpperCase() + next.slice(1)}`;
-    toggle.setAttribute('aria-label', label);
-    toggle.title = label;
+    toggle.title = `Theme: ${shown}${mode === 'auto' ? ' (follows your device)' : ''}. Select ${next[0].toUpperCase() + next.slice(1)}`;
     document.getElementById('themeMode').textContent = shown;
   }
 }

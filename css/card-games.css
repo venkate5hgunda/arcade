@@ -204,7 +204,7 @@
   margin: 0 0 7px;
 }
 
-.bj-seat h3, .ce-table h3 {
+.bj-seat h2, .ce-table h3 {
   margin: 0;
   font-size: 1rem;
   letter-spacing: .03em;
@@ -367,7 +367,7 @@
   transform: rotate(-8deg);
 }
 .card-room-entry-art i { color: #fb618c; font-style: normal; transform: translateY(-12px); display: inline-block; }
-.card-room-entry h3 { margin: 0; font-size: clamp(1.8rem, 6vw, 3rem); line-height: 1.1; }
+.card-room-entry h2 { margin: 0; font-size: clamp(1.8rem, 6vw, 3rem); line-height: 1.1; }
 .card-room-entry p { max-width: 360px; margin: 0 0 6px; font-weight: 650; }
 .card-room-entry .card-room-entry-online {
   width: min(100%, 300px);

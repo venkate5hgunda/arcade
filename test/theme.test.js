@@ -14,7 +14,12 @@ test('theme starts in Auto, follows the device, and cycles Light, Dark, Auto', a
     addEventListener(type, fn) { this[type] = fn; },
   };
   const modeLabel = { textContent: '' };
-  const root = { setAttribute(key, value) { this[key] = value; }, getAttribute(key) { return this[key]; } };
+  const root = {
+    style: {},
+    setAttribute(key, value) { this[key] = value; },
+    getAttribute(key) { return this[key]; },
+  };
+  const themeColor = { content: '' };
   const changes = [];
   try {
     globalThis.window = {
@@ -23,7 +28,7 @@ test('theme starts in Auto, follows the device, and cycles Light, Dark, Auto', a
     };
     globalThis.document = {
       documentElement: root,
-      getElementById: id => id === 'themeToggle' ? toggle : modeLabel,
+      getElementById: id => id === 'themeToggle' ? toggle : id === 'themeMode' ? modeLabel : themeColor,
     };
     globalThis.localStorage = {
       getItem: key => values.get(key) ?? null,
@@ -35,9 +40,13 @@ test('theme starts in Auto, follows the device, and cycles Light, Dark, Auto', a
     assert.equal(modeLabel.textContent, 'Auto');
     assert.match(toggle.title, /follows your device/);
     assert.equal(currentTheme(), 'dark');
+    assert.equal(root.style.colorScheme, 'dark');
+    assert.equal(themeColor.content, '#101222');
     media.matches = false;
     listeners.get('change')();
     assert.equal(currentTheme(), 'light');
+    assert.equal(root.style.colorScheme, 'light');
+    assert.equal(themeColor.content, '#efe9df');
 
     toggle.click();
     assert.equal(toggle.dataset.mode, 'light');

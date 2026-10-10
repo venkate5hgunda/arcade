@@ -118,6 +118,8 @@ export default {
 
     const status = document.createElement('div');
     status.className = 'dc-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
     stage.appendChild(status);
 
     function render() {

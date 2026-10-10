@@ -122,7 +122,7 @@ function renderGameList(container, games) {
   container.setAttribute('role', 'list');
 
   games.forEach((game, index) => {
-    const card = document.createElement('article');
+    const card = document.createElement('div');
     card.className = 'game-card';
     card.setAttribute('role', 'listitem');
     card.style.setProperty('--accent', game.color);
@@ -219,7 +219,7 @@ function renderResumeGames() {
   section.hidden = games.length === 0;
   section.querySelector('.resume-games').innerHTML = games.map((game) => `
     <div class="resume-game-item" style="--accent:${game.color}">
-    <button class="resume-game" type="button" data-game="${game.id}" style="--accent:${game.color}" aria-label="Resume ${game.name}">
+    <button class="resume-game" type="button" data-game="${game.id}" style="--accent:${game.color}">
       <span class="resume-icon">${iconMarkup(game.icon, 'catalog-icon')}</span>
       <span class="resume-game-copy"><strong>${game.name}</strong><small>Continue playing</small></span>
       ${iconMarkup('tabler:arrow-right')}

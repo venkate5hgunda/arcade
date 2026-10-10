@@ -32,6 +32,7 @@ function sound(kind) {
 function cardElement(card, hidden = false) {
   const el = document.createElement('div');
   el.className = `cg-card${hidden ? ' cg-card--back' : card.suit === '♥' || card.suit === '♦' ? ' cg-card--red' : ''}`;
+  el.setAttribute('role', 'img');
   el.setAttribute('aria-label', hidden ? 'Face-down card' : `${card.rank} of ${{ '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' }[card.suit]}`);
   if (hidden) {
     el.innerHTML = '<span aria-hidden="true" class="cg-card-back-mark">✦</span>';
@@ -77,12 +78,12 @@ export default {
       <div class="cg-table bj-table">
         <header class="cg-table-heading"><span class="cg-eyebrow">THE HOUSE</span><strong>BLACKJACK <span aria-hidden="true">♠</span></strong></header>
         <section class="bj-seat" aria-label="Dealer">
-          <div class="bj-seat-head"><h3>Dealer</h3><span class="bj-dealer-score"></span></div>
+          <div class="bj-seat-head"><h2>Dealer</h2><span class="bj-dealer-score"></span></div>
           <div class="cg-card-row bj-dealer-cards"></div>
         </section>
         <div class="bj-center"><span class="bj-round"></span><p class="cg-message bj-message" role="status" aria-live="polite"></p></div>
         <section class="bj-seat" aria-label="Your hand">
-          <div class="bj-seat-head"><h3>Your hand</h3><span class="bj-player-score"></span></div>
+          <div class="bj-seat-head"><h2>Your hand</h2><span class="bj-player-score"></span></div>
           <div class="cg-card-row bj-player-cards"></div>
         </section>
         <div class="cg-actions bj-actions"></div>
