@@ -168,17 +168,14 @@
   border: 1px solid var(--bs-stroke); padding: clamp(10px, 1.8vw, 23px);
 }
 .bs-top {
-  position: relative; isolation: isolate; overflow: hidden; min-width: 0;
-  padding: clamp(13px, 2vw, 24px); border-radius: 17px;
-  color: #ffffff; background: #1754a2; box-shadow: inset 0 0 0 1px #b8ecff80, 0 10px 24px #3b8de82f;
+  min-width: 0; padding: 0 0 10px;
+  color: var(--bs-ink); background: none;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px;
+  align-items: center;
 }
+.bs-top > h3, .bs-top > p { grid-column: 1 / -1; }
 .bs-top h3, .bs-top p, .bs-handoff h3, .bs-handoff p {
   max-width: 100%; min-width: 0; overflow-wrap: anywhere; word-break: normal;
-}
-.bs-top::before {
-  content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, #442bacdb, #1765bad4 50%, #0799b173),
-    url("../assets/business/cityscape.svg") right center / cover no-repeat;
 }
 .bs-top h3 {
   max-width: 730px; font-family: var(--game-ui-heading); font-size: clamp(1.3rem, 2.4vw, 1.8rem); font-weight: 800; line-height: 1.2;
@@ -186,23 +183,22 @@
 }
 .bs-top .bs-eyebrow { color: #f9cf8e; }
 .bs-handoff .bs-eyebrow { color: var(--bs-muted); }
-.bs-top .bs-message { color: #fff1d4; line-height: 1.45; }
+.bs-top .bs-message { color: var(--bs-muted); line-height: 1.45; }
 .bs-current-spot {
   width: fit-content; max-width: 100%; min-width: 0; display: flex; align-items: center;
   gap: 6px; padding: 4px 10px; border: 1px solid #ffdc9e6b; border-radius: 100px;
-  color: #fff5df; background: #112e3ec9; font-size: .82rem; font-weight: 750;
+  color: var(--bs-ink); background: var(--bs-panel); font-size: .82rem; font-weight: 750;
   overflow-wrap: anywhere;
 }
 .bs-current-spot span { min-width: 0; }
 .bs-art-icon { width: 25px; height: 25px; flex: none; stroke: currentColor; color: inherit; }
-.bs-current-spot .bs-art-icon { width: 20px; height: 20px; color: #f7cb83; }
+.bs-current-spot .bs-art-icon { width: 20px; height: 20px; color: var(--bs-muted); }
 .bs-top .bs-last-roll {
-  color: #ffe7ba; background: #173d4ded; border-color: #e8b76b8c;
+  color: var(--bs-ink); background: var(--bs-panel); border-color: var(--bs-stroke);
   padding: 3px 9px; font-size: .85rem; margin-right: 8px;
 }
-.bs-top .bs-wait { color: #f1d9ac; }
-.bs-top .bs-error { color: #ffd6dd; }
-.bs-journey { color: #f9d88f; font-size: .86rem; overflow-wrap: anywhere; }
+.bs-top .bs-wait { color: var(--bs-muted); }
+.bs-journey { color: var(--bs-muted); font-size: .86rem; overflow-wrap: anywhere; }
 .bs-card-flash {
   display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px;
   border-radius: 9px; border: 1px solid #edbd7d;
@@ -240,10 +236,10 @@
 .bs-seat.is-loss { animation: bs-loss 1s ease-out; }
 .bs-layout {
   grid-template-columns: minmax(0, 1fr) minmax(285px, 310px);
-  grid-template-rows: min-content 1fr; gap: 9px 12px;
+  grid-template-rows: auto; gap: 9px 12px;
 }
 .bs-priority { grid-column: 2; grid-row: 1; }
-.bs-board-scroll { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.bs-board-scroll { grid-column: 1; grid-row: 1; align-self: start; }
 .bs-tools { grid-column: 2; grid-row: 2; }
 .bs-board-scroll { min-width: 0; container-type: inline-size; }
 .bs-board { --cell: clamp(64px, 5.2vw, 72px); position: relative; background: #e4f8f5; }
@@ -342,14 +338,41 @@
 .bs-inspector-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .bs-inspector-nav .bs-button { flex: 1 1 105px; font-size: .77rem; padding: 5px 8px; }
 .bs-compact-tiers { font-weight: 700; }
-.bs-entry { position: relative; isolation: isolate; overflow: hidden; width: min(650px, 100%); background: #1754a2; color: #fff4dc; }
-.bs-entry::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, #5030bce8, #1268b983),
-    url("../assets/business/cityscape.svg") center / cover no-repeat; }
+.bs-entry { width: min(650px, 100%); background: var(--game-ui-panel); color: var(--bs-ink); border: 1px solid var(--bs-stroke); }
 .bs-entry h3 { font-weight: 900; letter-spacing: -.04em; overflow-wrap: anywhere; }
-.bs-entry .bs-eyebrow { color: #ffe2a2; }
+.bs-entry .bs-eyebrow { color: var(--bs-muted); }
 .bs-entry details { padding: 8px; border: 1px solid #ffe2a25e; border-radius: 8px; }
-[data-theme="dark"] .bs-top, [data-theme="dark"] .bs-entry { background: #174778; color: #fff0d0; }
+.bs-task { display: grid; gap: 10px; }
+.bs-task > section { padding: 0; border: 0; background: none; box-shadow: none; }
+.bs-task > .bs-actions { border: 0; box-shadow: none; }
+.bs-task h4 { margin: 0; font-size: 1.15rem; }
+.bs-task p { margin: 4px 0; line-height: 1.5; }
+.bs-task .bs-eyebrow { color: var(--bs-muted); }
+.bs-task .bs-inspector { border: 0; box-shadow: none; }
+.bs-task .bs-trade { display: grid; gap: 10px; }
+.bs-task input, .bs-task select { font: inherit; }
+.bs-task [hidden] { display: none; }
+.bs-steps {
+  list-style: none; margin: 0; padding: 0; display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px;
+}
+.bs-steps li {
+  padding: 10px 4px; border-radius: 9px; border: 1px solid var(--bs-stroke);
+  color: var(--bs-muted); background: var(--bs-panel); text-align: center;
+  font-size: .8rem; font-weight: 700;
+}
+.bs-steps [aria-current] {
+  color: var(--game-ui-primary-ink); background: var(--game-ui-primary);
+  border-color: var(--game-ui-primary);
+}
+.bs-steps .is-done { border-bottom: 3px solid var(--accent); }
+.bs-task h4:focus-visible { outline: 3px solid var(--game-ui-focus); outline-offset: 3px; }
+.bs-top > .bs-button { min-height: 44px; font-size: .8rem; padding: 7px 12px; }
+.bs-task .bs-portfolio > button { border-left: 4px solid var(--deed-ink); }
+.bs-standings { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 8px 0; }
+.bs-standings dt { min-width: 0; overflow-wrap: anywhere; }
+.bs-standings dd { margin: 0; font-weight: 800; }
+.bs-space:disabled { cursor: default; }
 @media (min-width: 1280px) {
   .bs-board { --cell: calc(100cqw / 11); }
 }
@@ -361,16 +384,16 @@
 }
 @media (max-width: 540px) {
   .bs-table { padding: 7px; display: flex; flex-direction: column; gap: 7px; }
-  .bs-layout, .bs-priority { display: contents; }
+  .bs-layout { display: contents; }
+  .bs-priority { order: 2; display: grid; width: 100%; }
   .bs-top { order: 0; }
   .bs-handoff { order: 1; }
   .bs-actions { order: 2; }
   .bs-seats { order: 3; }
-  .bs-inspector { order: 4; }
-  .bs-board-scroll { order: 5; width: 100%; }
+  .bs-board-scroll { order: 4; width: 100%; }
   .bs-tools { order: 6; }
   .bs-top { padding: 11px 12px; }
-  .bs-top h3 { font-size: 1.5rem; margin: 4px 0; }
+  .bs-top h3 { font-size: 1.15rem; margin: 4px 0; }
   .bs-top p { margin: 4px 0; }
   .bs-handoff { padding: 10px 12px; margin: 7px 0; }
   .bs-handoff h3 { margin: 2px 0; }
@@ -386,7 +409,8 @@
   .bs-space-art { height: 19px; }
   .bs-space-art .bs-art-icon { width: 18px; height: 18px; }
   .bs-center-crest strong { font-size: 3rem; }
-  .bs-priority section, .bs-tools details { padding: 10px; }
+  .bs-priority .bs-task { padding: 12px; }
+  .bs-task > section { padding: 0; }
   .bs-actions { gap: 7px; }
   .bs-actions h4 { font-size: 1.1rem; }
   .bs-roll .arcade-die-arena { height: 86px; }

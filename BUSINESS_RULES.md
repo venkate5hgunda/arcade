@@ -131,8 +131,26 @@ claiming any one variant is universally official.
 
 ### Exploring the Arcade table
 
-The contextual action card and current player's location are above the
-board, including on a phone. Board spaces are buttons: tap any deed to see
+The turn follows **Roll → Resolve → Finish**. Only the current decision is
+shown: roll, buy or auction, bid or pass, settle a payment, or end the turn.
+Rent, taxes, card effects and movement still resolve automatically; doubles
+return to Roll. The rules and game economics are unchanged.
+
+The task card and current player's location are above the board on a phone.
+**More actions** opens a focused choice instead of a row of under-board
+accordions. To manage properties, choose a deed, then choose an available
+action; unavailable actions are omitted and building restrictions are
+explained. A debt prompts **Raise cash**, showing only deeds that can be sold
+or mortgaged, including building liquidation. Trades follow **choose partner
+→ set terms → review → send**, and a pending offer replaces the normal turn
+controls until answered. **Back to turn** leaves a task without changing the
+game. Recent events are available on demand; instructions use Arcade's shared
+Help control. Out-of-turn local management remains available through More
+actions → Pass phone, with a handoff before the new player's controls appear.
+Setup uses Arcade defaults, with house-rule fields revealed only after
+choosing Customize rules.
+
+Board spaces are buttons: tap any deed to see
 its printed price, complete rent ladder, group, building price, mortgage,
 owner and buildings before deciding to buy or bid. Swipe **inside** the
 board to move around all 40 spaces; the board opens at Start and follows
@@ -142,3 +160,12 @@ district scenes and miniature piece emblems are original bundled vector
 artwork; no proprietary cards or board images are used. Colorful groups,
 distinct piece shapes, movement cues and contextual action cards make the
 table readable without relying on color alone.
+
+### UX research
+
+The guided interface applies [NN/g's progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/):
+show the essential decision first and defer secondary or advanced choices
+until requested. In Business this means one task panel, explicit steps and
+contextual legal actions rather than exposing every tool throughout play.
+The illustrated board remains game-specific; neutral panels, typography,
+buttons and focus styling follow Arcade's shared design language.
