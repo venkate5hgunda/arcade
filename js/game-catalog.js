@@ -148,7 +148,7 @@ export const GAMES = [
     id: 'uno',
     name: 'UNO-inspired',
     tagline: 'Colorful private-room showdown',
-    players: { min: 2, max: 4, type: 'local-multiplayer' },
+    players: { min: 2, max: 20, type: 'group' },
     category: 'Cards',
     color: '#ef4444',
     icon: 'game-icons:card-joker',
@@ -253,14 +253,23 @@ export function playerLabel(game) {
   return `${p.min}–${p.max} players`;
 }
 
-// Dynamically import a game module. Returns null if the module is missing
-// (game not yet implemented) so the router can render a "coming soon" screen.
+// Dynamically import a game module. Returns null ONLY if the module is
+// genuinely missing (game not yet implemented) so the router can render
+// a "coming soon" screen. All other failures (syntax, init, missing deps)
+// are re-thrown so they surface as actionable errors, not masked as absent.
 export async function loadGameModule(id) {
   try {
     const mod = await import(`../games/${id}.js`);
     return mod.default || mod;
   } catch (err) {
+    // Module not found (404) = intentionally unavailable game
+    const msg = String(err?.message ?? err);
+    if (msg.includes('404') || msg.includes('ENOENT') || msg.includes('not found')) {
+      console.error(`Game module "${id}" not implemented`);
+      return null;
+    }
+    // Any other error (syntax, init, missing import) = genuine defect
     console.error(`Failed to load game module "${id}"`, err);
-    return null;
+    throw err;
   }
 }

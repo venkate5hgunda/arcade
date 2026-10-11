@@ -1,6 +1,8 @@
+import { MAX_ROOM_SEATS } from './multiplayer.js';
+
 export function remoteMatch(room, gameId) {
   const game = room?.activeGame;
-  if (game?.id !== gameId || game.playerIds?.length < 2 || game.playerIds.length > 4 ||
+  if (game?.id !== gameId || game.playerIds?.length < 2 || game.playerIds.length > MAX_ROOM_SEATS ||
       !game.playerIds.includes(room.peerId)) return null;
   return room;
 }

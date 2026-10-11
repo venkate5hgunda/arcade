@@ -7,18 +7,34 @@ import { chooseCardTable } from '../js/card-room-entry.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
 
 export const COLORS = ['red', 'yellow', 'green', 'blue'];
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 20;
+// Tables larger than ten players need a second shuffled deck so the stock
+// does not run dry before the first player empties a hand.
+export const DOUBLE_DECK_AFTER = 10;
 const INK = { red: '#e24458', yellow: '#eeb744', green: '#31a77d', blue: '#4385df', wild: '#272a4e' };
 const LABEL = { skip: '⊘', reverse: '↶', draw2: '+2', wild: '★', wild4: '+4' };
 
-export function unoDeck() {
+export function unoDeckCount(playerCount) {
+  return playerCount > DOUBLE_DECK_AFTER ? 2 : 1;
+}
+
+function singleDeck(offset) {
   const cards = [];
   for (const color of COLORS) {
-    cards.push({ id: cards.length, color, value: '0' });
+    cards.push({ id: offset + cards.length, color, value: '0' });
     for (const value of [...Array.from({ length: 9 }, (_, i) => String(i + 1)), 'skip', 'reverse', 'draw2'])
-      for (let i = 0; i < 2; i++) cards.push({ id: cards.length, color, value });
+      for (let i = 0; i < 2; i++) cards.push({ id: offset + cards.length, color, value });
   }
   for (const value of ['wild', 'wild4']) for (let i = 0; i < 4; i++)
-    cards.push({ id: cards.length, color: 'wild', value });
+    cards.push({ id: offset + cards.length, color: 'wild', value });
+  return cards;
+}
+
+export function unoDeck(playerCount = 4) {
+  const decks = unoDeckCount(playerCount);
+  const cards = [];
+  for (let deck = 0; deck < decks; deck++) cards.push(...singleDeck(cards.length));
   return cards;
 }
 
@@ -31,8 +47,9 @@ export function shuffle(cards, random = Math.random) {
 }
 
 export function newUnoGame(count, random = Math.random) {
-  if (!Number.isInteger(count) || count < 2 || count > 4) throw new RangeError('UNO needs 2–4 players.');
-  const stock = shuffle(unoDeck(), random);
+  if (!Number.isInteger(count) || count < MIN_PLAYERS || count > MAX_PLAYERS)
+    throw new RangeError(`UNO needs ${MIN_PLAYERS}–${MAX_PLAYERS} players.`);
+  const stock = shuffle(unoDeck(count), random);
   const hands = Array.from({ length: count }, () => []);
   for (let n = 0; n < 7; n++) for (const hand of hands) hand.push(stock.pop());
   const first = stock.findLastIndex(card => /^[0-9]$/.test(card.value));
@@ -180,7 +197,7 @@ export function applyRemoteUnoAction(state, request, revision, from, playerIds) 
 
 export function validUnoCheckpoint(s, allowFinished = false) {
   if (!s || typeof s !== 'object' || !Array.isArray(s.hands) ||
-      s.hands.length < 2 || s.hands.length > 4 || s.hands.some((hand, index) =>
+      s.hands.length < MIN_PLAYERS || s.hands.length > MAX_PLAYERS || s.hands.some((hand, index) =>
         !Array.isArray(hand) || !hand.length && s.challenge?.offender !== index &&
           !(allowFinished && s.winner === index)) ||
       !Array.isArray(s.stock) || !Array.isArray(s.discard) || !s.discard.length ||
@@ -202,7 +219,7 @@ export function validUnoCheckpoint(s, allowFinished = false) {
       !(s.drawnId === null || Number.isInteger(s.drawnId) &&
         s.hands[s.current].some(card => card?.id === s.drawnId))) return false;
   const cards = [...s.stock, ...s.discard, ...s.hands.flat()];
-  const reference = unoDeck();
+  const reference = unoDeck(s.hands.length);
   return cards.length === reference.length &&
     cards.every(card => card && Number.isInteger(card.id) && card.id >= 0 &&
       card.id < reference.length && card.color === reference[card.id].color &&
@@ -281,7 +298,8 @@ export default {
       restored ? { count: String(restored.hands.length) } : await renderSetup(shell.stage, {
         title: '🌈 UNO-inspired', subtitle: 'Choose your table.',
         fields: [{ key: 'count', label: 'Players', default: saved.count,
-          options: [2, 3, 4].map(count => ({ value: String(count), label: `${count} Players` })) }],
+          options: Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => i + MIN_PLAYERS)
+            .map(count => ({ value: String(count), label: `${count} Players` })) }],
         startLabel: 'Deal cards',
       });
     if (!room) saveJSON(KEYS.SETTINGS + ':uno', settings);
@@ -303,7 +321,7 @@ export default {
     let covered = !room && state.winner === null;
     let pending = null, disposed = false, revision = 0, lastRevision = -1,
       gameRound = roomSave?.round ?? 0;
-    const deckById = unoDeck();
+    const deckById = unoDeck(count);
     const table = document.createElement('div');
     table.className = 'cg-table uno-table';
     shell.stage.appendChild(table);
@@ -394,14 +412,14 @@ export default {
         const incoming = event.action.view;
         if (!incoming || !Array.isArray(incoming.hand) || !Array.isArray(incoming.counts) ||
             incoming.counts.length !== count || incoming.counts[mySeat] !== incoming.hand.length ||
-            !incoming.counts.every(n => Number.isInteger(n) && n >= 0 && n <= 108) ||
+            !incoming.counts.every(n => Number.isInteger(n) && n >= 0 && n <= deckById.length) ||
             !Number.isInteger(incoming.current) || incoming.current < 0 || incoming.current >= count ||
             !COLORS.includes(incoming.color) || !incoming.top ||
             !Number.isInteger(incoming.top.id) ||
             incoming.top.color !== deckById[incoming.top.id]?.color ||
             incoming.top.value !== deckById[incoming.top.id]?.value ||
             !Number.isInteger(incoming.stockCount) || incoming.stockCount < 0 ||
-            incoming.stockCount > 108 || !Number.isInteger(incoming.turn) || incoming.turn < 1 ||
+            incoming.stockCount > deckById.length || !Number.isInteger(incoming.turn) || incoming.turn < 1 ||
             ![-1, 1].includes(incoming.direction) ||
             ![null, -1, ...Array.from({ length: count }, (_, i) => i)].includes(incoming.winner) ||
             typeof incoming.canDraw !== 'boolean' || typeof incoming.canPass !== 'boolean' ||

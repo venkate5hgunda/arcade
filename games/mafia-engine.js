@@ -114,12 +114,27 @@ export function viewFor(s, seat) {
 }
 
 export function validMafia(s, count) {
-  return s && Array.isArray(s.roles) && s.roles.length === count && count >= 5 && count <= 10 &&
-    rolesFor(count).sort().join() === [...s.roles].sort().join() &&
-    Array.isArray(s.alive) && s.alive.length === count && s.alive.every(v => typeof v === 'boolean') &&
-    ['night', 'discussion', 'vote', 'over'].includes(s.phase) &&
-    Number.isSafeInteger(s.day) && s.day >= 1 && Number.isSafeInteger(s.revision) &&
-    s.revision >= 0 && s.actions && typeof s.actions === 'object' &&
-    Array.isArray(s.skipped) && s.clues && typeof s.clues === 'object' &&
-    typeof s.announcement === 'string' && [null, 'town', 'mafia'].includes(s.winner);
+  if (!s || !Array.isArray(s.roles) || s.roles.length !== count || count < 5 || count > 10) return false;
+  if (rolesFor(count).sort().join() !== [...s.roles].sort().join()) return false;
+  if (!Array.isArray(s.alive) || s.alive.length !== count || !s.alive.every(v => typeof v === 'boolean')) return false;
+  if (!['night', 'discussion', 'vote', 'over'].includes(s.phase)) return false;
+  if (!Number.isSafeInteger(s.day) || s.day < 1) return false;
+  if (!Number.isSafeInteger(s.revision) || s.revision < 0) return false;
+  if (!s.actions || typeof s.actions !== 'object') return false;
+  if (!Array.isArray(s.skipped) || !s.skipped.every(i => Number.isInteger(i) && i >= 0 && i < count)) return false;
+  if (!s.clues || typeof s.clues !== 'object') return false;
+  // Validate nested clues: each entry must be a non-empty string for a valid seat
+  for (const [seat, clue] of Object.entries(s.clues)) {
+    const si = Number(seat);
+    if (!Number.isInteger(si) || si < 0 || si >= count || typeof clue !== 'string' || !clue.trim()) return false;
+  }
+  // Validate actions: each must be null (no action), an integer target, or the actor themselves (doctor self-heal)
+  for (const [actor, target] of Object.entries(s.actions)) {
+    const ai = Number(actor);
+    if (!Number.isInteger(ai) || ai < 0 || ai >= count) return false;
+    if (target !== null && (!Number.isInteger(target) || target < 0 || target >= count)) return false;
+  }
+  if (typeof s.announcement !== 'string') return false;
+  if (![null, 'town', 'mafia'].includes(s.winner)) return false;
+  return true;
 }

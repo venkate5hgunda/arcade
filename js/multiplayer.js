@@ -7,7 +7,10 @@ const MAX_URL = 16000;
 const MAX_PAYLOAD = 120000;
 const MAX_MESSAGE = 32000;
 const MAX_ACTION = 8000;
-const MAX_PRIVATE_CATAN_STATE = 30000;
+const MAX_PRIVATE_GAME_STATE = 30000;
+// Seats a room can hold. Games may declare smaller ranges; the room itself
+// only refuses a table larger than this.
+export const MAX_ROOM_SEATS = 32;
 const ICE_TIMEOUT = 20000;
 const CONNECT_TIMEOUT = 20000;
 const ID = /^[a-f0-9-]{36}$/i;
@@ -161,7 +164,7 @@ function connection() {
   });
 }
 function validPlayers(ids, members, requireConnected = true) {
-  return Array.isArray(ids) && ids.length > 0 && ids.length <= 32 &&
+  return Array.isArray(ids) && ids.length > 0 && ids.length <= MAX_ROOM_SEATS &&
     ids.every((id) => typeof id === 'string' && ID.test(id)) &&
     new Set(ids).size === ids.length &&
     ids.every((id) => members.some((member) => member.id === id &&
@@ -258,7 +261,7 @@ export class MultiplayerRoom {
     }
     if (![1, 2].includes(backup?.version) || !ID.test(backup.roomId ?? '') ||
         !ID.test(backup.peerId ?? '') || !Array.isArray(backup.members) ||
-        backup.members.length < 1 || backup.members.length > 32 ||
+        backup.members.length < 1 || backup.members.length > MAX_ROOM_SEATS ||
         backup.members[0]?.id !== backup.peerId ||
         !backup.members.every(member => ID.test(member?.id ?? '') &&
           typeof member.name === 'string' && member.name.trim() &&
@@ -436,7 +439,8 @@ export class MultiplayerRoom {
       this.members.find(member => member.id === reconnectingId && member.id !== this.peerId);
     if (reconnectingId !== null && (!existing || existing.connected))
       fail('Only a disconnected guest can be re-invited.');
-    if (reconnectingId === null && this.members.length >= 32) fail('Room is full (32 participants maximum).');
+    if (reconnectingId === null && this.members.length >= MAX_ROOM_SEATS)
+      fail(`Room is full (${MAX_ROOM_SEATS} participants maximum).`);
     const guest = reconnectingId ?? crypto.randomUUID();
     const peer = { pc: connection(), channel: null, lastRequest: 0 };
     const old = this.peers.get(guest);
@@ -608,7 +612,7 @@ export class MultiplayerRoom {
             fail('Invalid host error.');
           this.error(new Error(msg.message));
         } else if (msg.kind === 'state') {
-          if (!Array.isArray(msg.members) || msg.members.length > 32 ||
+          if (!Array.isArray(msg.members) || msg.members.length > MAX_ROOM_SEATS ||
               !msg.members.some((person) => person.id === this.peerId) ||
               !msg.members.some((person) => person.id === id) ||
               msg.members.some((person) => !ID.test(person?.id ?? '') ||
@@ -672,7 +676,7 @@ export class MultiplayerRoom {
     if (!action || typeof action !== 'object' || Array.isArray(action) ||
         typeof action.type !== 'string' || !GAME_ID.test(action.type) ||
         JSON.stringify(action).length > (privateCatanState && action.type === 'ct-state'
-          ? MAX_PRIVATE_CATAN_STATE : MAX_ACTION)) fail('Invalid game action.');
+          ? MAX_PRIVATE_GAME_STATE : MAX_ACTION)) fail('Invalid game action.');
   }
   broadcastAction(from, action) {
     const sequence = ++this.actionSequence;
