@@ -27,6 +27,7 @@ a generic static server to avoid exposing private development data.
 | Business | 2–6 | Board | ✅ Implemented |
 | Chess | 1–2 | Board | ✅ Implemented |
 | Imposter | 3–20 | Party | ✅ Implemented |
+| Mafia | 3–10 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
 | Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
 | Blackjack | 1 | Cards | ✅ Implemented |
@@ -34,7 +35,6 @@ a generic static server to avoid exposing private development data.
 | UNO-inspired | 2–4 | Cards | ✅ Implemented |
 | Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
 | Connect Four | 1–2 | Puzzle | ✅ Implemented |
-| Minesweeper | 1 | Puzzle | ✅ Implemented |
 | Memory Match | 1–2 | Puzzle | ✅ Implemented |
 | 2048 | 1 | Puzzle | ✅ Implemented |
 | Simon Says | 1 | Puzzle | ✅ Implemented |

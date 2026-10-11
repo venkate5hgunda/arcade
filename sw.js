@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v78';
-const RUNTIME_CACHE = 'arcade:runtime:v78';
+const STATIC_CACHE = 'arcade:static:v79';
+const RUNTIME_CACHE = 'arcade:runtime:v79';
 
 const STATIC_ASSETS = [
   './',
@@ -111,7 +111,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE).map((k) => caches.delete(k)))
+      Promise.all(
+        keys.filter((k) => k.startsWith('arcade:') && k !== STATIC_CACHE && k !== RUNTIME_CACHE).map((k) => caches.delete(k))
+      )
     ).then(() => self.clients.claim())
   );
 });

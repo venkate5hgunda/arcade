@@ -45,7 +45,7 @@ test('deleting a saved game persists, preserves other games, and reports storage
     console.warn = message => warnings.push(message);
     assert.equal(deleteGameSession('ludo'), false);
     assert.deepEqual(unfinishedGames(), ['ludo']);
-    assert.match(warnings[0], /Could not delete/);
+    assert.match(warnings[0], /Storage save failed/);
   } finally {
     localStorage.setItem = write;
     console.warn = warn;

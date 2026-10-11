@@ -113,7 +113,7 @@ choose to share links through (`js/multiplayer.js`, `README.md:Playing together`
 
 ## Game inventory
 
-All 22 games support local play and game-owned checkpoint validation. "Room"
+All 23 games support local play and game-owned checkpoint validation. "Room"
 means a separate-device room, not simply two players sharing a screen.
 
 | Game / module | Room | Important state and boundary |
@@ -171,15 +171,16 @@ physical device. Game vibration uses the Vibration API; iOS browsers do not
 offer arbitrary game haptics, though a directly touched native switch may
 provide tactile feedback (`js/haptics.js`, `README.md`).
 
-`npm test` runs Node's built-in test runner; there are 22 tracked test files
+`npm test` runs Node's built-in test runner; there are 28 tracked test files
 under `test/`. Focused suites cover Island Charter's generation/checkpoints,
 private card rules, chess pieces, room recovery/authorization, session expiry,
 dice, board/physics helpers, audio and haptics. Browser/device checks still
 matter for touch, sound, canvas, service-worker updates and camera/WebRTC:
 there is no automated real-device or end-to-end offline/network suite.
-Several local games (including Blackjack, Hangman, Minesweeper, Pool, Simon
-and Word Scramble) have no dedicated rules test; shared/category/room tests
-do not substitute for full gameplay coverage.
+Several local games (including Blackjack, Minesweeper, Pool, Simon
+and Word Scramble) have no dedicated rules test; the Hangman test exists in
+test/hangman.test.js but covers only word/guesses/round; shared/category/room
+tests do not substitute for full gameplay coverage.
 
 ## Known issues, limits and open verification
 
@@ -239,7 +240,7 @@ compatibility, host authorization and per-seat privacy.
    serialization and failure reporting while keeping each game's state
    validator and migration explicit. Test legacy restores before changing
    saved formats.
-4. **Standardize room action/revision adapters** for the nine room games
+4. **Standardize room action/revision adapters** for the eleven room games
    (`js/remote-match.js`, `games/uno.js`, `games/crazy-eights.js`,
    `games/catan.js`). Consolidate only repeated request/snapshot plumbing;
    actor validation, hidden data and recovery sequencing remain mandatory

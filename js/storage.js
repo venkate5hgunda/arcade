@@ -4,11 +4,26 @@
 
 const PREFIX = 'arcade:';
 
+// Optional callback to surface storage failures (quota, private mode)
+let storageFailureCallback = null;
+
+export function onStorageFailure(cb) {
+  storageFailureCallback = cb;
+}
+
+function reportFailure(op, key, err) {
+  console.warn(`Storage ${op} failed for ${key}:`, err);
+  if (storageFailureCallback) {
+    try { storageFailureCallback(op, key, err); } catch { /* ignore callback errors */ }
+  }
+}
+
 export function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(PREFIX + key);
     return raw === null ? fallback : JSON.parse(raw);
-  } catch {
+  } catch (err) {
+    reportFailure('load', key, err);
     return fallback;
   }
 }
@@ -17,7 +32,8 @@ export function saveJSON(key, value) {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
     return true;
-  } catch {
+  } catch (err) {
+    reportFailure('save', key, err);
     return false; // storage full / disabled — fail silently, state just won't persist
   }
 }
@@ -25,8 +41,10 @@ export function saveJSON(key, value) {
 export function remove(key) {
   try {
     localStorage.removeItem(PREFIX + key);
-  } catch {
-    /* ignore */
+    return true;
+  } catch (err) {
+    reportFailure('remove', key, err);
+    return false;
   }
 }
 

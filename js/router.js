@@ -81,7 +81,15 @@ export async function navigate(gameId, { pushState = true } = {}) {
   stage.dataset.game = game.id;
   if (pushState) syncHash(game.id);
 
-  const module = await loadGameModule(game.id);
+  let module;
+  try {
+    module = await loadGameModule(game.id);
+  } catch (err) {
+    if (myToken !== navToken) return; // superseded
+    console.error(`Failed to mount game ${game.id}`, err);
+    stage.innerHTML = renderError(game, err);
+    return;
+  }
   if (myToken !== navToken) return; // a newer navigation has since taken over
   if (!module || typeof module.render !== 'function') {
     stage.innerHTML = renderComingSoon(game);

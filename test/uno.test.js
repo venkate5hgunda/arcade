@@ -37,7 +37,7 @@ test('108-card deal is unique, seven cards per player, and resumable', () => {
     corrupt.stock[0] = corrupt.hands[0][0];
     assert.equal(validUnoCheckpoint(corrupt), false);
   }
-  assert.throws(() => newUnoGame(5), /2–4/);
+  assert.throws(() => newUnoGame(21), /2–20/);
 });
 
 test('skip, reverse including two-player repeat, and drawing penalties advance correctly', () => {
