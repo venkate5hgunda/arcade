@@ -60,9 +60,9 @@ jobs:
             import { GAME_HELP } from './js/game-help.js';
             import { MAX_ROOM_SEATS } from './js/multiplayer.js';
             import { readFile } from 'node:fs/promises';
-            
+
             const errors = [];
-            
+
             // 1. Every catalog entry must have a matching game module
             for (const game of GAMES) {
               const mod = await loadGameModule(game.id);
@@ -76,7 +76,7 @@ jobs:
             if (!uno || uno.players.min !== 2 || uno.players.max !== 20 || uno.players.max > MAX_ROOM_SEATS) {
               errors.push('UNO player limits must match the game and fit within the room seat limit');
             }
-            
+
             // 2. Every game module must be in catalog (excluding support modules)
             const fs = await import('node:fs/promises');
             const gameFiles = (await fs.readdir('./games')).filter(f => f.endsWith('.js'));
@@ -92,14 +92,14 @@ jobs:
                 errors.push(\`Orphan module: games/\${f} not in catalog\`);
               }
             }
-            
+
             // 3. Every game must have RESUME_MINUTES
             for (const game of GAMES) {
               if (!RESUME_MINUTES[game.id]) {
                 errors.push(\`Missing RESUME_MINUTES for \${game.id}\`);
               }
             }
-            
+
             // 4. Every game must have a category
             for (const game of GAMES) {
               if (!game.category || !CATEGORIES.includes(game.category)) {
@@ -112,7 +112,7 @@ jobs:
                 errors.push(\`Game module is missing from the service-worker precache: \${game.id}\`);
               }
             }
-            
+
             if (errors.length) {
               console.error('Consistency errors:');
               errors.forEach(e => console.error('  -', e));
