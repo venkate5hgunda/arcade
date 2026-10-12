@@ -41,15 +41,7 @@ jobs:
 
       - name: Check Python syntax
         run: |
-          python3 -m py_compile dev/serve.py
-          python3 -m py_compile -m dev.movies
-          python3 -m py_compile -m dev.movies.llm_annotation
-          python3 -m py_compile -m dev.movies.game_export
-          python3 -m py_compile -m dev.movies.catalog
-          python3 -m py_compile -m dev.movies.wikidata
-          python3 -m py_compile -m dev.movies.partitions
-          python3 -m py_compile -m dev.movies.omdb
-          python3 -m py_compile -m dev.movies.tmdb
+          python3 -m compileall -q dev
           echo "All Python files pass syntax check"
 
   consistency:
@@ -65,6 +57,9 @@ jobs:
           node --input-type=module -e "
             import { GAMES, loadGameModule, getGame, CATEGORIES } from './js/game-catalog.js';
             import { RESUME_MINUTES } from './js/game-session.js';
+            import { GAME_HELP } from './js/game-help.js';
+            import { MAX_ROOM_SEATS } from './js/multiplayer.js';
+            import { readFile } from 'node:fs/promises';
             
             const errors = [];
             
@@ -77,11 +72,20 @@ jobs:
                 errors.push(\`Module \${game.id} missing render() export\`);
               }
             }
+            const uno = GAMES.find(game => game.id === 'uno');
+            if (!uno || uno.players.min !== 2 || uno.players.max !== 20 || uno.players.max > MAX_ROOM_SEATS) {
+              errors.push('UNO player limits must match the game and fit within the room seat limit');
+            }
             
             // 2. Every game module must be in catalog (excluding support modules)
             const fs = await import('node:fs/promises');
             const gameFiles = (await fs.readdir('./games')).filter(f => f.endsWith('.js'));
             const supportModules = new Set(['business-engine', 'catan-art', 'hangman-engine', 'mafia-engine']);
+            const serviceWorker = await readFile('./sw.js', 'utf8');
+            const precacheMatch = serviceWorker.match(/\.\.\.\[([\s\S]*?)\]\.map\(\(id\)/);
+            const precachedGames = new Set(
+              [...(precacheMatch?.[1] ?? '').matchAll(/'([^']+)'/g)].map(([, id]) => id)
+            );
             for (const f of gameFiles) {
               const id = f.slice(0, -3);
               if (!getGame(id) && !supportModules.has(id)) {
@@ -100,6 +104,12 @@ jobs:
             for (const game of GAMES) {
               if (!game.category || !CATEGORIES.includes(game.category)) {
                 errors.push(\`Invalid category for \${game.id}: \${game.category}\`);
+              }
+              if (!GAME_HELP[game.id]) {
+                errors.push(\`Missing how-to-play instructions for \${game.id}\`);
+              }
+              if (!precachedGames.has(game.id)) {
+                errors.push(\`Game module is missing from the service-worker precache: \${game.id}\`);
               }
             }
             

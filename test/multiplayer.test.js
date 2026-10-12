@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { MultiplayerRoom, roomShareMessage } from '../js/multiplayer.js';
+import { MAX_ROOM_SEATS, MultiplayerRoom, roomShareMessage } from '../js/multiplayer.js';
 import { newCatan, catanView, validCatanCheckpoint } from '../games/catan.js';
 import { createBusiness, publicBusiness, validBusiness } from '../games/business-engine.js';
 import { applyRemoteBusinessAction } from '../games/business.js';
@@ -43,6 +43,25 @@ class FakePeer {
   close() { this.connectionState = 'closed'; }
 }
 globalThis.RTCPeerConnection = FakePeer;
+
+test('room capacity is 32 while UNO admits up to 20 selected seats', async () => {
+  const host = new MultiplayerRoom();
+  host.createHost('Host');
+  host.members.push(...Array.from({ length: MAX_ROOM_SEATS - 1 }, (_, index) => ({
+    id: crypto.randomUUID(), name: `Guest ${index + 1}`, connected: true, admitted: true,
+  })));
+  try {
+    assert.equal(host.members.length, 32);
+    const players = host.members.slice(0, 20).map(member => member.id);
+    host.startGame('uno', players);
+    assert.equal(host.activeGame.playerIds.length, 20);
+    assert.throws(() => host.startGame('uno', host.members.slice(0, 21).map(member => member.id)),
+      /selected player count/);
+    await assert.rejects(host.createInvite(), /Room is full \(32 participants maximum\)/);
+  } finally {
+    host.close();
+  }
+});
 
 test('Business supports six room seats, private deck order and nonturn auction responses', async () => {
   const host = new MultiplayerRoom(), guests = Array.from({ length: 5 }, () => new MultiplayerRoom());

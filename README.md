@@ -27,12 +27,12 @@ a generic static server to avoid exposing private development data.
 | Business | 2–6 | Board | ✅ Implemented |
 | Chess | 1–2 | Board | ✅ Implemented |
 | Imposter | 3–20 | Party | ✅ Implemented |
-| Mafia | 3–10 | Party | ✅ Implemented |
+| Mafia | 5–10 | Party | ✅ Implemented |
 | Dumb Charades | 2–8 | Party | ✅ Implemented |
 | Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
 | Blackjack | 1 | Cards | ✅ Implemented |
 | Crazy Eights | 2 | Cards | ✅ Implemented |
-| UNO-inspired | 2–4 | Cards | ✅ Implemented |
+| UNO-inspired | 2–20 | Cards | ✅ Implemented |
 | Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
 | Connect Four | 1–2 | Puzzle | ✅ Implemented |
 | Memory Match | 1–2 | Puzzle | ✅ Implemented |
@@ -168,6 +168,9 @@ Chess; **120 min** for Island Charter; and **240 min** for Business.
   and the active player's home glows until the turn ends. Both boards honor
   reduced-motion preferences; Ludo uses a full 52-square cross track and lets
   the player select which legal token to move.
+- **Mafia** — a 5–10-player, room-only social deduction game. Each person
+  receives a private role; the host coordinates night actions, secret votes
+  and recovery without broadcasting hidden information. See [Mafia rules](MAFIA_RULES.md).
 - **Island Charter** — original presentation of classic hex-settlement rules
   for 3–4 players: everyone rolls two dice for opening placement order; ties
   reroll, the highest places first and last, and the lowest places twice in
@@ -182,12 +185,13 @@ Chess; **120 min** for Island Charter; and **240 min** for Business.
   Local players pass the device before revealing private cargo; in a room,
   only the host holds the deck and sends each guest a private view. No
   commercial game's illustrations, cards, rulebook text, or branding are used.
-- **Cards** — UNO-inspired (2–4 players) and Crazy Eights (2 players) lead
+- **Cards** — UNO-inspired (2–20 players) and Crazy Eights (2 players) lead
   with private-room play on separate devices. Only the host holds the deck
   and sends each guest their own hand and public table state. Optional local
   pass-and-play uses a covered handoff; Blackjack is solo against the dealer.
   UNO-inspired supports one-card callouts, +2 catches and +4 bluff challenges
-  as well as wild colors, skips and reverses; drawing penalties do not stack.
+  as well as wild colors, skips and reverses; games above 10 players use two
+  decks, and drawing penalties do not stack.
   Both card duels also work offline in local mode. The room host owns the
   deck and must be trusted.
 - **Room play** — one persistent WebRTC room connects devices for repeated
@@ -195,8 +199,9 @@ Chess; **120 min** for Island Charter; and **240 min** for Business.
   can uncheck guests to spectate and the lobby lists games available for the
   selected seats. Supports Tic-Tac-Toe, Connect Four, Chess,
   Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games), Island Charter (3–4 players), Business (2–6 players), plus UNO-inspired (2–4 players) and
-  Crazy Eights (2 players), with host-authoritative private hands.
+  games), Island Charter (3–4 players), Business (2–6 players),
+  UNO-inspired (2–20 players), Crazy Eights (2 players), and Mafia
+  (5–10 players), with host-authoritative private game state.
   The room lobby keeps per-player and per-game wins, losses, draws and rankings
   for the lifetime of the room, including across replays and game changes.
   A dropped connection pauses turns without discarding the room or active game.

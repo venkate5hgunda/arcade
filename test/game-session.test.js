@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameSession, recentUnfinishedGame, unfinishedGames, deleteGameSession, RESUME_MINUTES } from '../js/game-session.js';
-import { KEYS, loadJSON, saveJSON } from '../js/storage.js';
-import { GAMES } from '../js/game-catalog.js';
+import { KEYS, loadJSON, saveJSON, remove, onStorageFailure } from '../js/storage.js';
+import { GAMES, loadGameModule } from '../js/game-catalog.js';
 import { initialGameFromHash } from '../js/router.js';
 
 const values = new Map();
@@ -16,6 +16,46 @@ test('every game has its own inactivity window', () => {
   assert.deepEqual(Object.keys(RESUME_MINUTES).sort(), GAMES.map((game) => game.id).sort());
   assert.ok(new Set(Object.values(RESUME_MINUTES)).size > 4);
   assert.ok(Object.values(RESUME_MINUTES).every((minutes) => Number.isInteger(minutes) && minutes > 0));
+});
+
+test('storage failures are deduplicated and clear after recovery', async () => {
+  values.clear();
+  const failures = [];
+  const originalGet = localStorage.getItem;
+  const originalSet = localStorage.setItem;
+  const originalRemove = localStorage.removeItem;
+  const warn = console.warn;
+  onStorageFailure((operation, key) => failures.push(`${operation}:${key}`));
+  console.warn = () => {};
+  try {
+    onStorageFailure(null);
+    localStorage.getItem = () => { throw new Error('Storage unavailable'); };
+    assert.equal(loadJSON('broken', null), null);
+    onStorageFailure((operation, key) => failures.push(`${operation}:${key}`));
+    assert.deepEqual(failures, ['load:broken'], 'failures before UI setup are replayed on registration');
+    assert.equal(loadJSON('broken', null), null);
+    assert.deepEqual(failures, ['load:broken']);
+
+    localStorage.setItem = () => { throw new Error('Storage unavailable'); };
+    assert.equal(saveJSON('broken', { saved: true }), false);
+    assert.equal(saveJSON('broken', { saved: true }), false);
+    assert.deepEqual(failures, ['load:broken', 'save:broken'], 'each failing operation is reported once');
+    localStorage.setItem = originalSet;
+    assert.equal(saveJSON('broken', { saved: true }), true);
+    localStorage.removeItem = () => { throw new Error('Storage unavailable'); };
+    assert.equal(remove('broken'), false);
+    assert.deepEqual(failures, ['load:broken', 'save:broken', 'remove:broken']);
+  } finally {
+    localStorage.getItem = originalGet;
+    localStorage.setItem = originalSet;
+    localStorage.removeItem = originalRemove;
+    console.warn = warn;
+    onStorageFailure(null);
+  }
+});
+
+test('an unknown game is intentionally unavailable rather than a failed import', async () => {
+  assert.equal(await loadGameModule('not-in-catalog'), null);
 });
 
 test('only an unfinished checkpoint returns to its actual saved round', () => {

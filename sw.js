@@ -87,8 +87,10 @@ async function cacheMovieIndex(cache, response) {
   const index = await response.clone().json();
   if (index.format_version !== 1 || !Array.isArray(index.files)) throw new Error('Invalid movie index');
   const base = new URL('./data/movies/', self.location.href);
+  if (index.files.some((file) => typeof file?.path !== 'string' || !/^[\w.-]+\.jsonl$/.test(file.path)))
+    throw new Error('Invalid movie partition path');
+  const current = new Set(index.files.map((file) => new URL(file.path, base).href));
   for (const file of index.files) {
-    if (!/^[\w.-]+\.jsonl$/.test(file.path)) throw new Error('Invalid movie partition path');
     const url = new URL(file.path, base);
     if (!await cache.match(url)) {
       const existing = await caches.match(url);
@@ -97,6 +99,12 @@ async function cacheMovieIndex(cache, response) {
     }
   }
   await cache.put(new URL('index.json', base), response.clone());
+  const cachedRequests = await cache.keys();
+  await Promise.all(cachedRequests.filter((request) => {
+    const url = new URL(request.url);
+    return url.origin === base.origin && url.pathname.startsWith(base.pathname) &&
+      url.pathname.endsWith('.jsonl') && !current.has(url.href);
+  }).map((request) => cache.delete(request)));
 }
 
 self.addEventListener('install', (event) => {
@@ -132,7 +140,7 @@ self.addEventListener('fetch', (event) => {
         await cacheMovieIndex(await caches.open(RUNTIME_CACHE), response);
         return response;
       } catch (error) {
-        const cached = await caches.match(request);
+        const cached = await (await caches.open(RUNTIME_CACHE)).match(request) ?? await caches.match(request);
         if (cached) return cached;
         console.error('Movie library unavailable:', error);
         throw error;

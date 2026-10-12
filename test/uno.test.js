@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { unoDeck, newUnoGame, canPlayUno, actUno, applyRemoteUnoAction, recycleUno,
+import { unoDeck, unoDeckCount, newUnoGame, canPlayUno, actUno, applyRemoteUnoAction, recycleUno,
   unoView, validUnoCheckpoint } from '../games/uno.js';
 
 function rig(count = 3) {
@@ -28,8 +28,12 @@ function rig(count = 3) {
 
 test('108-card deal is unique, seven cards per player, and resumable', () => {
   assert.equal(unoDeck().length, 108);
-  for (const count of [2, 3, 4]) {
+  for (const count of [2, 3, 4, 10, 11, 20]) {
     const s = newUnoGame(count);
+    const deck = unoDeck(count);
+    assert.equal(unoDeckCount(count), count > 10 ? 2 : 1);
+    assert.equal(deck.length, count > 10 ? 216 : 108);
+    assert.equal(new Set(deck.map(card => card.id)).size, deck.length);
     assert.deepEqual(s.hands.map(hand => hand.length), Array(count).fill(7));
     assert.match(s.discard[0].value, /^[0-9]$/);
     assert.equal(validUnoCheckpoint(s), true);
@@ -37,6 +41,7 @@ test('108-card deal is unique, seven cards per player, and resumable', () => {
     corrupt.stock[0] = corrupt.hands[0][0];
     assert.equal(validUnoCheckpoint(corrupt), false);
   }
+  assert.equal(newUnoGame(20).stock.length, 75);
   assert.throws(() => newUnoGame(21), /2–20/);
 });
 

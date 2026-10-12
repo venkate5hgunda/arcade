@@ -287,6 +287,9 @@ function renderComingSoon(game) {
 }
 
 function renderError(game, err) {
+  const detail = String(err && err.message ? err.message : err).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]);
   return `
     <div class="game-shell error">
       <button class="back-btn" data-nav="back" type="button">${iconMarkup('tabler:arrow-left')} Back to games</button>
@@ -295,7 +298,7 @@ function renderError(game, err) {
         <h2>${game.name}</h2>
         <p>Something went wrong loading this game.</p>
       </div>
-      <pre class="error-detail">${String(err && err.message ? err.message : err)}</pre>
+      <pre class="error-detail">${detail}</pre>
     </div>`;
 }
 

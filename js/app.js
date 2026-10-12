@@ -2,12 +2,13 @@
 // Kept tiny on purpose: each concern lives in its own module.
 
 import { initTheme } from './theme.js';
-import { loadJSON, saveJSON, KEYS } from './storage.js';
+import { loadJSON, saveJSON, KEYS, onStorageFailure } from './storage.js';
 import { ArcadeAudio } from './audio.js';
 import { haptics, hasGameVibration, isEnabled, isSupported, setEnabled } from './haptics.js';
 import { initRouter } from './router.js';
 import { room } from './multiplayer.js';
 
+initStorageNotice();
 initTheme();
 
 const audio = new ArcadeAudio(loadJSON(KEYS.SOUND_ENABLED, true));
@@ -39,6 +40,23 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .catch((error) => console.error('Arcade offline installation failed:', error));
+  });
+}
+
+function initStorageNotice() {
+  const notice = document.getElementById('storageNotice');
+  const message = notice?.querySelector('p');
+  const dismiss = notice?.querySelector('button');
+  if (!notice || !message || !dismiss) return;
+  dismiss.addEventListener('click', () => { notice.hidden = true; });
+  onStorageFailure((operation) => {
+    const text = operation === 'remove'
+      ? 'Saved data could not be removed from this device.'
+      : operation === 'save'
+        ? 'Changes could not be saved on this device. Game progress or settings may be lost if you leave.'
+        : 'Saved settings or game data could not be read. Default values will be used.';
+    if (message.textContent !== text) message.textContent = text;
+    notice.hidden = false;
   });
 }
 
