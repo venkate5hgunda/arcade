@@ -114,12 +114,55 @@ export function viewFor(s, seat) {
 }
 
 export function validMafia(s, count) {
-  return s && Array.isArray(s.roles) && s.roles.length === count && count >= 5 && count <= 10 &&
-    rolesFor(count).sort().join() === [...s.roles].sort().join() &&
-    Array.isArray(s.alive) && s.alive.length === count && s.alive.every(v => typeof v === 'boolean') &&
-    ['night', 'discussion', 'vote', 'over'].includes(s.phase) &&
-    Number.isSafeInteger(s.day) && s.day >= 1 && Number.isSafeInteger(s.revision) &&
-    s.revision >= 0 && s.actions && typeof s.actions === 'object' &&
-    Array.isArray(s.skipped) && s.clues && typeof s.clues === 'object' &&
-    typeof s.announcement === 'string' && [null, 'town', 'mafia'].includes(s.winner);
+  if (!Number.isInteger(count) || count < 5 || count > 10 || !s ||
+      !Array.isArray(s.roles) || s.roles.length !== count) return false;
+  if (rolesFor(count).sort().join() !== [...s.roles].sort().join()) return false;
+  if (!Array.isArray(s.alive) || s.alive.length !== count ||
+      !s.alive.every(v => typeof v === 'boolean') || !s.alive.some(Boolean)) return false;
+  if (!['night', 'discussion', 'vote', 'over'].includes(s.phase)) return false;
+  if (!Number.isSafeInteger(s.day) || s.day < 1) return false;
+  if (!Number.isSafeInteger(s.revision) || s.revision < 0) return false;
+  const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value) &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+  if (!isRecord(s.actions) || !isRecord(s.clues)) return false;
+  if (!Array.isArray(s.skipped) || new Set(s.skipped).size !== s.skipped.length) return false;
+  if (!s.skipped.every(i => Number.isInteger(i) && i >= 0 && i < count && s.alive[i])) return false;
+  if (s.phase !== 'night' && s.phase !== 'vote' && (Object.keys(s.actions).length || s.skipped.length)) return false;
+  const skipped = new Set(s.skipped);
+  for (const [seat, clues] of Object.entries(s.clues)) {
+    const si = Number(seat);
+    if (!Number.isInteger(si) || String(si) !== seat || si < 0 || si >= count ||
+        s.roles[si] !== 'detective' || !Array.isArray(clues) || !clues.length) return false;
+    let previousDay = 0;
+    for (const clue of clues) {
+      if (!isRecord(clue) || Object.keys(clue).sort().join() !== 'day,mafia,target' ||
+          !Number.isSafeInteger(clue.day) || clue.day <= previousDay || clue.day > s.day ||
+          !Number.isInteger(clue.target) || clue.target < 0 || clue.target >= count ||
+          typeof clue.mafia !== 'boolean' || clue.mafia !== (s.roles[clue.target] === 'mafia')) return false;
+      previousDay = clue.day;
+    }
+  }
+  for (const [actor, target] of Object.entries(s.actions)) {
+    const ai = Number(actor);
+    if (!Number.isInteger(ai) || String(ai) !== actor || ai < 0 || ai >= count ||
+        !s.alive[ai] || skipped.has(ai) || !['night', 'vote'].includes(s.phase)) return false;
+    if (s.phase === 'vote') {
+      if (target !== null && (!Number.isInteger(target) || target < 0 || target >= count ||
+          !s.alive[target] || target === ai)) return false;
+    } else {
+      if (!['mafia', 'doctor', 'detective'].includes(s.roles[ai]) ||
+          !Number.isInteger(target) || target < 0 || target >= count || !s.alive[target] ||
+          (target === ai && s.roles[ai] !== 'doctor')) return false;
+    }
+  }
+  const eligible = (seat) => s.phase === 'vote' ||
+    ['mafia', 'doctor', 'detective'].includes(s.roles[seat]);
+  if (s.skipped.some(seat => !eligible(seat))) return false;
+  if (typeof s.announcement !== 'string' || !s.announcement.trim() || s.announcement.length > 500) return false;
+  if (![null, 'town', 'mafia'].includes(s.winner)) return false;
+  const mafia = s.roles.filter((role, i) => role === 'mafia' && s.alive[i]).length;
+  const town = s.alive.filter(Boolean).length - mafia;
+  const expectedWinner = !mafia ? 'town' : mafia >= town ? 'mafia' : null;
+  if (s.winner !== expectedWinner || (s.phase === 'over') !== (s.winner !== null)) return false;
+  return true;
 }

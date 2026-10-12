@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { newMafia, actMafia, resolveMafia, viewFor, pending } from '../games/mafia-engine.js';
+import { newMafia, actMafia, resolveMafia, viewFor, pending, validMafia } from '../games/mafia-engine.js';
 import { MultiplayerRoom } from '../js/multiplayer.js';
 
 globalThis.crypto ??= webcrypto;
@@ -26,9 +26,11 @@ function night(s, mafiaTarget, doctorTarget, detectiveTarget) {
 
 test('private night protection and investigation, town victory and replay deal', () => {
   let s = setup();
+  assert.equal(validMafia(s, 5), true);
   assert.deepEqual(pending(s), [1, 2, 3]);
   assert.throws(() => move(s, 0, 1), /not available/);
   s = night(s, 4, 4, 1);
+  assert.equal(validMafia(s, 5), true, 'detective clue records remain valid checkpoints');
   assert.equal(s.phase, 'discussion');
   assert.equal(s.alive[4], true);
   assert.equal(s.clues[3][0].mafia, true);
@@ -49,6 +51,38 @@ test('private night protection and investigation, town victory and replay deal',
   assert.deepEqual(viewFor(s, 4).roles, s.roles);
   assert.throws(() => move(s, 4, 1), /passed/);
   assert.equal(newMafia(5).roles.length, 5);
+});
+
+test('Mafia checkpoint validation rejects malformed nested state and impossible outcomes', () => {
+  const source = setup();
+  const invalid = mutate => {
+    const state = structuredClone(source);
+    mutate(state);
+    return validMafia(state, 5);
+  };
+  assert.equal(validMafia(source, 4), false);
+  assert.equal(invalid(state => { state.actions = []; }), false);
+  assert.equal(invalid(state => { state.clues = []; }), false);
+  assert.equal(invalid(state => { state.clues[3] = [{ day: 1, target: 1, mafia: 'yes' }]; }), false);
+  assert.equal(invalid(state => { state.clues[0] = [{ day: 1, target: 1, mafia: true }]; }), false);
+  assert.equal(invalid(state => { state.actions['01'] = 1; }), false);
+  assert.equal(invalid(state => { state.actions[1] = 99; }), false);
+  assert.equal(invalid(state => { state.phase = 'discussion'; state.actions[1] = 4; }), false);
+  assert.equal(invalid(state => { state.phase = 'vote'; state.skipped = [0, 0]; }), false);
+  assert.equal(invalid(state => { state.phase = 'over'; state.winner = 'mafia'; }), false);
+  assert.equal(invalid(state => { state.alive.fill(false); state.phase = 'over'; state.winner = 'town'; }), false);
+  assert.equal(invalid(state => { state.clues[3] = []; }), false);
+
+  const submitted = move(source, 1, 4);
+  assert.equal(validMafia(submitted, 5), true);
+  const selfVote = structuredClone(submitted);
+  selfVote.phase = 'vote';
+  selfVote.actions[1] = 1;
+  assert.equal(validMafia(selfVote, 5), false);
+  const selfHeal = newMafia(5, () => 0.99);
+  selfHeal.roles = ['town', 'mafia', 'doctor', 'detective', 'town'];
+  selfHeal.actions[2] = 2;
+  assert.equal(validMafia(selfHeal, 5), true);
 });
 
 test('day tie and abstention, night losses, mafia parity, eliminated restrictions', () => {

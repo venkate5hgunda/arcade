@@ -1,6 +1,6 @@
 # Arcade architecture and maintenance map
 
-Last reviewed: 2026-10-04. This is the **current-state reference**,
+Last reviewed: 2026-10-11. This is the **current-state reference**,
 not a design proposal. Update it when a game's rules, persistence contract,
 room protocol, platform support, or an open issue changes. `README.md` explains
 how to play; `CHANGELOG.md` records historical decisions. Paths and named
@@ -76,17 +76,18 @@ Gameplay pauses until selected seats reconnect. Transient WebRTC disconnects
 have a recovery window before manual re-invitation is needed
 (`js/multiplayer.js`, `test/multiplayer.test.js`).
 
-Ten games support rooms: Business, Chess, Connect Four, Crazy Eights, Island Charter,
-Ludo, Rock Paper Scissors, Snakes & Ladders, Tic-Tac-Toe and UNO-inspired.
+Eleven games support rooms: Business, Chess, Connect Four, Crazy Eights,
+Island Charter, Ludo, Mafia, Rock Paper Scissors, Snakes & Ladders,
+Tic-Tac-Toe and UNO-inspired.
 Public-board games synchronize actions or host snapshots. Island Charter,
-Crazy Eights and UNO-inspired keep the deck/hidden hands on the host and send
-**per-seat private views**. Their move request revision, actor authorization
-and recipient checks are game-specific; never replace a private view with a
-broadcast full state. A guest rejoining mid-round needs a host sync, not a
-new random board/deck. Game-specific `validCheckpoint`/view validators protect
-local restore and room recovery, but saved-state formats are not centrally
-versioned (`games/catan.js`, `games/crazy-eights.js`, `games/uno.js`,
-`test/multiplayer.test.js`).
+Crazy Eights, Mafia and UNO-inspired keep hidden game state on the host and
+send **per-seat private views**. Their move request revision, actor
+authorization and recipient checks are game-specific; never replace a private
+view with a broadcast full state. A guest rejoining mid-round needs a host
+sync, not a new random board/deck. Game-specific validators protect local
+restore and room recovery, but saved-state formats are not centrally versioned
+(`games/catan.js`, `games/crazy-eights.js`, `games/mafia-engine.js`,
+`games/uno.js`, `test/multiplayer.test.js`).
 Business also uses private host snapshots: `games/business-engine.js` owns
 rules, decks and checkpoint validation; `games/business.js` sends **public
 views without deck order** to each selected room seat and accepts revision-
@@ -113,8 +114,9 @@ choose to share links through (`js/multiplayer.js`, `README.md:Playing together`
 
 ## Game inventory
 
-All 22 games support local play and game-owned checkpoint validation. "Room"
-means a separate-device room, not simply two players sharing a screen.
+The catalog contains 23 titles. Some support local pass-and-play, while Mafia
+is room-only. "Room" means a separate-device room, not simply two players
+sharing a screen.
 
 | Game / module | Room | Important state and boundary |
 | --- | --- | --- |
@@ -128,11 +130,12 @@ means a separate-device room, not simply two players sharing a screen.
 | Business (`games/business.js`, `games/business-engine.js`) | Yes, private public-state views | 40-space original Indian-city board, host card order, auctions, complete-set even building, debt/trades and bankruptcies; validated local/host resume. [Rules](BUSINESS_RULES.md). |
 | Chess (`games/chess.js`) | Yes | Board, castling, en passant, promotion, turn/result. |
 | Imposter (`games/imposter.js`) | No | Roles, secret reveal, prompt category and round state. |
+| Mafia (`games/mafia.js`, `games/mafia-engine.js`) | Yes, private views | 5–10 players; host-owned roles, night actions, secret votes and detective clues. [Rules](MAFIA_RULES.md). |
 | Dumb Charades (`games/dumb-charades.js`) | No | Prompt, actor/team, timer and round. |
 | Rock Paper Scissors (`games/rps.js`) | Yes | Picks, round, score and winner. |
 | Blackjack (`games/blackjack.js`) | No | Deck, player/dealer hands, stake and phase. |
 | Crazy Eights (`games/crazy-eights.js`) | Yes, private views | Host deck/hands, wild suit, turn and revisioned actions. |
-| UNO-inspired (`games/uno.js`) | Yes, private views | Host deck/hands, color, penalties, callout/challenge and revisioned actions. |
+| UNO-inspired (`games/uno.js`) | Yes, private views | 2–20 seats; host deck/hands, color, penalties, callout/challenge and revisioned actions. Above ten players it shuffles two decks. |
 | Tic-Tac-Toe (`games/tictactoe.js`) | Yes | Board, current seat and result. |
 | Connect Four (`games/connect-four.js`) | Yes | Grid, current seat and result. |
 | Minesweeper (`games/minesweeper.js`) | No | Cell/reveal/flag state and first-click safety. |
@@ -171,15 +174,16 @@ physical device. Game vibration uses the Vibration API; iOS browsers do not
 offer arbitrary game haptics, though a directly touched native switch may
 provide tactile feedback (`js/haptics.js`, `README.md`).
 
-`npm test` runs Node's built-in test runner; there are 22 tracked test files
+`npm test` runs Node's built-in test runner; there are 28 tracked test files
 under `test/`. Focused suites cover Island Charter's generation/checkpoints,
 private card rules, chess pieces, room recovery/authorization, session expiry,
 dice, board/physics helpers, audio and haptics. Browser/device checks still
 matter for touch, sound, canvas, service-worker updates and camera/WebRTC:
 there is no automated real-device or end-to-end offline/network suite.
-Several local games (including Blackjack, Hangman, Minesweeper, Pool, Simon
-and Word Scramble) have no dedicated rules test; shared/category/room tests
-do not substitute for full gameplay coverage.
+Several local games (including Blackjack, Minesweeper, Pool, Simon
+and Word Scramble) have no dedicated rules test; the Hangman test exists in
+test/hangman.test.js but covers only word/guesses/round; shared/category/room
+tests do not substitute for full gameplay coverage.
 
 ## Known issues, limits and open verification
 
@@ -239,7 +243,7 @@ compatibility, host authorization and per-seat privacy.
    serialization and failure reporting while keeping each game's state
    validator and migration explicit. Test legacy restores before changing
    saved formats.
-4. **Standardize room action/revision adapters** for the nine room games
+4. **Standardize room action/revision adapters** for the eleven room games
    (`js/remote-match.js`, `games/uno.js`, `games/crazy-eights.js`,
    `games/catan.js`). Consolidate only repeated request/snapshot plumbing;
    actor validation, hidden data and recovery sequencing remain mandatory

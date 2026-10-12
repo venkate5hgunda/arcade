@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run JS tests
+        run: npm test
+      - name: Run Python tests
+        run: npm run test:movies
+        env:
+          # Skip network calls in CI for movie tests
+          CI: 'true'
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JS syntax
+        run: |
+          # Simple syntax check for all JS files
+          for f in $(find . -name '*.js' -not -path './node_modules/*' -not -path './.git/*'); do
+            node --check "$f" || exit 1
+          done
+          echo "All JS files pass syntax check"
+
+      - name: Check Python syntax
+        run: |
+          python3 -m compileall -q dev
+          echo "All Python files pass syntax check"
+
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate catalog/module/help/precache consistency
+        run: |
+          node --input-type=module -e "
+            import { GAMES, loadGameModule, getGame, CATEGORIES } from './js/game-catalog.js';
+            import { RESUME_MINUTES } from './js/game-session.js';
+            import { GAME_HELP } from './js/game-help.js';
+            import { MAX_ROOM_SEATS } from './js/multiplayer.js';
+            import { readFile } from 'node:fs/promises';
+            
+            const errors = [];
+            
+            // 1. Every catalog entry must have a matching game module
+            for (const game of GAMES) {
+              const mod = await loadGameModule(game.id);
+              if (!mod) {
+                errors.push(\`Missing module: games/\${game.id}.js\`);
+              } else if (typeof mod.render !== 'function') {
+                errors.push(\`Module \${game.id} missing render() export\`);
+              }
+            }
+            const uno = GAMES.find(game => game.id === 'uno');
+            if (!uno || uno.players.min !== 2 || uno.players.max !== 20 || uno.players.max > MAX_ROOM_SEATS) {
+              errors.push('UNO player limits must match the game and fit within the room seat limit');
+            }
+            
+            // 2. Every game module must be in catalog (excluding support modules)
+            const fs = await import('node:fs/promises');
+            const gameFiles = (await fs.readdir('./games')).filter(f => f.endsWith('.js'));
+            const supportModules = new Set(['business-engine', 'catan-art', 'hangman-engine', 'mafia-engine']);
+            const serviceWorker = await readFile('./sw.js', 'utf8');
+            const precacheMatch = serviceWorker.match(/\.\.\.\[([\s\S]*?)\]\.map\(\(id\)/);
+            const precachedGames = new Set(
+              [...(precacheMatch?.[1] ?? '').matchAll(/'([^']+)'/g)].map(([, id]) => id)
+            );
+            for (const f of gameFiles) {
+              const id = f.slice(0, -3);
+              if (!getGame(id) && !supportModules.has(id)) {
+                errors.push(\`Orphan module: games/\${f} not in catalog\`);
+              }
+            }
+            
+            // 3. Every game must have RESUME_MINUTES
+            for (const game of GAMES) {
+              if (!RESUME_MINUTES[game.id]) {
+                errors.push(\`Missing RESUME_MINUTES for \${game.id}\`);
+              }
+            }
+            
+            // 4. Every game must have a category
+            for (const game of GAMES) {
+              if (!game.category || !CATEGORIES.includes(game.category)) {
+                errors.push(\`Invalid category for \${game.id}: \${game.category}\`);
+              }
+              if (!GAME_HELP[game.id]) {
+                errors.push(\`Missing how-to-play instructions for \${game.id}\`);
+              }
+              if (!precachedGames.has(game.id)) {
+                errors.push(\`Game module is missing from the service-worker precache: \${game.id}\`);
+              }
+            }
+            
+            if (errors.length) {
+              console.error('Consistency errors:');
+              errors.forEach(e => console.error('  -', e));
+              process.exit(1);
+            }
+            console.log('All consistency checks passed');
+          "

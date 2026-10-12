@@ -81,7 +81,15 @@ export async function navigate(gameId, { pushState = true } = {}) {
   stage.dataset.game = game.id;
   if (pushState) syncHash(game.id);
 
-  const module = await loadGameModule(game.id);
+  let module;
+  try {
+    module = await loadGameModule(game.id);
+  } catch (err) {
+    if (myToken !== navToken) return; // superseded
+    console.error(`Failed to mount game ${game.id}`, err);
+    stage.innerHTML = renderError(game, err);
+    return;
+  }
   if (myToken !== navToken) return; // a newer navigation has since taken over
   if (!module || typeof module.render !== 'function') {
     stage.innerHTML = renderComingSoon(game);
@@ -279,6 +287,9 @@ function renderComingSoon(game) {
 }
 
 function renderError(game, err) {
+  const detail = String(err && err.message ? err.message : err).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]);
   return `
     <div class="game-shell error">
       <button class="back-btn" data-nav="back" type="button">${iconMarkup('tabler:arrow-left')} Back to games</button>
@@ -287,7 +298,7 @@ function renderError(game, err) {
         <h2>${game.name}</h2>
         <p>Something went wrong loading this game.</p>
       </div>
-      <pre class="error-detail">${String(err && err.message ? err.message : err)}</pre>
+      <pre class="error-detail">${detail}</pre>
     </div>`;
 }
 
