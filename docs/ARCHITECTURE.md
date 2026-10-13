@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-10-11. This is the **current-state reference**,
 not a design proposal. Update it when a game's rules, persistence contract,
-room protocol, platform support, or an open issue changes. `README.md` explains
+room protocol, platform support, or an open issue changes. `README.md` and `docs/` explain
 how to play; `CHANGELOG.md` records historical decisions. Paths and named
 functions below are the sources of truth when this document becomes stale.
 
@@ -56,7 +56,7 @@ from `index.html`, not loaded per route.
 `js/game-session.js` supplies `session.save`, `finish`, `stop`, inactivity
 expiry and `unfinishedGames` for the home resume banner. Expiry ranges from
 two minutes (Whack-a-Mole) to 240 minutes (Business); the exact
-per-game windows are in `js/game-session.js` and `README.md`. A renderer
+per-game windows are in `js/game-session.js` and `docs/features.md`. A renderer
 validates its own `session.state` before restoring; an expired or malformed
 session is discarded. Reset/reload must preserve intended settings while
 not resurrecting finished rounds. Whack-a-Mole also uses its actual deadline,
@@ -110,7 +110,7 @@ and some NAT/firewall pairs will never connect directly. A recovered host
 must ready/resume the saved game; neither reload nor app-switch can recreate a
 dead peer connection by itself. The host must be trusted with private game
 state. URL/QR exchanges stay on device/peer except for whatever channel users
-choose to share links through (`js/multiplayer.js`, `README.md:Playing together`).
+choose to share links through (`js/multiplayer.js`, `docs/rooms.md`).
 
 ## Game inventory
 
@@ -127,10 +127,10 @@ sharing a screen.
 | Snakes & Ladders (`games/snakes-ladders.js`) | Yes | Seeded obstacle layout, turn/positions; large upper-board snake and animated travel. |
 | Ludo (`games/ludo.js`) | Yes | Four identical tokens per seat, roll/movable set, captures and turn; active home glows. |
 | Island Charter (`games/catan.js`) | Yes, private views | 19-hex board, terrain/number/harbor options, opening order, bank, build/trade/deck and ten-point victory. Its local/room players keep separate chart zoom/pan in per-tab `sessionStorage`, not the authoritative game checkpoint. |
-| Business (`games/business.js`, `games/business-engine.js`) | Yes, private public-state views | 40-space original Indian-city board, host card order, auctions, complete-set even building, debt/trades and bankruptcies; validated local/host resume. [Rules](BUSINESS_RULES.md). |
+| Business (`games/business.js`, `games/business-engine.js`) | Yes, private public-state views | 40-space original Indian-city board, host card order, auctions, complete-set even building, debt/trades and bankruptcies; validated local/host resume. [Rules](rules/business.md). |
 | Chess (`games/chess.js`) | Yes | Board, castling, en passant, promotion, turn/result. |
 | Imposter (`games/imposter.js`) | No | Roles, secret reveal, prompt category and round state. |
-| Mafia (`games/mafia.js`, `games/mafia-engine.js`) | Yes, private views | 5–10 players; host-owned roles, night actions, secret votes and detective clues. [Rules](MAFIA_RULES.md). |
+| Mafia (`games/mafia.js`, `games/mafia-engine.js`) | Yes, private views | 5–10 players; host-owned roles, night actions, secret votes and detective clues. [Rules](rules/mafia.md). |
 | Dumb Charades (`games/dumb-charades.js`) | No | Prompt, actor/team, timer and round. |
 | Rock Paper Scissors (`games/rps.js`) | Yes | Picks, round, score and winner. |
 | Blackjack (`games/blackjack.js`) | No | Deck, player/dealer hands, stake and phase. |
@@ -158,13 +158,13 @@ in `games/catan-art.js`. Other game rules remain in their own modules.
 
 `assets/` contains local SVG logos, UI icons, game/resource icons and PNG
 PWA icons. Game Icons art is CC BY 3.0 and Tabler icons are MIT; preserve
-attribution in `README.md`. The PWA caches vendored QR assets and listed
+attribution in `docs/credits.md`. The PWA caches vendored QR assets and listed
 game/CSS/JS/icon files in `sw.js:STATIC_ASSETS`. Bump both cache names when
 changing offline assets; otherwise installed clients can keep stale code.
 Navigation is network-first with an offline shell fallback. A first complete
 installation is required before local offline play; **remote rooms require
 network**. Camera scanning requires HTTPS or local `localhost` plus consent
-(`manifest.json`, `sw.js`, `js/room-qr.js`, `README.md`).
+(`manifest.json`, `sw.js`, `js/room-qr.js`, `docs/rooms.md`).
 
 Sound is synthesized by one lazy Web Audio context (`js/audio.js`);
 `js/app.js` unlocks it from user gestures. On iOS Chrome, playback-session
@@ -172,7 +172,7 @@ routing is selected when exposed by the browser; it can interrupt other audio.
 An "Audio is ready" status reports API state, **not audible output** on a
 physical device. Game vibration uses the Vibration API; iOS browsers do not
 offer arbitrary game haptics, though a directly touched native switch may
-provide tactile feedback (`js/haptics.js`, `README.md`).
+provide tactile feedback (`js/haptics.js`, `docs/features.md`).
 
 `npm test` runs Node's built-in test runner; there are 28 tracked test files
 under `test/`. Focused suites cover Island Charter's generation/checkpoints,
@@ -208,7 +208,7 @@ reports** distinct. This list is a backlog, not a claim of exhaustive bugs.
    deliberately uses simplified 8-ball rules; UNO-inspired is single-round,
    with no draw-card stacking or multi-round points. Telugu movie prompts
    have only a small verified starter set; solo campaigns are not implemented
-   (`README.md:Scope notes`, `README.md:Telugu movie catalogue`).
+   (`docs/limitations.md`, `docs/games.md`).
 5. **Unverified on-device report:** the user observed silence in iOS Chrome
    after the earlier audio unlock fix. Commit `788bbd4` added gesture-time
    audible scheduling and feature-detected playback routing, but no physical

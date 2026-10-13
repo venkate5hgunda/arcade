@@ -46,7 +46,7 @@ be exposed or committed; provider credentials belong in the ignored `.env`.
 - A game is registered in `js/game-catalog.js` and default-exports an async
   `render(el, game, context)` implementation. When adding one, keep its player
   limits, help text, resume expiry, tests, and offline assets/precache consistent;
-  see `ARCHITECTURE.md` for the exact integration points.
+  see `docs/ARCHITECTURE.md` for the exact integration points.
 - Keep game rules and checkpoint validation with the owning game. Shared
   modules are for genuinely reused mechanics, not a place to centralize
   unrelated game behavior.
@@ -69,6 +69,6 @@ be exposed or committed; provider credentials belong in the ignored `.env`.
   `dev/movies/README.md` for its ingestion, matching, and export invariants.
 
 For current state boundaries, game-specific recovery behavior, and known
-platform constraints, consult `ARCHITECTURE.md`. User-facing behavior and run
+platform constraints, consult `docs/ARCHITECTURE.md`. User-facing behavior and run
 instructions belong in `README.md`; historical decisions belong in
-`CHANGELOG.md`.
+`docs/CHANGELOG.md`.

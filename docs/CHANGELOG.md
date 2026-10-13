@@ -232,7 +232,7 @@ building Arcade, so no context is lost between sessions.
   recovery, contextual action panels, accessible scrolling board and
   expandable asset/trade/rule tools. Offline cache v58 includes all
   new modules, styles and artwork.
-- [Rules and sources](BUSINESS_RULES.md) distinguish this Arcade edition
+- [Rules and sources](rules/business.md) distinguish this Arcade edition
   from Funskool's current, mechanically different Gold Quest product;
   classic cash-based accounts conflict about taxes, Jail and Rest Stop.
 

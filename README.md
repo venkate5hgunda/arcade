@@ -1,376 +1,73 @@
-# Arcade
+<div align="center">
 
-A polished, responsive **progressive web app (PWA)** hosting a lot of games —
-single player, two player, board games, and group party games. Built with pure
-HTML/CSS/JS (no build step), installable on desktop and mobile, with light/dark
-mode, sound, and haptics.
+# 🕹️ Arcade
 
-For module boundaries, state recovery, game-by-game ownership, current
-limitations and refactoring priorities, see [Architecture and maintenance map](ARCHITECTURE.md).
+**22 games. One installable app. Zero servers.** Action, board, card, party, puzzle and word games — solo, pass-and-play, or in private peer-to-peer rooms.
 
-The progressive Telugu movie system of record, lossless ingestion, provider
-hydration and evidence-backed charades rubric are documented in
-[Movie catalog](dev/movies/README.md). Build locally with `npm run movies:build`;
-keep API credentials in the ignored `.env` file and use `npm start` rather than
-a generic static server to avoid exposing private development data.
+[![Play now](https://img.shields.io/badge/▶_Play_now-ff3d6b?style=for-the-badge)](https://venkate5hgunda.github.io/arcade/)
+![PWA](https://img.shields.io/badge/PWA-offline_ready-5a0fc8?style=for-the-badge)
+![No build step](https://img.shields.io/badge/build-none-2ea44f?style=for-the-badge)
+![License: MIT](https://img.shields.io/badge/license-MIT-f5a00b?style=for-the-badge)
 
-## Game catalog
+<img src="docs/images/home-light.png" alt="Arcade home screen" width="760">
 
-| Game | Players | Category | Status |
-| --- | --- | --- | --- |
-| Air Hockey | 2 | Action | ✅ Implemented |
-| 8-Ball Pool | 2 | Action | ✅ Implemented |
-| Whack-a-Mole | 1 | Action | ✅ Implemented |
-| Snakes & Ladders | 2–4 | Board | ✅ Implemented |
-| Ludo | 2–4 | Board | ✅ Implemented |
-| Island Charter | 3–4 | Board | ✅ Implemented |
-| Business | 2–6 | Board | ✅ Implemented |
-| Chess | 1–2 | Board | ✅ Implemented |
-| Imposter | 3–20 | Party | ✅ Implemented |
-| Mafia | 5–10 | Party | ✅ Implemented |
-| Dumb Charades | 2–8 | Party | ✅ Implemented |
-| Rock Paper Scissors | 1–2 | Party | ✅ Implemented |
-| Blackjack | 1 | Cards | ✅ Implemented |
-| Crazy Eights | 2 | Cards | ✅ Implemented |
-| UNO-inspired | 2–20 | Cards | ✅ Implemented |
-| Tic-Tac-Toe | 1–2 | Puzzle | ✅ Implemented |
-| Connect Four | 1–2 | Puzzle | ✅ Implemented |
-| Memory Match | 1–2 | Puzzle | ✅ Implemented |
-| 2048 | 1 | Puzzle | ✅ Implemented |
-| Simon Says | 1 | Puzzle | ✅ Implemented |
-| Hangman | 1–2 | Word | ✅ Implemented |
-| Word Scramble | 1 | Word | ✅ Implemented |
+</div>
 
-## Icon credits
+## ✨ Highlights
 
-Game artwork from [Game Icons](https://game-icons.net/) by Lorc, Delapouite,
-Skoll and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
-UI icons from [Tabler Icons](https://tabler.io/icons) by Paweł Kuna, licensed
-under [MIT](https://github.com/tabler/tabler-icons/blob/master/LICENSE).
-Both sets are served locally via [Iconify](https://iconify.design/). The
-Island Charter resource icons use color-tinted Game Icons silhouettes.
+- 🎮 **22 games** — Air Hockey, Pool, Chess, Ludo, Business, Island Charter, Mafia, UNO-inspired, 2048 and more. [See the catalog](docs/games.md).
+- 🌐 **Private rooms** — serverless WebRTC multiplayer with hidden hands kept on the host. [How rooms work](docs/rooms.md).
+- 📱 **Installable & offline** — a service worker caches everything; rounds resume where you left off.
+- 🌗 **Bright and accessible** — light/dark themes, synthesized sound, haptics, reduced-motion and WCAG AA contrast.
 
-## Features
+<p align="center">
+  <img src="docs/images/game-business.png" alt="Business board game" width="32%">
+  <img src="docs/images/game-catan.png" alt="Island Charter" width="32%">
+  <img src="docs/images/game-air-hockey.png" alt="Air Hockey" width="32%">
+</p>
 
-- **Responsive** — mobile, tablet, desktop. Flexible grid + fluid game stages.
-- **Theme** — header control cycles Auto → Light → Dark; Auto is the default
-  and follows the device. Your choice persists in `localStorage`.
-- **Sound** — synthesized Web Audio (no external assets), works offline and
-  retries interrupted effects after the next mobile-browser audio unlock.
-- **Touch feedback** — immediate light press sounds and haptics on game controls,
-  with distinct game sounds for goals, collisions, dice and wins. Buttons
-  bypass double-tap delay; Air Hockey pointer targets use a faster, fixed-step
-  paddle path. Game vibration requires the browser's Vibration API. On iOS,
-  tapping the native switch in **Sound & feel** can provide tactile feedback,
-  but browser games cannot reliably trigger arbitrary haptics.
-- **Offline-first PWA** — service worker caches the shell and runtime assets.
-- **Personalized** — local storage retains theme, sound, haptics, high scores,
-  per-game settings and unfinished local rounds.
-- **Setup flow** — games with options show a concise selection summary and
-  a collapsed **Game configuration** section (player count, difficulty, mode,
-  timer, etc.). Start immediately with the current choices or expand to customize;
-  choices persist per game. Help and player names live under **Help & player options**.
-  Island Charter explains harbor, appearance and neighboring-tile choices.
-  The top reset button briefly confirms a restart (or a restart
-  request in a room).
-- **How to play** — every cabinet has a quick help dialog with three illustrated
-  steps, controls, available options and a goal. Moves and impacts are animated
-  when motion is enabled; 2048 shows slides before merges and new tile spawns.
-- **Victory moments** — earned wins announce the winning player (or team) with
-  confetti, sound and haptics; the visual effects respect reduced-motion settings.
-  Set local player names from the game header or use names chosen on joining a
-  room. Room guests only celebrate their own victories.
-- **Recently played** — the home screen surfaces your last few games (deduped,
-  most-recent-first) above the full catalog for quick re-entry.
-- **Return to play** — refreshing or reopening the arcade preserves the current
-  page: an open game stays open, while returning home stays home even with
-  unfinished rounds. Home shows a temporary resume banner for every unfinished
-  game; it disappears when the rounds end or expire. Each game has a
-  pace-appropriate inactivity window: 2–5 minutes for quick and timed games,
-  8–20 minutes for puzzles, cards and physical games, and up to 45 minutes
-  for chess, two hours for Island Charter, or four hours for Business. Once its window expires, its
-  saved round is discarded; setup choices and high scores remain. Remote
-  rooms are tab-bound and do not
-  auto-resume.
-- **Navigation** — browser Back and Forward move between visited games and
-  home; Alt+Left/Right or Cmd+[/] work as keyboard shortcuts.
-- **Guided rooms** — the lobby highlights the next action: create or join,
-  share an invitation, return an answer, then choose seats and a game once
-  connected. Sharing includes a friendly message, three concise connection
-  steps and the full link; clipboard fallback copies the same message.
-  Reconnect invitations name the original seat and explain how paused play
-  resumes. Native sharing embeds the link in the text for text-only targets.
-  A mismatched reconnect name cancels that invitation without losing the seat
-  or game; create a fresh invite and use the original name.
-  QR codes, raw-link copying, room management and standings stay in expandable
-  sections. Each guest needs a unique invite and must keep their tab open;
-  hosts accept answers in the original tab.
-
-The windows are **2 min** for Whack-a-Mole; **3 min** for RPS; **5 min** for
-Blackjack, Dumb Charades and Simon; **8 min** for Tic-Tac-Toe; **10 min** for
-Air Hockey, Hangman and Word Scramble; **12 min** for Connect Four and Memory;
-**15 min** for Crazy Eights, Imposter, Minesweeper and Pool; **20 min** for
-2048, Snakes & Ladders and UNO-inspired; **30 min** for Ludo; **45 min** for
-Chess; **120 min** for Island Charter; and **240 min** for Business.
-
-- **Business** — an original 2–6-player Indian-city property trading
-  game with local handoffs or host-authoritative private WebRTC rooms,
-  auctions, rent, even development, mortgages, jail, cards, cash-raising
-  and bankruptcy. Its illustrated city table has distinctive player
-  pieces; inspect any board space for its full price and rent ladder before
-  bidding or buying. The current actor's decisions stay above the
-  scrollable board on phones. Configuration and edition differences are in
-  [Business rules](BUSINESS_RULES.md).
-- **Per-game "vibe"** — each game has its own accent palette/theme layered on
-  top of the shared shell, so the arcade doesn't feel like one reskinned game.
-- **Arcade-room design** — layered stage lighting, cabinet-like cards and
-  physical board surfaces in both themes, a vivid marquee-style header with
-  labeled room, Sound & feel and theme controls, and reduced-motion support.
-- **Game artwork** — each catalog card and game header has a distinct,
-  locally hosted SVG icon. Category filters and shared controls use matching
-  UI icons; all artwork remains available offline.
-
-- **Physical play** — 8-Ball Pool and Air Hockey share a fixed-step disc
-  simulation. Pool has rack, collisions, pockets, scratches and house-rule
-  8-ball play; air hockey has acceleration-limited paddles, impact-dependent
-  puck velocity, grippier table drag that checks gentle taps while firm
-  strikes carry, collisions, rebounds and goals. After
-  the opening faceoff, the puck rests at center until either player strikes it.
-  After a goal, it rests on the non-scoring player's half until they strike it.
-- **Island Charter** — a 3–4-player hex-settlement strategy game with an
-  illustrated SVG island, distinct buildings, recognizable resource and dice artwork,
-  production, trading, harbors, discoveries and ten-point victory. Play by
-  private handoff or in a room. Choose **Classic positions** for the same nine
-  coastal harbors and exchange rates on every island, or **Changing positions**
-  to redistribute nine non-overlapping harbors each new island. Harbor choice
-  persists across resets, local resumes and room reconnections. Paired piers
-  connect each offshore harbor marker to exactly two coastal outpost junctions;
-  only an outpost or city on either junction unlocks that harbor's trade rate.
-  Setup also offers
-  **Illustrated** or **Colorblock** land and four independent adjacency switches:
-  whether 6/8, 2/12, identical numbers or identical land types may touch.
-  All four default to no; the choices persist across resets and room recovery.
-  Brick, Wood, Wheat, Ore and Sheep use richer color-coded cargo cards;
-  resource symbols appear on colorblock land, in cargo, building costs and
-  their corresponding harbors;
-  the original art and wording avoid commercial board-game assets.
-- **Board-table dice** — Snakes & Ladders and Ludo use tumbling 3D dice
-  adapted from Pick's tabletop animation; Island Charter uses the same shared
-  engine for two dice, including host-authoritative room rolls and opening order.
-  The final faces remain visible briefly
-  before an automatic move or turn change. Snakes & Ladders draws varied
-  non-intersecting snakes and ladders on each new board, including a large snake
-  from square 99 into the bottom half, with square numbers placed clear of snake
-  heads. Larger player emblems travel square by square, climb ladders
-  or slide through snakes. Nearby snakes hiss, flick their tongues and sway
-  their tails; nearby ladders wobble. Ludo pieces follow the track and return
-  captured pieces to their yards. Matching Ludo pieces have no visible numbers,
-  and the active player's home glows until the turn ends. Both boards honor
-  reduced-motion preferences; Ludo uses a full 52-square cross track and lets
-  the player select which legal token to move.
-- **Mafia** — a 5–10-player, room-only social deduction game. Each person
-  receives a private role; the host coordinates night actions, secret votes
-  and recovery without broadcasting hidden information. See [Mafia rules](MAFIA_RULES.md).
-- **Island Charter** — original presentation of classic hex-settlement rules
-  for 3–4 players: everyone rolls two dice for opening placement order; ties
-  reroll, the highest places first and last, and the lowest places twice in
-  succession. The whole island fits by default, including on phones. Pinch
-  on touchscreens or a trackpad to zoom and swipe to pan; each local player
-  keeps their own zoom and pan through private handoffs, and each room player
-  keeps their view when returning to the game in the same tab.
-  Brighter, larger player buildings and roads stand apart from
-  the muted terrain. Resource production,
-  blocking raider and seven-card discards, distance and road-building rules,
-  bank/harbor and player trading, development cards and ten-point victory.
-  Local players pass the device before revealing private cargo; in a room,
-  only the host holds the deck and sends each guest a private view. No
-  commercial game's illustrations, cards, rulebook text, or branding are used.
-- **Cards** — UNO-inspired (2–20 players) and Crazy Eights (2 players) lead
-  with private-room play on separate devices. Only the host holds the deck
-  and sends each guest their own hand and public table state. Optional local
-  pass-and-play uses a covered handoff; Blackjack is solo against the dealer.
-  UNO-inspired supports one-card callouts, +2 catches and +4 bluff challenges
-  as well as wild colors, skips and reverses; games above 10 players use two
-  decks, and drawing penalties do not stack.
-  Both card duels also work offline in local mode. The room host owns the
-  deck and must be trusted.
-- **Room play** — one persistent WebRTC room connects devices for repeated
-  games. Connected guests are selected automatically as they join; the host
-  can uncheck guests to spectate and the lobby lists games available for the
-  selected seats. Supports Tic-Tac-Toe, Connect Four, Chess,
-  Rock Paper Scissors, Snakes & Ladders and Ludo (2–4 players for the board
-  games), Island Charter (3–4 players), Business (2–6 players),
-  UNO-inspired (2–20 players), Crazy Eights (2 players), and Mafia
-  (5–10 players), with host-authoritative private game state.
-  The room lobby keeps per-player and per-game wins, losses, draws and rankings
-  for the lifetime of the room, including across replays and game changes.
-  A dropped connection pauses turns without discarding the room or active game.
-  The host can re-invite a disconnected guest into the same seat. If the host
-  tab reloads, a per-tab host checkpoint restores the roster and the current
-  round in every supported room game, including private card hands that remain
-  on the host. Guests need fresh invite/answer exchanges to reclaim their
-  seats; public boards resynchronize from the host and private games send each
-  guest only their own view. Play pauses until every remaining selected
-  player reconnects; an eliminated Business seat cannot block the match.
-  Rooms use local browser storage, not a server: clearing site data or losing
-  the host's browser session cannot be recovered. WebRTC itself does not
-  reconnect across a full reload without another invite and answer.
-  Other games remain local-only.
-
-**Future enhancement:** Solo campaigns with progressive stages, unlocks and
-longer-term goals (distinct from the current single-round/high-score play).
-
-### Imposter options
-
-Imposter ships an original catalogue of 630 words across 21 categories
-(`js/imposter-words.js`); each entry has a hint and a close decoy word.
-Setup offers Classic or **Pair** mode (imposters secretly get the decoy and are
-not told their role), an imposter slider with a **Random** switch for a
-secret count within a range (1–6, at most fewer than half the table; the
-slider locks live when the player count allows only one), toggles for what imposters see (category, hint, fellow
-imposters), and a collapsible category picker that can mix in Telugu movies.
-Games run in rounds: the top vote is eliminated, ties spare everyone, and the
-crew wins once every imposter is out; imposters win when they equal the crew.
-
-### Telugu movie catalogue
-
-Dumb Charades and Imposter offer **Telugu movies** alongside their existing
-prompt categories, drawn from the approved catalogue in `data/movies/` (see
-`dev/movies/README.md`). In Dumb Charades the actor's card shows the top three
-billed actors and a one-sentence summary under the title to help them mime it;
-both reappear on the post-turn reveal. Imposter shows them only in the results,
-never on a face-down handoff or a hidden role card. Each card credits its
-source (TMDB, OMDb, Wikipedia under CC BY-SA, or the supplied dataset).
-
-## Playing together on separate devices
-
-1. Tap **Room** in the header and choose **Create a room** or **Join a room**.
-   Opening an invite URL selects **Join a room** automatically. Enter your name
-   and select **Create room** if hosting; the first guest invite appears immediately.
-2. Share the displayed invite QR or URL using **Share link** or **Copy link**.
-   After each guest connects, use **Invite another guest** for the next person.
-3. The guest opens the invite URL or chooses **Join a room** and uses
-   **Scan invite QR** (or pastes the URL), enters a name, and selects
-   **Join and create answer**. Their answer QR is shown by default; send its
-   URL or show the QR to the host.
-4. In the **original host tab**, paste the answer URL or use **Scan answer QR**,
-   then select **Accept answer**. Opening it in a new host tab will not work.
-   Acceptance admits the guest; wait until the lobby says **connected**.
-   Everyone connected is selected to play by default. Uncheck anyone who
-   should spectate, then choose one of the games available for that number
-   of selected players. Return to the lobby to play another game over the
-   same connection.
-   If someone disconnects, wait for WebRTC to recover. If it does not,
-   the host selects **Reconnect [name]** to generate a new invite for that
-   guest; they join with the same name, send a new answer, and reclaim their
-   seat. A restored host tab opens the lobby automatically and can resume a
-   saved Island Charter after guests reconnect.
-
-**Constraints shown before starting:** This static-hosted PWA has no
-signaling or TURN server. Both links must be exchanged manually, and some
-messaging apps truncate long SDP links. Direct WebRTC connections usually
-need internet for public STUN discovery and can fail behind restrictive
-firewalls or symmetric NAT. Rooms live only while tabs remain open; remote
-play is not available offline. **Downloaded game assets remain playable
-locally offline** after the service worker has completed its first install.
-QR codes are generated locally; no invite or answer is sent to a QR service.
-Camera scanning uses a locally hosted decoder on browsers without
-`BarcodeDetector`, including Safari and Chrome on iOS. On phones, open the
-arcade via **HTTPS** (not plain HTTP over a LAN IP) and allow camera access;
-`localhost` also works when testing on the same device. If camera access is
-denied or a long, dense QR is hard to read, paste the URL instead. QR codes
-that exceed capacity also fall back to the URL. The decoder and its worker
-are vendored from `qr-scanner` 1.4.2 under the MIT license in
-`js/vendor/LICENSE-qr-scanner`. Each device reports a lost or stalled direct
-connection; a warning indicates a possible network restriction, not proof
-of a particular firewall or NAT. Transient connections can recover when the
-underlying WebRTC channel reconnects; blocked networks may still require a
-new invite or a different network because there is no TURN relay.
-
-Sound starts on your first tap and can be checked with **Sound & feel → Test
-sound**. After switching apps or locking the screen, the next tap unlocks
-sound again. On iPhone or iPad, check the device mute setting and audio output
-if the test reports ready but you hear nothing. Chrome on iOS uses the system
-playback audio session where supported, so game sounds can pause other media
-while enabled; turning game sounds off releases that session. Safari and iOS
-Chrome do not expose the Web Vibration API, so gameplay haptics are unavailable there;
-the directly touched native switch can give a tactile tick on supported iOS
-versions, without relying on unreliable programmatic switch clicks.
-
-## Running locally
+## 🚀 Quick start
 
 ```bash
-python3 dev/serve.py
-# open http://localhost:8000
+npm start          # python3 dev/serve.py → http://localhost:8000
+npm test           # JavaScript tests
+npm run test:movies  # Python movie-pipeline tests
 ```
 
-`npm start` runs the same server. It blocks `.env`, hidden files and `dev/`
-data. For intentional LAN access, use `python3 dev/serve.py --bind 0.0.0.0`;
-phone camera scanning still requires HTTPS. Avoid generic static servers when
-local credentials are present.
+Use the project server rather than a generic static server; it blocks `.env`, hidden files and development data.
 
-## Project layout
+## 📚 Documentation
+
+| Topic | Page |
+| --- | --- |
+| Every game, player counts, Imposter and movie options | [docs/games.md](docs/games.md) |
+| Arcade features: themes, sound, resume, per-game highlights | [docs/features.md](docs/features.md) |
+| Playing on separate devices (invites, answers, reconnects) | [docs/rooms.md](docs/rooms.md) |
+| Running locally, project layout, adding a game | [docs/development.md](docs/development.md) |
+| Architecture and maintenance map | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Design language | [docs/DESIGN_LANGUAGE.md](docs/DESIGN_LANGUAGE.md) |
+| Game rules: [Business](docs/rules/business.md) · [Mafia](docs/rules/mafia.md) | |
+| Scope notes and limitations | [docs/limitations.md](docs/limitations.md) |
+| Changelog | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
+| Telugu movie catalog pipeline | [dev/movies/README.md](dev/movies/README.md) |
+| Icon credits | [docs/credits.md](docs/credits.md) |
+
+<p align="center">
+  <img src="docs/images/home-dark.png" alt="Dark theme" width="64%">
+  <img src="docs/images/mobile.png" alt="Mobile layout" width="22%">
+</p>
+
+## 🗂️ Repository layout
 
 ```
-arcade/
-  index.html            # shell: header, theme cycle and sound/feel panel, game stage
-  manifest.json         # PWA manifest
-  sw.js                 # service worker (offline caching)
-  css/styles.css        # theme tokens + component styles
-  js/
-    app.js              # entry point
-    storage.js          # localStorage wrapper + KEYS
-    theme.js            # light/dark/auto
-    audio.js            # Web Audio synthesis
-    haptics.js          # Vibration wrapper and saved preference
-    game-catalog.js     # single source of truth for all games
-    router.js           # hash-based router + landing grid
-    game-session.js     # per-game resume windows and local checkpoints
-    game-shell.js       # shared chrome for game views
-    game-utils.js       # shared board game helpers
-    dice.js             # tabletop die animation
-    disc-physics.js     # fixed-step puck / ball dynamics
-    multiplayer.js      # shared WebRTC room + two-link signaling
-    remote-match.js     # room seat and turn helpers
-  games/
-    <game-id>.js        # one module per game: default export { render(el, game) }
-  assets/
-    favicon.svg, logo.svg
-  css/board-games.css, css/physical-games.css, css/card-games.css,
-    css/multiplayer.css
-  CHANGELOG.md          # feature + assumption tracker
+index.html, manifest.json, sw.js   app shell and PWA
+css/, js/, games/, assets/         app code, one module per game
+data/movies/                       public movie prompt data
+dev/                               local server and movie tooling
+test/                              tests
+docs/                              documentation, rules and screenshots
 ```
 
-## Adding a new game
+## 📄 License
 
-1. Add an entry to `GAMES` in `js/game-catalog.js` (one shape, no extras).
-2. Create `games/<game-id>.js` exporting `default { render(el, game) }`.
-3. Add `./games/<game-id>.js` to `STATIC_ASSETS` in `sw.js` and bump the
-   cache version so the new game works offline immediately after installation.
-   Add a resume window in `js/game-session.js` and checkpoint unfinished
-   gameplay via the `session` argument passed to `render`. The landing grid
-   and in-app route `#/games/<game-id>` now pick it up.
-
-See `CHANGELOG.md` for the full history of decisions and assumptions.
-
-## Scope notes
-
-- A direct game link opens that game, even without a saved round. Refreshing
-  on home stays on home even if other games have unfinished local rounds;
-  their resume banners let you choose when to return.
-- **Chess** implements checkmate, stalemate, and insufficient-material draws,
-  but not draw-by-repetition or the 50-move rule — a deliberate scope limit
-  for a casual pass-and-play/AI opponent experience.
-- **Pool** uses simplified 8-ball house rules; there is no called pocket or
-  tournament break requirement.
-- **UNO-inspired** uses a single-round house ruleset: number-only opening
-  card and no draw-card stacking or multi-round point scoring.
-  If nobody can draw or play, the fewest cards wins (ties remain ties).
-
-## License
-
-Original project code and assets are licensed under the [MIT License](LICENSE).
-Copyright (c) 2026 Venkatesh Gunda.
-Third-party code, assets, and content remain subject to their respective licenses,
-including the artwork listed in [Icon credits](#icon-credits) and the license
-notices in `js/vendor/`.
+[MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code stay under their own licenses — see [credits](docs/credits.md) and `js/vendor/`.
