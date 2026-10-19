@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v80';
-const RUNTIME_CACHE = 'arcade:runtime:v80';
+const STATIC_CACHE = 'arcade:static:v81';
+const RUNTIME_CACHE = 'arcade:runtime:v81';
 
 const STATIC_ASSETS = [
   './',
@@ -70,7 +70,7 @@ const STATIC_ASSETS = [
   ...[
     'hockey', 'eight-ball', 'mole', 'snake', 'rolling-dice-cup', 'island',
     'chess-knight', 'spy', 'mafia', 'drama-masks', 'card-ace-spades', 'card-8-spades',
-    'card-joker', 'tic-tac-toe', 'minefield',
+    'card-joker', 'tic-tac-toe', 'minefield', 'hand', 'talk',
   ].map((name) => `./assets/icons/game-icons/${name}.svg`),
   ...['timber', 'clay', 'grain', 'wool', 'ore']
     .map((name) => `./assets/icons/resources/${name}.svg`),
@@ -79,7 +79,7 @@ const STATIC_ASSETS = [
     'abc', 'sort-ascending-letters', 'layout-grid', 'bolt', 'chess', 'cards',
     'confetti', 'puzzle', 'history', 'arrow-left', 'arrow-right', 'refresh',
     'info-circle', 'users', 'volume-2', 'device-mobile-vibration', 'pencil',
-    'sun', 'moon', 'building-bank', 'star', 'message-off', 'letter-w',
+    'sun', 'moon', 'building-bank', 'letter-case',
   ].map((name) => `./assets/icons/tabler/${name}.svg`)
 ];
 

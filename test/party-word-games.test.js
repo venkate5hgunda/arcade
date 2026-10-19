@@ -65,7 +65,7 @@ test('all new game modules, icons and styles are precached and exist',async()=>{
   const source=await readFile(new URL('../sw.js',import.meta.url),'utf8');
   const context={self:{addEventListener(){}},URL};vm.createContext(context);
   vm.runInContext(source+';globalThis.assets=STATIC_ASSETS;',context);
-  for (const path of ['./games/show-star.js','./games/taboo.js','./games/wordle.js','./css/party-word-games.css','./assets/icons/tabler/star.svg','./assets/icons/tabler/message-off.svg','./assets/icons/tabler/letter-w.svg']) {
+  for (const path of ['./games/show-star.js','./games/taboo.js','./games/wordle.js','./css/party-word-games.css','./assets/icons/game-icons/hand.svg','./assets/icons/game-icons/talk.svg','./assets/icons/tabler/letter-case.svg']) {
     assert.ok(context.assets.includes(path),path);await readFile(new URL('../'+path,import.meta.url));
   }
 });

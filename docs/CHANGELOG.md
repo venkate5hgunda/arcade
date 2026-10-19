@@ -3,6 +3,11 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-19 — Match new game artwork to existing collections
+
+- Replace the custom Show Star, Taboo and Wordle SVGs with Iconify’s Game Icons hand/talk silhouettes and Tabler letter-case artwork, matching the existing party and word cabinets.
+- Keep icons local and precached; bump caches to v81.
+
 ## 2026-10-19 — Show Star, Taboo and Wordle
 
 - Add Show Star: 3–8 players, four-chit sets, private handoffs, clockwise passing, a shared SLAP stack and cumulative round scores.
