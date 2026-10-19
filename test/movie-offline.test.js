@@ -72,7 +72,7 @@ test('service-worker upgrades preserve all movie partitions and offline index fa
     respondWith(promise) { response = promise; },
   });
   await response;
-  const runtime = buckets.get('arcade:runtime:v79');
+  const runtime = buckets.get([...buckets.keys()].find(name => name.startsWith('arcade:runtime:')));
   assert.ok(runtime.has(key('data/movies/new-catalog-hash.jsonl')));
   for (const file of JSON.parse(await (await runtime.get(key('data/movies/index.json'))).clone().text()).files) {
     assert.ok(runtime.has(key(`data/movies/${file.path}`)));

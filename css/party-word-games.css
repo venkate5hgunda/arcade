@@ -1,0 +1,34 @@
+.new-game { width: 100%; max-width: 760px; margin-inline: auto; padding: clamp(12px, 3vw, 28px); color: var(--text); }
+.new-game h2, .new-game h3 { text-wrap: balance; }
+.new-game p { line-height: 1.6; }
+.new-game-actions, .chit-hand { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 20px; }
+.chit-hand { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.chit { min-height: 100px; font-size: 1.25rem; }
+.slap-start { width: 100%; min-height: 72px; font-size: 1.25rem; }
+.slap-pads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block: 20px; }
+.slap-pad { min-height: 100px; touch-action: none; user-select: none; }
+.slap-pad:disabled { opacity: 1; background: var(--bg-soft); color: var(--text); border: 2px solid var(--text-soft); }
+.taboo-card { max-width: 400px; margin: 16px auto; border: 2px solid var(--game-ui-primary); text-align: center; }
+.taboo-card h3 { font-size: 2rem; margin: 8px; }
+.taboo-card ul { list-style: none; padding: 0; line-height: 1.8; font-size: 1.2rem; }
+.taboo-clock { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wordle-board { display: grid; gap: 6px; max-width: 340px; margin: 12px auto; }
+.wordle-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.wordle-tile { position: relative; display: grid; place-items: center; aspect-ratio: 1; font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 800; background: var(--bg-soft); border: 2px solid var(--text-soft); border-radius: 6px; }
+.wordle-tile small { position: absolute; right: 3px; bottom: 0; font-size: .65rem; }
+.wordle-form { display: flex; gap: 8px; max-width: 400px; margin: 12px auto; }
+.wordle-form input { min-width: 0; width: 100%; font: inherit; padding: 12px; text-transform: uppercase; color: var(--text); background: var(--bg-soft); border: 2px solid var(--text-soft); border-radius: 8px; }
+.wordle-keyboard { display: grid; gap: 6px; margin: 20px auto; max-width: 540px; }
+.wordle-key-row { display: flex; justify-content: center; gap: 4px; }
+.wordle-key { min-width: 0; flex: 1; max-width: 50px; min-height: 44px; padding: 4px 0; font: inherit; font-weight: 800; border: 1px solid var(--text-soft); border-radius: 5px; background: var(--bg-soft); color: var(--text); cursor: pointer; touch-action: manipulation; }
+.wordle-key:disabled { cursor: default; }
+.new-game :is(.wordle-key, .wordle-tile).correct { background: #166534; border-color: #166534; color: #fff; }
+.new-game :is(.wordle-key, .wordle-tile).present { background: #854d0e; border-color: #854d0e; color: #fff; }
+.new-game :is(.wordle-key, .wordle-tile).absent { background: #374151; border-color: #374151; color: #fff; }
+[data-theme="dark"] .new-game :is(.wordle-key, .wordle-tile):is(.correct, .present, .absent) { border-color: #cbd5e1; }
+/* The shared stage centers flex children; these controls need a real width. */
+.new-game .wordle-board { width: min(340px, 100%); flex-shrink: 0; }
+.new-game .wordle-form { width: min(400px, 100%); }
+.new-game .wordle-form button { flex-shrink: 0; }
+.new-game .wordle-keyboard { width: min(540px, 100%); }
+.new-game .slap-pads, .new-game .chit-hand { width: 100%; }

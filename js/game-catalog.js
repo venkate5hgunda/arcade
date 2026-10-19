@@ -5,6 +5,24 @@
 
 export const GAMES = [
   {
+    id: 'show-star', name: 'Show Star', tagline: 'Match four, race to slap',
+    players: { min: 3, max: 8, type: 'group' }, category: 'Party',
+    color: '#d97706', icon: 'tabler:star',
+    description: 'Pass four secret chits clockwise, match a set and race for the lowest hand in the SLAP stack.',
+  },
+  {
+    id: 'taboo', name: 'Taboo', tagline: 'Great clues, forbidden words',
+    players: { min: 4, max: 20, type: 'group' }, category: 'Party',
+    color: '#db2777', icon: 'tabler:message-off',
+    description: 'Two teams race the timer to guess original clue cards without saying the forbidden words.',
+  },
+  {
+    id: 'wordle', name: 'Wordle', tagline: 'Five letters, six chances',
+    players: { min: 1, max: 1, type: 'single' }, category: 'Word',
+    color: '#16a34a', icon: 'tabler:letter-w',
+    description: 'Solve a five-letter word in six guesses with repeated-letter hints and an offline practice vocabulary.',
+  },
+  {
     id: 'air-hockey',
     name: 'Air Hockey',
     tagline: 'Two-player puck battle',

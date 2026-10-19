@@ -2,8 +2,8 @@
 // KISS: a single static cache plus a generic runtime cache for same-origin
 // fetches. Network-first for JSON so preferences always try to stay fresh.
 
-const STATIC_CACHE = 'arcade:static:v79';
-const RUNTIME_CACHE = 'arcade:runtime:v79';
+const STATIC_CACHE = 'arcade:static:v80';
+const RUNTIME_CACHE = 'arcade:runtime:v80';
 
 const STATIC_ASSETS = [
   './',
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   './manifest.json',
   './css/styles.css',
   './css/game-interface.css',
+  './css/party-word-games.css',
   './css/hangman.css',
   './assets/hangman/word-garden.svg',
   './css/board-games.css',
@@ -58,7 +59,7 @@ const STATIC_ASSETS = [
     '2048', 'air-hockey', 'blackjack', 'chess', 'connect-four', 'crazy-eights',
     'catan', 'catan-art', 'business', 'business-engine', 'dumb-charades', 'hangman', 'hangman-engine', 'imposter', 'mafia', 'mafia-engine', 'ludo', 'memory', 'minesweeper', 'uno',
     'pool', 'rps', 'simon', 'snakes-ladders', 'tictactoe', 'whack-a-mole',
-    'word-scramble',
+    'word-scramble', 'show-star', 'taboo', 'wordle',
   ].map((id) => `./games/${id}.js`),
   './assets/favicon.svg',
   './assets/logo.svg',
@@ -78,7 +79,7 @@ const STATIC_ASSETS = [
     'abc', 'sort-ascending-letters', 'layout-grid', 'bolt', 'chess', 'cards',
     'confetti', 'puzzle', 'history', 'arrow-left', 'arrow-right', 'refresh',
     'info-circle', 'users', 'volume-2', 'device-mobile-vibration', 'pencil',
-    'sun', 'moon', 'building-bank',
+    'sun', 'moon', 'building-bank', 'star', 'message-off', 'letter-w',
   ].map((name) => `./assets/icons/tabler/${name}.svg`)
 ];
 

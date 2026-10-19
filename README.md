@@ -2,7 +2,7 @@
 
 # 🕹️ Arcade
 
-**22 games. One installable app. Zero servers.** Action, board, card, party, puzzle and word games — solo, pass-and-play, or in private peer-to-peer rooms.
+**26 games. One installable app. Zero servers.** Action, board, card, party, puzzle and word games — solo, pass-and-play, or in private peer-to-peer rooms.
 
 [![Play now](https://img.shields.io/badge/▶_Play_now-ff3d6b?style=for-the-badge)](https://venkate5hgunda.github.io/arcade/)
 ![PWA](https://img.shields.io/badge/PWA-offline_ready-5a0fc8?style=for-the-badge)
@@ -15,7 +15,7 @@
 
 ## ✨ Highlights
 
-- 🎮 **22 games** — Air Hockey, Pool, Chess, Ludo, Business, Island Charter, Mafia, UNO-inspired, 2048 and more. [See the catalog](docs/games.md).
+- 🎮 **26 games** — Air Hockey, Pool, Chess, Ludo, Business, Island Charter, Mafia, UNO-inspired, 2048 and more. [See the catalog](docs/games.md).
 - 🌐 **Private rooms** — serverless WebRTC multiplayer with hidden hands kept on the host. [How rooms work](docs/rooms.md).
 - 📱 **Installable & offline** — a service worker caches everything; rounds resume where you left off.
 - 🌗 **Bright and accessible** — light/dark themes, synthesized sound, haptics, reduced-motion and WCAG AA contrast.

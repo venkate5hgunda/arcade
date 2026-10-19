@@ -3,6 +3,14 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-19 — Show Star, Taboo and Wordle
+
+- Add Show Star: 3–8 players, four-chit sets, private handoffs, clockwise passing, a shared SLAP stack and cumulative round scores.
+- Add Taboo: two teams, fifty original cards, configurable timed turns, penalties and reload-safe deadlines.
+- Add Wordle: random offline practice, six guesses, repeated-letter feedback and touch/physical keyboard entry.
+- Register help, resume windows, local icons and service-worker assets for all three games; bump caches to v80.
+- Implementation choice: Show Star collects private choices round-robin and rotates them together, keeping every hand at four chits. SLAP order follows input arrival on one shared screen.
+
 ## 2026-10-08 — Movie cast and summaries; Wikidata catalogue growth
 
 - Dumb Charades: the actor's card shows "Starring" chips for the top three

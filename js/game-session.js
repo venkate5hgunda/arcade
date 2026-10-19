@@ -3,6 +3,9 @@ import { KEYS, loadJSON, remove, saveJSON } from './storage.js';
 const MINUTE = 60_000;
 export const RESUME_MINUTES = Object.freeze({
   '2048': 20,
+  'show-star': 20,
+  taboo: 15,
+  wordle: 20,
   'air-hockey': 10,
   blackjack: 5,
   business: 240,
