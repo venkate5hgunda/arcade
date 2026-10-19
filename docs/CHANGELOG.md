@@ -3,6 +3,10 @@
 This file tracks every feature request, decision, and assumption made while
 building Arcade, so no context is lost between sessions.
 
+## 2026-10-19 — Rename Show
+
+- Name the game Show throughout the catalog, setup and documentation. Keep the existing route and saved-round key compatible.
+
 ## 2026-10-19 — Match new game artwork to existing collections
 
 - Replace the custom Show Star, Taboo and Wordle SVGs with Iconify’s Game Icons hand/talk silhouettes and Tabler letter-case artwork, matching the existing party and word cabinets.

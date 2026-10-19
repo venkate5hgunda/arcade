@@ -5,7 +5,7 @@
 
 export const GAMES = [
   {
-    id: 'show-star', name: 'Show Star', tagline: 'Match four, race to slap',
+    id: 'show-star', name: 'Show', tagline: 'Match four, race to slap',
     players: { min: 3, max: 8, type: 'group' }, category: 'Party',
     color: '#d97706', icon: 'game-icons:hand',
     description: 'Pass four secret chits clockwise, match a set and race for the lowest hand in the SLAP stack.',

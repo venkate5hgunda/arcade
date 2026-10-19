@@ -6,7 +6,7 @@ import { CARDS, secondsLeft, applyOutcome, validState as validTaboo } from '../g
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-test('Show Star deals exactly four of each symbol, and passing conserves chits for every player count', () => {
+test('Show deals exactly four of each symbol, and passing conserves chits for every player count', () => {
   for (let players = 3; players <= 8; players++) {
     let hands = deal(players, () => .37);
     for (let round = 0; round < 30; round++) {
@@ -21,14 +21,14 @@ test('Show Star deals exactly four of each symbol, and passing conserves chits f
   }
 });
 const starState = () => ({ players:3,rounds:3,round:1,scores:[0,0,0],hands:[[0,0,0,0],[1,1,1,1],[2,2,2,2]],picks:[],phase:'passing',stack:[] });
-test('Show Star matches four and awards descending points in arrival order', () => {
+test('Show matches four and awards descending points in arrival order', () => {
   assert.ok(matches([1,1,1,1])); assert.ok(!matches([1,1,1,2])); assert.ok(!matches([1,1,1]));
   assert.deepEqual(stackPoints([2,0,1],3),[2,1,3]);
   const s=starState();assert.ok(validStar(s));s.phase='slapping';s.stack=[0];assert.ok(validStar(s));
   s.stack=[0,2,1];s.phase='scored';assert.ok(validStar(s));
   s.stack=[0,0,1];assert.ok(!validStar(s));
 });
-test('Show Star rejects corrupt hands, selections, impossible initiators and scores', () => {
+test('Show rejects corrupt hands, selections, impossible initiators and scores', () => {
   for (const alter of [s=>s.hands[0][0]=1,s=>s.hands[0]=[],s=>s.picks=[5],s=>s.scores[1]=-1,s=>s.round=99,s=>{s.phase='slapping';s.stack=[1];}]) {
     const s=starState();alter(s);assert.ok(!validStar(s));
   }

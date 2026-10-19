@@ -29,7 +29,7 @@ All 26 games, their player counts and special options.
 | Hangman | 1–2 | Word | ✅ Implemented |
 | Word Scramble | 1 | Word | ✅ Implemented |
 | Minesweeper | 1 | Puzzle | ✅ Implemented |
-| Show Star | 3–8 | Party | ✅ Implemented |
+| Show | 3–8 | Party | ✅ Implemented |
 | Taboo | 4–20 | Party | ✅ Implemented |
 | Wordle | 1 | Word | ✅ Implemented |
 
@@ -57,7 +57,7 @@ never on a face-down handoff or a hidden role card. Each card credits its
 source (TMDB, OMDb, Wikipedia under CC BY-SA, or the supplied dataset).
 
 
-## Show Star
+## Show
 
 Play on one shared device. Everyone gets four chits and secretly chooses one to pass clockwise. Once everyone has chosen, the chits rotate together. Four matching chits unlock SLAP: place your palm down (lighter side to the floor), then everyone races to tap their own pad. Stack positions earn N, N−1, …, 1 points. Choose 3, 5 or 10 rounds; highest total wins, with shared wins for ties. Handoffs and reloads conceal hands. These local party games do not use WebRTC rooms.
 

@@ -37,7 +37,7 @@ export default {
     const restored = validState(session?.state) ? structuredClone(session.state) : null;
     const saved = loadJSON(KEYS.SETTINGS + ':show-star', {});
     const settings = restored || await renderSetup(stage, {
-      title: 'Show Star', subtitle: 'One shared device · private chits, then a SLAP race. Put the screen flat where everyone can reach.',
+      title: 'Show', subtitle: 'One shared device · private chits, then a SLAP race. Put the screen flat where everyone can reach.',
       fields: [{ key: 'players', label: 'Players', options: [3,4,5,6,7,8].map(n => ({ value: String(n), label: String(n) })), default: String(saved.players || 4) },
         { key: 'rounds', label: 'Rounds', options: [3,5,10].map(n => ({ value: String(n), label: String(n) })), default: String(saved.rounds || 3) }],
       startLabel: 'Deal chits',
