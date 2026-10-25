@@ -71,3 +71,7 @@ docs/                              documentation, rules and screenshots
 ## 📄 License
 
 [MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code stay under their own licenses — see [credits](docs/credits.md) and `js/vendor/`.
+
+## 🧭 Redesign
+
+The framework redesign is being developed on `codex/redesign-foundation`. See the [requirements, architecture and runnable foundation](docs/redesign/README.md) for scope, local preview and feature-parity tracking.
