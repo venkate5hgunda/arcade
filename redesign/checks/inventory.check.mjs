@@ -15,7 +15,12 @@ test('every feature has unique identity, existing evidence and explicit acceptan
     manifest.requirements.length,
   );
   for (const entry of manifest.requirements) {
-    assert.equal(entry.status, 'planned');
+    assert.ok(['planned', 'implemented'].includes(entry.status));
+    if (entry.status === 'implemented') {
+      assert.ok(entry.implementationTests?.length);
+      for (const path of entry.implementationTests)
+        assert.ok(existsSync(resolve(root, path)), path);
+    }
     assert.ok(entry.acceptance.length);
     assert.ok(entry.sources.length);
     for (const p of [...entry.sources, ...entry.baselineTests])
@@ -44,6 +49,9 @@ test('all local documentation links resolve', () => {
     'architecture.md',
     'migration.md',
     'verification.md',
+    'backlog.md',
+    'artwork.md',
+    'design-qa.md',
   ]) {
     const path = resolve(root, 'docs/redesign', name);
     const body = readFileSync(path, 'utf8');

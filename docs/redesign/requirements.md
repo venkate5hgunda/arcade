@@ -32,7 +32,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G16](#g16) | Blackjack | Cards | Planned |
 | [G17](#g17) | Crazy Eights | Cards | Planned |
 | [G18](#g18) | UNO-inspired | Cards | Planned |
-| [G19](#g19) | Tic-Tac-Toe | Puzzle | Planned |
+| [G19](#g19) | Tic-Tac-Toe | Puzzle | Implemented |
 | [G20](#g20) | Connect Four | Puzzle | Planned |
 | [G21](#g21) | Minesweeper | Puzzle | Planned |
 | [G22](#g22) | Memory Match | Puzzle | Planned |
@@ -47,7 +47,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 - Preserve bright original artwork, legible contrast, touch and keyboard operation, focus management, reduced motion, and mobile/landscape/desktop layouts. Primary action and active actor remain apparent.
 - Treat installation, first-load caching, fully offline operation, interrupted updates and multi-tab version consistency as separate cases.
 - Keep behavior, domain state, persistent data and presentation independently testable; one authoritative owner for each state transition.
-- A planned or merely implemented feature is not verified parity. Track pending, implemented and verified evidence separately when migration begins. Foundation status is intentionally all planned.
+- A planned or merely implemented feature is not verified parity. Track pending, implemented and verified evidence separately when migration begins. Foundation status was all planned; Phase 2 implements G19 with scoped progress on the platform and room requirements. See verification.md for current evidence.
 - A backend replacement must specify user-visible availability, consent, data retention, authority and recovery semantics before activation. Architectural freedom does not erase these requirements.
 
 ## A01
@@ -366,7 +366,7 @@ Baseline tests: [test/uno.test.js](../../test/uno.test.js).
 
 ## G19
 
-**Tic-Tac-Toe** · Puzzle · Planned
+**Tic-Tac-Toe** · Puzzle · Implemented
 
 - One/two-player local modes and room duel; legal cells, computer option, three-in-row win/draw and reset.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.

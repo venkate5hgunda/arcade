@@ -7,154 +7,285 @@ import {
   useLocation,
   useParams,
 } from 'react-router-dom';
-import { categories, filterRequirements, requirements } from './lib/catalog';
-function Catalog() {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All');
-  const visible = filterRequirements(query, category);
+import type { CSSProperties } from 'react';
+import { CATEGORIES, GAMES, isImplemented, playerLabel } from './lib/games.ts';
+import type { Game } from './lib/games.ts';
+import {
+  unfinishedGames,
+  deleteGameSession,
+  createGameSession,
+} from './lib/session.ts';
+import { isValidState } from './lib/tictactoe.ts';
+import type { LocalState } from './lib/tictactoe.ts';
+import { recentGames } from './lib/profile.ts';
+import { KEYS, loadJSON, onStorageFailure, saveJSON } from './lib/storage.ts';
+import { requirements } from './lib/catalog.ts';
+import { Room } from './lib/room/protocol.ts';
+import { RoomPage } from './features/Room.tsx';
+import { GameRoute } from './features/Game.tsx';
+
+const categoryIcons: Record<string, string> = {
+  All: 'layout-grid',
+  Action: 'bolt',
+  Board: 'chess',
+  Cards: 'cards-filled',
+  Party: 'confetti',
+  Puzzle: 'puzzle',
+  Word: 'abc',
+};
+function Icon({ name }: { name: string }) {
+  return <img className="icon" src={`./icons/${name}.svg`} alt="" />;
+}
+function Catalog({ query, category }: { query: string; category: string }) {
+  const [selected, setSelected] = useState('tictactoe');
+  const [recent] = useState(recentGames);
+  const [resumable] = useState(() =>
+    unfinishedGames().filter((id) => {
+      if (!isImplemented(id)) return false;
+      const session = createGameSession(id);
+      if (isValidState(session.state as LocalState)) return true;
+      deleteGameSession(id);
+      return false;
+    }),
+  );
+  const visible = GAMES.filter(
+    (game) =>
+      (category === 'All' || game.category === category) &&
+      `${game.name} ${game.tagline} ${game.description}`
+        .toLowerCase()
+        .includes(query.toLowerCase().trim()),
+  );
+  const game = visible.find((g) => g.id === selected) ?? visible[0];
   return (
     <>
-      <section className="hero">
-        <div>
-          <div className="eyebrow">A new chapter / 01</div>
-          <h1 tabIndex={-1}>Good games. Great company.</h1>
-          <p className="lede">
-            A bright new cabinet for every kind of game night.
-          </p>
-          <p className="note">
-            Foundation preview. Explore the feature plan below; gameplay and
-            saved-data migration come in later milestones.
-          </p>
-        </div>
-        <div className="art board" aria-hidden="true">
-          {Array.from({ length: 9 }, (_, i) => (
-            <span className="tile" key={i} />
-          ))}
-        </div>
-      </section>
-      <section aria-labelledby="catalog-title">
-        <div className="toolbar">
-          <div>
-            <div className="eyebrow">The complete picture</div>
-            <h2 id="catalog-title">Explore the redesign</h2>
-          </div>
-          <label className="search">
-            Search features
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a feature…"
+      {game ? (
+        <section className="showcase" aria-label="Featured game">
+          <div className="showcase-scene">
+            <div
+              className={`hero-image world world-${game.category}`}
+              role="img"
+              aria-label={`${game.category} game world illustration`}
             />
-          </label>
-        </div>
-        <div className="filters" aria-label="Feature categories">
-          {categories.map((value) => (
-            <button
-              className="filter"
-              key={value}
-              aria-pressed={category === value}
-              onClick={() => setCategory(value)}
-            >
-              {value}
-            </button>
-          ))}
-        </div>
-        <p className="count" role="status">
-          {visible.length} of {requirements.length} feature groups · all
-          awaiting migration
-        </p>
-        <div className="grid">
-          {visible.map((item) => (
-            <Link
-              className="card"
-              to={`/requirements/${item.id}`}
-              key={item.id}
-            >
-              <div className="meta">
-                <span>{item.category}</span>
-                <span>Planned</span>
-              </div>
-              <h3>{item.title}</h3>
-              <p>{item.acceptance[0]}</p>
-              <span className="link-label">View acceptance criteria →</span>
+            <div className="scene-caption">
+              GOOD GAMES BRING PEOPLE TOGETHER
+            </div>
+          </div>
+          <div className="showcase-copy">
+            <p className="eyebrow">
+              {game.category} <span> / </span> Your next good time
+            </p>
+            <h1>{game.name}</h1>
+            <p className="lede">{game.description}</p>
+            <div className="game-facts">
+              <span>
+                <Icon name="users" />
+                <span>
+                  <b>{playerLabel(game)}</b>
+                  <small>
+                    {isImplemented(game.id)
+                      ? 'Solo or pass & play'
+                      : 'Original Arcade'}
+                  </small>
+                </span>
+              </span>
+              {isImplemented(game.id) && (
+                <span>
+                  <Icon name="confetti" />
+                  <span>
+                    <b>Private room</b>
+                    <small>2 players, 2 screens</small>
+                  </span>
+                </span>
+              )}
+            </div>
+            <Link className="primary hero-play" to={`/game/${game.id}`}>
+              {resumable.includes(game.id)
+                ? 'Continue'
+                : isImplemented(game.id)
+                  ? 'Play'
+                  : 'Explore'}{' '}
+              {game.name}
+              <Icon name="arrow-right" />
             </Link>
-          ))}
+            <p className="availability">
+              {isImplemented(game.id)
+                ? 'No accounts. No downloads. Just play.'
+                : 'The complete game is playable in original Arcade.'}
+            </p>
+          </div>
+          <div className="shelf" aria-label="Choose a game">
+            {[...visible]
+              .sort(
+                (a, b) =>
+                  Number(isImplemented(b.id)) - Number(isImplemented(a.id)),
+              )
+              .map((g) => (
+                <button
+                  key={g.id}
+                  className={`shelf-game ${g.id === game.id ? 'selected' : ''}`}
+                  aria-pressed={g.id === game.id}
+                  onClick={() => setSelected(g.id)}
+                >
+                  <span className={`shelf-image world world-${g.category}`} />
+                  <span className="shelf-label">{g.name}</span>
+                  {resumable.includes(g.id) && (
+                    <span className="saved-dot" aria-label="Saved game" />
+                  )}
+                </button>
+              ))}
+          </div>
+        </section>
+      ) : (
+        <section className="empty">
+          <h1>No games found</h1>
+          <p>Try a different search or choose another category.</p>
+        </section>
+      )}
+      <section className="collection">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">A little more play in your day</p>
+            <h2>
+              {resumable.length
+                ? 'Pick up where you left off'
+                : 'Your next favorite is here'}
+            </h2>
+          </div>
+          <p className="count" role="status">
+            {visible.length} games{' '}
+            {category === 'All' ? 'on the shelf' : `in ${category}`}
+          </p>
         </div>
-        {visible.length === 0 && (
-          <p className="empty">
-            No features match. Clear the search or choose another category.
+        {resumable.length > 0 && (
+          <div className="continue-row">
+            {resumable.map((id) => (
+              <Link key={id} to={`/game/${id}`} className="continue-card">
+                <span className="continue-art world world-Puzzle" />
+                <span>
+                  <b>{GAMES.find((g) => g.id === id)?.name}</b>
+                  <small>Your saved match is ready</small>
+                </span>
+                <Icon name="arrow-right" />
+              </Link>
+            ))}
+          </div>
+        )}
+        {!resumable.length && !recent.length && (
+          <p className="shelf-note">
+            Pull up a chair. Start with Tic-Tac-Toe, or explore the full
+            collection.
           </p>
         )}
+        {recent.length > 0 && (
+          <details className="recent">
+            <summary>Recently played</summary>
+            <div className="recent-links">
+              {recent.map((item) => (
+                <Link key={item.id} to={`/game/${item.id}`}>
+                  {GAMES.find((g) => g.id === item.id)?.name}
+                </Link>
+              ))}
+            </div>
+          </details>
+        )}
+        <div className="collection-grid">
+          {visible.map((g, i) => (
+            <GameCard game={g} index={i} key={g.id} />
+          ))}
+        </div>
+        <p className="catalog-note">
+          The new shelf is taking shape. Tic-Tac-Toe is ready here; all 26 games
+          are available in{' '}
+          <a
+            href="https://venkate5hgunda.github.io/arcade/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            original Arcade ↗
+          </a>
+          .
+        </p>
       </section>
     </>
   );
 }
-function Detail() {
+function GameCard({ game, index }: { game: Game; index: number }) {
+  return (
+    <Link
+      className="game-card"
+      to={`/game/${game.id}`}
+      style={{ '--card-index': index } as CSSProperties}
+    >
+      <div className={`card-image world world-${game.category}`}>
+        <span className="card-category">{game.category}</span>
+      </div>
+      <div className="card-copy">
+        <div className="card-meta">
+          <small>{playerLabel(game)}</small>
+          {isImplemented(game.id) && (
+            <span className="ready">Ready to play</span>
+          )}
+        </div>
+        <h3>{game.name}</h3>
+        <p>{game.tagline}</p>
+        <span className="card-action">
+          {isImplemented(game.id) ? 'Let’s play' : 'Explore game'}{' '}
+          <Icon name="arrow-right" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+function RequirementRoute() {
   const { id } = useParams();
-  const item = requirements.find((value) => value.id === id);
-  if (!item)
-    return (
-      <section className="detail">
-        <h1 tabIndex={-1}>Feature not found</h1>
-        <p>This feature is not in the baseline inventory.</p>
-        <Link to="/">Back to all features</Link>
-      </section>
-    );
+  const entry = requirements.find((r) => r.id === id);
   return (
     <section className="detail">
-      <Link className="back" to="/">
-        ← All features
-      </Link>
-      <div className="eyebrow">
-        {item.id} / {item.category} / Planned
-      </div>
-      <h1 tabIndex={-1}>{item.title}</h1>
-      <p className="note">
-        This is a requirement for the redesign. The migrated feature is not
-        implemented in this foundation.
-      </p>
-      <div className="panel">
-        <h2>What must work</h2>
-        <ul>
-          {item.acceptance.map((text) => (
-            <li key={text}>{text}</li>
-          ))}
-        </ul>
-      </div>
-      <div className="panel">
-        <h2>Baseline evidence</h2>
-        <p>Repository paths used to derive this requirement:</p>
-        <ul>
-          {item.sources.map((path) => (
-            <li key={path}>
-              <code>{path}</code>
-            </li>
-          ))}
-        </ul>
-        <h2>Existing coverage</h2>
-        {item.baselineTests.length ? (
+      <Link to="/">← Back to the shelf</Link>
+      <h1>{entry?.title ?? 'Feature not found'}</h1>
+      {entry && (
+        <>
+          <p>
+            Migration status: {entry.status}. See the redesign documentation for
+            the exact implemented scope.
+          </p>
           <ul>
-            {item.baselineTests.map((path) => (
-              <li key={path}>
-                <code>{path}</code>
-              </li>
+            {entry.acceptance.map((text) => (
+              <li key={text}>{text}</li>
             ))}
           </ul>
-        ) : (
-          <p>
-            No dedicated test mapped yet. Add a complete behavior test before
-            parity sign-off.
-          </p>
-        )}
-      </div>
+        </>
+      )}
     </section>
   );
 }
 function Shell() {
+  const [room] = useState(() => new Room());
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  const [theme, setTheme] = useState(() => loadJSON(KEYS.THEME, 'dark'));
+  const [warning, setWarning] = useState('');
   const location = useLocation();
+  const home = location.pathname === '/';
+  useEffect(
+    () =>
+      onStorageFailure(() =>
+        setWarning(
+          'Your browser could not save progress. You can keep playing, but leave this tab open.',
+        ),
+      ),
+    [],
+  );
   useEffect(() => {
-    document.querySelector<HTMLElement>('h1')?.focus();
+    document.documentElement.dataset.theme =
+      theme === 'light' ? 'light' : 'dark';
+  }, [theme]);
+  useEffect(() => {
+    const heading = document.querySelector('main h1');
+    if (heading instanceof HTMLElement) {
+      heading.tabIndex = -1;
+      heading.focus();
+    }
     window.scrollTo(0, 0);
   }, [location.pathname]);
   return (
@@ -169,30 +300,100 @@ function Shell() {
       >
         Skip to content
       </a>
-      <div className="wrap">
-        <header>
-          <Link className="brand" to="/">
-            Arcade<span>✦</span>
+      <header className="app-header">
+        <Link className="brand" to="/" aria-label="Arcade home">
+          <img src="./icons/logo.svg" alt="" />
+          ARCADE<span aria-hidden="true">✦</span>
+        </Link>
+        {home && (
+          <nav className="filters" aria-label="Game categories">
+            {CATEGORIES.map((value) => (
+              <button
+                className="filter"
+                key={value}
+                aria-pressed={category === value}
+                onClick={() => setCategory(value)}
+              >
+                <Icon name={categoryIcons[value]} />
+                {value}
+              </button>
+            ))}
+          </nav>
+        )}
+        <div className="header-tools">
+          {home && (
+            <label className="search">
+              <span className="sr-only">Search games</span>
+              <input
+                type="search"
+                placeholder="Search 26 games…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+          )}
+          <Link className="room-link" to="/room">
+            <Icon name="users" />
+            Room
           </Link>
-          <span className="label">Redesign foundation</span>
-        </header>
-        <main id="main" tabIndex={-1}>
-          <Routes>
-            <Route path="/" element={<Catalog />} />
-            <Route path="/requirements/:id" element={<Detail />} />
-            <Route path="*" element={<Detail />} />
-          </Routes>
-        </main>
-        <footer>
-          <p>
-            React + TypeScript + Vite + React Router · Local development preview
-          </p>
-          <p>
-            Scope: requirements, architecture and runnable foundations. Full
-            feature parity is a release gate.
-          </p>
-        </footer>
-      </div>
+          <button
+            className="icon-button"
+            aria-label={
+              theme === 'dark'
+                ? 'Switch to light theme'
+                : 'Switch to dark theme'
+            }
+            onClick={() => {
+              const next = theme === 'dark' ? 'light' : 'dark';
+              setTheme(next);
+              saveJSON(KEYS.THEME, next);
+            }}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+          </button>
+        </div>
+      </header>
+      <main id="main" tabIndex={-1}>
+        <Routes>
+          <Route
+            path="/"
+            element={<Catalog query={query} category={category} />}
+          />
+          <Route path="/game/:id" element={<GameRoute />} />
+          <Route path="/games/:id" element={<GameRoute />} />
+          <Route path="/room" element={<RoomPage room={room} />} />
+          <Route path="/requirements/:id" element={<RequirementRoute />} />
+          <Route
+            path="*"
+            element={
+              <section className="detail">
+                <h1>Let’s get you back to play.</h1>
+                <Link className="primary" to="/">
+                  Back to the shelf
+                </Link>
+              </section>
+            }
+          />
+        </Routes>
+      </main>
+      {warning && (
+        <div className="storage-warning" role="status">
+          {warning}
+          <button
+            onClick={() => setWarning('')}
+            aria-label="Dismiss storage message"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      <footer>
+        <Link className="brand" to="/">
+          ARCADE<span aria-hidden="true">✦</span>
+        </Link>
+        <p>Good games. Better together.</p>
+        <Link to="/requirements/A01">Redesign progress</Link>
+      </footer>
     </>
   );
 }

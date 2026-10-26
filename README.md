@@ -74,4 +74,4 @@ docs/                              documentation, rules and screenshots
 
 ## 🧭 Redesign
 
-The framework redesign is being developed on `codex/redesign-foundation`. See the [requirements, architecture and runnable foundation](docs/redesign/README.md) for scope, local preview and feature-parity tracking.
+The Living Game Shelf and first playable redesign are on `codex/redesign-first-game`, for review into `codex/redesign-foundation`. See the [redesign preview and documentation](docs/redesign/README.md) for scope, local play and parity tracking.

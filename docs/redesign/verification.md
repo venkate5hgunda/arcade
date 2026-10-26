@@ -1,39 +1,54 @@
 # Verification
 
-## Foundation acceptance
-
-The milestone must pass type checking, production bundling, inventory/source integrity and real browser navigation/filter/detail/recovery checks. Tests inspect the production build and exercise desktop Chromium and mobile WebKit, including no horizontal overflow and reduced motion. Preview isolation checks assert no local/session storage, IndexedDB databases, service-worker registrations or external requests.
-
-The inventory test hashes the actual baseline Git objects, verifies every cited source/test exists, and checks local documentation links. CI fetches complete history so baseline objects are available. The game/exercise catalog coverage check prevents accidentally omitting a known entry. Screenshots are generated from the built preview.
-
-## Execution evidence
-
-Verified on 2026-10-24 against the source baseline recorded in [the inventory](parity.json):
+Verified 2026-10-26 for the Living Game Shelf / first-game milestone. This supersedes the foundation-only evidence from 2026-10-24.
 
 | Check | Result |
 | --- | --- |
-| Foundation type check and production build | Passed |
-| Foundation inventory / source-hash / documentation checks | 4/4 passed |
-| Desktop Chromium + mobile WebKit browser checks | 10/10 passed |
-| Automated WCAG A/AA checks on catalog and detail routes | No violations in tested pages |
-| Root JavaScript baseline suite | 203/203 passed |
-| Desktop and mobile captures | Generated from production build and visually inspected |
+| Type checking and production bundling | Passed |
+| Frozen baseline / catalog / documentation inventory | 4 passed |
+| Compiled TypeScript domain, persistence and room checks | 11 passed |
+| Chromium desktop + WebKit iPhone browser flows | 18 passed |
+| Automated WCAG A/AA checks | No violations on catalog, setup, active board and room |
+| Original JavaScript suite, Node 22 | 203 passed |
+| Original Python movie suite | 80 passed |
+| Real desktop/mobile captures | Generated from production build; see [design QA](design-qa.md) |
 
-Browser coverage traverses every requirement route, filters and searches the live inventory, verifies detail criteria, reload/deep-link behavior, Back navigation, empty search, unknown-route recovery, keyboard input, reduced-motion operation, horizontal overflow and absence of storage/worker/external-request side effects. It is foundation evidence, not evidence that migrated gameplay is complete.
+## What the tests prove
 
-Commands: `npm --prefix redesign run build`, `npm --prefix redesign test`, `npm --prefix redesign run check:format`, `npm --prefix redesign run test:browser`, `npm --prefix redesign run capture`. Browser tests use the built preview; baseline JavaScript tests use the existing root runner. Dependencies are exact-pinned with package-local locks.
+`redesign/checks/unit/domain.check.ts` traverses actual moves, terminal-state validation, every possible human branch against minimax, baseline session envelopes/expiry, recent-game shapes, names, scores and storage-denial handling. It compares all catalog IDs, player limits, categories and icons with the original registry.
 
-Arcade's JavaScript baseline passed on Node 22, matching its CI configuration. On local Node 26, the existing lobby progressive-disclosure fixture failed at `test/multiplayer.test.js:1229` (Your name field visibility). No production game source changed; use Node 22 for the baseline runner until its fixture/runtime compatibility is reviewed. The Python movie pipeline passed 80/80, including the HTTP private-file-denial test, with local-server permission.
+`redesign/checks/unit/room.check.ts` runs admission through an injected transport, tests wrong-seat and stale-revision rejection, win/draw accounting, rematch, host restore, same-seat reconnect, mismatched names and malformed/unrelated signals. The production transport always uses native WebRTC.
 
-## Trace findings and fixes
+`redesign/checks/browser/foundation.spec.ts` exercises the **built application** in Chromium and mobile WebKit: all 26 game routes and 34 requirement routes, browse/filter/search/selection, original-game links, named local play, O victory, resume/reload, AI/keyboard/reset, expired/invalid data, quota denial, responsive layouts, persisted theme choice and automated accessibility. It also exchanges actual invitation/answer URLs between two separate browser contexts, plays a room match, rematches, reloads the host, reconnects the same guest and verifies the retained board.
 
-The trace covered source registries and UI entry points, domain transitions, data keys/checkpoints, lifecycle cleanup, multiplayer/private views or reminder/push authority, PWA assets, existing regressions, current remote decisions, new package dependencies, documentation references and CI/test discovery.
+The native room test uses loopback candidate addresses and disables public STUN in its **test fixture only**. This runner cannot route headless mDNS/LAN candidates: a minimal native WebRTC pair stalled identically, with ICE requests and no responses. Loopback connects real native DTLS/SCTP data channels; application signaling, validation and UI remain the production pipeline. This is evidence of local real-browser transport, not cross-network qualification or TURN coverage. Production continues to gather ordinary candidates and uses Google STUN when online.
 
-A missed trace of Node's automatic root test discovery initially let it execute nested Playwright specs with the wrong runner. The new package now keeps checks under `redesign/checks/` and invokes inventory checks explicitly; original root test discovery passes independently. The browser pipeline also caught persistent empty-search state on Pick's recovery route; home navigation clears transient filters. These corrections were verified before committing.
+## Commands and environment
 
-The React production build reports dependency-level `use client` directive warnings from React Router; these directives do not control this entirely client-rendered application. Builds and both browser engines pass. Svelte's checker currently supports TypeScript 5/6, so Pick pins 6.0.3; the React packages pin 7.0.2. Dependency resolution was verified without force or legacy-peer overrides.
+```sh
+npm --prefix redesign run check:format
+npm --prefix redesign test
+npm --prefix redesign run build
+npm --prefix redesign run test:browser
+npm --prefix redesign run capture
+node --test test/*.test.js # Node 22
+npm run test:movies
+```
 
+Use `ARCADE_REUSE_PREVIEW=1` for browser checks/captures only when a known production preview is already running. Tests compile TypeScript to ESM in the ignored package cache and execute absolute test paths. They do not require a new runtime dependency. Keep checks outside nested `test/` directories so the original root runner cannot discover them accidentally.
 
-## Remaining release work
+The original JavaScript fixture still fails under Node 26 at `test/multiplayer.test.js:1229`; all 203 tests pass on Node 22, as in CI. The Python private-file-denial test requires permission to run its local HTTP fixture. These are pre-existing environment constraints. React Router produces dependency-level `use client` warnings in this entirely client-rendered build; bundling succeeds.
 
-All parity entries are planned. No legacy gameplay flow, saved-data migration, offline installation, production push subscription, multiplayer recovery or real-model qualification has been implemented or requalified by this foundation. Existing tests are baseline evidence and remain required during later implementation. Full game/practice flows, keyboard/screen-reader behavior, light/dark palettes and physical device sound/haptics/push need feature-specific sign-off.
+## Change and decision trace
+
+Traced catalog registry and every stable ID → category/search/selected shelf → game routes and legacy `#/games/:id` aliases → shared setup/turn/board UI → pure game rules and AI → session/settings/name/recent/score readers and writers → room negotiation, admission, authoritative moves, serialized snapshots and recovery → docs, parity, CI and original regressions.
+
+The pending implementation had missed traces: recent games were written as strings instead of `{id, at}`, scores were flattened instead of nested by game, any win was attributed to Player 1, finished-state validation contradicted itself, arrow-key instructions had no handler, and the room used placeholder SDP. The implementation and pipeline tests correct these defects. Earlier claims of nondeterministic test runners were unsupported: the abandoned tests expected an extra X and accepted a finished checkpoint without its required flag.
+
+Additional edits surfaced by tracing: preserve original-game `#/games/` handoff links, retain the requirements explorer, cancel AI timers on navigation, save the initial board and rematches, prune invalid resumable boards, keep the same reconnect name/seat, validate external snapshots, show connection/storage failures, and keep the selected playable game visible on the shelf. Browser-only network restrictions belong in test setup, not production networking.
+
+The user's approved option 2 and Phase 2 review-PR scope supersede the foundation's temporary explorer homepage. The React stack, baseline source freeze, data contracts, isolated preview, no automatic merge/deploy and phased parity decisions remain intact.
+
+## Remaining release gates
+
+Only G19 is fully implemented. A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 25 redesigned games, QR admission, spectators/private information, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.

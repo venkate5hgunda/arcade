@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "app": "Arcade",
   "baselineCommit": "ae1136d6e544784811e5c334ee76d6c54b6921a3",
-  "milestone": "foundation",
+  "milestone": "first-game",
   "requirements": [
     {
       "id": "A01",
@@ -24,7 +24,8 @@
       "baselineTests": [
         "test/game-categories.test.js",
         "test/game-session.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A02",
@@ -50,7 +51,8 @@
         "test/game-help.test.js",
         "test/player-names.test.js",
         "test/turn-indicator.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A03",
@@ -63,13 +65,14 @@
       ],
       "acceptance": [
         "Preserve arcade-prefixed settings, names, scores, recent games and local checkpoints.",
-        "Use each game\u2019s actual expiry from game-session.js; timed games retain absolute deadlines across hide/reload.",
+        "Use each game’s actual expiry from game-session.js; timed games retain absolute deadlines across hide/reload.",
         "Validate checkpoints; finished/expired rounds never resurrect; preference/high-score data survives expiry.",
         "Surface storage failures without blocking playable in-memory sessions."
       ],
       "baselineTests": [
         "test/game-session.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A04",
@@ -90,7 +93,8 @@
       "baselineTests": [
         "test/multiplayer.test.js",
         "test/room-qr.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A05",
@@ -112,7 +116,8 @@
       "baselineTests": [
         "test/multiplayer.test.js",
         "test/remote-match.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A06",
@@ -132,7 +137,8 @@
       ],
       "baselineTests": [
         "test/multiplayer.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A07",
@@ -156,7 +162,8 @@
         "test/audio.test.js",
         "test/haptics.test.js",
         "test/theme.test.js"
-      ]
+      ],
+      "implementationScope": "Partial: Living Game Shelf and Tic-Tac-Toe only; see docs/redesign/backlog.md for remaining acceptance scope."
     },
     {
       "id": "A08",
@@ -195,7 +202,7 @@
       "acceptance": [
         "Display name Show; three to eight shared-device players, four chits each, concealed simultaneous clockwise passes.",
         "Four matching chits unlock slap, N through 1 stack scoring; 3/5/10 rounds and shared wins on ties; reload conceals hands; local only.",
-        "Preserve catalog player range 3\u20138; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 3–8; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
@@ -214,7 +221,7 @@
       "acceptance": [
         "Four to twenty players in two teams; 30/60/90-second turns, 4/6/8 total turns, correct +1, skip 0, forbidden -1.",
         "Fifty original cards without repeats until exhausted; private clue giver/referee handoff; deadline continues hidden/reloaded; local only.",
-        "Preserve catalog player range 4\u201320; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 4–20; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
@@ -232,7 +239,7 @@
       ],
       "acceptance": [
         "Solo random five-letter practice, six guesses, curated offline vocabulary, repeated-letter accounting, physical/on-screen keyboard and accessible symbol feedback; new puzzle reset; local only.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
@@ -250,7 +257,7 @@
       ],
       "acceptance": [
         "Two-player paddle/puck controls; fixed-step collisions, drag, rebounds and goals; opening puck waits at center and post-goal serve waits on conceding half.",
-        "Preserve catalog player range 2\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/air-hockey.test.js"
@@ -268,7 +275,7 @@
       ],
       "acceptance": [
         "Two-player rack, aiming, disc collisions, pockets, scratches, assigned groups and house-rule eight-ball win/loss.",
-        "Preserve catalog player range 2\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -284,7 +291,7 @@
       ],
       "acceptance": [
         "Timed solo target interaction, hit/miss scoring and absolute-deadline resume.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -300,7 +307,7 @@
       ],
       "acceptance": [
         "Two to four local/room players; fair dice, square-by-square travel, ladders/snakes and legal finish; randomized non-intersecting board including long snake from 99.",
-        "Preserve catalog player range 2\u20134; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -316,7 +323,7 @@
       ],
       "acceptance": [
         "Two to four local/room players; full 52-cell cross track, legal token choice, capture, home path and victory; matching unnumbered pieces and active-home feedback.",
-        "Preserve catalog player range 2\u20134; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -334,7 +341,7 @@
         "Three to four local/room players; opening dice ties and snake placement; roads/distance, resource production, robber/discards, bank/harbor/player trades, development cards and ten-point victory.",
         "Classic/changing nine harbors, illustrated/colorblock terrain and four adjacency options retain persistence.",
         "Inspect/zoom/pan full island with per-seat viewport; hidden cargo and deck remain private; harbor access derives from its two coastal junctions.",
-        "Preserve catalog player range 3\u20134; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 3–4; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/catan.test.js"
@@ -353,7 +360,7 @@
       "acceptance": [
         "Two to six local/room players; Indian-city property board, buying, auctions, rent ladders, even building, mortgages, jail, cards, trades, debt and bankruptcy.",
         "Inspect any deed; primary decisions precede scrollable board; non-turn auction/trade responses are authorized; preserve private deck and round/revision checks.",
-        "Preserve catalog player range 2\u20136; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–6; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/business.test.js"
@@ -371,7 +378,7 @@
       ],
       "acceptance": [
         "Local one/two-player modes and room duel; legal moves, check, castling, en passant, promotion and end conditions represented by current game.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/chess-pieces.test.js"
@@ -391,7 +398,7 @@
         "Three to twenty players; 630 original prompts across 21 categories plus approved Telugu movies; Classic/Pair mode.",
         "Choose fixed/random imposter count bounded by table size, hint/category/fellow-imposter visibility and categories.",
         "Private reveal; round votes eliminate top candidate, ties spare all; crew wins at zero imposters and imposters at parity.",
-        "Preserve catalog player range 3\u201320; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 3–20; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/imposter.test.js"
@@ -409,7 +416,7 @@
       ],
       "acceptance": [
         "Five to ten players, rooms only; host-held roles, night actions, private information, secret votes, elimination, winning teams and recovery per existing rules.",
-        "Preserve catalog player range 5\u201310; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 5–10; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/mafia.test.js"
@@ -427,7 +434,7 @@
       ],
       "acceptance": [
         "Two to eight players; actor/team turns, timer, categories, scoring and reveal; Telugu movies show cast/synopsis to actor and after turn.",
-        "Preserve catalog player range 2\u20138; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–8; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -443,7 +450,7 @@
       ],
       "acceptance": [
         "One/two-player local modes and room duel; simultaneous hidden choices, reveal, win/draw scoring and replay.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -459,7 +466,7 @@
       ],
       "acceptance": [
         "Solo against dealer; deck, hit, stand, double down, stakes, bust and settlement.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -475,7 +482,7 @@
       ],
       "acceptance": [
         "Two players, private room or covered local handoff; suit/rank matches, wild eight suit, drawing, victory and host-owned deck.",
-        "Preserve catalog player range 2\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/crazy-eights.test.js"
@@ -494,7 +501,7 @@
       "acceptance": [
         "Two to twenty players, private room or local handoff; matching color/value, wilds, skip/reverse, draw penalties without stacking, one-card callouts/catches and +4 bluff challenges.",
         "Use two decks above ten players; host-private hands/deck and recipient-specific recovery.",
-        "Preserve catalog player range 2\u201320; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 2–20; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/uno.test.js"
@@ -504,7 +511,7 @@
       "id": "G19",
       "title": "Tic-Tac-Toe",
       "category": "Puzzle",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/tictactoe.js",
         "js/game-catalog.js",
@@ -512,9 +519,14 @@
       ],
       "acceptance": [
         "One/two-player local modes and room duel; legal cells, computer option, three-in-row win/draw and reset.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/domain.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/foundation.spec.ts"
+      ]
     },
     {
       "id": "G20",
@@ -528,7 +540,7 @@
       ],
       "acceptance": [
         "One/two-player local modes and room duel; gravity drops, computer option, four-in-line wins/draws and full-column rejection.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -544,7 +556,7 @@
       ],
       "acceptance": [
         "Solo board settings, first-click safety, reveal/flag, loss/win and saved board.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -560,7 +572,7 @@
       ],
       "acceptance": [
         "One/two-player matching pairs; concealed cards, delayed mismatch flips, scoring and turn progression.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -576,7 +588,7 @@
       ],
       "acceptance": [
         "Keyboard/swipe slides, once-per-move merges, staged movement/merge/spawn, score, 2048 continuation and game over.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/2048.test.js"
@@ -594,7 +606,7 @@
       ],
       "acceptance": [
         "Watch growing color sequence, input phase, correct/failure feedback and timed-session resume.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     },
@@ -610,7 +622,7 @@
       ],
       "acceptance": [
         "One/two-player word modes, keyboard/letter entry, repeated-guess handling, mistake limit and win/loss.",
-        "Preserve catalog player range 1\u20132; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": [
         "test/hangman.test.js"
@@ -628,7 +640,7 @@
       ],
       "acceptance": [
         "Solo shuffled words, answer checking, hints, progress and timer.",
-        "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
       ],
       "baselineTests": []
     }

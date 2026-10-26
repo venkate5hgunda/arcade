@@ -1,7 +1,7 @@
-name: Redesign foundation
+name: Arcade redesign
 on:
   push:
-    branches: [codex/redesign-foundation]
+    branches: [codex/redesign-foundation, codex/redesign-first-game]
   pull_request:
     paths: ['redesign/**', 'docs/redesign/**', 'docs/images/redesign-*', '.github/workflows/redesign.yml']
   workflow_dispatch:

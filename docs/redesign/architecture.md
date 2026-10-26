@@ -2,7 +2,7 @@
 
 ## Decision and scope
 
-Use **React + TypeScript + Vite + React Router**. This supersedes the original no-frontend-build constraint for the redesign, following the framework discussion and explicit redesign request. The existing root app remains the behavior reference during phased migration. The first milestone implements the foundation and traceable feature explorer only.
+Use **React + TypeScript + Vite + React Router**. This supersedes the original no-frontend-build constraint for the redesign, following the framework discussion and explicit redesign request. The existing root app remains the behavior reference during phased migration. The foundation milestone remains the source inventory; Phase 2 implements the selected Living Game Shelf, local Tic-Tac-Toe and a two-browser room duel.
 
 Vite builds static assets; hash navigation keeps preview deep links independent of server rewrites. A production route scheme will preserve existing inbound hashes or supply an explicit alias adapter. Runtime servers are introduced only for features that need them. Dependencies are exact-pinned with a separate lockfile; upgrades receive their own review.
 
@@ -16,8 +16,8 @@ User input → route/view → feature controller → domain transition
                            persistence / transport
 ```
 
-- `redesign/src/App.tsx` owns the current foundation shell and route composition.
-- `redesign/src/lib/catalog.ts` adapts the durable parity inventory for the explorer. Production logic is not imported into this preview.
+- `redesign/src/App.tsx` owns the shelf, header and route composition; `src/features/Game.tsx` and `Room.tsx` own playable flows.
+- `redesign/src/lib/catalog.ts` adapts the durable parity inventory for the retained requirements explorer. `games.ts` owns the typed catalog, `tictactoe.ts` pure rules, `profile.ts` the baseline-shaped preferences/scores/recent entries, and `session.ts` expiring checkpoints. Production logic is not imported into this preview.
 - `redesign/src/styles.css` owns shared layout; `theme.css` owns this product's tokens. Avoid scattered override stylesheets.
 - Add `src/features/<feature>/` for cohesive view/controller code when that feature is implemented, `src/domain/` for pure rules, `src/platform/` for browser persistence/audio/timers/network, and `src/components/` for genuinely shared controls. Do not create empty abstraction layers in advance.
 - `docs/redesign/` owns requirements, decisions, migration and evidence. `docs/images/` owns actual browser captures. Existing root source/tests remain the reference during migration.
@@ -30,7 +30,7 @@ Randomness, time and identifiers are injected into pure rules so tests can repla
 
 ## Routes and composition
 
-Target product surfaces: Catalog, game/:id, room lobby, invitation/answer handoff, game setup, settings/help. Foundation routes are `/` and `/requirements/:id` within the URL hash. Unknown feature routes provide recovery; route changes focus the heading. Catalog search and category buttons are accessible native controls. The browser tests cover actual built navigation and data rendering.
+Target product surfaces: Catalog, game/:id, room lobby, invitation/answer handoff, game setup, settings/help. Routes within the hash are `/`, `/game/:id`, the original `/games/:id` alias, `/room` and `/requirements/:id`. Unknown feature routes provide recovery; route changes focus the heading. Catalog search and category buttons are accessible native controls. The browser tests cover actual built navigation and data rendering.
 
 ## React and game boundaries
 
@@ -42,7 +42,7 @@ Model multiplayer through a transport interface and an authority controller. Pre
 
 ## Delivery, PWA and security
 
-The foundation serves on loopback on a dedicated port, imports only its own code and the public parity JSON, and never registers a service worker. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
+The redesign serves on loopback on a dedicated port, imports only its own runtime code and public parity JSON, and never registers a service worker. Local data uses the original `arcade:` formats; room host checkpoints use a tab-scoped redesign-specific key. The first room controller supports exactly two named seats, public Tic-Tac-Toe snapshots, host-owned results, and round/revision validation. It is deliberately independent of the broader legacy room wire protocol. Real WebRTC creates offers/answers and encrypted data channels; a factory permits domain tests to supply a transport. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
 
 Before product rollout, introduce a dedicated manifest, asset graph and scope-owned service worker, then test install/update/offline behavior. Avoid CDN runtime dependencies. Static hosting must include the correct repository base path and all lazy feature assets. Use a separate preview origin for any later migration experiments so production storage and workers cannot be modified accidentally.
 
@@ -50,7 +50,7 @@ Treat imported content as text and validate serialized input at boundaries. Keep
 
 ## Design direction
 
-Retain the app's identity while improving clarity and movement. Use the current foundation's bright palette and original geometric illustration as an initial direction, not a final art system. Future game/exercise views require task-specific original artwork, visible action/state feedback, compact secondary settings and full keyboard/touch behavior. Visual approval is based on real desktop/mobile flows and captures, including light/dark and reduced motion.
+Retain the app's identity while improving clarity and movement. The approved option 2, Living Game Shelf, supersedes the temporary geometric foundation. Use navy/coral/cream/teal, a wide illustrated stage and horizontal selected-game shelf. Original Firefly family illustrations and existing Tabler/Arcade assets are local; see artwork.md. Future game/exercise views require task-specific original artwork, visible action/state feedback, compact secondary settings and full keyboard/touch behavior. Visual approval is based on real desktop/mobile flows and captures, including light/dark and reduced motion.
 
 ## Test-runner isolation
 
