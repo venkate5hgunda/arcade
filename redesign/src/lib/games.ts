@@ -1,3 +1,4 @@
+import { PUZZLE_IDS } from './puzzles.ts';
 // Game catalog, ported from js/game-catalog.js.
 //
 // The durable, observable catalog is the source of truth for every game in
@@ -330,7 +331,7 @@ export const CATEGORIES = [
 ] as const;
 
 /** Games with a migrated view. Others render an honest "Coming soon" screen. */
-export const implementedGameIds = new Set<string>(['tictactoe']);
+export const implementedGameIds = new Set<string>(['tictactoe', ...PUZZLE_IDS]);
 
 /** Room-supported games, matching the baseline's `REMOTE_GAMES`. */
 export const ROOM_GAMES = new Set<string>([

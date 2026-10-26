@@ -2,9 +2,9 @@
 
 A vibrant, illustrated shelf for good games and better company.
 
-**Phase 2 is implemented:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
+**Six puzzle games are implemented:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
 
-The other 25 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
+Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. The other 20 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
 
 | Document | Purpose |
 | --- | --- |
@@ -13,6 +13,7 @@ The other 25 games link to their working original Arcade versions. This is a rev
 | [Migration and decisions](migration.md) | Prior decisions, data contracts and rollout |
 | [Verification](verification.md) | Current test evidence and trace findings |
 | [Design QA](design-qa.md) | Reference comparison and responsive checks |
+| [Game ports](game-ports.md) | Family-by-family migration status and current evidence |
 | [Backlog](backlog.md) | Remaining game families and release work |
 | [Artwork](artwork.md) | Illustration and icon provenance |
 | [Parity inventory](parity.json) | Honest implemented and partial scopes |
@@ -42,7 +43,7 @@ Tests and captures normally start their own production preview. To use a preview
 
 1. Open **Room**, enter a name, and create a room.
 2. Send the generated invitation to one guest. They open it, enter their name, and return their answer link.
-3. Paste that answer into the original host tab. When both seats connect, start Tic-Tac-Toe.
+3. Paste that answer into the original host tab. When both seats connect, choose Tic-Tac-Toe or Connect Four and start.
 4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. The board and standings survive in the host tab.
 
 Rooms use real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
@@ -57,4 +58,4 @@ Use a separate preview origin: the redesign deliberately preserves the original 
 | --- | --- |
 | <img src="../images/redesign-mobile.png" alt="Living Game Shelf on mobile" width="280" /> | <img src="../images/redesign-game-mobile.png" alt="Playable Tic-Tac-Toe on mobile" width="280" /> |
 
-Baseline: [`ae1136d6e544`](https://github.com/venkate5hgunda/arcade/commit/ae1136d6e544784811e5c334ee76d6c54b6921a3). Review branch: `codex/redesign-first-game`, targeting `codex/redesign-foundation`.
+Baseline: [`ae1136d6e544`](https://github.com/venkate5hgunda/arcade/commit/ae1136d6e544784811e5c334ee76d6c54b6921a3). First milestone: `codex/redesign-first-game` → `codex/redesign-foundation`. Puzzle ports: `codex/redesign-puzzle-games` → `codex/redesign-first-game`, stacked while the first PR is reviewed.

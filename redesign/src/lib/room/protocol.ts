@@ -1,3 +1,4 @@
+import { c4Drop, c4Win, validC4 } from '../puzzles.ts';
 import { applyMove, emptyBoard, findWin, isValidState } from '../tictactoe.ts';
 import type { LocalState } from '../tictactoe.ts';
 import { waitForIce, webrtcConnectionFactory } from './transport.ts';
@@ -10,6 +11,7 @@ export interface Member {
 }
 export interface Match extends LocalState {
   mode: 'pvp';
+  gameId?: 'tictactoe' | 'connect-four';
   round: number;
   revision: number;
 }
@@ -61,7 +63,10 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     integer(s.draws) &&
     (s.match === null ||
       (s.members.length === 2 &&
-        isValidState(s.match, true) &&
+        (s.match.gameId === 'connect-four'
+          ? validC4(s.match, true)
+          : (!s.match.gameId || s.match.gameId === 'tictactoe') &&
+            isValidState(s.match, true)) &&
         s.match.mode === 'pvp' &&
         integer(s.match.round) &&
         integer(s.match.revision)))
@@ -451,7 +456,10 @@ export class Room {
     this.checkpoint();
     this.emit();
   }
-  start() {
+  start(
+    gameId: 'tictactoe' | 'connect-four' = this.snapshot?.match?.gameId ??
+      'tictactoe',
+  ) {
     if (
       this.role !== 'host' ||
       !this.snapshot ||
@@ -461,7 +469,8 @@ export class Room {
       throw new Error('Wait for both players to connect.');
     this.snapshot.match = {
       mode: 'pvp',
-      board: emptyBoard(),
+      board: gameId === 'connect-four' ? Array(42).fill(0) : emptyBoard(),
+      gameId,
       current: 1,
       over: false,
       round: (this.snapshot.match?.round ?? -1) + 1,
@@ -495,18 +504,32 @@ export class Room {
       s.revision !== revision
     )
       return;
-    if (!Number.isInteger(cell) || cell < 0 || cell > 8 || s.board[cell] !== 0)
+    if (
+      !Number.isInteger(cell) ||
+      cell < 0 ||
+      cell >= (s.gameId === 'connect-four' ? 7 : 9)
+    )
       return;
-    const result = applyMove(s.board, s.current, cell);
-    room.match = {
-      ...s,
-      board: result.board,
-      current: result.current,
-      over: result.finished,
-      revision: s.revision + 1,
-    };
-    if (result.finished) {
-      if (result.win) room.wins[result.current - 1]++;
+    let next: LocalState;
+    try {
+      if (s.gameId === 'connect-four') next = c4Drop(s, cell);
+      else {
+        const result = applyMove(s.board, s.current, cell);
+        next = {
+          mode: 'pvp',
+          board: result.board,
+          current: result.current,
+          over: result.finished,
+        };
+      }
+    } catch {
+      return;
+    }
+    room.match = { ...s, ...next, mode: 'pvp', revision: s.revision + 1 };
+    if (next.over) {
+      const win =
+        s.gameId === 'connect-four' ? c4Win(next.board) : findWin(next.board);
+      if (win) room.wins[next.current - 1]++;
       else room.draws++;
     }
     this.publish();

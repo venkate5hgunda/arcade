@@ -296,114 +296,172 @@ test('catalog, setup, board and room meet automated accessibility checks', async
   ).toEqual([]);
 });
 
-test('real two-browser WebRTC invitation, play, win, rematch and host recovery', async ({
-  page: host,
-  browser,
-}) => {
-  test.setTimeout(90_000);
-  const guestContext = await browser.newContext();
-  // Real data channels over loopback: headless mDNS/LAN routing is unavailable
-  // on this runner. Only candidate addresses are normalized; SDP negotiation,
-  // DTLS/SCTP, admission, wire messages and both UIs remain the production path.
-  const localIce = () => {
-    Object.defineProperty(navigator, 'onLine', { get: () => false });
-    const Native = window.RTCPeerConnection;
-    window.RTCPeerConnection = class extends Native {
-      setRemoteDescription(description: RTCSessionDescriptionInit) {
-        return super.setRemoteDescription({
-          ...description,
-          sdp: description.sdp?.replace(
-            /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-            (_match, prefix) => prefix + '127.0.0.1',
-          ),
-        });
-      }
+for (const roomGame of ['tictactoe', 'connect-four'] as const) {
+  test(`real two-browser WebRTC ${roomGame}: invitation, play, win, rematch and host recovery`, async ({
+    page: host,
+    browser,
+  }) => {
+    test.setTimeout(90_000);
+    const guestContext = await browser.newContext();
+    // Real data channels over loopback: headless mDNS/LAN routing is unavailable
+    // on this runner. Only candidate addresses are normalized; SDP negotiation,
+    // DTLS/SCTP, admission, wire messages and both UIs remain the production path.
+    const localIce = () => {
+      Object.defineProperty(navigator, 'onLine', { get: () => false });
+      const Native = window.RTCPeerConnection;
+      window.RTCPeerConnection = class extends Native {
+        setRemoteDescription(description: RTCSessionDescriptionInit) {
+          return super.setRemoteDescription({
+            ...description,
+            sdp: description.sdp?.replace(
+              /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
+              (_match, prefix) => prefix + '127.0.0.1',
+            ),
+          });
+        }
+      };
     };
-  };
-  await host.context().addInitScript(localIce);
-  await guestContext.addInitScript(localIce);
-  const guest = await guestContext.newPage();
-  const errors: string[] = [];
-  host.on('pageerror', (e) => errors.push(e.message));
-  guest.on('pageerror', (e) => errors.push(e.message));
-  try {
-    await host.goto('/#/room');
-    await host.getByLabel('Your room name').fill('Mira');
-    await host
-      .getByRole('button', { name: 'Create a room', exact: true })
-      .click();
-    const invitation = host.getByLabel('Invitation to share');
-    await expect(invitation).toHaveValue(/invite=/);
-    await guest.goto(await invitation.inputValue());
-    await guest.getByLabel('Your room name').fill('Kai');
-    await guest.getByRole('button', { name: 'Join room', exact: true }).click();
-    await expect(guest.getByLabel('Answer to share')).toHaveValue(/answer=/);
-    await host
-      .getByLabel('Guest’s answer link')
-      .fill(await guest.getByLabel('Answer to share').inputValue());
-    await host.getByRole('button', { name: 'Accept answer' }).click();
-    await expect(
-      host.getByRole('button', { name: 'Start Tic-Tac-Toe' }),
-    ).toBeVisible({ timeout: 20_000 });
-    await host.getByRole('button', { name: 'Start Tic-Tac-Toe' }).click();
-    await expect(
-      guest.getByRole('heading', { name: 'Mira’s turn' }),
-    ).toBeVisible();
-    await expect(guest.locator('.square').first()).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    );
-    for (const [player, index] of [
-      [host, 0],
-      [guest, 3],
-      [host, 1],
-      [guest, 4],
-      [host, 2],
-    ] as const) {
+    await host.context().addInitScript(localIce);
+    await guestContext.addInitScript(localIce);
+    const guest = await guestContext.newPage();
+    const errors: string[] = [];
+    host.on('pageerror', (e) => errors.push(e.message));
+    guest.on('pageerror', (e) => errors.push(e.message));
+    try {
+      await host.goto('/#/room');
+      await host.getByLabel('Your room name').fill('Mira');
+      await host
+        .getByRole('button', { name: 'Create a room', exact: true })
+        .click();
+      const invitation = host.getByLabel('Invitation to share');
+      await expect(invitation).toHaveValue(/invite=/);
+      await guest.goto(await invitation.inputValue());
+      await guest.getByLabel('Your room name').fill('Kai');
+      await guest
+        .getByRole('button', { name: 'Join room', exact: true })
+        .click();
+      await expect(guest.getByLabel('Answer to share')).toHaveValue(/answer=/);
+      await host
+        .getByLabel('Guest’s answer link')
+        .fill(await guest.getByLabel('Answer to share').inputValue());
+      await host.getByRole('button', { name: 'Accept answer' }).click();
       await expect(
-        player.getByRole('heading', { name: 'Your turn' }),
+        host.getByRole('button', { name: 'Start Tic-Tac-Toe' }),
+      ).toBeVisible({ timeout: 20_000 });
+      if (roomGame === 'connect-four')
+        await host
+          .getByRole('combobox', { name: 'Room game' })
+          .selectOption('connect-four');
+      await host
+        .getByRole('button', {
+          name:
+            roomGame === 'connect-four'
+              ? 'Start Connect Four'
+              : 'Start Tic-Tac-Toe',
+        })
+        .click();
+      await expect(
+        guest.getByRole('heading', { name: 'Mira’s turn' }),
       ).toBeVisible();
-      await player.locator('.square').nth(index).click();
+      if (roomGame === 'connect-four')
+        await expect(
+          guest.getByRole('button', { name: 'Drop in column 1', exact: true }),
+        ).toBeDisabled();
+      else
+        await expect(guest.locator('.square').first()).toHaveAttribute(
+          'aria-disabled',
+          'true',
+        );
+      const moves =
+        roomGame === 'connect-four'
+          ? ([
+              [host, 0],
+              [guest, 1],
+              [host, 0],
+              [guest, 1],
+              [host, 0],
+              [guest, 1],
+              [host, 0],
+            ] as const)
+          : ([
+              [host, 0],
+              [guest, 3],
+              [host, 1],
+              [guest, 4],
+              [host, 2],
+            ] as const);
+      const move = async (player: typeof host, index: number) => {
+        if (roomGame === 'connect-four')
+          await player
+            .getByRole('button', {
+              name: `Drop in column ${index + 1}`,
+              exact: true,
+            })
+            .click();
+        else await player.locator('.square').nth(index).click();
+      };
+      for (const [player, index] of moves) {
+        await expect(
+          player.getByRole('heading', { name: 'Your turn' }),
+        ).toBeVisible();
+        await move(player, index);
+      }
+      for (const player of [host, guest])
+        await expect(
+          player.getByRole('heading', { name: 'Mira wins!' }),
+        ).toBeVisible();
+      await host.getByRole('button', { name: 'Play again' }).click();
+      await move(host, roomGame === 'connect-four' ? 3 : 4);
+      await expect(
+        guest.getByRole('heading', { name: 'Your turn' }),
+      ).toBeVisible();
+      await host.reload();
+      await expect(
+        host.getByRole('heading', { name: 'Match paused' }),
+      ).toBeVisible();
+      await host
+        .getByRole('button', { name: 'Create reconnect invitation' })
+        .click();
+      await expect(host.getByLabel('Invitation to share')).toHaveValue(
+        /invite=/,
+      );
+      const newInvite = await host
+        .getByLabel('Invitation to share')
+        .inputValue();
+      // Opening a new invitation restores the same guest seat on a fresh document.
+      await guest.goto(newInvite);
+      await guest.getByLabel('Your room name').fill('Kai');
+      await guest
+        .getByRole('button', { name: 'Join room', exact: true })
+        .click();
+      await expect(guest.getByLabel('Answer to share')).toHaveValue(/answer=/);
+      await host
+        .getByLabel('Guest’s answer link')
+        .fill(await guest.getByLabel('Answer to share').inputValue());
+      await host.getByRole('button', { name: 'Accept answer' }).click();
+      await expect(
+        guest.getByRole('heading', { name: 'Your turn' }),
+      ).toBeVisible({ timeout: 20_000 });
+      if (roomGame === 'connect-four')
+        await expect(
+          guest.getByRole('img', { name: 'Row 6, column 4: red', exact: true }),
+        ).toBeVisible();
+      else
+        await expect(
+          guest.getByRole('button', { name: 'Row 2, column 2: X' }),
+        ).toBeVisible();
+      await move(guest, 0);
+      if (roomGame === 'connect-four')
+        await expect(
+          host.getByRole('img', { name: 'Row 6, column 1: gold', exact: true }),
+        ).toBeVisible();
+      else
+        await expect(
+          host.getByRole('button', { name: 'Row 1, column 1: O' }),
+        ).toBeVisible();
+      expect(errors).toEqual([]);
+    } finally {
+      await guestContext.close();
     }
-    for (const player of [host, guest])
-      await expect(
-        player.getByRole('heading', { name: 'Mira wins!' }),
-      ).toBeVisible();
-    await host.getByRole('button', { name: 'Play again' }).click();
-    await host.locator('.square').nth(4).click();
-    await expect(
-      guest.getByRole('heading', { name: 'Your turn' }),
-    ).toBeVisible();
-    await host.reload();
-    await expect(
-      host.getByRole('heading', { name: 'Match paused' }),
-    ).toBeVisible();
-    await host
-      .getByRole('button', { name: 'Create reconnect invitation' })
-      .click();
-    await expect(host.getByLabel('Invitation to share')).toHaveValue(/invite=/);
-    const newInvite = await host.getByLabel('Invitation to share').inputValue();
-    // Opening a new invitation restores the same guest seat on a fresh document.
-    await guest.goto(newInvite);
-    await guest.getByLabel('Your room name').fill('Kai');
-    await guest.getByRole('button', { name: 'Join room', exact: true }).click();
-    await expect(guest.getByLabel('Answer to share')).toHaveValue(/answer=/);
-    await host
-      .getByLabel('Guest’s answer link')
-      .fill(await guest.getByLabel('Answer to share').inputValue());
-    await host.getByRole('button', { name: 'Accept answer' }).click();
-    await expect(guest.getByRole('heading', { name: 'Your turn' })).toBeVisible(
-      { timeout: 20_000 },
-    );
-    await expect(
-      guest.getByRole('button', { name: 'Row 2, column 2: X' }),
-    ).toBeVisible();
-    await guest.locator('.square').first().click();
-    await expect(
-      host.getByRole('button', { name: 'Row 1, column 1: O' }),
-    ).toBeVisible();
-    expect(errors).toEqual([]);
-  } finally {
-    await guestContext.close();
-  }
-});
+  });
+}

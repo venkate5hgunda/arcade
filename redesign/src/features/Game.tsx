@@ -1,6 +1,9 @@
+import { PuzzleGame } from './Puzzles.tsx';
+import { PUZZLE_IDS } from '../lib/puzzles.ts';
+import type { PuzzleId } from '../lib/puzzles.ts';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { GAMES, isImplemented } from '../lib/games.ts';
+import { GAMES } from '../lib/games.ts';
 import {
   applyMove,
   aiMove,
@@ -320,7 +323,9 @@ export function GameRoute() {
         <p>Choose one of the games on the shelf.</p>
       </section>
     );
-  if (isImplemented(game.id)) return <LocalGame key={game.id} />;
+  if (game.id === 'tictactoe') return <LocalGame key={game.id} />;
+  if (PUZZLE_IDS.includes(game.id as PuzzleId))
+    return <PuzzleGame id={game.id as PuzzleId} key={game.id} />;
   return (
     <section className="detail">
       <Link className="back" to="/">

@@ -1,3 +1,5 @@
+import { ConnectBoard } from '../components/ConnectBoard.tsx';
+import { c4Win } from '../lib/puzzles.ts';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Room } from '../lib/room/protocol.ts';
@@ -8,6 +10,9 @@ import { names } from '../lib/profile.ts';
 export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
+  const [gameId, setGameId] = useState<'tictactoe' | 'connect-four'>(
+    'tictactoe',
+  );
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
     location.search ? window.location.href : '',
@@ -33,7 +38,11 @@ export function RoomPage({ room }: { room: Room }) {
   const connected =
     s?.members.length === 2 && s.members.every((m) => m.connected);
   const seat = s?.members.findIndex((m) => m.id === room.peerId) ?? -1;
-  const win = match && findWin(match.board);
+  const win =
+    match &&
+    (match.gameId === 'connect-four'
+      ? c4Win(match.board)
+      : findWin(match.board));
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setMessage('');
@@ -65,7 +74,8 @@ export function RoomPage({ room }: { room: Room }) {
       <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>
       <p className="lede">
-        A direct connection for two. No accounts, just Tic-Tac-Toe.
+        A direct connection for two. No accounts, just Tic-Tac-Toe or Connect
+        Four.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -123,8 +133,22 @@ export function RoomPage({ room }: { room: Room }) {
           <div className="room-roster" aria-label="Room players">
             {s?.members.map((m, index) => (
               <div key={m.id}>
-                <b className={index === 0 ? 'x-text' : 'o-text'}>
-                  {index === 0 ? 'X' : 'O'}
+                <b
+                  className={
+                    index === 0
+                      ? 'x-text'
+                      : s.match?.gameId === 'connect-four'
+                        ? 'gold-text'
+                        : 'o-text'
+                  }
+                >
+                  {s.match?.gameId === 'connect-four'
+                    ? index === 0
+                      ? 'R'
+                      : 'G'
+                    : index === 0
+                      ? 'X'
+                      : 'O'}
                 </b>
                 <strong>
                   {m.name}
@@ -229,28 +253,52 @@ export function RoomPage({ room }: { room: Room }) {
           {connected && !match && (
             <div className="setup-card">
               <h2>Everyone’s here.</h2>
+              {room.role === 'host' && (
+                <label>
+                  Room game
+                  <select
+                    value={gameId}
+                    onChange={(e) => setGameId(e.target.value as typeof gameId)}
+                  >
+                    <option value="tictactoe">Tic-Tac-Toe</option>
+                    <option value="connect-four">Connect Four</option>
+                  </select>
+                </label>
+              )}
               <p>
                 {room.role === 'host'
                   ? 'Your table is ready for a little friendly competition.'
-                  : 'Waiting for the host to start Tic-Tac-Toe.'}
+                  : 'Waiting for the host to choose and start a game.'}
               </p>
               {room.role === 'host' && (
-                <button className="primary" onClick={() => room.start()}>
-                  Start Tic-Tac-Toe
+                <button className="primary" onClick={() => room.start(gameId)}>
+                  Start{' '}
+                  {gameId === 'connect-four' ? 'Connect Four' : 'Tic-Tac-Toe'}
                 </button>
               )}
             </div>
           )}
           {match && (
             <div className="room-match board-panel">
+              <p className="room-game-name">
+                {match.gameId === 'connect-four'
+                  ? 'Connect Four'
+                  : 'Tic-Tac-Toe'}
+              </p>
               <div
                 className={`turn-banner ${match.over ? 'finished' : ''}`}
                 role="status"
               >
                 <span
-                  className={`turn-token ${match.current === 1 ? 'x-text' : 'o-text'}`}
+                  className={`turn-token ${match.current === 1 ? 'x-text' : match.gameId === 'connect-four' ? 'gold-text' : 'o-text'}`}
                 >
-                  {match.current === 1 ? 'X' : 'O'}
+                  {match.gameId === 'connect-four'
+                    ? match.current === 1
+                      ? 'R'
+                      : 'G'
+                    : match.current === 1
+                      ? 'X'
+                      : 'O'}
                 </span>
                 <div>
                   <h2>
@@ -270,18 +318,30 @@ export function RoomPage({ room }: { room: Room }) {
                       : !connected
                         ? 'Reconnect both players to continue this board.'
                         : match.current - 1 === seat
-                          ? 'Choose an empty square.'
+                          ? match.gameId === 'connect-four'
+                            ? 'Choose an open column.'
+                            : 'Choose an empty square.'
                           : 'Waiting for your opponent’s move.'}
                   </p>
                 </div>
               </div>
-              <Board
-                board={match.board}
-                blocked={
-                  !connected || !!match.over || match.current - 1 !== seat
-                }
-                move={(cell) => room.move(cell)}
-              />
+              {match.gameId === 'connect-four' ? (
+                <ConnectBoard
+                  state={match}
+                  blocked={
+                    !connected || !!match.over || match.current - 1 !== seat
+                  }
+                  drop={(column) => room.move(column)}
+                />
+              ) : (
+                <Board
+                  board={match.board}
+                  blocked={
+                    !connected || !!match.over || match.current - 1 !== seat
+                  }
+                  move={(cell) => room.move(cell)}
+                />
+              )}
               <div className="score-line">
                 {s?.members.map((m, index) => (
                   <span key={m.id}>

@@ -6,8 +6,8 @@ Verified 2026-10-26 for the Living Game Shelf / first-game milestone. This super
 | --- | --- |
 | Type checking and production bundling | Passed |
 | Frozen baseline / catalog / documentation inventory | 4 passed |
-| Compiled TypeScript domain, persistence and room checks | 11 passed |
-| Chromium desktop + WebKit iPhone browser flows | 18 passed |
+| Compiled TypeScript domain, persistence and room checks | 18 passed |
+| Chromium desktop + WebKit iPhone browser flows | 34 passed |
 | Automated WCAG A/AA checks | No violations on catalog, setup, active board and room |
 | Original JavaScript suite, Node 22 | 203 passed |
 | Original Python movie suite | 80 passed |
@@ -51,4 +51,26 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-Only G19 is fully implemented. A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 25 redesigned games, QR admission, spectators/private information, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G19–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 20 redesigned games, QR admission, spectators/private information, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+
+## Puzzle-family trace
+
+Traced baseline options/rules → pure typed transitions → React input and turn
+state → per-game checkpoint validation → shared catalog/resume capability →
+room game identity/authority → browser flows, parity statuses and docs.
+
+The old home assumed every implemented game used Tic-Tac-Toe checkpoints and
+had room support. Expanding that flag exposed those assumptions; validation is
+now dispatched by game and only migrated room games advertise private rooms.
+Connect Four snapshots preserve game identity across rematches and host reload.
+The 2048 move function retains the original trajectory/merge metadata and is
+compared directly with the baseline engine; React stages movement, merge and
+spawn, queues one move, and honors reduced motion. Memory saves normalized
+post-mismatch state so navigation cannot resurrect an invalid pair or leave a
+stale timer to mutate the next game. Simon replays restored partial sequences
+and cancels playback on navigation.
+
+Browser checks caught unlabelled-role tile semantics (fixed with inspectable
+image roles) and a test that attempted to click a Minesweeper field after flood
+reveal had already won (fixed to observe the actual current board). The latter
+was a test assumption error, not a gameplay defect.
