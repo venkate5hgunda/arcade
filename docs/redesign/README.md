@@ -53,6 +53,8 @@ Use a separate preview origin: the redesign deliberately preserves the original 
 
 ![Living Game Shelf on desktop](../images/redesign-desktop.png)
 
-<img src="../images/redesign-mobile.png" alt="Living Game Shelf on mobile" width="320" />
+| Mobile shelf | Mobile match |
+| --- | --- |
+| <img src="../images/redesign-mobile.png" alt="Living Game Shelf on mobile" width="280" /> | <img src="../images/redesign-game-mobile.png" alt="Playable Tic-Tac-Toe on mobile" width="280" /> |
 
 Baseline: [`ae1136d6e544`](https://github.com/venkate5hgunda/arcade/commit/ae1136d6e544784811e5c334ee76d6c54b6921a3). Review branch: `codex/redesign-first-game`, targeting `codex/redesign-foundation`.

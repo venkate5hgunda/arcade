@@ -217,19 +217,47 @@ test('storage denial warns while local gameplay remains playable', async ({
 
 test('responsive shelf and play screens have no overflow, external assets or service worker', async ({
   page,
+  isMobile,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const external: string[] = [];
   page.on('request', (r) => {
     if (!r.url().startsWith('http://127.0.0.1:')) external.push(r.url());
   });
+  await page.goto('/');
+  if (isMobile) {
+    const play = await page
+      .getByRole('link', { name: 'Play Tic-Tac-Toe', exact: true })
+      .boundingBox();
+    expect(play!.y + play!.height).toBeLessThanOrEqual(
+      await page.evaluate(() => innerHeight),
+    );
+  }
   for (const path of ['/', '/#/game/tictactoe', '/#/room']) {
     await page.goto(path);
+    const layout = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      viewport: innerWidth,
+      overflow: [...document.querySelectorAll('header, header > *, main > *')]
+        .filter((el) => el.getBoundingClientRect().right > innerWidth + 1)
+        .map((el) => ({
+          tag: el.tagName,
+          class: el.className,
+          right: el.getBoundingClientRect().right,
+        })),
+    }));
     expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
+      layout.width,
+      JSON.stringify({ path, ...layout }),
+    ).toBeLessThanOrEqual(layout.viewport);
+  }
+  if (isMobile) {
+    await page.goto('/#/game/tictactoe');
+    await page.getByRole('button', { name: 'Start playing' }).click();
+    const board = await page.locator('.ttt-board').boundingBox();
+    expect(board!.y + board!.height).toBeLessThanOrEqual(
+      await page.evaluate(() => innerHeight),
+    );
   }
   expect(
     await page.evaluate(

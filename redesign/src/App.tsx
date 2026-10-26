@@ -62,7 +62,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
         <section className="showcase" aria-label="Featured game">
           <div className="showcase-scene">
             <div
-              className={`hero-image world world-${game.category}`}
+              className={`hero-image world world-${game.category} ${game.id === 'tictactoe' ? 'ttt-scene' : ''}`}
               role="img"
               aria-label={`${game.category} game world illustration`}
             />
@@ -126,7 +126,9 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   aria-pressed={g.id === game.id}
                   onClick={() => setSelected(g.id)}
                 >
-                  <span className={`shelf-image world world-${g.category}`} />
+                  <span
+                    className={`shelf-image world world-${g.category} ${g.id === 'tictactoe' ? 'ttt-scene' : ''}`}
+                  />
                   <span className="shelf-label">{g.name}</span>
                   {resumable.includes(g.id) && (
                     <span className="saved-dot" aria-label="Saved game" />
@@ -160,7 +162,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
           <div className="continue-row">
             {resumable.map((id) => (
               <Link key={id} to={`/game/${id}`} className="continue-card">
-                <span className="continue-art world world-Puzzle" />
+                <span className="continue-art world world-Puzzle ttt-scene" />
                 <span>
                   <b>{GAMES.find((g) => g.id === id)?.name}</b>
                   <small>Your saved match is ready</small>
@@ -216,7 +218,9 @@ function GameCard({ game, index }: { game: Game; index: number }) {
       to={`/game/${game.id}`}
       style={{ '--card-index': index } as CSSProperties}
     >
-      <div className={`card-image world world-${game.category}`}>
+      <div
+        className={`card-image world world-${game.category} ${game.id === 'tictactoe' ? 'ttt-scene' : ''}`}
+      >
         <span className="card-category">{game.category}</span>
       </div>
       <div className="card-copy">

@@ -166,7 +166,7 @@ function LocalGame() {
             <Help />
           </div>
           <div
-            className="setup-art world world-Puzzle"
+            className="setup-art world world-Puzzle ttt-scene"
             role="img"
             aria-label="Colorful X and O pieces on a game board"
           />
