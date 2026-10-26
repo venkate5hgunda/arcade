@@ -8,6 +8,7 @@ test('complete shelf, categories, search, selection and original-game handoff', 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
+  await expect(page).toHaveTitle('Arcade · Good games, better together');
   await expect(page.locator('.game-card')).toHaveCount(26);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Tic-Tac-Toe',
