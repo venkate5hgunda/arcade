@@ -47,3 +47,9 @@ The user selected visual option 2, **Living Game Shelf**, and authorized complet
 The completed scope is the 26-entry shelf + shared local setup + baseline-shaped persistence + local/room Tic-Tac-Toe. Original game URLs use `#/games/:id`; the redesign accepts that alias and `/game/:id`. Unported entries link to the original app. The two-player room is a scoped typed implementation, not a claim of wire compatibility with the legacy room or private-game/spectator parity.
 
 First-game progress is recorded per requirement. Only G19 is implemented; broader shared criteria remain planned until all their consumers/games are ported. Keep the remaining families, QR/private/spectator breadth, full sound/auto-theme, PWA and production migration in [the backlog](backlog.md). Do not merge or deploy this PR automatically.
+
+## Per-game artwork and card-port checkpoint — 2026-10-26
+
+The user requires custom artwork for each of the 26 games and consistent theme guidelines for future generation. The [art guide](art-guide.md), linked from repository `AGENTS.md`, supersedes shared family covers. Twenty-five new Adobe Firefly illustrations join the retained bespoke Tic-Tac-Toe hero; the manifest records exact accepted prompts and inspection/provenance. Images remain local and optimized. This decision changes artwork coverage, not native-game parity.
+
+Blackjack follows the puzzle milestone as the first native card game. Its baseline solo rules/checkpoint shape remain intact; the shared frame is extracted for reuse and has an explicit completion predicate for natural initial deals. Other card games still require private-hand/room work. This unit is stacked on `codex/redesign-puzzle-games`; no automatic merge or production deployment is authorized.

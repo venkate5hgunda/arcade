@@ -31,7 +31,8 @@ reference; the redesign builds clean, typed equivalents.
 - [x] **Puzzle family (G20–G24):** Connect Four (local/AI/room), Minesweeper,
       Memory Match, 2048 and Simon Says. Typed rules, native React controls,
       baseline-compatible checkpoints/settings, complete-game browser flows.
-- [ ] **Cards:** Blackjack, Crazy Eights, UNO-inspired, including private hands.
+- [x] **Blackjack (G16):** native solo table, deck/aces/naturals/doubling, scoring and recovery.
+- [ ] **Remaining cards:** Crazy Eights and UNO-inspired, including private hands.
 - [ ] **Board:** Snakes & Ladders, Ludo, Island Charter, Business, Chess.
 - [ ] **Action:** Air Hockey, 8-Ball Pool, Whack-a-Mole.
 - [ ] **Party:** Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
@@ -42,7 +43,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G01–G18, G25–G26).** Port the remaining 20 catalog
+- [ ] **More games (G01–G15, G17–G18, G25–G26).** Port the remaining 19 catalog
       entries in coherent families (Cards, Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior

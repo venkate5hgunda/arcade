@@ -2,9 +2,9 @@
 
 A vibrant, illustrated shelf for good games and better company.
 
-**Six puzzle games are implemented:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
+**Seven games are implemented, with custom artwork for all 26:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
 
-Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. The other 20 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
+Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. Blackjack also has native solo play. The other 19 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
 
 | Document | Purpose |
 | --- | --- |
@@ -16,6 +16,7 @@ Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-To
 | [Game ports](game-ports.md) | Family-by-family migration status and current evidence |
 | [Backlog](backlog.md) | Remaining game families and release work |
 | [Artwork](artwork.md) | Illustration and icon provenance |
+| [Art guide](art-guide.md) | Required visual theme and generation brief for every Arcade image |
 | [Parity inventory](parity.json) | Honest implemented and partial scopes |
 | [Source snapshot](source-snapshot.json) | Frozen baseline source inventory |
 

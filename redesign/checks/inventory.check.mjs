@@ -51,6 +51,7 @@ test('all local documentation links resolve', () => {
     'verification.md',
     'backlog.md',
     'artwork.md',
+    'art-guide.md',
     'design-qa.md',
     'game-ports.md',
   ]) {
@@ -80,4 +81,36 @@ test('every production game is mapped to a dedicated parity requirement', async 
     manifest.requirements.filter((r) => r.id.startsWith('G')).length,
     GAMES.length,
   );
+});
+
+test('all 26 games have distinct inspected local artwork with verifiable provenance', async () => {
+  const { GAMES } = await import('../../js/game-catalog.js');
+  const art = read('docs/redesign/artwork-manifest.json');
+  assert.deepEqual(
+    art.assets.map((a) => a.id).sort(),
+    GAMES.map((g) => g.id).sort(),
+  );
+  assert.ok(existsSync(resolve(root, art.styleGuide)));
+  assert.equal(new Set(art.assets.map((a) => a.sha256)).size, 26);
+  assert.equal(new Set(art.assets.map((a) => a.src)).size, 26);
+  for (const a of art.assets) {
+    assert.equal(a.src, `./art/games/${a.id}.webp`);
+    const bytes = readFileSync(resolve(root, 'redesign/public', a.src));
+    assert.equal(
+      createHash('sha256').update(bytes).digest('hex'),
+      a.sha256,
+      a.id,
+    );
+    assert.equal(bytes.length, a.bytes);
+    assert.ok(a.bytes < 250000, a.id);
+    assert.equal(a.width, 1344);
+    assert.equal(a.height, 768);
+    assert.ok(a.alt.length > 20);
+    assert.ok(a.inspection);
+    assert.ok(a.provider);
+    if (a.id !== 'tictactoe') {
+      assert.ok(a.prompt.includes('Living Game Shelf'));
+      assert.ok(a.requestId);
+    }
+  }
 });

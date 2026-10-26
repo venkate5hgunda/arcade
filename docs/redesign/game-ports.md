@@ -1,11 +1,11 @@
 # Game migration status
 
-**6 of 26 games are implemented.** The remaining 20 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**7 of 26 games are implemented.** The remaining 19 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
-| Cards | — | Blackjack, Crazy Eights, UNO-inspired |
+| Cards | Blackjack | Crazy Eights, UNO-inspired |
 | Board | — | Snakes & Ladders, Ludo, Island Charter, Business, Chess |
 | Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
 | Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
@@ -22,6 +22,14 @@
 Checks: `redesign/checks/unit/puzzles.check.ts`, `room.check.ts`, `redesign/checks/browser/puzzles.spec.ts` and `foundation.spec.ts`. Original game modules remain unchanged and serve as behavior references. All implemented flags, route consumers, checkpoint readers and room projections were traced together.
 
 ![Five new puzzle games, mobile browser captures](../images/redesign-puzzles-mobile.png)
+
+## Blackjack acceptance and evidence
+
+Native solo Blackjack preserves the 52-card deck, ace handling, dealer standing on soft 17, hit/stand, two-card doubling, naturals paying 3:2, push/bust/settlement, session record and baseline-compatible five-minute checkpoint. Dealer hole cards expose no rank in the DOM until reveal. Natural initial deals finish immediately and cannot appear as resumable games. Fictional units only.
+
+Evidence: `redesign/checks/unit/blackjack.check.ts` and `redesign/checks/browser/art-blackjack.spec.ts`; complete desktop/mobile flows, keyboard controls, accessibility, reload and record-preserving redeals. Shared audio/haptics remain A07 work.
+
+![Native Blackjack on mobile](../images/redesign-blackjack-mobile.png)
 
 ## Porting rule
 

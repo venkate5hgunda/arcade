@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G19–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 20 redesigned games, QR admission, spectators/private information, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G16 and G19–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 19 redesigned games, QR admission, spectators/private information, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -74,3 +74,13 @@ Browser checks caught unlabelled-role tile semantics (fixed with inspectable
 image roles) and a test that attempted to click a Minesweeper field after flood
 reveal had already won (fixed to observe the actual current board). The latter
 was a test assumption error, not a gameplay defect.
+
+## Per-game artwork and Blackjack trace
+
+Traced every catalog ID → manifest → hero/shelf/grid/resume/setup/detail art consumer → responsive styles → capture tooling → provenance/credits/docs and coverage checks. All 26 images are distinct, locally hosted and inspected. The per-game requirement supersedes intentional family-image sharing; the old atlas CSS and asset were removed. The capture script now decodes real images rather than reading a background URL. The guide and exact accepted prompts remain in the repository for future art work.
+
+Traced baseline Blackjack deal/action/settlement rules → typed deck/ace/value transitions → native card table and hidden dealer-card DOM → shared setup/start/redeal hook → checkpoint dispatch/expiry → catalog capability and resume → parity/docs/tests. The extracted shared frame preserves puzzle behavior; its completion predicate handles natural Blackjack on the initial deal, so a completed hand is never saved. Units, records and card uniqueness retain baseline contracts. No global preference or unrelated source-game behavior changed.
+
+Validation: five inventory checks, 21 domain/protocol checks, TypeScript/build/format, 42 desktop Chromium and mobile WebKit flows (including existing two-browser rooms), and refreshed real-app captures. Shared audio/haptics remain explicitly tracked under A07.
+
+Final inspection also caught a capture assumption: waiting only for the hero could record still-loading shelf images. Captures now decode all visible images, and the first eight shelf covers load eagerly. A redeal test incorrectly assumed a random new deal could not produce another natural; a deterministic non-natural fixture now checks record preservation, with a separate natural-deal flow. These were missed traces of image readiness and randomized settlement, corrected before sign-off.

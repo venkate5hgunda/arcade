@@ -36,13 +36,30 @@ try {
       });
       await page.goto(`http://127.0.0.1:${port}`);
       await page.locator('.game-card').first().waitFor();
-      await page.locator('.hero-image').evaluate(async (el) => {
-        const url = getComputedStyle(el).backgroundImage.slice(5, -2);
-        const image = new Image();
-        image.src = url;
-        await image.decode();
+      await page.locator('img').evaluateAll(async (images) => {
+        await Promise.all(
+          images
+            .filter((img) => {
+              const rect = img.getBoundingClientRect();
+              return (
+                rect.bottom > 0 &&
+                rect.top < innerHeight &&
+                rect.right > 0 &&
+                rect.left < innerWidth
+              );
+            })
+            .map((img) => img.decode()),
+        );
+        await document.fonts.ready;
       });
       await page.screenshot({ path: `../docs/images/redesign-${name}.png` });
+      await page.goto(`http://127.0.0.1:${port}/#/game/blackjack`);
+      await page.getByRole('button', { name: 'Start playing' }).click();
+      await page.locator('.blackjack-table').waitFor();
+      await page.screenshot({
+        path: `../docs/images/redesign-blackjack-${name}.png`,
+        fullPage: true,
+      });
     } finally {
       await browser.close();
     }

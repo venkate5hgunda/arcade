@@ -1,3 +1,5 @@
+import { GameArt } from '../components/GameArt.tsx';
+import { BlackjackGame } from './Blackjack.tsx';
 import { PuzzleGame } from './Puzzles.tsx';
 import { PUZZLE_IDS } from '../lib/puzzles.ts';
 import type { PuzzleId } from '../lib/puzzles.ts';
@@ -168,11 +170,7 @@ function LocalGame() {
             </Link>
             <Help />
           </div>
-          <div
-            className="setup-art world world-Puzzle ttt-scene"
-            role="img"
-            aria-label="Colorful X and O pieces on a game board"
-          />
+          <GameArt id="tictactoe" className="setup-art" eager />
         </div>
       ) : (
         <div className="match-layout">
@@ -323,6 +321,7 @@ export function GameRoute() {
         <p>Choose one of the games on the shelf.</p>
       </section>
     );
+  if (game.id === 'blackjack') return <BlackjackGame key={game.id} />;
   if (game.id === 'tictactoe') return <LocalGame key={game.id} />;
   if (PUZZLE_IDS.includes(game.id as PuzzleId))
     return <PuzzleGame id={game.id as PuzzleId} key={game.id} />;
@@ -331,7 +330,7 @@ export function GameRoute() {
       <Link className="back" to="/">
         ← Back to the shelf
       </Link>
-      <div className={`detail-art world world-${game.category}`} />
+      <GameArt id={game.id} className="detail-art" eager />
       <p className="eyebrow">{game.category} · Joining the new shelf soon</p>
       <h1>{game.name}</h1>
       <p className="lede">{game.description}</p>
