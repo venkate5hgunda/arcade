@@ -120,6 +120,7 @@ test('local match saves names, resumes from home, announces O win once and remat
 test('AI draw, keyboard board controls, reload and stale timer disposal', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date('2026-01-01T10:00:00Z') });
   await page.goto('/#/game/tictactoe');
   await page.getByRole('button', { name: 'Start playing' }).click();
   const first = page.getByRole('button', {
@@ -153,13 +154,19 @@ test('AI draw, keyboard board controls, reload and stale timer disposal', async 
   await expect(
     page.getByRole('heading', { name: /draw|Computer wins/ }),
   ).toBeVisible();
+  // Keep the pending AI callback frozen until the destination has mounted.
+  await page.clock.pauseAt(new Date('2026-01-01T11:00:00Z'));
   await page.getByRole('button', { name: 'Play again' }).click();
   await first.click();
   await page.getByRole('link', { name: 'Back to the shelf' }).click();
+  await expect(
+    page.getByRole('region', { name: 'Featured game' }),
+  ).toBeVisible();
   const before = await page.evaluate(() =>
     localStorage.getItem('arcade:game.sessions'),
   );
-  await page.waitForTimeout(500);
+  expect(JSON.parse(before!).tictactoe.state.current).toBe(2);
+  await page.clock.runFor(500);
   expect(
     await page.evaluate(() => localStorage.getItem('arcade:game.sessions')),
   ).toBe(before);
