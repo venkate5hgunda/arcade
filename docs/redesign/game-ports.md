@@ -1,6 +1,6 @@
 # Game migration status
 
-**15 of 26 games are implemented.** The remaining 11 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**16 of 26 games are implemented.** The remaining 10 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -8,7 +8,7 @@
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
 | Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
-| Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
+| Party | Taboo | Show, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
 | Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
@@ -64,6 +64,10 @@ Word Scramble preserves the original word pool, 5/8/12-round options, hints, ski
 ## Whack-a-Mole acceptance and evidence
 
 Whack-a-Mole retains 30/45/60-second rounds, randomly timed targets, hit/miss scoring, best score and absolute-deadline recovery. Interactive illustrated moles support touch and keyboard. `redesign/checks/unit/whack.check.ts` validates saved timed state; `redesign/checks/browser/whack.spec.ts` exercises hit, miss, reload, expiry, score and replay on desktop and mobile.
+
+## Taboo acceptance and evidence
+
+Taboo retains the original clue deck, two-team scoring, 30/60/90-second turns, 4/6/8 turns and absolute deadlines. Covered handoffs keep cards out of the rendered interface until the clue giver reveals them, including after reload. `redesign/checks/unit/taboo.check.ts` compares cards, scoring and deadline rules to the original; `redesign/checks/browser/taboo.spec.ts` covers recovery, scoring, hiding, expiry and complete results on desktop/mobile.
 
 ## Porting rule
 

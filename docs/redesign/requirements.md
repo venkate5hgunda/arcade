@@ -15,7 +15,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [A07](#a07) | Sound, feel and themes | Experience | Planned |
 | [A08](#a08) | Offline assets and data pipeline | Platform | Planned |
 | [G01](#g01) | Show | Party | Planned |
-| [G02](#g02) | Taboo | Party | Planned |
+| [G02](#g02) | Taboo | Party | Implemented |
 | [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
@@ -172,7 +172,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G02
 
-**Taboo** · Party · Planned
+**Taboo** · Party · Implemented
 
 - Four to twenty players in two teams; 30/60/90-second turns, 4/6/8 total turns, correct +1, skip 0, forbidden -1.
 - Fifty original cards without repeats until exhausted; private clue giver/referee handoff; deadline continues hidden/reloaded; local only.

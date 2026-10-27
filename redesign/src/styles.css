@@ -2787,3 +2787,68 @@ select:focus-visible {
     transition: none;
   }
 }
+.taboo-table {
+  padding: 1.3rem;
+  border-radius: 1.4rem;
+  background: linear-gradient(145deg, #315e58, #183e40);
+  color: #fff3df;
+  text-align: center;
+}
+.taboo-score {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  font-weight: 800;
+}
+.taboo-score b {
+  color: #ffd474;
+}
+.taboo-reveal {
+  margin: 1.5rem auto;
+}
+.taboo-clock {
+  font-weight: 900;
+  color: #ffd474;
+}
+.taboo-card {
+  background: #fff3df;
+  color: #191c35;
+  border: 4px solid #ffd474;
+  border-radius: 1rem;
+  max-width: 22rem;
+  margin: 1rem auto;
+  padding: 1rem;
+  box-shadow: 0 0.35rem 0 #b58d59;
+}
+.taboo-card h3 {
+  font-size: 2rem;
+  margin: 0.3rem;
+}
+.taboo-card ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.taboo-card li {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.4rem;
+  background: #ffd7c6;
+  font-weight: 700;
+}
+.taboo-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.taboo-actions .quiet,
+.taboo-hide {
+  color: #fff3df;
+  border-color: #a5e3ac;
+}
+.taboo-hide {
+  margin-top: 0.7rem;
+}

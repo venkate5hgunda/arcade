@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G03, G06–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 11 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G02–G03, G06–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 10 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -124,3 +124,7 @@ Traced word selection, 5/8/12-round settings, hints, solved-round timer, checkpo
 ## Whack-a-Mole milestone
 
 Traced duration options, target timing, scores, best-score storage, absolute-deadline checkpoint and expiry through setup, catalog, resume and desktop/mobile complete-game checks. Browser review showed the initial board extended below the viewport during a timed round; it was resized to keep targets accessible.
+
+## Taboo milestone
+
+Traced the original card deck, scoring, deadline, numeric settings and checkpoint validation through covered clue-giver handoffs, turn transitions, catalog, resume and desktop/mobile gameplay. The replay control now has a distinct label from the header reset; legacy numeric settings are restored. Cards are omitted from the rendered handoff screen, while the timer continues across reload.
