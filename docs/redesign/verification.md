@@ -134,3 +134,10 @@ Traced the original card deck, scoring, deadline, numeric settings and checkpoin
 Traced original deals, simultaneous passes, chit conservation, slap ordering, point calculation, settings and checkpoints through covered handoffs, catalog/resume, pointer and keyboard pads, and desktop/mobile gameplay. Chits are removed from the interface during handoff and reload. A synchronous state reference keeps simultaneous pad presses ordered.
 
 A follow-up capability trace caught room introduction copy that still omitted Snakes & Ladders and Ludo. The room now lists both games and their player range. This was a missed consumer in the race-game trace.
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.
