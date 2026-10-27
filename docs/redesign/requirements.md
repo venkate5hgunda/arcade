@@ -29,7 +29,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G13](#g13) | Mafia | Party | Planned |
 | [G14](#g14) | Dumb Charades | Party | Planned |
 | [G15](#g15) | Rock Paper Scissors | Party | Planned |
-| [G16](#g16) | Blackjack | Cards | Planned |
+| [G16](#g16) | Blackjack | Cards | Implemented |
 | [G17](#g17) | Crazy Eights | Cards | Planned |
 | [G18](#g18) | UNO-inspired | Cards | Planned |
 | [G19](#g19) | Tic-Tac-Toe | Puzzle | Implemented |
@@ -332,7 +332,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G16
 
-**Blackjack** · Cards · Planned
+**Blackjack** · Cards · Implemented
 
 - Solo against dealer; deck, hit, stand, double down, stakes, bust and settlement.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.

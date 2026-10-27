@@ -1,3 +1,4 @@
+import { GameArt } from './components/GameArt.tsx';
 import { useEffect, useState } from 'react';
 import {
   HashRouter,
@@ -8,7 +9,13 @@ import {
   useParams,
 } from 'react-router-dom';
 import type { CSSProperties } from 'react';
-import { CATEGORIES, GAMES, isImplemented, playerLabel } from './lib/games.ts';
+import {
+  CATEGORIES,
+  GAMES,
+  implementedGameIds,
+  isImplemented,
+  playerLabel,
+} from './lib/games.ts';
 import type { Game } from './lib/games.ts';
 import {
   unfinishedGames,
@@ -60,11 +67,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
       {game ? (
         <section className="showcase" aria-label="Featured game">
           <div className="showcase-scene">
-            <div
-              className={`hero-image world world-${game.category} ${game.id === 'tictactoe' ? 'ttt-scene' : ''}`}
-              role="img"
-              aria-label={`${game.category} game world illustration`}
-            />
+            <GameArt id={game.id} className="hero-image" eager />
             <div className="scene-caption">
               GOOD GAMES BRING PEOPLE TOGETHER
             </div>
@@ -120,15 +123,18 @@ function Catalog({ query, category }: { query: string; category: string }) {
                 (a, b) =>
                   Number(isImplemented(b.id)) - Number(isImplemented(a.id)),
               )
-              .map((g) => (
+              .map((g, index) => (
                 <button
                   key={g.id}
                   className={`shelf-game ${g.id === game.id ? 'selected' : ''}`}
                   aria-pressed={g.id === game.id}
                   onClick={() => setSelected(g.id)}
                 >
-                  <span
-                    className={`shelf-image world world-${g.category} ${g.id === 'tictactoe' ? 'ttt-scene' : ''}`}
+                  <GameArt
+                    id={g.id}
+                    className="shelf-image"
+                    decorative
+                    eager={index < 8}
                   />
                   <span className="shelf-label">{g.name}</span>
                   {resumable.includes(g.id) && (
@@ -163,9 +169,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
           <div className="continue-row">
             {resumable.map((id) => (
               <Link key={id} to={`/game/${id}`} className="continue-card">
-                <span
-                  className={`continue-art world world-Puzzle ${id === 'tictactoe' ? 'ttt-scene' : ''}`}
-                />
+                <GameArt id={id} className="continue-art" decorative />
                 <span>
                   <b>{GAMES.find((g) => g.id === id)?.name}</b>
                   <small>Your saved match is ready</small>
@@ -199,8 +203,8 @@ function Catalog({ query, category }: { query: string; category: string }) {
           ))}
         </div>
         <p className="catalog-note">
-          The new shelf is taking shape. All six puzzle games are ready here;
-          all 26 games are available in{' '}
+          The new shelf is taking shape. {implementedGameIds.size} games are
+          ready here; all 26 games are available in{' '}
           <a
             href="https://venkate5hgunda.github.io/arcade/"
             target="_blank"
@@ -221,9 +225,8 @@ function GameCard({ game, index }: { game: Game; index: number }) {
       to={`/game/${game.id}`}
       style={{ '--card-index': index } as CSSProperties}
     >
-      <div
-        className={`card-image world world-${game.category} ${game.id === 'tictactoe' ? 'ttt-scene' : ''}`}
-      >
+      <div className="card-image">
+        <GameArt id={game.id} decorative />
         <span className="card-category">{game.category}</span>
       </div>
       <div className="card-copy">

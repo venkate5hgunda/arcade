@@ -331,7 +331,11 @@ export const CATEGORIES = [
 ] as const;
 
 /** Games with a migrated view. Others render an honest "Coming soon" screen. */
-export const implementedGameIds = new Set<string>(['tictactoe', ...PUZZLE_IDS]);
+export const implementedGameIds = new Set<string>([
+  'tictactoe',
+  'blackjack',
+  ...PUZZLE_IDS,
+]);
 
 /** Room-supported games, matching the baseline's `REMOTE_GAMES`. */
 export const ROOM_GAMES = new Set<string>([
