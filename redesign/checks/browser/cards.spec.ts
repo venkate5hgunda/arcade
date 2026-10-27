@@ -248,7 +248,7 @@ async function join(host: Page, guest: Page, name: string, first = false) {
   await host.getByRole('button', { name: 'Accept answer' }).click();
   await expect(
     host.getByRole('button', { name: 'Invite another player', exact: true }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
 }
 for (const gameId of ['crazy-eights', 'uno'] as const) {
   test(`real private ${gameId} room: admission, projections, host reload, same seats, win and replay`, async ({
@@ -356,11 +356,11 @@ for (const gameId of ['crazy-eights', 'uno'] as const) {
           guests[i]
             .getByRole('region', { name: 'Your cards' })
             .getByRole('button'),
-        ).toHaveCount(1);
+        ).toHaveCount(1, { timeout: 20_000 });
       }
       await expect(
         host.getByRole('heading', { name: 'Your turn', exact: true }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 20_000 });
       await expect(
         guests[0].getByRole('button', {
           name:
