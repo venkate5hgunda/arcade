@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G07–G08 and G16–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 15 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G03, G07–G08 and G16–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 14 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -108,3 +108,7 @@ CI's three-browser room flow exposed a missed timing assumption: it waited five 
 Traced original rules and seeded board generation through the typed engines, checkpoint validation, local rematches, catalog routing, 2–4-seat room snapshots, host-authoritative actions, protocol versions, reconnects, tests and documentation. This surfaced two missed traces: restored player counts were not carried into rematches, and an interactive board used incomplete grid semantics. Both are corrected. The public snapshot addition advances connections to v3; v1 public and v2 private-card host backups remain recoverable with fresh invitations.
 
 Validation includes original-engine board and move comparisons, exact finishes, captures and safe squares, four-seat protocol recovery and invalid actions, desktop/mobile browser wins and accessibility, and three-browser WebRTC turn and reconnect flows. Full cross-network and physical-device qualification remains outstanding.
+
+## Wordle milestone
+
+Traced original vocabulary and duplicate-letter scoring through the native board, checkpoint validator, catalog and resume links, accessibility and gameplay tests. Browser inspection exposed the guess form below the initial viewport and tile labels without valid roles; both were corrected. Desktop/mobile tests cover keyboard entry, repeated-letter marks, invalid inputs, recovery, wins, losses and replay.

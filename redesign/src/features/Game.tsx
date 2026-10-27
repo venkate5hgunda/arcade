@@ -1,3 +1,4 @@
+import { WordleGame } from './Wordle.tsx';
 import { RacesGame } from './Races.tsx';
 import { CardsGame } from './Cards.tsx';
 import { GameArt } from '../components/GameArt.tsx';
@@ -327,6 +328,7 @@ export function GameRoute() {
     return <RacesGame id={game.id} key={game.id} />;
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
+  if (game.id === 'wordle') return <WordleGame key={game.id} />;
   if (game.id === 'blackjack') return <BlackjackGame key={game.id} />;
   if (game.id === 'tictactoe') return <LocalGame key={game.id} />;
   if (PUZZLE_IDS.includes(game.id as PuzzleId))

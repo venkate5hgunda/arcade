@@ -16,7 +16,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [A08](#a08) | Offline assets and data pipeline | Platform | Planned |
 | [G01](#g01) | Show | Party | Planned |
 | [G02](#g02) | Taboo | Party | Planned |
-| [G03](#g03) | Wordle | Word | Planned |
+| [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
 | [G06](#g06) | Whack-a-Mole | Action | Planned |
@@ -184,7 +184,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G03
 
-**Wordle** · Word · Planned
+**Wordle** · Word · Implemented
 
 - Solo random five-letter practice, six guesses, curated offline vocabulary, repeated-letter accounting, physical/on-screen keyboard and accessible symbol feedback; new puzzle reset; local only.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.

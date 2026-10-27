@@ -1,6 +1,6 @@
 # Game migration status
 
-**11 of 26 games are implemented.** The remaining 15 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**12 of 26 games are implemented.** The remaining 14 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
 | Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
 | Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
-| Word | — | Wordle, Hangman, Word Scramble |
+| Word | Wordle | Hangman, Word Scramble |
 
 ## Puzzle acceptance and evidence
 
@@ -48,6 +48,10 @@ Evidence: `redesign/checks/unit/cards.check.ts`, `room.check.ts`, and `redesign/
 Snakes & Ladders and Ludo support 2–4 local or room players, baseline-compatible checkpoints and host-authoritative dice. Snakes preserves the original seeded board, exact finish and 99-to-21 snake. Ludo preserves token release, choice, safe squares, captures, extra turns and exact home. Players can inspect squares or select tokens using touch and keyboard; motion respects reduced-motion settings.
 
 Evidence: `redesign/checks/unit/races.check.ts` compares seeded boards and legal moves with the original engines, and `room.check.ts` exercises four-seat recovery and forged-action rejection. `redesign/checks/browser/races.spec.ts` covers desktop/mobile complete local wins and rematches, accessibility, and three real WebRTC peers reconnecting after host reload. Cross-network and physical-device qualification remain release gates.
+
+## Wordle acceptance and evidence
+
+Wordle retains the original offline vocabulary, repeated-letter scoring, six guesses and local checkpoints. Players can type or use the on-screen keyboard; symbols accompany color feedback. Complete wins, losses, invalid guesses, reload, replay and accessibility are covered in `redesign/checks/browser/wordle.spec.ts`, with original vocabulary and scoring comparisons in `redesign/checks/unit/wordle.check.ts`.
 
 ## Porting rule
 

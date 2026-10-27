@@ -231,7 +231,7 @@
       "id": "G03",
       "title": "Wordle",
       "category": "Word",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/wordle.js",
         "js/game-catalog.js",
@@ -243,7 +243,12 @@
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/wordle.check.ts",
+        "redesign/checks/browser/wordle.spec.ts"
+      ],
+      "implementationScope": "Native offline Wordle practice with original vocabulary, duplicate-letter feedback and compatible local recovery."
     },
     {
       "id": "G04",

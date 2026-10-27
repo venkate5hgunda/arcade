@@ -334,6 +334,7 @@ export const CATEGORIES = [
 export const implementedGameIds = new Set<string>([
   'tictactoe',
   'blackjack',
+  'wordle',
   'crazy-eights',
   'uno',
   'snakes-ladders',
