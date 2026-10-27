@@ -4,7 +4,7 @@
 
 - Start from refreshed `origin/main` at `ae1136d6e544784811e5c334ee76d6c54b6921a3`. The existing code, its tests, product documentation and the [source snapshot](source-snapshot.json) anchor the requirements.
 - The initial no-build architecture optimized direct static deployment. The user's redesign request supersedes that implementation constraint, while preserving user capabilities and allowing new logic, flows and backend internals.
-- The agreed first milestone is requirements, architecture and runnable foundations. Full implementation is intentionally deferred and each [parity record](parity.json) remains planned.
+- The agreed first milestone is requirements, architecture and runnable foundations. The subsequent Phase 2 request implements the first complete game; G19 now has implementation evidence and broader parity records retain planned status.
 - The practical stack chosen in the conversation is Svelte/TypeScript/Vite for Pick and React/TypeScript/Vite/React Router for Arcade and Sharp. Vue was considered for Sharp; common React tooling across the larger apps is the selected tradeoff.
 - Maintain product-specific implementations in their own repos. Share conventions first; extract a shared package only after actual duplication and compatible ownership justify it.
 
@@ -39,3 +39,11 @@ Use a separate preview origin during later implementation. Before replacing the 
 ## Trace checklist for every migrated feature
 
 Trace UI entry points → controller/actions → domain rules → persistence/transport → projections/rendering → serialized output → docs and tests. Include every consumer of changed roles, phases, flags, IDs and fields. Revisit the original decision when changing its premise. Record newly discovered requirements and additional edits; identify missed traces explicitly if they cause a defect.
+
+## Phase 2 decision checkpoint — 2026-10-26
+
+The user selected visual option 2, **Living Game Shelf**, and authorized completing the first-game feature in a review PR against `codex/redesign-foundation`, with progressive remote pushes. This supersedes the explorer homepage, while retaining its routes and baseline evidence. The local unfinished branch was reviewed against freshly fetched remote refs: both started at `20b5299`; no divergent remote first-game commit existed.
+
+The completed scope is the 26-entry shelf + shared local setup + baseline-shaped persistence + local/room Tic-Tac-Toe. Original game URLs use `#/games/:id`; the redesign accepts that alias and `/game/:id`. Unported entries link to the original app. The two-player room is a scoped typed implementation, not a claim of wire compatibility with the legacy room or private-game/spectator parity.
+
+First-game progress is recorded per requirement. Only G19 is implemented; broader shared criteria remain planned until all their consumers/games are ported. Keep the remaining families, QR/private/spectator breadth, full sound/auto-theme, PWA and production migration in [the backlog](backlog.md). Do not merge or deploy this PR automatically.

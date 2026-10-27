@@ -1,23 +1,26 @@
-# Arcade redesign
+# Arcade · Living Game Shelf
 
-A new implementation of the existing product, grounded in its complete observable behavior.
+A vibrant, illustrated shelf for good games and better company.
 
-**Milestone 1: requirements, architecture and runnable foundations.** No migrated gameplay is claimed. The original application remains the behavior reference. The foundation is a working, responsive feature explorer with navigation, category filters, search, acceptance details and explicit planned status.
+**Phase 2 is implemented:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
+
+The other 25 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
 
 | Document | Purpose |
 | --- | --- |
-| [Requirements](requirements.md) | Feature groups, acceptance criteria and source/test evidence |
-| [Architecture](architecture.md) | Target stack, ownership, state and rendering boundaries |
-| [Migration and decisions](migration.md) | Data contracts, prior decisions, phases and rollout |
-| [Verification](verification.md) | Checks performed, results and remaining release gates |
-| [Parity inventory](parity.json) | Machine-readable requirements consumed by the foundation |
-| [Source snapshot](source-snapshot.json) | SHA-256 file inventory at the baseline commit |
+| [Requirements](requirements.md) | Acceptance criteria and original behavior evidence |
+| [Architecture](architecture.md) | React/TypeScript ownership and state boundaries |
+| [Migration and decisions](migration.md) | Prior decisions, data contracts and rollout |
+| [Verification](verification.md) | Current test evidence and trace findings |
+| [Design QA](design-qa.md) | Reference comparison and responsive checks |
+| [Backlog](backlog.md) | Remaining game families and release work |
+| [Artwork](artwork.md) | Illustration and icon provenance |
+| [Parity inventory](parity.json) | Honest implemented and partial scopes |
+| [Source snapshot](source-snapshot.json) | Frozen baseline source inventory |
 
-Baseline: [`ae1136d6e544`](https://github.com/venkate5hgunda/arcade/commit/ae1136d6e544784811e5c334ee76d6c54b6921a3) from refreshed `origin/main`. Branch: `codex/redesign-foundation`. Stack: **React + TypeScript + Vite + React Router**. Baseline evidence means inspected source and existing regression tests; it does not claim every existing game flow was manually revalidated during this milestone.
+## Play locally
 
-## Run the foundation
-
-From the repository root, use Node 22.12+ (or a newer Vite-supported LTS):
+Use Node 22.12+; CI and baseline tests use Node 22.
 
 ```sh
 npm --prefix redesign ci
@@ -30,16 +33,28 @@ npm --prefix redesign test
 npm --prefix redesign run build
 npm --prefix redesign exec -- playwright install chromium webkit
 npm --prefix redesign run test:browser
+npm --prefix redesign run capture
 ```
 
-`npm --prefix redesign run capture` refreshes the documentation screenshots after a successful build.
+Tests and captures normally start their own production preview. To use a preview you already started on port 5174, set `ARCADE_REUSE_PREVIEW=1`. All generated checks/build files stay in `redesign/node_modules/.cache/`.
 
-Browser tests run the production build with Chromium desktop and WebKit mobile. The ports differ across the three repos, so all previews can run together. Dependencies, lockfile and build outputs are local to `redesign/`. Build/test output lives under its already-ignored `node_modules/.cache/`; no ignore-rule changes are required. Root commands continue to run the baseline app.
+## A table for two
+
+1. Open **Room**, enter a name, and create a room.
+2. Send the generated invitation to one guest. They open it, enter their name, and return their answer link.
+3. Paste that answer into the original host tab. When both seats connect, start Tic-Tac-Toe.
+4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. The board and standings survive in the host tab.
+
+Rooms use real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
+
+Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
 
 ## Preview
 
-![Desktop foundation](../images/redesign-desktop.png)
+![Living Game Shelf on desktop](../images/redesign-desktop.png)
 
-![Mobile foundation](../images/redesign-mobile.png)
+| Mobile shelf | Mobile match |
+| --- | --- |
+| <img src="../images/redesign-mobile.png" alt="Living Game Shelf on mobile" width="280" /> | <img src="../images/redesign-game-mobile.png" alt="Playable Tic-Tac-Toe on mobile" width="280" /> |
 
-The preview uses no production storage, service worker, account, notification subscription or remote API. The artwork is original CSS geometry and all resources are local. It is an architectural starting point, not a replacement release.
+Baseline: [`ae1136d6e544`](https://github.com/venkate5hgunda/arcade/commit/ae1136d6e544784811e5c334ee76d6c54b6921a3). Review branch: `codex/redesign-first-game`, targeting `codex/redesign-foundation`.

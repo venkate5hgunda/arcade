@@ -1,9 +1,19 @@
 :root {
-  --paper: #f5f1ff;
-  --surface: #fff;
-  --ink: #211537;
-  --muted: #63556f;
-  --accent: #6636c9;
-  --soft: #e8dcff;
-  --line: #d8caed;
+  color-scheme: dark;
+  --paper: #fcf4e5;
+  --surface: #fffaf1;
+  --ink: #182039;
+  --muted: #5c6072;
+  --accent: #bc254e;
+  --coral: #ff456b;
+  --teal: #8fe0d8;
+  --navy: #14182f;
+  --line: #ded4c3;
+  --header: #191c35;
+  --header-ink: #fff8e9;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --header: #fff8eb;
+  --header-ink: #192039;
 }

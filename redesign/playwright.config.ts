@@ -13,6 +13,6 @@ export default defineConfig({
   webServer: {
     command: 'npm run preview',
     url: 'http://127.0.0.1:5174',
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.ARCADE_REUSE_PREVIEW === '1',
   },
 });
