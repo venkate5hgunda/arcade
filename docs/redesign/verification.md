@@ -108,3 +108,10 @@ CI's three-browser room flow exposed a missed timing assumption: it waited five 
 Traced original rules and seeded board generation through the typed engines, checkpoint validation, local rematches, catalog routing, 2–4-seat room snapshots, host-authoritative actions, protocol versions, reconnects, tests and documentation. This surfaced two missed traces: restored player counts were not carried into rematches, and an interactive board used incomplete grid semantics. Both are corrected. The public snapshot addition advances connections to v3; v1 public and v2 private-card host backups remain recoverable with fresh invitations.
 
 Validation includes original-engine board and move comparisons, exact finishes, captures and safe squares, four-seat protocol recovery and invalid actions, desktop/mobile browser wins and accessibility, and three-browser WebRTC turn and reconnect flows. Full cross-network and physical-device qualification remains outstanding.
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.
