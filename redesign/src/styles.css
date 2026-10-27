@@ -2626,3 +2626,64 @@ select:focus-visible {
   cursor: pointer;
   font-weight: 800;
 }
+.scramble-table {
+  padding: 1.4rem;
+  border-radius: 1.4rem;
+  background: linear-gradient(145deg, #315e58, #183e40);
+  color: #fff3df;
+  text-align: center;
+}
+.scramble-letters {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin: 1.2rem 0;
+}
+.scramble-letters span {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background: #fff3df;
+  color: #191c35;
+  border-bottom: 4px solid #ffd474;
+  font-size: 1.5rem;
+  font-weight: 900;
+  transform: rotate(-2deg);
+}
+.scramble-letters span:nth-child(even) {
+  transform: rotate(2deg);
+  background: #ffe0a4;
+}
+.scramble-form {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.scramble-form label {
+  display: grid;
+  gap: 0.3rem;
+  text-align: left;
+  font-weight: 700;
+}
+.scramble-form input {
+  max-width: 12rem;
+  padding: 0.7rem;
+  border-radius: 0.6rem;
+  border: 2px solid #fff3df;
+  font: inherit;
+}
+.scramble-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.scramble-actions .quiet {
+  color: #fff3df;
+  border-color: #a5e3ac;
+}

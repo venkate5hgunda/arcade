@@ -693,7 +693,7 @@
       "id": "G26",
       "title": "Word Scramble",
       "category": "Word",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/word-scramble.js",
         "js/game-catalog.js",
@@ -703,7 +703,12 @@
         "Solo shuffled words, answer checking, hints, progress and timer.",
         "Preserve catalog player range 1\u20131; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/scramble.check.ts",
+        "redesign/checks/browser/scramble.spec.ts"
+      ],
+      "implementationScope": "Native solo Word Scramble with original vocabulary, hints, round options, automatic advance and compatible local recovery."
     }
   ]
 }

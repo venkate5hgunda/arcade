@@ -39,7 +39,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G23](#g23) | 2048 | Puzzle | Implemented |
 | [G24](#g24) | Simon Says | Puzzle | Implemented |
 | [G25](#g25) | Hangman | Word | Implemented |
-| [G26](#g26) | Word Scramble | Word | Planned |
+| [G26](#g26) | Word Scramble | Word | Implemented |
 
 ## Shared release requirements
 
@@ -443,7 +443,7 @@ Baseline tests: [test/hangman.test.js](../../test/hangman.test.js).
 
 ## G26
 
-**Word Scramble** · Word · Planned
+**Word Scramble** · Word · Implemented
 
 - Solo shuffled words, answer checking, hints, progress and timer.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.

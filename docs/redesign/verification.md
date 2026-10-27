@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G03, G07–G08 and G16–G25 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 13 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G03, G07–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 12 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -116,3 +116,7 @@ Traced original vocabulary and duplicate-letter scoring through the native board
 ## Hangman milestone
 
 Traced the original word pool, category clues and round transitions through native controls, checkpoint validation, player settings, catalog/resume and complete desktop/mobile flows. Original-engine comparisons cover solo and two-player rounds; browser tests cover repeated letters, turn handoff, clue, reload, win, loss and replay. Visual review exposed a low-contrast clue label; its text color was corrected.
+
+## Word Scramble milestone
+
+Traced word selection, 5/8/12-round settings, hints, solved-round timer, checkpoint recovery, catalog and resume paths. Desktop/mobile tests exercise hints, wrong answers, automatic advance, completion, solved-checkpoint recovery and fresh-match input cleanup. The shuffle guarantees a changed arrangement by swapping distinct letters if the initial shuffle matches the original; this avoids an unbounded retry while preserving a valid scramble.

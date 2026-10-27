@@ -336,6 +336,7 @@ export const implementedGameIds = new Set<string>([
   'blackjack',
   'wordle',
   'hangman',
+  'word-scramble',
   'crazy-eights',
   'uno',
   'snakes-ladders',

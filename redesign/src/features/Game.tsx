@@ -1,3 +1,4 @@
+import { ScrambleGame } from './Scramble.tsx';
 import { HangmanGame } from './Hangman.tsx';
 import { WordleGame } from './Wordle.tsx';
 import { RacesGame } from './Races.tsx';
@@ -329,6 +330,7 @@ export function GameRoute() {
     return <RacesGame id={game.id} key={game.id} />;
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
+  if (game.id === 'word-scramble') return <ScrambleGame key={game.id} />;
   if (game.id === 'hangman') return <HangmanGame key={game.id} />;
   if (game.id === 'wordle') return <WordleGame key={game.id} />;
   if (game.id === 'blackjack') return <BlackjackGame key={game.id} />;

@@ -1,6 +1,6 @@
 # Game migration status
 
-**13 of 26 games are implemented.** The remaining 13 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**14 of 26 games are implemented.** The remaining 12 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
 | Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
 | Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
-| Word | Wordle, Hangman | Word Scramble |
+| Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
 
@@ -56,6 +56,10 @@ Wordle retains the original offline vocabulary, repeated-letter scoring, six gue
 ## Hangman acceptance and evidence
 
 Hangman retains the original 85-word pool, category clues, six misses, alternating two-player guesses, repeated-letter handling and compatible local checkpoints. Original-engine comparisons cover complete rounds in `redesign/checks/unit/hangman.check.ts`; `redesign/checks/browser/hangman.spec.ts` covers wins, losses, turns, clues, reload, replay, keyboard and accessibility on desktop and mobile.
+
+## Word Scramble acceptance and evidence
+
+Word Scramble preserves the original word pool, 5/8/12-round options, hints, skips, scoring, saved rounds and delayed advance after a correct answer. Desktop/mobile complete-round and recovery checks are in `redesign/checks/browser/scramble.spec.ts`; checkpoint, pool and completion checks are in `redesign/checks/unit/scramble.check.ts`.
 
 ## Porting rule
 
