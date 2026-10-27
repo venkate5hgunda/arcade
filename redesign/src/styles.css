@@ -1389,3 +1389,363 @@ label {
     font-size: 8px;
   }
 }
+/* Puzzle family: game controls and boards share the shelf's tactile palette. */
+select {
+  font: inherit;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+select:focus-visible {
+  outline: 3px solid #007a80;
+  outline-offset: 4px;
+}
+.puzzle-setup {
+  max-width: 620px;
+}
+.puzzle-setup .primary {
+  width: 100%;
+  margin: 10px 0;
+}
+.puzzle-setup label {
+  margin-top: 12px;
+}
+.puzzle-play {
+  max-width: 660px;
+  margin: auto;
+}
+.puzzle-play .turn-banner {
+  min-height: 56px;
+}
+.puzzle-play .room-callout {
+  color: #9de4df;
+}
+.connect-columns,
+.connect-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 7px;
+}
+.connect-columns {
+  margin-bottom: 10px;
+}
+.connect-columns button {
+  background: #ffe0a7;
+  color: #192039;
+  border: 0;
+  border-radius: 8px;
+  min-height: 44px;
+  font-weight: 900;
+}
+.connect-columns button:disabled {
+  cursor: default;
+}
+.connect-grid {
+  padding: 10px;
+  border-radius: 16px;
+  background: #324882;
+  border-bottom: 7px solid #172747;
+}
+.connect-slot {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #11182f;
+  box-shadow: inset 0 3px 4px #0009;
+}
+.connect-slot span {
+  width: 85%;
+  height: 85%;
+  border-radius: 50%;
+}
+.connect-slot.token-1 span {
+  background: #ff6b83;
+  border-bottom: 4px solid #bc324f;
+}
+.connect-slot.token-2 span {
+  background: #ffd474;
+  border-bottom: 4px solid #c78d27;
+}
+.connect-slot.winning {
+  outline: 3px solid #9ee6df;
+  outline-offset: 1px;
+}
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  touch-action: none;
+}
+.number-tile {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #35405e;
+  color: #fff8eb;
+  font-size: clamp(20px, 5vw, 42px);
+  font-weight: 850;
+  border-bottom: 5px solid #0003;
+  transition: transform 0.15s;
+}
+.tile-2 {
+  background: #f4e8d0;
+  color: #362f42;
+}
+.tile-4 {
+  background: #edd5a5;
+  color: #362f42;
+}
+.tile-8 {
+  background: #f4ad6b;
+  color: #362f42;
+}
+.tile-16 {
+  background: #f98a70;
+  color: #362039;
+}
+.tile-32 {
+  background: #f66c83;
+  color: #271c36;
+}
+.tile-64 {
+  background: #ffca72;
+  color: #362039;
+}
+.tile-128,
+.tile-256 {
+  background: #a8d5bb;
+  color: #203139;
+}
+.tile-512,
+.tile-1024,
+.tile-2048 {
+  background: #8ce0dc;
+  color: #192039;
+}
+.direction-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.direction-controls .quiet {
+  color: #fff8eb;
+  min-width: 52px;
+  font-size: 22px;
+}
+.mine-scroll,
+.memory-scroll {
+  max-width: 100%;
+  overflow: auto;
+  margin-top: 18px;
+  scrollbar-color: #8fe0d8 #192039;
+}
+.mine-grid {
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  padding: 3px;
+}
+.mine-cell {
+  width: 36px;
+  height: 36px;
+  background: #3f4e73;
+  color: #fff8eb;
+  border: 1px solid #8492b1;
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  padding: 0;
+  font-weight: 850;
+  font-size: 17px;
+}
+.mine-cell.revealed {
+  background: #d7dfeb;
+  color: #1c2847;
+  border-color: #b3bfd3;
+}
+.mine-cell.exploded {
+  background: #ff8d9c;
+  color: #192039;
+}
+.flag-toggle {
+  color: #fff8eb;
+}
+.flag-toggle[aria-pressed='true'] {
+  background: #8fe0d8;
+  color: #192039;
+}
+.memory-grid {
+  display: grid;
+  gap: 8px;
+  padding: 4px;
+}
+.memory-card {
+  aspect-ratio: 1;
+  min-height: 44px;
+  border: 1px solid #8996c3;
+  border-bottom: 5px solid #172644;
+  border-radius: 12px;
+  background: #39528d;
+  color: #fff8eb;
+  font-size: clamp(23px, 4vw, 42px);
+  font-weight: 800;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.memory-card.face-up {
+  background: #fff0d8;
+  transform: rotateY(0);
+}
+.memory-card.matched {
+  background: #ace2cf;
+  border-color: #58aa99;
+}
+.memory-card[aria-disabled='true'] {
+  cursor: default;
+}
+.simon-pads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+.simon-pad {
+  aspect-ratio: 1;
+  border-radius: 22px;
+  color: #151d34;
+  border: 4px solid #ffffff50;
+  border-bottom-width: 9px;
+  position: relative;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  font-weight: 800;
+  transition:
+    filter 0.12s,
+    transform 0.12s;
+}
+.simon-pad b {
+  font-size: clamp(35px, 6vw, 60px);
+  line-height: 1;
+}
+.pad-0 {
+  background: #ff8496;
+}
+.pad-1 {
+  background: #91b8ff;
+}
+.pad-2 {
+  background: #ffda79;
+}
+.pad-3 {
+  background: #80d8b9;
+}
+.simon-pad.active {
+  filter: brightness(1.4);
+  transform: scale(0.96);
+  outline: 5px solid #fff8eb;
+  outline-offset: -10px;
+}
+.simon-pad small {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+}
+@media (max-width: 560px) {
+  .puzzle-page .board-panel {
+    padding: 18px 12px;
+  }
+  .puzzle-page .game-heading h1 {
+    font-size: 31px;
+  }
+  .connect-columns,
+  .connect-grid {
+    gap: 4px;
+  }
+  .connect-grid {
+    padding: 7px;
+  }
+  .simon-pads {
+    gap: 12px;
+  }
+  .puzzle-play .turn-banner h2 {
+    font-size: 19px;
+  }
+  .memory-grid {
+    gap: 5px;
+  }
+}
+.tile-grid {
+  position: relative;
+}
+.tile-motion-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tile-moving > .number-tile {
+  opacity: 0.12;
+}
+.movement-tile {
+  position: absolute;
+  animation: tile-slide 0.175s ease-out both;
+}
+.tile-merged {
+  animation: tile-pop 0.2s ease-out;
+}
+.tile-spawned {
+  animation: tile-spawn 0.18s ease-out;
+}
+@keyframes tile-slide {
+  to {
+    transform: translate(var(--travel-x), var(--travel-y));
+  }
+}
+@keyframes tile-pop {
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes tile-spawn {
+  from {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .movement-tile,
+  .tile-merged,
+  .tile-spawned {
+    animation: none;
+  }
+}
+.room-game-name {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #c9c6da;
+  font-weight: 800;
+}
+.connect-slot.token-1 span,
+.connect-slot.token-2 span {
+  animation: disc-drop 0.2s ease-out;
+}
+@keyframes disc-drop {
+  from {
+    transform: translateY(-45px);
+    opacity: 0.15;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.gold-text {
+  color: #ffd474;
+}

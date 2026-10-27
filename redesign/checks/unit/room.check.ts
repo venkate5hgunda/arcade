@@ -218,3 +218,36 @@ test('draw standings are counted once and reconnect name mismatch preserves the 
   host.leave();
   guest.leave();
 });
+
+test('Connect Four room uses authoritative gravity and restores the correct game after reconnect', async () => {
+  cache.clear();
+  const host = new Room(factory);
+  const guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('connect-four');
+  await flush();
+  assert.equal(guest.snapshot?.match?.gameId, 'connect-four');
+  assert.equal(guest.snapshot?.match?.board.length, 42);
+  for (const [player, col] of [
+    [host, 0],
+    [guest, 1],
+    [host, 0],
+    [guest, 1],
+    [host, 0],
+    [guest, 1],
+    [host, 0],
+  ] as const) {
+    player.move(col);
+    await flush();
+  }
+  assert.equal(guest.snapshot?.match?.over, true);
+  assert.deepEqual(guest.snapshot?.wins, [1, 0]);
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.snapshot?.match?.gameId, 'connect-four');
+  assert.equal(restored.snapshot?.match?.board[14], 1);
+  restored.leave();
+  host.leave();
+  guest.leave();
+});

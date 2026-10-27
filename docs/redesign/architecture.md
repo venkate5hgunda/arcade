@@ -42,7 +42,7 @@ Model multiplayer through a transport interface and an authority controller. Pre
 
 ## Delivery, PWA and security
 
-The redesign serves on loopback on a dedicated port, imports only its own runtime code and public parity JSON, and never registers a service worker. Local data uses the original `arcade:` formats; room host checkpoints use a tab-scoped redesign-specific key. The first room controller supports exactly two named seats, public Tic-Tac-Toe snapshots, host-owned results, and round/revision validation. It is deliberately independent of the broader legacy room wire protocol. Real WebRTC creates offers/answers and encrypted data channels; a factory permits domain tests to supply a transport. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
+The redesign serves on loopback on a dedicated port, imports only its own runtime code and public parity JSON, and never registers a service worker. Local data uses the original `arcade:` formats; room host checkpoints use a tab-scoped redesign-specific key. The first room controller supports exactly two named seats, public Tic-Tac-Toe and Connect Four snapshots, host-owned results, and round/revision validation. It is deliberately independent of the broader legacy room wire protocol. Real WebRTC creates offers/answers and encrypted data channels; a factory permits domain tests to supply a transport. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
 
 Before product rollout, introduce a dedicated manifest, asset graph and scope-owned service worker, then test install/update/offline behavior. Avoid CDN runtime dependencies. Static hosting must include the correct repository base path and all lazy feature assets. Use a separate preview origin for any later migration experiments so production storage and workers cannot be modified accidentally.
 
@@ -55,3 +55,14 @@ Retain the app's identity while improving clarity and movement. The approved opt
 ## Test-runner isolation
 
 Foundation checks live under `redesign/checks/`, with an explicitly invoked `inventory.check.mjs` and Playwright specs. The baseline repos use Node automatic test discovery; a nested `test/` directory would cause Node to execute Playwright specs with the wrong runner. Keep the new package checks explicit so root test commands remain independent.
+
+## Puzzle-family boundary
+
+`lib/puzzles.ts` owns pure transitions and validators. `features/Puzzles.tsx`
+owns setup/React rendering and cancels all playback, mismatch, AI and movement
+timers. `lib/checkpoints.ts` dispatches validation per game and distinguishes
+migrated room capability from the baseline registry's eventual room support.
+The shared room snapshot carries an optional `gameId`; absent IDs are restored
+as Tic-Tac-Toe for compatibility with the first milestone. Both games still
+validate seat, round and revision at the host; guests cannot select a new game
+or publish state.

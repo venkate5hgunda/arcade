@@ -15,8 +15,7 @@ import {
   deleteGameSession,
   createGameSession,
 } from './lib/session.ts';
-import { isValidState } from './lib/tictactoe.ts';
-import type { LocalState } from './lib/tictactoe.ts';
+import { validCheckpoint, roomGameIds } from './lib/checkpoints.ts';
 import { recentGames } from './lib/profile.ts';
 import { KEYS, loadJSON, onStorageFailure, saveJSON } from './lib/storage.ts';
 import { requirements } from './lib/catalog.ts';
@@ -43,7 +42,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
     unfinishedGames().filter((id) => {
       if (!isImplemented(id)) return false;
       const session = createGameSession(id);
-      if (isValidState(session.state as LocalState)) return true;
+      if (validCheckpoint(id, session.state)) return true;
       deleteGameSession(id);
       return false;
     }),
@@ -83,12 +82,14 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <b>{playerLabel(game)}</b>
                   <small>
                     {isImplemented(game.id)
-                      ? 'Solo or pass & play'
+                      ? game.players.type === 'single'
+                        ? 'Solo challenge'
+                        : 'Solo or pass & play'
                       : 'Original Arcade'}
                   </small>
                 </span>
               </span>
-              {isImplemented(game.id) && (
+              {roomGameIds.has(game.id) && (
                 <span>
                   <Icon name="confetti" />
                   <span>
@@ -162,7 +163,9 @@ function Catalog({ query, category }: { query: string; category: string }) {
           <div className="continue-row">
             {resumable.map((id) => (
               <Link key={id} to={`/game/${id}`} className="continue-card">
-                <span className="continue-art world world-Puzzle ttt-scene" />
+                <span
+                  className={`continue-art world world-Puzzle ${id === 'tictactoe' ? 'ttt-scene' : ''}`}
+                />
                 <span>
                   <b>{GAMES.find((g) => g.id === id)?.name}</b>
                   <small>Your saved match is ready</small>
@@ -196,8 +199,8 @@ function Catalog({ query, category }: { query: string; category: string }) {
           ))}
         </div>
         <p className="catalog-note">
-          The new shelf is taking shape. Tic-Tac-Toe is ready here; all 26 games
-          are available in{' '}
+          The new shelf is taking shape. All six puzzle games are ready here;
+          all 26 games are available in{' '}
           <a
             href="https://venkate5hgunda.github.io/arcade/"
             target="_blank"

@@ -33,11 +33,11 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G17](#g17) | Crazy Eights | Cards | Planned |
 | [G18](#g18) | UNO-inspired | Cards | Planned |
 | [G19](#g19) | Tic-Tac-Toe | Puzzle | Implemented |
-| [G20](#g20) | Connect Four | Puzzle | Planned |
-| [G21](#g21) | Minesweeper | Puzzle | Planned |
-| [G22](#g22) | Memory Match | Puzzle | Planned |
-| [G23](#g23) | 2048 | Puzzle | Planned |
-| [G24](#g24) | Simon Says | Puzzle | Planned |
+| [G20](#g20) | Connect Four | Puzzle | Implemented |
+| [G21](#g21) | Minesweeper | Puzzle | Implemented |
+| [G22](#g22) | Memory Match | Puzzle | Implemented |
+| [G23](#g23) | 2048 | Puzzle | Implemented |
+| [G24](#g24) | Simon Says | Puzzle | Implemented |
 | [G25](#g25) | Hangman | Word | Planned |
 | [G26](#g26) | Word Scramble | Word | Planned |
 
@@ -47,7 +47,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 - Preserve bright original artwork, legible contrast, touch and keyboard operation, focus management, reduced motion, and mobile/landscape/desktop layouts. Primary action and active actor remain apparent.
 - Treat installation, first-load caching, fully offline operation, interrupted updates and multi-tab version consistency as separate cases.
 - Keep behavior, domain state, persistent data and presentation independently testable; one authoritative owner for each state transition.
-- A planned or merely implemented feature is not verified parity. Track pending, implemented and verified evidence separately when migration begins. Foundation status was all planned; Phase 2 implements G19 with scoped progress on the platform and room requirements. See verification.md for current evidence.
+- A planned or merely implemented feature is not verified parity. Track pending, implemented and verified evidence separately when migration begins. Foundation status was all planned; Phase 2 implements G19 and Phase 3 implements G20–G24, with scoped progress on platform and room requirements. See verification.md for current evidence.
 - A backend replacement must specify user-visible availability, consent, data retention, authority and recovery semantics before activation. Architectural freedom does not erase these requirements.
 
 ## A01
@@ -377,7 +377,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G20
 
-**Connect Four** · Puzzle · Planned
+**Connect Four** · Puzzle · Implemented
 
 - One/two-player local modes and room duel; gravity drops, computer option, four-in-line wins/draws and full-column rejection.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.
@@ -388,7 +388,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G21
 
-**Minesweeper** · Puzzle · Planned
+**Minesweeper** · Puzzle · Implemented
 
 - Solo board settings, first-click safety, reveal/flag, loss/win and saved board.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
@@ -399,7 +399,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G22
 
-**Memory Match** · Puzzle · Planned
+**Memory Match** · Puzzle · Implemented
 
 - One/two-player matching pairs; concealed cards, delayed mismatch flips, scoring and turn progression.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.
@@ -410,7 +410,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G23
 
-**2048** · Puzzle · Planned
+**2048** · Puzzle · Implemented
 
 - Keyboard/swipe slides, once-per-move merges, staged movement/merge/spawn, score, 2048 continuation and game over.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
@@ -421,7 +421,7 @@ Baseline tests: [test/2048.test.js](../../test/2048.test.js).
 
 ## G24
 
-**Simon Says** · Puzzle · Planned
+**Simon Says** · Puzzle · Implemented
 
 - Watch growing color sequence, input phase, correct/failure feedback and timed-session resume.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
