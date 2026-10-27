@@ -1,11 +1,11 @@
 # Game migration status
 
-**7 of 26 games are implemented.** The remaining 19 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**9 of 26 games are implemented.** The remaining 17 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
-| Cards | Blackjack | Crazy Eights, UNO-inspired |
+| Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | — | Snakes & Ladders, Ludo, Island Charter, Business, Chess |
 | Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
 | Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
@@ -30,6 +30,18 @@ Native solo Blackjack preserves the 52-card deck, ace handling, dealer standing 
 Evidence: `redesign/checks/unit/blackjack.check.ts` and `redesign/checks/browser/art-blackjack.spec.ts`; complete desktop/mobile flows, keyboard controls, accessibility, reload and record-preserving redeals. Shared audio/haptics remain A07 work.
 
 ![Native Blackjack on mobile](../images/redesign-blackjack-mobile.png)
+
+## Private-card acceptance and evidence
+
+- **Crazy Eights:** native two-player covered local hands and private rooms; suit/rank matching, wild-eight suit selection, one draw per turn, passing, discard recycling, empty-hand victory and blocked-hand penalty scoring. Choosing a suit survives reload; completed games are removed from local resume.
+- **UNO-inspired:** native 2–20-player local tables and rooms; one/two decks, private hands, skip/reverse/+2/wild/+4, drawn-card restriction, challenge/accept, UNO callouts/catches, blocked termination, wins and replay. Names/settings/checkpoints retain baseline shapes. Reload covers local hands again.
+- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v2 rejects older connection links. Valid v1 public host checkpoints can be restored and re-invited using v2 links.
+
+Evidence: `redesign/checks/unit/cards.check.ts`, `room.check.ts`, and `redesign/checks/browser/cards.spec.ts`. Typed engines are compared against the originals through complete games at 2/3/10/11/20 players. Twenty-seat protocol admission/projection/reconnect is checked with deterministic transports; real WebRTC browser flows cover two-player Crazy Eights and three-player UNO, including host reload, preserved private hands, complete wins and rematches. Physical-device/network qualification and broader shared room criteria remain release gates.
+
+| Crazy Eights | UNO-inspired |
+| --- | --- |
+| ![Crazy Eights mobile](../images/redesign-crazy-eights-mobile.png) | ![UNO mobile](../images/redesign-uno-mobile.png) |
 
 ## Porting rule
 

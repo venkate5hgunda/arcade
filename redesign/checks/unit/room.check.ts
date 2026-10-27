@@ -251,3 +251,180 @@ test('Connect Four room uses authoritative gravity and restores the correct game
   host.leave();
   guest.leave();
 });
+
+test('private Crazy Eights snapshots contain only own cards, reject forged intentions, finish once and restore a private deck', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('crazy-eights');
+  await flush();
+  const first = guest.snapshot!.cardMatch!;
+  assert.equal(first.view.seat, 1);
+  assert.equal(first.view.hand.length, 7);
+  assert.equal(validSnapshot({ ...guest.snapshot, privateGame: {} }), false);
+  assert.equal(
+    validSnapshot({
+      ...guest.snapshot,
+      cardMatch: { ...first, view: { ...first.view, stock: [] } },
+    }),
+    false,
+  );
+  const rev = host.snapshot!.cardMatch!.revision;
+  guest.cardAction({ type: 'draw' });
+  await flush();
+  assert.equal(host.snapshot!.cardMatch!.revision, rev, 'out-of-turn rejected');
+  host.cardAction({ type: 'draw', hands: [] });
+  await flush();
+  assert.equal(
+    host.snapshot!.cardMatch!.revision,
+    rev,
+    'injected fields rejected',
+  );
+  const wire = Peer.peers.at(-1)!.channel!,
+    send = wire.send;
+  wire.send = function (data: string) {
+    const m = JSON.parse(data);
+    if (m.type === 'card-action') m.round = -1;
+    send.call(this, JSON.stringify(m));
+  };
+  guest.cardAction({ type: 'pass' });
+  await flush();
+  assert.equal(host.snapshot!.cardMatch!.revision, rev);
+  wire.send = send;
+  for (
+    let turn = 0;
+    turn < 4000 && host.snapshot!.cardMatch!.view.phase !== 'over';
+    turn++
+  ) {
+    const actor = host.snapshot!.cardMatch!.view.current,
+      player = actor === 0 ? host : guest,
+      v = player.snapshot!.cardMatch!.view;
+    assert.equal(v.seat, actor);
+    assert.equal('hands' in v, false);
+    assert.equal('stock' in v, false);
+    player.cardAction(
+      v.phase === 'choose'
+        ? { type: 'choose', suit: '♠' }
+        : v.legal.length
+          ? { type: 'play', id: v.legal[0] }
+          : v.canDraw && !v.drawn
+            ? { type: 'draw' }
+            : { type: 'pass' },
+    );
+    await flush();
+  }
+  assert.equal(host.snapshot!.cardMatch!.view.phase, 'over');
+  assert.equal(
+    host.snapshot!.wins.reduce((a, b) => a + b, 0) + host.snapshot!.draws,
+    1,
+  );
+  host.cardAction({ type: 'draw' });
+  assert.equal(
+    host.snapshot!.wins.reduce((a, b) => a + b, 0) + host.snapshot!.draws,
+    1,
+  );
+  host.start();
+  await flush();
+  host.cardAction({ type: 'draw' });
+  await flush();
+  const expected = structuredClone(host.snapshot!.cardMatch);
+  const restored = new Room(factory);
+  restored.restore();
+  assert.deepEqual(restored.snapshot!.cardMatch, expected);
+  host.leave();
+  await connect(restored, guest);
+  assert.equal(guest.snapshot!.cardMatch!.view.seat, 1);
+  assert.equal(guest.snapshot!.cardMatch!.revision, expected!.revision);
+  assert.ok(guest.snapshot!.members.every((m) => m.connected));
+  restored.leave();
+  guest.leave();
+});
+
+test('20-seat UNO admission keeps existing channels, projects every private hand and reconnects a chosen seat', async () => {
+  cache.clear();
+  const host = new Room(factory);
+  host.createHost('Mira');
+  const players = [host];
+  for (let seat = 1; seat < 20; seat++) {
+    const guest = new Room(factory),
+      invite = await host.createInvite(),
+      answer = await guest.joinInvite(invite, `Guest ${seat}`);
+    await host.acceptAnswer(answer);
+    await flush();
+    players.push(guest);
+    assert.ok(host.snapshot!.members.every((m) => m.connected));
+  }
+  assert.equal(host.snapshot!.members.length, 20);
+  await assert.rejects(host.createInvite(), /20 players/);
+  assert.throws(() => host.start('crazy-eights'), /more than two/);
+  host.start('uno');
+  await flush();
+  const all = players.map((player, seat) => {
+    const s = player.snapshot!;
+    assert.ok(validSnapshot(s));
+    assert.equal(s.cardMatch!.view.seat, seat);
+    assert.equal(s.cardMatch!.view.counts.length, 20);
+    assert.equal(s.cardMatch!.view.stockCount, 75);
+    return s.cardMatch!.view.hand;
+  });
+  assert.equal(new Set(all.flat()).size, 140);
+  for (let seat = 1; seat < 20; seat++)
+    assert.ok(all[seat].every((id) => !all[0].includes(id)));
+  const id = host.snapshot!.members[7].id;
+  const answer = await players[7].joinInvite(
+    await host.createInvite(id),
+    'Guest 7',
+  );
+  await host.acceptAnswer(answer);
+  await flush();
+  assert.ok(host.snapshot!.members.every((m) => m.connected));
+  assert.deepEqual(players[7].snapshot!.cardMatch!.view.hand, all[7]);
+  const old = host.snapshot!.cardMatch!.revision;
+  players[7].cardAction({ type: 'draw' });
+  await flush();
+  assert.equal(host.snapshot!.cardMatch!.revision, old);
+  for (const player of players) player.leave();
+});
+
+test('v1 public host checkpoints migrate into v2 invitations without accepting old peers or extra private fields', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start();
+  host.move(4);
+  await flush();
+  const saved = structuredClone(host.snapshot)!;
+  host.leave();
+  guest.leave();
+  cache.set('arcade:redesign:room:v1', JSON.stringify(saved));
+  const restored = new Room(factory);
+  restored.restore();
+  assert.deepEqual(restored.snapshot!.match, saved.match);
+  const invite = await restored.createInvite();
+  assert.equal(readSignal(invite, 'offer').version, 2);
+  const url = new URL(invite),
+    params = new URLSearchParams(url.hash.split('?')[1]),
+    message = JSON.parse(atob(params.get('invite')!));
+  message.version = 1;
+  url.hash = `/room?invite=${encodeURIComponent(btoa(JSON.stringify(message)))}`;
+  assert.throws(
+    () => readSignal(url.href, 'offer'),
+    /same version.*fresh link/,
+  );
+  assert.equal(
+    validSnapshot({
+      ...saved,
+      members: saved.members.map((m) => ({ ...m, hand: [] })),
+    }),
+    false,
+  );
+  assert.equal(
+    validSnapshot({ ...saved, match: { ...saved.match, stock: [] } }),
+    false,
+  );
+  restored.leave();
+});

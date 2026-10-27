@@ -60,6 +60,15 @@ try {
         path: `../docs/images/redesign-blackjack-${name}.png`,
         fullPage: true,
       });
+      for (const id of ['crazy-eights', 'uno']) {
+        await page.goto(`http://127.0.0.1:${port}/#/game/${id}`);
+        await page.getByRole('button', { name: 'Start playing' }).click();
+        await page.getByRole('button', { name: 'Reveal my hand' }).click();
+        await page.screenshot({
+          path: `../docs/images/redesign-${id}-${name}.png`,
+          fullPage: true,
+        });
+      }
     } finally {
       await browser.close();
     }

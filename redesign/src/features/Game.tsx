@@ -1,3 +1,4 @@
+import { CardsGame } from './Cards.tsx';
 import { GameArt } from '../components/GameArt.tsx';
 import { BlackjackGame } from './Blackjack.tsx';
 import { PuzzleGame } from './Puzzles.tsx';
@@ -321,6 +322,8 @@ export function GameRoute() {
         <p>Choose one of the games on the shelf.</p>
       </section>
     );
+  if (game.id === 'crazy-eights' || game.id === 'uno')
+    return <CardsGame id={game.id} key={game.id} />;
   if (game.id === 'blackjack') return <BlackjackGame key={game.id} />;
   if (game.id === 'tictactoe') return <LocalGame key={game.id} />;
   if (PUZZLE_IDS.includes(game.id as PuzzleId))

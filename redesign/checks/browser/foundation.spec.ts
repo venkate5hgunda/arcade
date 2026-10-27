@@ -2,6 +2,18 @@ import { test, expect } from '@playwright/test';
 import { GAMES } from '../../src/lib/games.ts';
 import baseline from '../../../docs/redesign/parity.json' with { type: 'json' };
 
+test('skip link stays hidden until focused and moves keyboard focus to the main content', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const skip = page.getByRole('link', { name: 'Skip to content' });
+  await expect(skip).toHaveCSS('clip-path', 'inset(50%)');
+  await skip.focus();
+  await expect(skip).toHaveCSS('clip-path', 'none');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+});
+
 test('complete shelf, categories, search, selection and original-game handoff', async ({
   page,
 }) => {

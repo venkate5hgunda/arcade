@@ -25,7 +25,7 @@
         "test/game-categories.test.js",
         "test/game-session.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A02",
@@ -52,7 +52,7 @@
         "test/player-names.test.js",
         "test/turn-indicator.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A03",
@@ -72,7 +72,7 @@
       "baselineTests": [
         "test/game-session.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A04",
@@ -94,7 +94,7 @@
         "test/multiplayer.test.js",
         "test/room-qr.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A05",
@@ -117,7 +117,7 @@
         "test/multiplayer.test.js",
         "test/remote-match.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A06",
@@ -138,7 +138,7 @@
       "baselineTests": [
         "test/multiplayer.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A07",
@@ -163,7 +163,7 @@
         "test/haptics.test.js",
         "test/theme.test.js"
       ],
-      "implementationScope": "Partial: seven games (six puzzle games and Blackjack); room support for Tic-Tac-Toe and Connect Four. See docs/redesign/backlog.md for remaining acceptance scope."
+      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
     },
     {
       "id": "A08",
@@ -479,7 +479,7 @@
       "id": "G17",
       "title": "Crazy Eights",
       "category": "Cards",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/crazy-eights.js",
         "js/game-catalog.js",
@@ -491,13 +491,19 @@
       ],
       "baselineTests": [
         "test/crazy-eights.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/cards.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/cards.spec.ts"
+      ],
+      "implementationScope": "Native local and private room play, baseline-compatible checkpoints, covered handoffs, host-owned deck, seat projections and reload/reconnect. Shared audio/haptics and broader room release gates remain separate."
     },
     {
       "id": "G18",
       "title": "UNO-inspired",
       "category": "Cards",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/uno.js",
         "js/game-catalog.js",
@@ -510,7 +516,13 @@
       ],
       "baselineTests": [
         "test/uno.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/cards.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/cards.spec.ts"
+      ],
+      "implementationScope": "Native local and private room play, baseline-compatible checkpoints, covered handoffs, host-owned deck, seat projections and reload/reconnect. Shared audio/haptics and broader room release gates remain separate."
     },
     {
       "id": "G19",

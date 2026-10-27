@@ -2,7 +2,7 @@
 
 The [Living Game Shelf reference](../images/redesign-reference.png) establishes the navy, coral, cream, teal and warm golden tabletop direction. The [art guide](art-guide.md) is the required brief for every new Arcade image.
 
-All **26 games have distinct local covers**, reused consistently on the hero, shelf, catalog, resume, setup and unported-game detail surfaces through `GameArt`. Artwork coverage is independent of gameplay migration: seven games currently have native redesigned play.
+All **26 games have distinct local covers**, reused consistently on the hero, shelf, catalog, resume, setup and unported-game detail surfaces through `GameArt`. Artwork coverage is independent of gameplay migration: nine games currently have native redesigned play.
 
 - `redesign/public/art/games/*.webp`: 26 inspected, optimized 1344×768 covers, approximately 1.96 MiB combined. The [manifest](artwork-manifest.json) records every game ID, alternative text, hash, dimensions, byte size, provider, exact accepted prompt and generation request ID.
 - Twenty-five new covers were generated with Adobe Firefly. Tic-Tac-Toe retains the bespoke built-in ImageGen illustration from the first-game milestone; its original prompt was not recorded then, and the manifest explicitly preserves that limitation.

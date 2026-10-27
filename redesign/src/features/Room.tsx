@@ -1,3 +1,6 @@
+import { CardTable } from '../components/CardTable.tsx';
+import { GAMES } from '../lib/games.ts';
+import type { RoomGameId } from '../lib/room/protocol.ts';
 import { ConnectBoard } from '../components/ConnectBoard.tsx';
 import { c4Win } from '../lib/puzzles.ts';
 import { useEffect, useState } from 'react';
@@ -10,9 +13,7 @@ import { names } from '../lib/profile.ts';
 export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
-  const [gameId, setGameId] = useState<'tictactoe' | 'connect-four'>(
-    'tictactoe',
-  );
+  const [gameId, setGameId] = useState<RoomGameId>('tictactoe');
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
     location.search ? window.location.href : '',
@@ -35,8 +36,11 @@ export function RoomPage({ room }: { room: Room }) {
   }, [location.search]);
   const s = room.snapshot;
   const match = s?.match;
+  const cards = s?.cardMatch;
+  const selectedGame = s && s.members.length > 2 ? 'uno' : gameId;
+  const gameName = (id: string) => GAMES.find((g) => g.id === id)!.name;
   const connected =
-    s?.members.length === 2 && s.members.every((m) => m.connected);
+    !!s && s.members.length >= 2 && s.members.every((m) => m.connected);
   const seat = s?.members.findIndex((m) => m.id === room.peerId) ?? -1;
   const win =
     match &&
@@ -74,8 +78,8 @@ export function RoomPage({ room }: { room: Room }) {
       <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>
       <p className="lede">
-        A direct connection for two. No accounts, just Tic-Tac-Toe or Connect
-        Four.
+        Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights or
+        UNO-inspired. UNO tables welcome 2–20 players.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -146,9 +150,11 @@ export function RoomPage({ room }: { room: Room }) {
                     ? index === 0
                       ? 'R'
                       : 'G'
-                    : index === 0
-                      ? 'X'
-                      : 'O'}
+                    : cards
+                      ? String(index + 1)
+                      : index === 0
+                        ? 'X'
+                        : 'O'}
                 </b>
                 <strong>
                   {m.name}
@@ -161,7 +167,7 @@ export function RoomPage({ room }: { room: Room }) {
             ))}
             {s?.members.length === 1 && <p>Your guest’s seat is waiting.</p>}
           </div>
-          {!connected && (
+          {(!connected || (room.role === 'host' && output)) && (
             <div className="room-columns">
               <section className="setup-card">
                 <h2>
@@ -171,7 +177,7 @@ export function RoomPage({ room }: { room: Room }) {
                 </h2>
                 <p>
                   {room.role === 'host'
-                    ? 'Send this unique invitation to one friend. Keep this tab open while they join.'
+                    ? 'Send this invitation to one guest. Each player needs their own invitation. Keep this tab open while they join.'
                     : 'Send this answer to the host. They must accept it in the tab that created your invitation.'}
                 </p>
                 {output && (
@@ -208,6 +214,18 @@ export function RoomPage({ room }: { room: Room }) {
                     </div>
                   </>
                 )}
+                {room.role === 'host' && connected && output && (
+                  <button
+                    className="quiet"
+                    onClick={() => {
+                      room.cancelInvite();
+                      setOutput('');
+                      setInput('');
+                    }}
+                  >
+                    Cancel invitation
+                  </button>
+                )}
                 {room.role === 'host' && (
                   <button
                     className="quiet"
@@ -216,7 +234,7 @@ export function RoomPage({ room }: { room: Room }) {
                       run(async () => setOutput(await room.createInvite()))
                     }
                   >
-                    {s?.members.length === 2
+                    {(s?.members.length ?? 0) >= 2
                       ? 'Create reconnect invitation'
                       : 'Create fresh invitation'}
                   </button>
@@ -250,34 +268,74 @@ export function RoomPage({ room }: { room: Room }) {
               )}
             </div>
           )}
-          {connected && !match && (
-            <div className="setup-card">
-              <h2>Everyone’s here.</h2>
-              {room.role === 'host' && (
-                <label>
-                  Room game
-                  <select
-                    value={gameId}
-                    onChange={(e) => setGameId(e.target.value as typeof gameId)}
+          {connected &&
+            !match &&
+            !cards &&
+            room.role === 'host' &&
+            s &&
+            s.members.length < 20 &&
+            !output && (
+              <button
+                className="quiet invite-another"
+                onClick={() =>
+                  run(async () => setOutput(await room.createInvite()))
+                }
+              >
+                Invite another player
+              </button>
+            )}
+          {connected &&
+            !match &&
+            !cards &&
+            (!output || room.role === 'guest') && (
+              <div className="setup-card">
+                <h2>Everyone’s here.</h2>
+                {room.role === 'host' && (
+                  <label>
+                    Room game
+                    <select
+                      value={selectedGame}
+                      onChange={(e) =>
+                        setGameId(e.target.value as typeof gameId)
+                      }
+                    >
+                      <option
+                        disabled={(s?.members.length ?? 0) > 2}
+                        value="tictactoe"
+                      >
+                        Tic-Tac-Toe
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 2}
+                        value="connect-four"
+                      >
+                        Connect Four
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 2}
+                        value="crazy-eights"
+                      >
+                        Crazy Eights
+                      </option>
+                      <option value="uno">UNO-inspired</option>
+                    </select>
+                  </label>
+                )}
+                <p>
+                  {room.role === 'host'
+                    ? 'Your table is ready for a little friendly competition.'
+                    : 'Waiting for the host to choose and start a game.'}
+                </p>
+                {room.role === 'host' && (
+                  <button
+                    className="primary"
+                    onClick={() => room.start(selectedGame)}
                   >
-                    <option value="tictactoe">Tic-Tac-Toe</option>
-                    <option value="connect-four">Connect Four</option>
-                  </select>
-                </label>
-              )}
-              <p>
-                {room.role === 'host'
-                  ? 'Your table is ready for a little friendly competition.'
-                  : 'Waiting for the host to choose and start a game.'}
-              </p>
-              {room.role === 'host' && (
-                <button className="primary" onClick={() => room.start(gameId)}>
-                  Start{' '}
-                  {gameId === 'connect-four' ? 'Connect Four' : 'Tic-Tac-Toe'}
-                </button>
-              )}
-            </div>
-          )}
+                    Start {gameName(selectedGame)}
+                  </button>
+                )}
+              </div>
+            )}
           {match && (
             <div className="room-match board-panel">
               <p className="room-game-name">
@@ -366,6 +424,69 @@ export function RoomPage({ room }: { room: Room }) {
               )}
             </div>
           )}
+          {cards && s && (
+            <div className="board-panel room-card-match">
+              <p className="room-game-name">{gameName(cards.gameId)}</p>
+              <div className="turn-banner" role="status">
+                <div>
+                  <h2>
+                    {cards.view.phase === 'over'
+                      ? 'Round complete'
+                      : !connected
+                        ? 'Match paused'
+                        : cards.view.current === seat
+                          ? 'Your turn'
+                          : `${s.members[cards.view.current].name}’s turn`}
+                  </h2>
+                  <p>
+                    {!connected
+                      ? 'Reconnect every seat to continue.'
+                      : cards.view.phase === 'over'
+                        ? `Round ${cards.round + 1} complete`
+                        : 'Your cards are private. Play from your own screen.'}
+                  </p>
+                </div>
+              </div>
+              <CardTable
+                view={cards.view}
+                names={s.members.map((m) => m.name)}
+                blocked={!connected}
+                onAction={(action) => {
+                  try {
+                    room.cardAction(action);
+                  } catch (error) {
+                    setMessage(
+                      error instanceof Error
+                        ? error.message
+                        : 'Reconnect to continue.',
+                    );
+                  }
+                }}
+              />
+              <div className="score-line">
+                {s.members.map((member, index) => (
+                  <span key={member.id}>
+                    {member.name} <strong>{s.wins[index]} wins</strong>
+                  </span>
+                ))}
+              </div>
+              <p className="count">
+                {s.draws} draws · Round {cards.round + 1}
+              </p>
+              {cards.view.phase === 'over' &&
+                (room.role === 'host' ? (
+                  <button
+                    className="primary"
+                    disabled={!connected}
+                    onClick={() => room.start()}
+                  >
+                    Play again
+                  </button>
+                ) : (
+                  <p>Waiting for the host to start the next round.</p>
+                ))}
+            </div>
+          )}
           <details className="help-card">
             <summary>Room options</summary>
             <p>
@@ -378,6 +499,23 @@ export function RoomPage({ room }: { room: Room }) {
               another network if the links are accepted but the room cannot
               connect.
             </p>
+            {room.role === 'host' &&
+              s?.members
+                .slice(1)
+                .filter((m) => !m.connected)
+                .map((member) => (
+                  <button
+                    key={member.id}
+                    className="quiet"
+                    onClick={() =>
+                      run(async () =>
+                        setOutput(await room.createInvite(member.id)),
+                      )
+                    }
+                  >
+                    Reconnect {member.name}
+                  </button>
+                ))}
             <button
               className="quiet"
               onClick={() => {

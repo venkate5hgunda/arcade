@@ -91,7 +91,11 @@ h1[tabindex='-1']:focus {
 .skip {
   position: fixed;
   left: 16px;
-  top: -100px;
+  top: 12px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
   z-index: 10;
   background: white;
   color: #151b32;
@@ -99,7 +103,10 @@ h1[tabindex='-1']:focus {
   border-radius: 10px;
 }
 .skip:focus {
-  top: 12px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 .sr-only {
   position: absolute;
@@ -886,7 +893,8 @@ label {
   max-width: 590px;
   margin: 20px auto;
 }
-.room-match .count {
+.room-match .count,
+.room-card-match .count {
   color: #c9c6da;
   margin-top: 15px;
 }
@@ -1836,4 +1844,280 @@ select:focus-visible {
   .blackjack-actions > button {
     flex: 1;
   }
+}
+
+/* Private card tables share the shelf's resin, cream and teal materials. */
+.private-card-table {
+  padding: 20px;
+  background: radial-gradient(ellipse at top, #24695e, #123f43);
+  border: 6px solid #aa7349;
+  border-radius: 24px;
+  color: #fff3df;
+}
+.card-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.card-seats > div {
+  border: 1px solid #8fe0d866;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+.card-seats > .active-seat {
+  border-color: #ffd474;
+  background: #fff3df;
+  color: #191c35;
+  box-shadow: 0 0 0 2px #ffd474;
+}
+.card-table-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-block: 1px solid #fff3df44;
+}
+.card-table-center .eyebrow {
+  color: #ffb6c5;
+}
+.active-card-suit {
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: capitalize;
+  margin: 8px 0;
+}
+.table-card-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 116px;
+  border-radius: 12px;
+  background: #fff3df;
+  color: #191c35;
+  box-shadow:
+    0 4px 0 #d1bda3,
+    0 8px 12px #0003;
+  overflow: hidden;
+  border: 3px solid #fff3df;
+}
+.table-card-face > strong {
+  display: grid;
+  place-items: center;
+  width: 90%;
+  min-height: 65px;
+  border-radius: 50%;
+  background: #fff3df;
+  color: #191c35;
+  font-size: 32px;
+  transform: rotate(-12deg);
+}
+.table-card-face > small {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+.table-card-corner {
+  position: absolute;
+  top: 1px;
+  left: 5px;
+  font-size: 15px;
+  font-weight: 900;
+  z-index: 1;
+}
+.tone-red {
+  background: #c32e4c;
+  color: #fff3df;
+}
+.tone-yellow {
+  background: #ffd474;
+  color: #191c35;
+}
+.tone-green {
+  background: #147050;
+  color: #fff3df;
+}
+.tone-blue {
+  background: #2459a2;
+  color: #fff3df;
+}
+.tone-wild {
+  background: conic-gradient(
+    #c32e4c 0 25%,
+    #ffd474 25% 50%,
+    #147050 50% 75%,
+    #2459a2 75%
+  );
+  color: #fff3df;
+}
+.tone-wild > small {
+  background: #191c35;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.crazy-eights .tone-red {
+  background: #fff3df;
+  color: #bd2441;
+}
+.crazy-eights .tone-red > strong {
+  color: #bd2441;
+}
+.private-hand h3 {
+  font-size: 17px;
+}
+.private-hand h3 small {
+  font-size: 12px;
+  font-weight: 500;
+}
+.private-hand-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 2px 16px;
+}
+.table-card-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: transform 0.15s ease;
+}
+.table-card-button:not(:disabled) {
+  outline: 3px solid #ffd474;
+  outline-offset: 3px;
+}
+.table-card-button:not(:disabled):hover {
+  transform: translateY(-7px) rotate(-3deg);
+}
+.table-card-button:disabled {
+  opacity: 0.62;
+  cursor: default;
+}
+.private-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.private-card-actions .quiet,
+.suit-chooser .quiet,
+.challenge-banner .quiet {
+  color: #fff3df;
+  border-color: #fff3df99;
+  background: #191c35;
+}
+.card-next-action {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.hand-cover {
+  text-align: center;
+  padding: 16px 10px 24px;
+}
+.hand-cover > span {
+  font-size: 40px;
+  color: #ffd474;
+}
+.hand-cover p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.hand-cover .primary {
+  margin-inline: auto;
+}
+.suit-chooser,
+.challenge-banner,
+.card-result {
+  padding: 16px;
+  border: 1px solid #ffd474;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+.suit-chooser h3,
+.challenge-banner h3 {
+  margin-top: 0;
+}
+.suit-chooser .actions {
+  flex-wrap: wrap;
+}
+.invite-another {
+  margin-bottom: 20px;
+}
+.room-roster {
+  flex-wrap: wrap;
+}
+.score-line {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .private-card-table {
+    padding: 12px;
+    border-width: 4px;
+  }
+  .table-card-face {
+    width: 62px;
+    height: 94px;
+  }
+  .table-card-face > strong {
+    font-size: 26px;
+    min-height: 48px;
+  }
+  .private-hand-cards {
+    gap: 10px;
+  }
+  .card-table-center {
+    gap: 14px;
+    padding: 12px 0;
+  }
+  .card-seats > div {
+    flex: 1;
+    min-width: 85px;
+  }
+  .private-card-actions > button {
+    flex: 1;
+    min-width: 100px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-card-button {
+    transition: none;
+  }
+  .table-card-button:not(:disabled):hover {
+    transform: none;
+  }
+}
+
+/* Corner echoes and suit/color stamps are decorative; the card image's accessible name supplies its identity once. */
+.table-card-corner::before,
+.table-card-face > strong::before {
+  content: attr(data-mark);
+}
+.table-card-face > small::before {
+  content: attr(data-detail);
+}
+
+.room-card-match {
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+.puzzle-crazy-eights .puzzle-play,
+.puzzle-uno .puzzle-play {
+  max-width: 900px;
+}
+.private-hand h3:focus,
+.hand-cover h3:focus,
+.card-result h3:focus {
+  outline: none;
 }

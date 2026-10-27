@@ -30,8 +30,8 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G14](#g14) | Dumb Charades | Party | Planned |
 | [G15](#g15) | Rock Paper Scissors | Party | Planned |
 | [G16](#g16) | Blackjack | Cards | Implemented |
-| [G17](#g17) | Crazy Eights | Cards | Planned |
-| [G18](#g18) | UNO-inspired | Cards | Planned |
+| [G17](#g17) | Crazy Eights | Cards | Implemented |
+| [G18](#g18) | UNO-inspired | Cards | Implemented |
 | [G19](#g19) | Tic-Tac-Toe | Puzzle | Implemented |
 | [G20](#g20) | Connect Four | Puzzle | Implemented |
 | [G21](#g21) | Minesweeper | Puzzle | Implemented |
@@ -343,7 +343,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G17
 
-**Crazy Eights** · Cards · Planned
+**Crazy Eights** · Cards · Implemented
 
 - Two players, private room or covered local handoff; suit/rank matches, wild eight suit, drawing, victory and host-owned deck.
 - Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline.
@@ -354,7 +354,7 @@ Baseline tests: [test/crazy-eights.test.js](../../test/crazy-eights.test.js).
 
 ## G18
 
-**UNO-inspired** · Cards · Planned
+**UNO-inspired** · Cards · Implemented
 
 - Two to twenty players, private room or local handoff; matching color/value, wilds, skip/reverse, draw penalties without stacking, one-card callouts/catches and +4 bluff challenges.
 - Use two decks above ten players; host-private hands/deck and recipient-specific recovery.

@@ -334,6 +334,8 @@ export const CATEGORIES = [
 export const implementedGameIds = new Set<string>([
   'tictactoe',
   'blackjack',
+  'crazy-eights',
+  'uno',
   ...PUZZLE_IDS,
 ]);
 
