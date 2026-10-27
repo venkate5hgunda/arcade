@@ -19,7 +19,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
-| [G06](#g06) | Whack-a-Mole | Action | Planned |
+| [G06](#g06) | Whack-a-Mole | Action | Implemented |
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
 | [G08](#g08) | Ludo | Board | Implemented |
 | [G09](#g09) | Island Charter | Board | Planned |
@@ -217,7 +217,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G06
 
-**Whack-a-Mole** · Action · Planned
+**Whack-a-Mole** · Action · Implemented
 
 - Timed solo target interaction, hit/miss scoring and absolute-deadline resume.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
