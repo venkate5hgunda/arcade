@@ -124,3 +124,10 @@ Traced word selection, 5/8/12-round settings, hints, solved-round timer, checkpo
 ## Whack-a-Mole milestone
 
 Traced duration options, target timing, scores, best-score storage, absolute-deadline checkpoint and expiry through setup, catalog, resume and desktop/mobile complete-game checks. Browser review showed the initial board extended below the viewport during a timed round; it was resized to keep targets accessible.
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.
