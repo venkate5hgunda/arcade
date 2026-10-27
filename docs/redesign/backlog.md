@@ -33,7 +33,8 @@ reference; the redesign builds clean, typed equivalents.
       baseline-compatible checkpoints/settings, complete-game browser flows.
 - [x] **Blackjack (G16):** native solo table, deck/aces/naturals/doubling, scoring and recovery.
 - [x] **Remaining cards (G17–G18):** Crazy Eights and UNO-inspired, native covered local play and private rooms, full baseline rules, 2–20-player UNO, recovery and replay.
-- [ ] **Board:** Snakes & Ladders, Ludo, Island Charter, Business, Chess.
+- [x] **Race board games (G07–G08):** Snakes & Ladders and Ludo, with 2–4-player local/room play and recovery.
+- [ ] **Remaining board:** Island Charter, Business, Chess.
 - [ ] **Action:** Air Hockey, 8-Ball Pool, Whack-a-Mole.
 - [ ] **Party:** Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
 - [ ] **Word:** Wordle, Hangman, Word Scramble.
@@ -43,7 +44,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G01–G15, G25–G26).** Port the remaining 17 catalog
+- [ ] **More games (G01–G06, G09–G15, G25–G26).** Port the remaining 15 catalog
       entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior

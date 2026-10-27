@@ -336,6 +336,8 @@ export const implementedGameIds = new Set<string>([
   'blackjack',
   'crazy-eights',
   'uno',
+  'snakes-ladders',
+  'ludo',
   ...PUZZLE_IDS,
 ]);
 

@@ -1,3 +1,4 @@
+import { RaceTable } from '../components/RaceTable.tsx';
 import { CardTable } from '../components/CardTable.tsx';
 import { GAMES } from '../lib/games.ts';
 import type { RoomGameId } from '../lib/room/protocol.ts';
@@ -21,6 +22,7 @@ export function RoomPage({ room }: { room: Room }) {
   const [output, setOutput] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [raceMoving, setRaceMoving] = useState<number | null>(null);
   useEffect(() => room.on(() => refresh((v) => v + 1)), [room]);
   useEffect(() => {
     room.restore();
@@ -37,7 +39,14 @@ export function RoomPage({ room }: { room: Room }) {
   const s = room.snapshot;
   const match = s?.match;
   const cards = s?.cardMatch;
-  const selectedGame = s && s.members.length > 2 ? 'uno' : gameId;
+  const race = s?.raceMatch;
+  const selectedGame =
+    s &&
+    ((s.members.length > 4 && gameId !== 'uno') ||
+      (s.members.length > 2 &&
+        !['uno', 'snakes-ladders', 'ludo'].includes(gameId)))
+      ? 'uno'
+      : gameId;
   const gameName = (id: string) => GAMES.find((g) => g.id === id)!.name;
   const connected =
     !!s && s.members.length >= 2 && s.members.every((m) => m.connected);
@@ -150,7 +159,7 @@ export function RoomPage({ room }: { room: Room }) {
                     ? index === 0
                       ? 'R'
                       : 'G'
-                    : cards
+                    : cards || race
                       ? String(index + 1)
                       : index === 0
                         ? 'X'
@@ -271,6 +280,7 @@ export function RoomPage({ room }: { room: Room }) {
           {connected &&
             !match &&
             !cards &&
+            !race &&
             room.role === 'host' &&
             s &&
             s.members.length < 20 &&
@@ -287,6 +297,7 @@ export function RoomPage({ room }: { room: Room }) {
           {connected &&
             !match &&
             !cards &&
+            !race &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
                 <h2>Everyone’s here.</h2>
@@ -316,6 +327,18 @@ export function RoomPage({ room }: { room: Room }) {
                         value="crazy-eights"
                       >
                         Crazy Eights
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 4}
+                        value="snakes-ladders"
+                      >
+                        Snakes &amp; Ladders
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 4}
+                        value="ludo"
+                      >
+                        Ludo
                       </option>
                       <option value="uno">UNO-inspired</option>
                     </select>
@@ -474,6 +497,75 @@ export function RoomPage({ room }: { room: Room }) {
                 {s.draws} draws · Round {cards.round + 1}
               </p>
               {cards.view.phase === 'over' &&
+                (room.role === 'host' ? (
+                  <button
+                    className="primary"
+                    disabled={!connected}
+                    onClick={() => room.start()}
+                  >
+                    Play again
+                  </button>
+                ) : (
+                  <p>Waiting for the host to start the next round.</p>
+                ))}
+            </div>
+          )}
+          {race && s && (
+            <div className="board-panel room-race-match">
+              <p className="room-game-name">{gameName(race.gameId)}</p>
+              <div className="turn-banner" role="status">
+                <div>
+                  <h2>
+                    {raceMoving !== null
+                      ? `${s.members[raceMoving].name} is moving…`
+                      : race.race.state.winner != null
+                        ? `${s.members[race.race.state.winner].name} wins!`
+                        : !connected
+                          ? 'Match paused'
+                          : race.race.state.current === seat
+                            ? 'Your turn'
+                            : `${s.members[race.race.state.current].name}’s turn`}
+                  </h2>
+                  <p>
+                    {!connected
+                      ? 'Reconnect every seat to continue.'
+                      : raceMoving !== null
+                        ? 'Watch the piece travel.'
+                        : race.race.state.winner != null
+                          ? `Round ${race.round + 1} complete`
+                          : 'Roll and race together.'}
+                  </p>
+                </div>
+              </div>
+              <RaceTable
+                game={race.race}
+                names={s.members.map((m) => m.name)}
+                blocked={!connected || race.race.state.current !== seat}
+                onMotion={setRaceMoving}
+                onAction={(action) => {
+                  try {
+                    room.raceAction(action);
+                  } catch (error) {
+                    setMessage(
+                      error instanceof Error
+                        ? error.message
+                        : 'Reconnect to continue.',
+                    );
+                  }
+                }}
+              />
+              <div className="score-line">
+                {s.members.map((member, index) => (
+                  <span key={member.id}>
+                    {member.name} <strong>{s.wins[index]} wins</strong>
+                  </span>
+                ))}
+              </div>
+              <p className="count">
+                {s.draws} draws · Round {race.round + 1}
+              </p>
+              {race.race.state.winner != null &&
+                raceMoving === null &&
                 (room.role === 'host' ? (
                   <button
                     className="primary"

@@ -299,7 +299,7 @@
       "id": "G07",
       "title": "Snakes & Ladders",
       "category": "Board",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/snakes-ladders.js",
         "js/game-catalog.js",
@@ -309,13 +309,19 @@
         "Two to four local/room players; fair dice, square-by-square travel, ladders/snakes and legal finish; randomized non-intersecting board including long snake from 99.",
         "Preserve catalog player range 2\u20134; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/races.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/races.spec.ts"
+      ],
+      "implementationScope": "Native 2–4-player local and room play with baseline rules, checkpoint recovery, host-owned dice and reconnect. Physical-device and cross-network qualification remain separate release gates."
     },
     {
       "id": "G08",
       "title": "Ludo",
       "category": "Board",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/ludo.js",
         "js/game-catalog.js",
@@ -325,7 +331,13 @@
         "Two to four local/room players; full 52-cell cross track, legal token choice, capture, home path and victory; matching unnumbered pieces and active-home feedback.",
         "Preserve catalog player range 2\u20134; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/races.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/races.spec.ts"
+      ],
+      "implementationScope": "Native 2–4-player local and room play with baseline rules, checkpoint recovery, host-owned dice and reconnect. Physical-device and cross-network qualification remain separate release gates."
     },
     {
       "id": "G09",

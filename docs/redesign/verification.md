@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G16–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 17 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G07–G08 and G16–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 15 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -102,3 +102,9 @@ Final capture review exposed a missed screenshot trace: WebKit could include the
 The local handoff trace also found that a new match could inherit the previous hand's revealed state, and that the original UNO flow allowed an outgoing player to call UNO before handing over. Both were missed traces. Fresh deals now always cover the hand, and the handoff offers the outgoing player their call without revealing the next hand. A browser flow checks both against the saved game.
 
 CI's three-browser room flow exposed a missed timing assumption: it waited five seconds for native ICE admission, although the product allows 20 seconds before reporting a connection failure. The test now waits for the real connected state and seat projection within that same limit; it still fails if admission or recovery does not complete. Production transport and validation are unchanged.
+
+## Race-game milestone
+
+Traced original rules and seeded board generation through the typed engines, checkpoint validation, local rematches, catalog routing, 2–4-seat room snapshots, host-authoritative actions, protocol versions, reconnects, tests and documentation. This surfaced two missed traces: restored player counts were not carried into rematches, and an interactive board used incomplete grid semantics. Both are corrected. The public snapshot addition advances connections to v3; v1 public and v2 private-card host backups remain recoverable with fresh invitations.
+
+Validation includes original-engine board and move comparisons, exact finishes, captures and safe squares, four-seat protocol recovery and invalid actions, desktop/mobile browser wins and accessibility, and three-browser WebRTC turn and reconnect flows. Full cross-network and physical-device qualification remains outstanding.

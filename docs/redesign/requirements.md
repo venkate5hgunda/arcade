@@ -20,8 +20,8 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
 | [G06](#g06) | Whack-a-Mole | Action | Planned |
-| [G07](#g07) | Snakes & Ladders | Board | Planned |
-| [G08](#g08) | Ludo | Board | Planned |
+| [G07](#g07) | Snakes & Ladders | Board | Implemented |
+| [G08](#g08) | Ludo | Board | Implemented |
 | [G09](#g09) | Island Charter | Board | Planned |
 | [G10](#g10) | Business | Board | Planned |
 | [G11](#g11) | Chess | Board | Planned |
@@ -228,7 +228,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G07
 
-**Snakes & Ladders** · Board · Planned
+**Snakes & Ladders** · Board · Implemented
 
 - Two to four local/room players; fair dice, square-by-square travel, ladders/snakes and legal finish; randomized non-intersecting board including long snake from 99.
 - Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline.
@@ -239,7 +239,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G08
 
-**Ludo** · Board · Planned
+**Ludo** · Board · Implemented
 
 - Two to four local/room players; full 52-cell cross track, legal token choice, capture, home path and victory; matching unnumbered pieces and active-home feedback.
 - Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline.

@@ -47,7 +47,7 @@ Tests and captures normally start their own production preview. To use a preview
 3. Paste that answer into the original host tab. When both seats connect, choose Tic-Tac-Toe, Connect Four, Crazy Eights or UNO-inspired and start. Use **Invite another player** before starting to build a larger UNO table (up to 20 players).
 4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. Reconnect every disconnected seat. The board, private deck/hands and standings survive in the host tab.
 
-Rooms use version 2 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
+Rooms use version 3 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
 
 Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
 

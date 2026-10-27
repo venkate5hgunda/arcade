@@ -2121,3 +2121,326 @@ select:focus-visible {
 .card-result h3:focus {
   outline: none;
 }
+
+/* Race boards use a scrollable full-size tabletop so pieces stay usable on phones. */
+.puzzle-snakes-ladders .puzzle-play,
+.puzzle-ludo .puzzle-play,
+.room-race-match {
+  max-width: 1000px;
+  margin: 20px auto;
+}
+.room-race-match .count {
+  color: #c9c6da;
+  margin-top: 15px;
+}
+.race-table {
+  border: 5px solid #a86d43;
+  border-radius: 22px;
+  padding: 18px;
+  background: radial-gradient(ellipse at top, #28695f, #123e43);
+  color: #fff3df;
+}
+.race-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+.race-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #8fe0d866;
+  border-radius: 12px;
+  padding: 9px;
+  min-width: 0;
+}
+.race-player.active {
+  background: #fff3df;
+  color: #191c35;
+  border-color: #ffd474;
+  box-shadow: 0 0 0 2px #ffd474;
+}
+.race-player b,
+.race-player small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.race-player small {
+  font-size: 12px;
+}
+.race-avatar,
+.race-token,
+.ludo-token {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid #fff3df;
+  box-shadow:
+    inset 0 4px 5px #fff8,
+    0 3px 0 #0005,
+    0 7px 9px #0004;
+  font-weight: 900;
+}
+.race-avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+}
+.token-red {
+  background: #e04456;
+  color: white;
+}
+.token-blue {
+  background: #3379c4;
+  color: white;
+}
+.token-green {
+  background: #17855d;
+  color: white;
+}
+.token-gold {
+  background: #ffd474;
+  color: #191c35;
+}
+.race-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 20px 0;
+}
+.race-controls .primary {
+  min-width: 155px;
+}
+.race-controls p {
+  margin: 0;
+  flex: 1 1 200px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.race-die {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: #fff3df;
+  color: #191c35;
+  font-size: 40px;
+  line-height: 1;
+  box-shadow:
+    0 4px 0 #d3bd9d,
+    0 7px 10px #0004;
+}
+.race-die.rolling {
+  animation: race-roll 0.4s ease-in-out infinite alternate;
+}
+@keyframes race-roll {
+  from {
+    transform: rotate(-10deg) translateY(0);
+  }
+  to {
+    transform: rotate(12deg) translateY(-5px);
+  }
+}
+.race-scroll {
+  overflow: auto;
+  border-radius: 14px;
+  border: 3px solid #ffd474;
+  background: #191c35;
+  overscroll-behavior: contain;
+}
+.race-scroll:focus-visible {
+  outline: 3px solid #fff3df;
+  outline-offset: 4px;
+}
+.snakes-board {
+  width: max(600px, 100%);
+  position: relative;
+  aspect-ratio: 1;
+}
+.snakes-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+}
+.snakes-grid button {
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid #473c3a55;
+  color: #18243b;
+  text-align: left;
+  font-weight: 800;
+  font-size: clamp(11px, 1.5vw, 15px);
+  vertical-align: top;
+  display: flex;
+  align-items: flex-start;
+}
+.snakes-grid .tile-cream {
+  background: #fff1d7;
+}
+.snakes-grid .tile-warm {
+  background: #f3c88f;
+}
+.snakes-grid button:focus-visible {
+  outline: 4px solid #ff456b;
+  outline-offset: -4px;
+  z-index: 4;
+}
+.snakes-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.snakes-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.race-token {
+  position: absolute;
+  z-index: 2;
+  width: 27px;
+  height: 27px;
+  font-size: 14px;
+  pointer-events: none;
+}
+.race-inspector {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ludo-board {
+  width: max(750px, 100%);
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  aspect-ratio: 1;
+  position: relative;
+}
+.ludo-cell {
+  min-width: 0;
+  min-height: 0;
+  background: #23334b;
+  border: 1px solid #15243455;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+.ludo-cell.track {
+  background: #fff3df;
+  color: #1b3143;
+}
+.ludo-cell.safe {
+  background: #ffd474;
+  color: #193142;
+}
+.ludo-cell.lane-red,
+.ludo-cell.yard-red {
+  background: #d95a60;
+}
+.ludo-cell.lane-blue,
+.ludo-cell.yard-blue {
+  background: #5a9dcc;
+}
+.ludo-cell.lane-green,
+.ludo-cell.yard-green {
+  background: #51b689;
+}
+.ludo-cell.lane-gold,
+.ludo-cell.yard-gold {
+  background: #e8bb59;
+}
+.ludo-cell.finish {
+  background: conic-gradient(
+    #d95a60 0 25%,
+    #5a9dcc 25% 50%,
+    #51b689 50% 75%,
+    #e8bb59 75%
+  );
+}
+.ludo-yard-frame {
+  z-index: 1;
+  pointer-events: none;
+  margin: 8%;
+  border: 5px solid #ffffffaa;
+  border-radius: 20px;
+  background: #fff3df55;
+  color: #172639;
+  padding: 8px;
+  font-weight: 900;
+  font-size: 14px;
+}
+.ludo-yard-frame.active {
+  box-shadow:
+    0 0 0 5px #ffd474,
+    0 0 24px #ffd47499;
+}
+.ludo-token {
+  z-index: 3;
+  width: 90%;
+  height: 90%;
+  min-width: 0;
+  padding: 0;
+  align-self: center;
+  justify-self: center;
+  cursor: default;
+  transform: translate(var(--offset-x), var(--offset-y));
+  font-size: 19px;
+}
+.ludo-token.movable {
+  outline: 4px solid #ffd474;
+  outline-offset: 3px;
+  cursor: pointer;
+  animation: race-highlight 1s ease-in-out infinite alternate;
+}
+.ludo-token:focus-visible {
+  outline: 4px solid #191c35;
+  outline-offset: 3px;
+  z-index: 5;
+}
+@keyframes race-highlight {
+  to {
+    box-shadow:
+      inset 0 4px 5px #fff8,
+      0 0 0 7px #ffd47488;
+  }
+}
+.token-choice-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+.token-choice-list .quiet {
+  color: #fff3df;
+  background: #191c35;
+  border-color: #fff3df99;
+}
+@media (max-width: 600px) {
+  .race-table {
+    padding: 12px;
+    border-width: 4px;
+  }
+  .race-players {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .race-player {
+    font-size: 13px;
+  }
+  .race-controls {
+    gap: 10px;
+  }
+  .race-controls p {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .race-die.rolling,
+  .ludo-token.movable {
+    animation: none;
+  }
+}

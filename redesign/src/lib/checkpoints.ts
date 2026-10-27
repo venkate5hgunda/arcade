@@ -1,3 +1,4 @@
+import { validLudo, validSnakes } from './races.ts';
 import { validCrazyEightsCheckpoint, validUnoCheckpoint } from './cards.ts';
 import { validBlackjack } from './blackjack.ts';
 import { isValidState } from './tictactoe.ts';
@@ -5,6 +6,8 @@ import type { LocalState } from './tictactoe.ts';
 import { puzzleValidators, PUZZLE_IDS } from './puzzles.ts';
 import type { PuzzleId } from './puzzles.ts';
 export function validCheckpoint(id: string, state: unknown): boolean {
+  if (id === 'snakes-ladders') return validSnakes(state);
+  if (id === 'ludo') return validLudo(state);
   if (id === 'crazy-eights') return validCrazyEightsCheckpoint(state);
   if (id === 'uno') return validUnoCheckpoint(state);
   if (id === 'blackjack') return validBlackjack(state);
@@ -19,4 +22,6 @@ export const roomGameIds = new Set([
   'connect-four',
   'crazy-eights',
   'uno',
+  'snakes-ladders',
+  'ludo',
 ]);

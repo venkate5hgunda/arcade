@@ -67,10 +67,10 @@ test('every game switches to its own local artwork, including catalog and detail
       page.locator(`.game-card img[src="${asset.src}"]`),
     ).toHaveCount(1);
   }
-  await page.goto('/#/game/ludo');
+  await page.goto('/#/game/chess');
   await expect(page.locator('.detail-art')).toHaveAttribute(
     'src',
-    './art/games/ludo.webp',
+    './art/games/chess.webp',
   );
   await page.goto('/#/game/blackjack');
   await expect(page.locator('.puzzle-setup-art')).toHaveAttribute(

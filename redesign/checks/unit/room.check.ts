@@ -358,7 +358,7 @@ test('20-seat UNO admission keeps existing channels, projects every private hand
   }
   assert.equal(host.snapshot!.members.length, 20);
   await assert.rejects(host.createInvite(), /20 players/);
-  assert.throws(() => host.start('crazy-eights'), /more than two/);
+  assert.throws(() => host.start('crazy-eights'), /number of players/);
   host.start('uno');
   await flush();
   const all = players.map((player, seat) => {
@@ -388,7 +388,7 @@ test('20-seat UNO admission keeps existing channels, projects every private hand
   for (const player of players) player.leave();
 });
 
-test('v1 public host checkpoints migrate into v2 invitations without accepting old peers or extra private fields', async () => {
+test('v1 public host checkpoints migrate into v3 invitations without accepting old peers or extra private fields', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -405,7 +405,7 @@ test('v1 public host checkpoints migrate into v2 invitations without accepting o
   restored.restore();
   assert.deepEqual(restored.snapshot!.match, saved.match);
   const invite = await restored.createInvite();
-  assert.equal(readSignal(invite, 'offer').version, 2);
+  assert.equal(readSignal(invite, 'offer').version, 3);
   const url = new URL(invite),
     params = new URLSearchParams(url.hash.split('?')[1]),
     message = JSON.parse(atob(params.get('invite')!));
@@ -427,4 +427,69 @@ test('v1 public host checkpoints migrate into v2 invitations without accepting o
     false,
   );
   restored.leave();
+});
+
+test('four-seat race validates actions, propagates turns, and restores a paused host room', async () => {
+  cache.clear();
+  const host = new Room(factory);
+  const guests = [new Room(factory), new Room(factory), new Room(factory)];
+  host.createHost('Mira');
+  for (const guest of guests) await connect(host, guest);
+  host.start('ludo');
+  await flush();
+  assert.equal(host.snapshot?.raceMatch?.race.state.current, 0);
+  assert.equal(host.snapshot?.raceMatch?.revision, 0);
+  guests[0].raceAction({ type: 'roll' });
+  host.raceAction({ type: 'roll', value: 6 });
+  await flush();
+  assert.equal(host.snapshot?.raceMatch?.revision, 0);
+  host.raceAction({ type: 'roll' });
+  await flush();
+  assert.equal(host.snapshot?.raceMatch?.revision, 1);
+  for (const guest of guests) assert.deepEqual(guest.snapshot, host.snapshot);
+  const saved = structuredClone(host.snapshot!);
+  assert.ok(validSnapshot(saved));
+  (saved.raceMatch!.race.state as unknown as Record<string, unknown>).forged =
+    3;
+  assert.equal(validSnapshot(saved), false);
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.snapshot?.raceMatch?.revision, 1);
+  assert.ok(restored.snapshot?.members.slice(1).every((m) => !m.connected));
+  host.leave();
+  for (const guest of guests) await connect(restored, guest);
+  assert.ok(restored.snapshot?.members.every((m) => m.connected));
+  for (const guest of guests)
+    assert.deepEqual(guest.snapshot, restored.snapshot);
+  restored.start('snakes-ladders');
+  await flush();
+  assert.equal(restored.snapshot?.raceMatch?.gameId, 'snakes-ladders');
+  assert.equal(restored.snapshot?.raceMatch?.round, 1);
+  for (const guest of guests)
+    assert.deepEqual(guest.snapshot, restored.snapshot);
+  restored.leave();
+  for (const guest of guests) guest.leave();
+});
+
+test('v2 private-card host backups restore into v3 without exposing another hand', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('crazy-eights');
+  await flush();
+  const old = cache.get('arcade:redesign:room:v3')!;
+  cache.set('arcade:redesign:room:v2', old);
+  cache.delete('arcade:redesign:room:v3');
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.role, 'host');
+  assert.deepEqual(restored.snapshot?.cardMatch, host.snapshot?.cardMatch);
+  host.leave();
+  await connect(restored, guest);
+  assert.equal(guest.snapshot?.cardMatch?.view.seat, 1);
+  assert.equal('hands' in guest.snapshot!.cardMatch!.view, false);
+  restored.leave();
+  guest.leave();
 });

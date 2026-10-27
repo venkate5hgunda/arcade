@@ -87,7 +87,12 @@ function Catalog({ query, category }: { query: string; category: string }) {
                     {isImplemented(game.id)
                       ? game.players.type === 'single'
                         ? 'Solo challenge'
-                        : game.id === 'crazy-eights' || game.id === 'uno'
+                        : [
+                              'crazy-eights',
+                              'uno',
+                              'snakes-ladders',
+                              'ludo',
+                            ].includes(game.id)
                           ? 'Pass & play'
                           : 'Solo or pass & play'
                       : 'Original Arcade'}
@@ -102,9 +107,11 @@ function Catalog({ query, category }: { query: string; category: string }) {
                     <small>
                       {game.id === 'uno'
                         ? '2–20 players, private hands'
-                        : game.id === 'crazy-eights'
-                          ? '2 players, private hands'
-                          : '2 players, 2 screens'}
+                        : ['snakes-ladders', 'ludo'].includes(game.id)
+                          ? '2–4 players, 2–4 screens'
+                          : game.id === 'crazy-eights'
+                            ? '2 players, private hands'
+                            : '2 players, 2 screens'}
                     </small>
                   </span>
                 </span>

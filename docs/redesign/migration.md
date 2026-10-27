@@ -59,3 +59,7 @@ Blackjack follows the puzzle milestone as the first native card game. Its baseli
 The authorized card family now includes native Crazy Eights and 2–20-player UNO-inspired. Pure rules are typed equivalents compared against the unchanged original engines; no legacy renderer/iframe is used. Existing local checkpoint/settings/name shapes remain valid. Local cards are covered on handoff and reload, while room guests receive only seat-specific projections.
 
 The earlier one-host/one-guest transport assumption is superseded for UNO. A host maintains independent channels and sequence counters for each guest. Protocol v2 explicitly separates private authoritative state from public snapshots and rejects v1 connection links; existing valid v1 public host backups can be restored with fresh v2 invitations. This is not compatibility with the original JavaScript multiplayer protocol. The UI keeps setup/options expandable and starts group matches only after every admitted seat connects. Cards are now complete native ports; broad A04–A07, PWA and full-release gates remain planned. This milestone is stacked on `codex/redesign-game-art`, with no automatic merge or deployment.
+
+### Race-game protocol update
+
+Public race snapshots extend the room schema, so v3 invitations and messages reject older peers. Valid v1 public and v2 private-card host checkpoints remain recoverable through fresh v3 invitations. Snakes & Ladders and Ludo are native 2–4-player ports, stacked on the private-card milestone.
