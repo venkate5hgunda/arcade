@@ -38,7 +38,8 @@ reference; the redesign builds clean, typed equivalents.
 - [x] **Whack-a-Mole (G06):** timed targets, scoring and absolute-deadline recovery.
 - [ ] **Remaining action:** Air Hockey, 8-Ball Pool.
 - [x] **Taboo (G02):** covered clues, team scoring and deadline recovery.
-- [ ] **Remaining party:** Show, Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
+- [x] **Show (G01):** covered chits, simultaneous passes and slap-order scoring.
+- [ ] **Remaining party:** Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
 - [x] **Wordle (G03):** offline practice, repeated-letter feedback and local recovery.
 - [x] **Hangman (G25):** original word pool, solo/two-player rounds and recovery.
 - [x] **Word Scramble (G26):** original word pool, hints, rounds and recovery.
@@ -48,7 +49,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G01, G04–G05, G09–G15).** Port the remaining 10 catalog
+- [ ] **More games (G04–G05, G09–G15).** Port the remaining 9 catalog
       entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior

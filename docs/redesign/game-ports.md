@@ -1,6 +1,6 @@
 # Game migration status
 
-**16 of 26 games are implemented.** The remaining 10 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**17 of 26 games are implemented.** The remaining 9 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -8,7 +8,7 @@
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
 | Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
-| Party | Taboo | Show, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
+| Party | Show, Taboo | Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
 | Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
@@ -68,6 +68,10 @@ Whack-a-Mole retains 30/45/60-second rounds, randomly timed targets, hit/miss sc
 ## Taboo acceptance and evidence
 
 Taboo retains the original clue deck, two-team scoring, 30/60/90-second turns, 4/6/8 turns and absolute deadlines. Covered handoffs keep cards out of the rendered interface until the clue giver reveals them, including after reload. `redesign/checks/unit/taboo.check.ts` compares cards, scoring and deadline rules to the original; `redesign/checks/browser/taboo.spec.ts` covers recovery, scoring, hiding, expiry and complete results on desktop/mobile.
+
+## Show acceptance and evidence
+
+Show retains 3–8 players, 3/5/10 rounds, private chit handoffs, simultaneous clockwise passes, matching hands, slap order and point scoring. Chits are removed from the rendered interface between players and on reload. Original-rule comparisons are in `redesign/checks/unit/show.check.ts`; `redesign/checks/browser/show.spec.ts` covers handoffs, passing, recovery, slap scoring and a complete match on desktop/mobile.
 
 ## Porting rule
 
