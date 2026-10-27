@@ -112,3 +112,10 @@ Validation includes original-engine board and move comparisons, exact finishes, 
 ## Wordle milestone
 
 Traced original vocabulary and duplicate-letter scoring through the native board, checkpoint validator, catalog and resume links, accessibility and gameplay tests. Browser inspection exposed the guess form below the initial viewport and tile labels without valid roles; both were corrected. Desktop/mobile tests cover keyboard entry, repeated-letter marks, invalid inputs, recovery, wins, losses and replay.
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.
