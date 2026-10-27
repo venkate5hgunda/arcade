@@ -1,3 +1,4 @@
+import { validHangmanState } from './hangman.ts';
 import { validWordle } from './wordle.ts';
 import { validLudo, validSnakes } from './races.ts';
 import { validCrazyEightsCheckpoint, validUnoCheckpoint } from './cards.ts';
@@ -7,6 +8,7 @@ import type { LocalState } from './tictactoe.ts';
 import { puzzleValidators, PUZZLE_IDS } from './puzzles.ts';
 import type { PuzzleId } from './puzzles.ts';
 export function validCheckpoint(id: string, state: unknown): boolean {
+  if (id === 'hangman') return validHangmanState(state);
   if (id === 'wordle') return validWordle(state);
   if (id === 'snakes-ladders') return validSnakes(state);
   if (id === 'ludo') return validLudo(state);

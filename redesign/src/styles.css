@@ -2540,3 +2540,89 @@ select:focus-visible {
   margin-top: 0.5rem;
   color: #fff3df;
 }
+
+.hangman-table {
+  padding: 1.4rem;
+  border-radius: 1.4rem;
+  background: linear-gradient(145deg, #3c6b59, #24463c);
+  color: #fff3df;
+}
+.hangman-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.hangman-progress span {
+  display: flex;
+  gap: 0.25rem;
+  color: #ff6c81;
+  font-size: 1.5rem;
+}
+.hangman-progress i {
+  font-style: normal;
+}
+.hangman-progress .lost {
+  color: #abc4b4;
+  opacity: 0.5;
+}
+.hangman-word {
+  display: flex;
+  justify-content: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin: 1.2rem 0;
+}
+.hangman-word span {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.7rem;
+  border-radius: 0.4rem;
+  border-bottom: 4px solid #ffd474;
+  background: #fff3df;
+  color: #191c35;
+  font-weight: 900;
+  font-size: 1.3rem;
+}
+.hangman-word .found {
+  background: #a5e3ac;
+}
+.hangman-keys {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0.3rem;
+  max-width: 36rem;
+  margin: auto;
+}
+.hangman-keys button {
+  min-width: 0;
+  min-height: 2.7rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: #fff3df;
+  color: #191c35;
+  font-weight: 900;
+}
+.hangman-keys .found {
+  background: #a5e3ac;
+  color: #153f30;
+  opacity: 1;
+}
+.hangman-keys .missed {
+  background: #d3d6d8;
+  color: #232a35;
+  opacity: 1;
+}
+.hangman-clue {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #a5e3ac;
+  border-radius: 0.6rem;
+}
+.hangman-clue summary {
+  color: #fff3df;
+  cursor: pointer;
+  font-weight: 800;
+}

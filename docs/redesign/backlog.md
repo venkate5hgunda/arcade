@@ -38,14 +38,15 @@ reference; the redesign builds clean, typed equivalents.
 - [ ] **Action:** Air Hockey, 8-Ball Pool, Whack-a-Mole.
 - [ ] **Party:** Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
 - [x] **Wordle (G03):** offline practice, repeated-letter feedback and local recovery.
-- [ ] **Remaining word games:** Hangman, Word Scramble.
+- [x] **Hangman (G25):** original word pool, solo/two-player rounds and recovery.
+- [ ] **Remaining word game:** Word Scramble.
 
 See [game-port evidence](game-ports.md). The user has authorized all remaining
 ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G01–G02, G04–G06, G09–G15, G25–G26).** Port the remaining 14 catalog
+- [ ] **More games (G01–G02, G04–G06, G09–G15, G26).** Port the remaining 13 catalog
       entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior

@@ -670,7 +670,7 @@
       "id": "G25",
       "title": "Hangman",
       "category": "Word",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/hangman.js",
         "js/game-catalog.js",
@@ -682,7 +682,12 @@
       ],
       "baselineTests": [
         "test/hangman.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/hangman.check.ts",
+        "redesign/checks/browser/hangman.spec.ts"
+      ],
+      "implementationScope": "Native one- and two-player Hangman with original vocabulary, clues, keyboard play and compatible local recovery."
     },
     {
       "id": "G26",

@@ -38,7 +38,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G22](#g22) | Memory Match | Puzzle | Implemented |
 | [G23](#g23) | 2048 | Puzzle | Implemented |
 | [G24](#g24) | Simon Says | Puzzle | Implemented |
-| [G25](#g25) | Hangman | Word | Planned |
+| [G25](#g25) | Hangman | Word | Implemented |
 | [G26](#g26) | Word Scramble | Word | Planned |
 
 ## Shared release requirements
@@ -432,7 +432,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G25
 
-**Hangman** · Word · Planned
+**Hangman** · Word · Implemented
 
 - One/two-player word modes, keyboard/letter entry, repeated-guess handling, mistake limit and win/loss.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.

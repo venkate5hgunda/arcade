@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G03, G07–G08 and G16–G24 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 14 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G03, G07–G08 and G16–G25 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 13 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -112,3 +112,7 @@ Validation includes original-engine board and move comparisons, exact finishes, 
 ## Wordle milestone
 
 Traced original vocabulary and duplicate-letter scoring through the native board, checkpoint validator, catalog and resume links, accessibility and gameplay tests. Browser inspection exposed the guess form below the initial viewport and tile labels without valid roles; both were corrected. Desktop/mobile tests cover keyboard entry, repeated-letter marks, invalid inputs, recovery, wins, losses and replay.
+
+## Hangman milestone
+
+Traced the original word pool, category clues and round transitions through native controls, checkpoint validation, player settings, catalog/resume and complete desktop/mobile flows. Original-engine comparisons cover solo and two-player rounds; browser tests cover repeated letters, turn handoff, clue, reload, win, loss and replay. Visual review exposed a low-contrast clue label; its text color was corrected.
