@@ -102,3 +102,11 @@ Final capture review exposed a missed screenshot trace: WebKit could include the
 The local handoff trace also found that a new match could inherit the previous hand's revealed state, and that the original UNO flow allowed an outgoing player to call UNO before handing over. Both were missed traces. Fresh deals now always cover the hand, and the handoff offers the outgoing player their call without revealing the next hand. A browser flow checks both against the saved game.
 
 CI's three-browser room flow exposed a missed timing assumption: it waited five seconds for native ICE admission, although the product allows 20 seconds before reporting a connection failure. The test now waits for the real connected state and seat projection within that same limit; it still fails if admission or recovery does not complete. Production transport and validation are unchanged.
+
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.

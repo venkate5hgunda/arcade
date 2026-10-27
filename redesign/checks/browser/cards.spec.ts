@@ -401,3 +401,18 @@ for (const gameId of ['crazy-eights', 'uno'] as const) {
     }
   });
 }
+
+test('restored UNO player count survives a fresh deal without saved settings', async ({
+  page,
+}) => {
+  await seed(page, { gameId: 'uno', state: newUnoGame(4, () => 0.5) });
+  await expect(
+    page.getByRole('button', { name: 'Reveal my hand' }),
+  ).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'New match', exact: true }).click();
+  await page.getByRole('button', { name: 'Start playing →' }).click();
+  await expect
+    .poll(async () => (await saved<UnoState>(page, 'uno'))?.hands.length)
+    .toBe(4);
+});
