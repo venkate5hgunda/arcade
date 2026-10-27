@@ -1,5 +1,5 @@
 import { KEYS, saveJSON } from '../lib/storage.ts';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { CardTable } from '../components/CardTable.tsx';
@@ -33,6 +33,14 @@ export function CardsGame({ id }: { id: CardGameId }) {
       ).state,
     (state) => finishedCards(wrapCards(id, state)),
   );
+  // The checkpoint is authoritative when saved setup preferences are absent or stale.
+  useEffect(() => {
+    if (id === 'uno' && run.state)
+      run.setSettings((settings) => ({
+        ...settings,
+        count: String(run.state!.hands.length),
+      }));
+  }, []);
   const [covered, setCovered] = useState(true);
   const [names, setNames] = useState(readNames);
   const game = run.state ? wrapCards(id, run.state) : null;

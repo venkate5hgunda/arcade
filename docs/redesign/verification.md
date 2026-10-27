@@ -128,3 +128,10 @@ Traced duration options, target timing, scores, best-score storage, absolute-dea
 ## Taboo milestone
 
 Traced the original card deck, scoring, deadline, numeric settings and checkpoint validation through covered clue-giver handoffs, turn transitions, catalog, resume and desktop/mobile gameplay. The replay control now has a distinct label from the header reset; legacy numeric settings are restored. Cards are omitted from the rendered handoff screen, while the timer continues across reload.
+## PR review correction: restored UNO setup
+
+Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
+including when setup preferences are missing or stale. The added cards browser
+regression restores four hands, resets the match, and verifies the new deal still
+has four players. Validation: TypeScript/production build and all seven desktop
+card browser flows passed, including real private-room reload and reconnect.
