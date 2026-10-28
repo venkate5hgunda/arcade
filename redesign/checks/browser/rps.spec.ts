@@ -152,6 +152,8 @@ test('RPS private room completes, replays and recovers a locked throw after host
   const guest = await context.newPage();
   async function connect(reconnect = false) {
     if (reconnect)
+      await host.getByText('Room players (2)', { exact: true }).click();
+    if (reconnect)
       await host
         .getByRole('button', {
           name: 'Create reconnect invitation',

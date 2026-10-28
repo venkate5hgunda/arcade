@@ -1330,8 +1330,8 @@ label {
     font-size: 16px;
   }
   .room-roster > div {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 135px;
+    min-width: 135px;
     padding: 14px;
     font-size: 13px;
   }
@@ -3313,4 +3313,69 @@ select:focus-visible {
 .pool-controls input {
   display: block;
   width: 100%;
+}
+.mafia-table {
+  display: grid;
+  gap: 1rem;
+}
+.mafia-hero,
+.mafia-panel {
+  border-radius: 24px;
+  padding: 1.3rem;
+  background: #252447;
+  color: #fff5e5;
+}
+.mafia-hero h2 {
+  color: #fff5e5;
+}
+.mafia-hero .eyebrow {
+  color: #ffc66d;
+}
+.mafia-role {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid #e2ab66;
+  border-radius: 18px;
+  background: #3d3155;
+}
+.mafia-role > span {
+  font-size: 2rem;
+  color: #ffce75;
+}
+.mafia-role p {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+.mafia-role strong {
+  font-size: 1.5rem;
+}
+.mafia-role small {
+  color: #fff5e5;
+}
+.mafia-targets,
+.mafia-reveal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.mafia-targets button[aria-pressed='true'] {
+  background: #ffce75;
+  color: #352019;
+}
+.mafia-reveal span {
+  padding: 0.5rem 0.7rem;
+  border-radius: 1rem;
+  background: #51496e;
+}
+
+.room-roster-details {
+  margin: 1rem 0;
+}
+.room-roster-details > summary {
+  cursor: pointer;
+  font-weight: 800;
 }

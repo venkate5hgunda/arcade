@@ -1,3 +1,4 @@
+import { MafiaTable } from '../components/MafiaTable.tsx';
 import { ChessBoard } from '../components/ChessBoard.tsx';
 import { chessResult } from '../lib/chess.ts';
 import { RpsRoomTable } from '../components/RpsRoomTable.tsx';
@@ -17,10 +18,14 @@ import { names } from '../lib/profile.ts';
 export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
-  const [gameId, setGameId] = useState<RoomGameId>('tictactoe');
+  const [gameId, setGameId] = useState<RoomGameId>(() =>
+    new URLSearchParams(location.search).get('game') === 'mafia'
+      ? 'mafia'
+      : 'tictactoe',
+  );
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
-    location.search ? window.location.href : '',
+    location.search.includes('invite=') ? window.location.href : '',
   );
   const [output, setOutput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,7 +36,7 @@ export function RoomPage({ room }: { room: Room }) {
     room.restore();
   }, [room]);
   useEffect(() => {
-    if (location.search && window.location.href !== input) {
+    if (location.search.includes('invite=') && window.location.href !== input) {
       setInput(window.location.href);
       if (location.search.includes('invite=') && room.role === 'guest') {
         room.leave();
@@ -45,12 +50,13 @@ export function RoomPage({ room }: { room: Room }) {
   const race = s?.raceMatch;
   const rps = s?.rpsMatch;
   const chess = s?.chessMatch;
+  const mafia = s?.mafiaMatch;
   const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
-    ((s.members.length > 4 && gameId !== 'uno') ||
+    ((s.members.length > 4 && !['uno', 'mafia'].includes(gameId)) ||
       (s.members.length > 2 &&
-        !['uno', 'snakes-ladders', 'ludo'].includes(gameId)))
+        !['uno', 'mafia', 'snakes-ladders', 'ludo'].includes(gameId)))
       ? 'uno'
       : gameId;
   const gameName = (id: string) => GAMES.find((g) => g.id === id)!.name;
@@ -94,8 +100,8 @@ export function RoomPage({ room }: { room: Room }) {
       <h1>Your private table</h1>
       <p className="lede">
         Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-        UNO-inspired, Snakes & Ladders, Ludo, Chess or Rock Paper Scissors. UNO
-        tables welcome 2–20 players; race games welcome 2–4.
+        UNO-inspired, Snakes & Ladders, Ludo, Chess, Mafia or Rock Paper
+        Scissors. UNO welcomes 2–20 players, Mafia 5–10, and race games 2–4.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -150,39 +156,45 @@ export function RoomPage({ room }: { room: Room }) {
         </div>
       ) : (
         <>
-          <div className="room-roster" aria-label="Room players">
-            {s?.members.map((m, index) => (
-              <div key={m.id}>
-                <b
-                  className={
-                    index === 0
-                      ? 'x-text'
-                      : s.match?.gameId === 'connect-four'
-                        ? 'gold-text'
-                        : 'o-text'
-                  }
-                >
-                  {s.match?.gameId === 'connect-four'
-                    ? index === 0
-                      ? 'R'
-                      : 'G'
-                    : cards || race || rps || chess
-                      ? String(index + 1)
-                      : index === 0
-                        ? 'X'
-                        : 'O'}
-                </b>
-                <strong>
-                  {m.name}
-                  {m.id === room.peerId ? ' (you)' : ''}
-                </strong>
-                <span>
-                  {m.connected ? 'Connected' : 'Waiting to reconnect'}
-                </span>
-              </div>
-            ))}
-            {s?.members.length === 1 && <p>Your guest’s seat is waiting.</p>}
-          </div>
+          <details
+            className="room-roster-details"
+            open={!match && !cards && !race && !rps && !chess && !mafia}
+          >
+            <summary>Room players ({s?.members.length ?? 0})</summary>
+            <div className="room-roster" aria-label="Room players">
+              {s?.members.map((m, index) => (
+                <div key={m.id}>
+                  <b
+                    className={
+                      index === 0
+                        ? 'x-text'
+                        : s.match?.gameId === 'connect-four'
+                          ? 'gold-text'
+                          : 'o-text'
+                    }
+                  >
+                    {s.match?.gameId === 'connect-four'
+                      ? index === 0
+                        ? 'R'
+                        : 'G'
+                      : cards || race || rps || chess || mafia
+                        ? String(index + 1)
+                        : index === 0
+                          ? 'X'
+                          : 'O'}
+                  </b>
+                  <strong>
+                    {m.name}
+                    {m.id === room.peerId ? ' (you)' : ''}
+                  </strong>
+                  <span>
+                    {m.connected ? 'Connected' : 'Waiting to reconnect'}
+                  </span>
+                </div>
+              ))}
+              {s?.members.length === 1 && <p>Your guest’s seat is waiting.</p>}
+            </div>
+          </details>
           {(!connected || (room.role === 'host' && output)) && (
             <div className="room-columns">
               <section className="setup-card">
@@ -290,6 +302,7 @@ export function RoomPage({ room }: { room: Room }) {
             !race &&
             !rps &&
             !chess &&
+            !mafia &&
             room.role === 'host' &&
             s &&
             s.members.length < 20 &&
@@ -309,6 +322,7 @@ export function RoomPage({ room }: { room: Room }) {
             !race &&
             !rps &&
             !chess &&
+            !mafia &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
                 <h2>Everyone’s here.</h2>
@@ -363,6 +377,15 @@ export function RoomPage({ room }: { room: Room }) {
                       >
                         Chess
                       </option>
+                      <option
+                        disabled={
+                          (s?.members.length ?? 0) < 5 ||
+                          (s?.members.length ?? 0) > 10
+                        }
+                        value="mafia"
+                      >
+                        Mafia
+                      </option>
                       <option value="uno">UNO-inspired</option>
                     </select>
                   </label>
@@ -372,9 +395,19 @@ export function RoomPage({ room }: { room: Room }) {
                     ? 'Your table is ready for a little friendly competition.'
                     : 'Waiting for the host to choose and start a game.'}
                 </p>
+                {room.role === 'host' &&
+                  selectedGame === 'mafia' &&
+                  (s?.members.length ?? 0) < 5 && (
+                    <p>Invite at least five players to start Mafia.</p>
+                  )}
                 {room.role === 'host' && (
                   <button
                     className="primary"
+                    disabled={
+                      selectedGame === 'mafia' &&
+                      ((s?.members.length ?? 0) < 5 ||
+                        (s?.members.length ?? 0) > 10)
+                    }
                     onClick={() => room.start(selectedGame)}
                   >
                     Start {gameName(selectedGame)}
@@ -616,6 +649,18 @@ export function RoomPage({ room }: { room: Room }) {
                 ))}
             </div>
           )}
+          {mafia && s && (
+            <MafiaTable
+              view={mafia.view}
+              seat={mafia.seat}
+              names={s.members.map((m) => m.name)}
+              online={s.members.map((m) => m.connected)}
+              host={room.role === 'host'}
+              error={message || room.issue}
+              action={(action) => room.mafiaAction(action)}
+              replay={() => room.start()}
+            />
+          )}
           {race && s && (
             <div className="board-panel room-race-match">
               <p className="room-game-name">{gameName(race.gameId)}</p>
@@ -737,7 +782,7 @@ export function RoomPage({ room }: { room: Room }) {
         <p role="status">Preparing your connection link… Keep this tab open.</p>
       )}
       <p className="room-status" role="status">
-        {message || room.issue}
+        {!mafia && (message || room.issue)}
       </p>
     </section>
   );

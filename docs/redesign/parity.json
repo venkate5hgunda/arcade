@@ -457,7 +457,7 @@
       "id": "G13",
       "title": "Mafia",
       "category": "Party",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/mafia.js",
         "js/game-catalog.js",
@@ -469,6 +469,11 @@
       ],
       "baselineTests": [
         "test/mafia.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/mafia.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/mafia.spec.ts"
       ]
     },
     {

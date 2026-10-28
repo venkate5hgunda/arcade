@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 3 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G08 and G11–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 2 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -190,3 +190,11 @@ Browser inspection found the initial mobile table extended below the viewport; r
 Traced seeded rack placement, fixed-step collisions and pocket callbacks, first contact/rail/foul flags, assignments and remaining-group counts, cue respot, early/legal 8-ball and win states through the typed solver, canvas, keyboard/pointer controls, stable-checkpoint rules, catalog/resume, documentation and tests. The seeded rack and checkpoint validator were compared with the original; complete legal/early 8-ball shots run through the production physics pipeline. An expandable ball inventory exposes number, group and pocketed state without relying on tiny mobile marks.
 
 Eight desktop/mobile Pool flows pass, including a break, legal and early 8-ball, drag, recovery during motion, replay and accessibility. The catalog handoff test had assumed Pool was still unported; it now uses Island Charter. This was a missed capability-consumer trace. The 28 Pool/foundation browser checks passed together. Shared audio/haptics and physical-device qualification remain open.
+
+## Mafia private-room trace
+
+Traced original role distribution, night actions, private detective history, pending/absent seats, secret votes/abstentions, resolution, win conditions and final role reveal through the typed engine, host-only tab backup, strict seat-specific views, round/revision validation, per-seat reconnect, room selection, standings, capability labels and tests. Protocol v5 rejects older links and restores valid v1–v4 host backups; guests receive only their own role, applicable allies, clues and own target. Rejected actions return private recovery guidance. Five-browser desktop/mobile games cover host reload, reconnect, investigation privacy, voting, win and replay; deterministic tests cover 5–10-seat rules, disconnected-seat skips and unauthorized actions.
+
+Mobile inspection exposed a missed shared-room trace: five roster cards squeezed into unreadable columns and displaced the game. Room rosters now wrap legibly and collapse during a match, while remaining expandable. The catalog's previous two-player room label was also corrected for Mafia. Physical-device and cross-network qualification, broader spectators/standings and shared audio/PWA remain open.
+
+The first combined v5 browser run passed 141 of 144 checks. Three failures were missed room-layout traces: Mafia recovery text appeared twice, and the RPS reconnect test expected a now-collapsed roster to be visible. The status is now shown once next to Mafia actions, and the RPS check opens the roster. All 62 affected room/catalog desktop/mobile checks passed on rerun, including real two-, three- and five-browser rooms.

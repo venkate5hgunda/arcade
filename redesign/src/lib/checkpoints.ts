@@ -42,6 +42,7 @@ export function validCheckpoint(id: string, state: unknown): boolean {
       : false;
 }
 export const roomGameIds = new Set([
+  'mafia',
   'chess',
   'rps',
   'tictactoe',

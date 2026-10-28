@@ -71,3 +71,7 @@ The user requested importing the original app’s shared-card and pile work, sup
 ### Secret-throw protocol update
 
 Chess adds authoritative legal moves, promotions and result accounting; Rock Paper Scissors adds seat-specific secret throws and host-timed reveals in protocol v4. Invitations reject older peers; valid v1 public, v2 private-card and v3 race host backups remain recoverable using fresh v4 invitations. Local checkpoint shapes and first-to-3/5/7 settings remain compatible. This extends the authorized remaining-game work; no merge or production deployment is implied.
+
+### Mafia private-room protocol update
+
+Mafia adds host-held roles/actions and seat-specific projections in protocol v5. Fresh connections reject older peers; valid v1–v4 host backups restore into fresh v5 invitations. Unlike other games, the host may explicitly mark a disconnected pending Mafia seat absent for the current phase, matching the original game. No merge or production deployment is implied.

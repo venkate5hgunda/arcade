@@ -26,7 +26,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G10](#g10) | Business | Board | Planned |
 | [G11](#g11) | Chess | Board | Implemented |
 | [G12](#g12) | Imposter | Party | Implemented |
-| [G13](#g13) | Mafia | Party | Planned |
+| [G13](#g13) | Mafia | Party | Implemented |
 | [G14](#g14) | Dumb Charades | Party | Implemented |
 | [G15](#g15) | Rock Paper Scissors | Party | Implemented |
 | [G16](#g16) | Blackjack | Cards | Implemented |
@@ -299,7 +299,7 @@ Baseline tests: [test/imposter.test.js](../../test/imposter.test.js).
 
 ## G13
 
-**Mafia** · Party · Planned
+**Mafia** · Party · Implemented
 
 - Five to ten players, rooms only; host-held roles, night actions, private information, secret votes, elimination, winning teams and recovery per existing rules.
 - Preserve catalog player range 5–10; full rules/options and transitions in the cited game are the baseline.

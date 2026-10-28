@@ -1,6 +1,6 @@
 # Game migration status
 
-**23 of 26 games are implemented.** The remaining 3 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**24 of 26 games are implemented.** The remaining 2 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -8,7 +8,7 @@
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo, Chess | Island Charter, Business |
 | Action | Whack-a-Mole, Air Hockey, 8-Ball Pool | None |
-| Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter | Mafia |
+| Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter, Mafia | None |
 | Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
@@ -35,7 +35,7 @@ Evidence: `redesign/checks/unit/blackjack.check.ts` and `redesign/checks/browser
 
 - **Crazy Eights:** native two-player covered local hands and private rooms; suit/rank matching, wild-eight suit selection, one draw per turn, passing, discard recycling, empty-hand victory and blocked-hand penalty scoring. Choosing a suit survives reload; completed games are removed from local resume.
 - **UNO-inspired:** native 2–20-player local tables and rooms; one/two decks, private hands, skip/reverse/+2/wild/+4, drawn-card restriction, challenge/accept, UNO callouts/catches, blocked termination, wins and replay. Names/settings/checkpoints retain baseline shapes. Reload covers local hands again.
-- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v4 rejects older connection links. Valid v1 public and v2 private-card host checkpoints can be restored and re-invited using v4 links.
+- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v5 rejects older connection links. Valid v1–v4 host checkpoints can be restored and re-invited using v5 links.
 
 Evidence: `redesign/checks/unit/cards.check.ts`, `room.check.ts`, and `redesign/checks/browser/cards.spec.ts`. Typed engines are compared against the originals through complete games at 2/3/10/11/20 players. Twenty-seat protocol admission/projection/reconnect is checked with deterministic transports; real WebRTC browser flows cover two-player Crazy Eights and three-player UNO, including host reload, preserved private hands, complete wins and rematches. Physical-device/network qualification and broader shared room criteria remain release gates.
 
@@ -83,7 +83,7 @@ The original app's `js/playing-cards.js` and `js/card-pile.js` centralize standa
 
 ## Rock Paper Scissors acceptance and evidence
 
-Native computer/pass-and-play modes preserve first-to-3/5/7 settings, secret handoffs, all nine throw outcomes, ties, absolute countdown recovery and replay. Rooms preserve independently chosen throws, first-to-3 matches, host-only next-round control, standings, reconnect and tab recovery. Guest projections contain their own throw and opponent lock status; neither throw is revealed until the host finishes the countdown. Protocol v4 rejects older peers and restores valid v1–v3 host backups with fresh invitations.
+Native computer/pass-and-play modes preserve first-to-3/5/7 settings, secret handoffs, all nine throw outcomes, ties, absolute countdown recovery and replay. Rooms preserve independently chosen throws, first-to-3 matches, host-only next-round control, standings, reconnect and tab recovery. Guest projections contain their own throw and opponent lock status; neither throw is revealed until the host finishes the countdown. Protocol v5 rejects older peers and restores valid v1–v4 host backups with fresh invitations.
 
 Evidence: `redesign/checks/unit/rps.check.ts`, `room.check.ts`, and `redesign/checks/browser/rps.spec.ts`; eight desktop/mobile flows cover full matches, computer play, deadlines, navigation cleanup, accessibility and real two-browser reload/reconnect. Physical-device and cross-network qualification remains a release gate.
 
@@ -91,7 +91,7 @@ Evidence: `redesign/checks/unit/rps.check.ts`, `room.check.ts`, and `redesign/ch
 
 Native local/computer play preserves White/Black selection, automatic board orientation, legal moves, check/checkmate, stalemate, insufficient material, castling, en passant and four promotion choices. Original piece silhouettes and checkpoint fields are retained. Keyboard arrows navigate squares; legal moves and piece identities have accessible names. Pending promotion and AI turns recover after reload, and disposed AI timers cannot act on another game.
 
-Host-authoritative rooms enforce White/Black seat turns, legal moves and promotions, stale-action rejection, disconnected-seat pauses, host reload, same-seat reconnect, exactly-once wins/draws and replay. Chess is included with RPS in protocol v4.
+Host-authoritative rooms enforce White/Black seat turns, legal moves and promotions, stale-action rejection, disconnected-seat pauses, host reload, same-seat reconnect, exactly-once wins/draws and replay. Chess and RPS use protocol v5.
 
 Evidence: `redesign/checks/unit/chess.check.ts`, `room.check.ts`, and `redesign/checks/browser/chess.spec.ts`. Legal-move/position comparisons run through a complete original-engine checkmate; special-move and draw fixtures plus six desktop/mobile flows cover promotion recovery, AI, keyboard/accessibility and a real two-browser recovered game. The original engine's supported draw rules are preserved; repetition/50-move claims were never baseline capabilities.
 
@@ -118,3 +118,9 @@ Evidence: `redesign/checks/unit/hockey.check.ts` compares collisions, drag, acce
 Native two-player Pool preserves the original rack, aiming and shot power, fixed-step disc collisions/pockets, group assignment, turn retention, no-contact/wrong-contact/rail/scratch fouls, cue respot, early/fouled or legal 8-ball outcomes and replay. A stable pre-shot table is saved while the balls roll, so interrupted shots can be replayed. The table supports keyboard and drag shots; an expandable inventory makes each numbered ball and pocketed state inspectable.
 
 Evidence: `redesign/checks/unit/pool.check.ts` compares the seeded rack and saved shape with the original and exercises fouls plus real physical 8-ball shots. `redesign/checks/browser/pool.spec.ts` covers eight desktop/mobile flows including real break/aim/power, drag, in-motion recovery, 8-ball outcomes, replay and accessibility. Physical-device and shared audio/haptic qualification remain release gates.
+
+## Mafia acceptance and evidence
+
+Native private rooms support five to ten players, host-held shuffled roles, Mafia night targets, Doctor protection, Detective private clues, daytime discussion, secret votes and abstentions, ties, elimination, winning teams and replay. Each seat receives only its role, permitted allies, own clues and own action until final role reveal. The host may mark a disconnected pending seat absent, and host tab recovery retains private state and seat identities. Protocol v5 rejects old connections and restores valid v1–v4 host backups via fresh invitations.
+
+Evidence: `redesign/checks/unit/mafia.check.ts` compares the native rules and projections with the original across 5–10 seats; `redesign/checks/unit/room.check.ts` covers privacy, full wins, absent seats, rejected actions, protocol migration and recovery. `redesign/checks/browser/mafia.spec.ts` completes a game across five real browser contexts on desktop and mobile, including reconnection and private clues. Cross-network and physical-device qualification remain release gates.
