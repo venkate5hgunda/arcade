@@ -638,7 +638,7 @@ export class Room {
       else throw new Error();
     } else {
       if (
-        m.type === 'mafia-error' &&
+        ['mafia-error', 'business-error'].includes(m.type) &&
         typeof m.message === 'string' &&
         m.message.length <= 200
       ) {

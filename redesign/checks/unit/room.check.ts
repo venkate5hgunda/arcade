@@ -763,6 +763,10 @@ test('Business room hides decks, rejects forged dice and restores the host befor
   assert.ok(
     JSON.parse(cache.get('arcade:redesign:room:v6')!).privateBusiness.decks,
   );
+  guest.businessAction({ type: 'end' });
+  await flush();
+  assert.match(guest.issue, /Wait for the current player/);
+  assert.equal(host.issue, '');
   guest.businessAction({ type: 'roll', dice: [6, 6] });
   await flush();
   assert.equal(host.snapshot!.businessMatch!.revision, 0);
