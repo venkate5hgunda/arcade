@@ -1,13 +1,13 @@
 # Game migration status
 
-**22 of 26 games are implemented.** The remaining 4 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**23 of 26 games are implemented.** The remaining 3 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo, Chess | Island Charter, Business |
-| Action | Whack-a-Mole, Air Hockey | 8-Ball Pool |
+| Action | Whack-a-Mole, Air Hockey, 8-Ball Pool | None |
 | Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter | Mafia |
 | Word | Wordle, Hangman, Word Scramble | None |
 
@@ -112,3 +112,9 @@ Evidence: `redesign/checks/unit/imposter.check.ts` compares original categories,
 Native two-player Air Hockey retains first-to-5/7/10 options, fixed-step disc physics, accelerated paddles, keyboard and independent pointer controls, opening faceoff, rebounds, scoring, receiving serves, win/replay and baseline-shaped checkpoints. The entire table fits in the initial mobile viewport; each half accepts a drag without requiring a precise paddle hit.
 
 Evidence: `redesign/checks/unit/hockey.check.ts` compares collisions, drag, acceleration and impacts directly with the original solver and exercises both goals and serving; `redesign/checks/browser/hockey.spec.ts` covers desktop/mobile keyboard and pointer play, recovery, scoring, rematch, accessibility and reset. Shared sound/haptics and physical-device qualification remain A07/release gates.
+
+## 8-Ball Pool acceptance and evidence
+
+Native two-player Pool preserves the original rack, aiming and shot power, fixed-step disc collisions/pockets, group assignment, turn retention, no-contact/wrong-contact/rail/scratch fouls, cue respot, early/fouled or legal 8-ball outcomes and replay. A stable pre-shot table is saved while the balls roll, so interrupted shots can be replayed. The table supports keyboard and drag shots; an expandable inventory makes each numbered ball and pocketed state inspectable.
+
+Evidence: `redesign/checks/unit/pool.check.ts` compares the seeded rack and saved shape with the original and exercises fouls plus real physical 8-ball shots. `redesign/checks/browser/pool.spec.ts` covers eight desktop/mobile flows including real break/aim/power, drag, in-motion recovery, 8-ball outcomes, replay and accessibility. Physical-device and shared audio/haptic qualification remain release gates.

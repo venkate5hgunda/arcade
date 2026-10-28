@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G04, G06–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 4 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 3 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -184,3 +184,9 @@ The combined party-game build passed all 126 desktop Chromium and mobile WebKit 
 Traced fixed-step physics, disc collisions, paddle acceleration and limits, opening and receiving serves, target settings, score/finish, saved puck/paddle coordinates, input ownership and teardown through the typed solver, canvas, local session and catalog/resume consumers. Direct comparisons exercise original strikes, acceleration, friction and collisions; state tests cover both goals, valid serving checkpoints and finished-state removal. The reusable typed disc solver is also available to the upcoming Pool port.
 
 Browser inspection found the initial mobile table extended below the viewport; responsive sizing and a viewport assertion correct that missed trace. A separate reset test exposed another missed trace: unmount cleanup could re-save a deliberately cleared checkpoint. Reset now suppresses that cleanup save. All eight desktop/mobile browser checks pass for keyboard and pointer movement, goals, serves, resume, replay, reset and accessibility. Multi-touch on physical devices and shared audio/haptics remain release gates.
+
+## 8-Ball Pool trace
+
+Traced seeded rack placement, fixed-step collisions and pocket callbacks, first contact/rail/foul flags, assignments and remaining-group counts, cue respot, early/legal 8-ball and win states through the typed solver, canvas, keyboard/pointer controls, stable-checkpoint rules, catalog/resume, documentation and tests. The seeded rack and checkpoint validator were compared with the original; complete legal/early 8-ball shots run through the production physics pipeline. An expandable ball inventory exposes number, group and pocketed state without relying on tiny mobile marks.
+
+Eight desktop/mobile Pool flows pass, including a break, legal and early 8-ball, drag, recovery during motion, replay and accessibility. The catalog handoff test had assumed Pool was still unported; it now uses Island Charter. This was a missed capability-consumer trace. The 28 Pool/foundation browser checks passed together. Shared audio/haptics and physical-device qualification remain open.

@@ -18,7 +18,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G02](#g02) | Taboo | Party | Implemented |
 | [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Implemented |
-| [G05](#g05) | 8-Ball Pool | Action | Planned |
+| [G05](#g05) | 8-Ball Pool | Action | Implemented |
 | [G06](#g06) | Whack-a-Mole | Action | Implemented |
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
 | [G08](#g08) | Ludo | Board | Implemented |
@@ -206,7 +206,7 @@ Baseline tests: [test/air-hockey.test.js](../../test/air-hockey.test.js).
 
 ## G05
 
-**8-Ball Pool** · Action · Planned
+**8-Ball Pool** · Action · Implemented
 
 - Two-player rack, aiming, disc collisions, pockets, scratches, assigned groups and house-rule eight-ball win/loss.
 - Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline.

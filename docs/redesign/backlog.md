@@ -38,7 +38,7 @@ reference; the redesign builds clean, typed equivalents.
 - [ ] **Remaining board:** Island Charter, Business.
 - [x] **Whack-a-Mole (G06):** timed targets, scoring and absolute-deadline recovery.
 - [x] **Air Hockey (G04):** native two-player table, fixed-step collisions, touch/keyboard controls, serving and recovery.
-- [ ] **Remaining action:** 8-Ball Pool.
+- [x] **8-Ball Pool (G05):** native table, physical shots, house rules, inspection and stable-table recovery.
 - [x] **Taboo (G02):** covered clues, team scoring and deadline recovery.
 - [x] **Show (G01):** covered chits, simultaneous passes and slap-order scoring.
 - [x] **Rock Paper Scissors (G15):** secret local throws, computer, 3/5/7-win matches, countdown recovery and private two-browser rooms.
@@ -54,7 +54,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G04–G05, G09–G15).** Port the remaining 4 catalog
+- [ ] **More games (G04–G05, G09–G15).** Port the remaining 3 catalog
       entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior

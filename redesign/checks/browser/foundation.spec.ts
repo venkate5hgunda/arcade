@@ -27,16 +27,19 @@ test('complete shelf, categories, search, selection and original-game handoff', 
   );
   await page.getByRole('button', { name: 'Action', exact: true }).click();
   await expect(page.locator('.game-card')).toHaveCount(3);
-  await page.getByRole('button', { name: '8-Ball Pool', exact: true }).click();
+  await page.getByRole('button', { name: 'Board', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Island Charter', exact: true })
+    .click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    '8-Ball Pool',
+    'Island Charter',
   );
-  await page.getByRole('link', { name: 'Explore 8-Ball Pool' }).click();
+  await page.getByRole('link', { name: 'Explore Island Charter' }).click();
   await expect(
     page.getByRole('link', { name: 'Play in original Arcade' }),
   ).toHaveAttribute(
     'href',
-    'https://venkate5hgunda.github.io/arcade/#/games/pool',
+    'https://venkate5hgunda.github.io/arcade/#/games/catan',
   );
   await page.goBack();
   await page.getByRole('button', { name: 'All', exact: true }).click();

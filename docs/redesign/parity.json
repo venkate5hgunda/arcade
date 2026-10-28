@@ -286,7 +286,7 @@
       "id": "G05",
       "title": "8-Ball Pool",
       "category": "Action",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/pool.js",
         "js/game-catalog.js",
@@ -296,7 +296,11 @@
         "Two-player rack, aiming, disc collisions, pockets, scratches, assigned groups and house-rule eight-ball win/loss.",
         "Preserve catalog player range 2\u20132; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/pool.check.ts",
+        "redesign/checks/browser/pool.spec.ts"
+      ]
     },
     {
       "id": "G06",
