@@ -2987,3 +2987,199 @@ select:focus-visible {
     flex-wrap: wrap;
   }
 }
+
+/* Secret throws stay out of the rendered table until the countdown finishes. */
+.rps-table {
+  padding: 1.5rem 0;
+  min-height: 230px;
+  display: grid;
+  place-items: center;
+}
+.rps-choices {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+.rps-choices button {
+  display: grid;
+  gap: 0.7rem;
+  place-items: center;
+  min-width: 0;
+  flex: 1;
+  max-width: 180px;
+  padding: 1.3rem 0.4rem;
+  border: 2px solid #a7473b;
+  border-radius: 24px;
+  background: #fff0cf;
+  color: #48251e;
+  font-weight: 800;
+  box-shadow: 0 6px 0 #a7473b;
+}
+.rps-choices button:hover {
+  background: #ffdc83;
+  transform: translateY(-3px);
+}
+.rps-choices button span {
+  font-size: clamp(2rem, 7vw, 4.5rem);
+}
+.rps-arena {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+}
+.rps-arena > div {
+  display: grid;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 24px;
+}
+.rps-arena span {
+  font-size: clamp(3rem, 10vw, 6rem);
+}
+.rps-winning {
+  background: #ffe085;
+  color: #48251e;
+  box-shadow: 0 0 0 3px #a7473b;
+}
+.rps-count,
+.rps-covered {
+  text-align: center;
+}
+.rps-count > span {
+  display: block;
+  font-size: 3rem;
+}
+.rps-count strong {
+  display: block;
+  font-size: 3rem;
+}
+.rps-covered {
+  font-size: 6rem;
+  color: #de5c43;
+}
+@media (max-width: 480px) {
+  .rps-choices {
+    gap: 0.6rem;
+  }
+  .rps-arena {
+    gap: 0.5rem;
+  }
+}
+
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  max-width: 520px;
+  margin: 1rem auto;
+  border: 7px solid #a95a3f;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 7px 0 #713b30;
+}
+.chess-square {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  min-height: 0;
+}
+.chess-light {
+  background: #f5dfaa;
+  color: #4d2a25;
+}
+.chess-dark {
+  background: #56847a;
+  color: #fff4d5;
+}
+.chess-square > span {
+  width: 78%;
+  height: 90%;
+  display: grid;
+}
+.chess-piece {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 1px #0005);
+  stroke: #51332d;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.chess-piece.cw {
+  fill: #fff5db;
+}
+.chess-piece.cb {
+  fill: #252e4c;
+  stroke: #f1c581;
+}
+.chess-band {
+  fill: #d49c4e;
+}
+.chess-glint {
+  fill: none;
+  stroke: #fff9;
+  stroke-width: 2;
+}
+.chess-detail {
+  fill: none;
+}
+.chess-detail-dot {
+  fill: #b86a49;
+  stroke: none;
+}
+.chess-square small {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-size: 0.55rem;
+  line-height: 1;
+}
+.chess-square.chess-last {
+  background: #e3b452;
+  color: #38251d;
+}
+.chess-square.chess-selected {
+  background: #ff915c;
+  color: #38251d;
+  box-shadow: inset 0 0 0 3px #772723;
+}
+.chess-square.chess-target {
+  box-shadow: inset 0 0 0 3px #d43269;
+}
+.chess-square i {
+  position: absolute;
+  width: 24%;
+  height: 24%;
+  border-radius: 50%;
+  background: #a72052;
+  opacity: 0.8;
+}
+.chess-square:focus-visible {
+  z-index: 1;
+  outline: 3px solid #ff2e79;
+  outline-offset: -3px;
+}
+.chess-captures {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.chess-captures p {
+  margin: 0.4rem 0;
+}
+.chess-promotion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 0;
+}
+.chess-promotion p {
+  width: 100%;
+  margin: 0;
+}

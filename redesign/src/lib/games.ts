@@ -332,6 +332,8 @@ export const CATEGORIES = [
 
 /** Games with a migrated view. Others render an honest "Coming soon" screen. */
 export const implementedGameIds = new Set<string>([
+  'chess',
+  'rps',
   'tictactoe',
   'blackjack',
   'wordle',

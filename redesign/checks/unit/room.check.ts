@@ -388,7 +388,7 @@ test('20-seat UNO admission keeps existing channels, projects every private hand
   for (const player of players) player.leave();
 });
 
-test('v1 public host checkpoints migrate into v3 invitations without accepting old peers or extra private fields', async () => {
+test('v1 public host checkpoints migrate into v4 invitations without accepting old peers or extra private fields', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -405,7 +405,7 @@ test('v1 public host checkpoints migrate into v3 invitations without accepting o
   restored.restore();
   assert.deepEqual(restored.snapshot!.match, saved.match);
   const invite = await restored.createInvite();
-  assert.equal(readSignal(invite, 'offer').version, 3);
+  assert.equal(readSignal(invite, 'offer').version, 4);
   const url = new URL(invite),
     params = new URLSearchParams(url.hash.split('?')[1]),
     message = JSON.parse(atob(params.get('invite')!));
@@ -471,7 +471,7 @@ test('four-seat race validates actions, propagates turns, and restores a paused 
   for (const guest of guests) guest.leave();
 });
 
-test('v2 private-card host backups restore into v3 without exposing another hand', async () => {
+test('v2 private-card host backups restore into v4 without exposing another hand', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -479,9 +479,9 @@ test('v2 private-card host backups restore into v3 without exposing another hand
   await connect(host, guest);
   host.start('crazy-eights');
   await flush();
-  const old = cache.get('arcade:redesign:room:v3')!;
+  const old = cache.get('arcade:redesign:room:v4')!;
   cache.set('arcade:redesign:room:v2', old);
-  cache.delete('arcade:redesign:room:v3');
+  cache.delete('arcade:redesign:room:v4');
   const restored = new Room(factory);
   restored.restore();
   assert.equal(restored.role, 'host');
@@ -490,6 +490,121 @@ test('v2 private-card host backups restore into v3 without exposing another hand
   await connect(restored, guest);
   assert.equal(guest.snapshot?.cardMatch?.view.seat, 1);
   assert.equal('hands' in guest.snapshot!.cardMatch!.view, false);
+  restored.leave();
+  guest.leave();
+});
+
+test('RPS accepts crossed secret throws, hides picks, restores and records a match once', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('rps');
+  await flush();
+  host.rpsAction({ type: 'pick', choice: 'rock' });
+  guest.rpsAction({ type: 'pick', choice: 'scissors' });
+  await flush();
+  assert.equal(host.snapshot!.rpsMatch!.view.phase, 'countdown');
+  assert.equal(guest.snapshot!.rpsMatch!.view.ownPick, 'scissors');
+  assert.equal(guest.snapshot!.rpsMatch!.view.revealed, null);
+  assert.equal('picks' in guest.snapshot!.rpsMatch!.view, false);
+  assert.ok(validSnapshot(guest.snapshot));
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.snapshot?.rpsMatch?.view.ownPick, 'rock');
+  host.leave();
+  await connect(restored, guest);
+  // Advance the authoritative deadline without waiting for real animation time.
+  for (let turn = 0; turn < 3; turn++) {
+    if (turn) {
+      restored.rpsAction({ type: 'next' });
+      await flush();
+      guest.rpsAction({ type: 'pick', choice: 'scissors' });
+      await flush();
+      restored.rpsAction({ type: 'pick', choice: 'rock' });
+      await flush();
+    }
+    const authority = restored as unknown as {
+      privateRps: { deadline: number };
+      scheduleRps(): void;
+    };
+    authority.privateRps.deadline = 1;
+    authority.scheduleRps();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await flush();
+    assert.deepEqual(guest.snapshot!.rpsMatch!.view.revealed, [
+      'rock',
+      'scissors',
+    ]);
+    assert.equal(restored.snapshot!.rpsMatch!.view.score[0], turn + 1);
+  }
+  assert.equal(restored.snapshot!.wins[0], 1);
+  restored.rpsAction({ type: 'next' });
+  restored.rpsAction({ type: 'pick', choice: 'paper' });
+  await flush();
+  assert.equal(restored.snapshot!.wins[0], 1);
+  restored.start();
+  await flush();
+  assert.equal(guest.snapshot!.rpsMatch!.round, 1);
+  assert.deepEqual(guest.snapshot!.rpsMatch!.view.score, [0, 0]);
+  restored.leave();
+  guest.leave();
+});
+
+test('Chess room enforces seats, restores, completes checkmate and records one result', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('chess');
+  await flush();
+  guest.chessAction({ type: 'move', from: 12, to: 28 });
+  await flush();
+  assert.equal(host.snapshot!.chessMatch!.revision, 0);
+  host.chessAction({ type: 'move', from: 13, to: 21 });
+  await flush();
+  const restored = new Room(factory);
+  restored.restore();
+  assert.deepEqual(restored.snapshot!.chessMatch, host.snapshot!.chessMatch);
+  host.leave();
+  await connect(restored, guest);
+  guest.chessAction({ type: 'move', from: 52, to: 36 });
+  await flush();
+  restored.chessAction({ type: 'move', from: 14, to: 30 });
+  await flush();
+  guest.chessAction({ type: 'move', from: 59, to: 31 });
+  await flush();
+  assert.ok(validSnapshot(guest.snapshot));
+  assert.equal(guest.snapshot!.chessMatch!.game.over, true);
+  assert.equal(restored.snapshot!.wins[1], 1);
+  guest.chessAction({ type: 'move', from: 31, to: 39 });
+  await flush();
+  assert.equal(restored.snapshot!.wins[1], 1);
+  restored.start();
+  await flush();
+  assert.equal(guest.snapshot!.chessMatch!.round, 1);
+  assert.equal(guest.snapshot!.chessMatch!.game.over, false);
+  restored.leave();
+  guest.leave();
+});
+
+test('v3 race host backup restores into v4 with a fresh invitation', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('ludo');
+  await flush();
+  const saved = cache.get('arcade:redesign:room:v4')!;
+  host.leave();
+  cache.set('arcade:redesign:room:v3', saved);
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.snapshot?.raceMatch?.gameId, 'ludo');
+  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 4);
   restored.leave();
   guest.leave();
 });

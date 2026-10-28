@@ -1,3 +1,15 @@
+import { newChess, validChess, moveChess, chessResult } from '../chess.ts';
+import type { ChessState } from '../chess.ts';
+import {
+  newRpsRoom,
+  validRpsRoom,
+  rpsView,
+  validRpsView,
+  applyRpsRoom,
+  revealRpsRoom,
+  rpsRoomDone,
+} from '../rps.ts';
+import type { RpsRoomState, RpsView } from '../rps.ts';
 import { applyRace, newRace, raceCount, validRace } from '../races.ts';
 import type { RaceId, RaceState } from '../races.ts';
 import {
@@ -32,10 +44,30 @@ export interface RoomSnapshot {
   match: Match | null;
   cardMatch?: CardMatch | null;
   raceMatch?: RaceMatch | null;
+  rpsMatch?: RpsMatch | null;
+  chessMatch?: ChessMatch | null;
   wins: number[];
   draws: number;
 }
-export type RoomGameId = 'tictactoe' | 'connect-four' | CardGameId | RaceId;
+export type RoomGameId =
+  | 'tictactoe'
+  | 'connect-four'
+  | 'chess'
+  | 'rps'
+  | CardGameId
+  | RaceId;
+export interface ChessMatch {
+  gameId: 'chess';
+  round: number;
+  revision: number;
+  game: ChessState;
+}
+export interface RpsMatch {
+  gameId: 'rps';
+  round: number;
+  revision: number;
+  view: RpsView;
+}
 export interface RaceMatch {
   gameId: RaceId;
   round: number;
@@ -49,7 +81,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 3;
+  version: 4;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -57,7 +89,8 @@ interface Signal {
   name: string;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v3';
+const BACKUP = 'arcade:redesign:room:v4';
+const RACE_BACKUP = 'arcade:redesign:room:v3';
 const CARD_BACKUP = 'arcade:redesign:room:v2';
 const OLD_BACKUP = 'arcade:redesign:room:v1';
 const UUID = /^[a-f0-9-]{36}$/i;
@@ -82,6 +115,8 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'match',
         'cardMatch',
         'raceMatch',
+        'rpsMatch',
+        'chessMatch',
         'wins',
         'draws',
       ].includes(k),
@@ -103,6 +138,29 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
     integer(s.draws) &&
+    (s.chessMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        !s.raceMatch &&
+        !s.rpsMatch &&
+        s.members.length === 2 &&
+        Object.keys(s.chessMatch).length === 4 &&
+        s.chessMatch.gameId === 'chess' &&
+        integer(s.chessMatch.round) &&
+        integer(s.chessMatch.revision) &&
+        !!s.chessMatch.game &&
+        s.chessMatch.game.mode === 'pvp' &&
+        validChess(s.chessMatch.game, true))) &&
+    (s.rpsMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        !s.raceMatch &&
+        s.members.length === 2 &&
+        Object.keys(s.rpsMatch).length === 4 &&
+        s.rpsMatch.gameId === 'rps' &&
+        integer(s.rpsMatch.round) &&
+        integer(s.rpsMatch.revision) &&
+        validRpsView(s.rpsMatch.view))) &&
     (s.raceMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -177,7 +235,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 3)
+    if (s && typeof s === 'object' && s.version !== 4)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -222,6 +280,8 @@ export class Room {
   private pendingGuest = '';
   private listeners = new Set<() => void>();
   private privateGame: CardState | null = null;
+  private privateRps: RpsRoomState | null = null;
+  private rpsTimer?: ReturnType<typeof setTimeout>;
   constructor(
     private factory: ConnectionFactory = webrtcConnectionFactory,
     private base = typeof location === 'undefined'
@@ -245,6 +305,7 @@ export class Room {
         JSON.stringify({
           snapshot: this.snapshot,
           privateGame: this.privateGame,
+          privateRps: this.privateRps,
         }),
       );
     } catch {
@@ -256,6 +317,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(RACE_BACKUP) ??
           sessionStorage.getItem(CARD_BACKUP) ??
           'null',
       );
@@ -272,6 +334,16 @@ export class Room {
             JSON.stringify(snapshot.cardMatch.view))
       )
         return;
+      if (
+        snapshot.rpsMatch &&
+        (!validRpsRoom(saved?.privateRps) ||
+          JSON.stringify(rpsView(saved.privateRps, 0)) !==
+            JSON.stringify(snapshot.rpsMatch.view))
+      )
+        return;
+      this.privateRps = snapshot.rpsMatch
+        ? structuredClone(saved.privateRps)
+        : null;
       this.snapshot = structuredClone(snapshot);
       this.privateGame = snapshot.cardMatch
         ? structuredClone(saved.privateGame)
@@ -389,7 +461,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 3,
+        version: 4,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -400,9 +472,12 @@ export class Room {
     const snapshot = structuredClone(this.snapshot!);
     if (snapshot.cardMatch && this.privateGame)
       snapshot.cardMatch.view = cardView(this.privateGame, seat);
+    if (snapshot.rpsMatch && this.privateRps)
+      snapshot.rpsMatch.view = rpsView(this.privateRps, seat);
     return snapshot;
   }
   private publish() {
+    this.scheduleRps();
     this.checkpoint();
     if (this.snapshot)
       for (const peer of this.peers.values()) {
@@ -420,7 +495,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 3 ||
+      m.version !== 4 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -441,6 +516,10 @@ export class Room {
         this.commitMove(peer.id, m.cell, m.round, m.revision);
       else if (m.type === 'card-action' && peer.accepted)
         this.commitCard(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'chess-action' && peer.accepted)
+        this.commitChess(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'rps-action' && peer.accepted)
+        this.commitRps(peer.id, m.action, m.round, m.revision, m.turns);
       else if (m.type === 'race-action' && peer.accepted)
         this.commitRace(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'sync' && peer.accepted) this.publish();
@@ -461,11 +540,23 @@ export class Room {
             ))
       )
         throw new Error();
+      if (
+        m.snapshot.rpsMatch &&
+        m.snapshot.rpsMatch.view.seat !==
+          m.snapshot.members.findIndex(
+            (member: Member) => member.id === this.peerId,
+          )
+      )
+        throw new Error();
       const previous =
+          this.snapshot.chessMatch ??
+          this.snapshot.rpsMatch ??
           this.snapshot.raceMatch ??
           this.snapshot.cardMatch ??
           this.snapshot.match,
         next =
+          (m.snapshot as RoomSnapshot).chessMatch ??
+          (m.snapshot as RoomSnapshot).rpsMatch ??
           (m.snapshot as RoomSnapshot).raceMatch ??
           (m.snapshot as RoomSnapshot).cardMatch ??
           m.snapshot.match;
@@ -502,7 +593,9 @@ export class Room {
       : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
         ((this.snapshot.match ||
           this.snapshot.cardMatch ||
-          this.snapshot.raceMatch) &&
+          this.snapshot.raceMatch ||
+          this.snapshot.rpsMatch ||
+          this.snapshot.chessMatch) &&
         this.snapshot.members.length === 2
           ? this.snapshot.members[1]
           : undefined));
@@ -512,7 +605,9 @@ export class Room {
       !existing &&
       (this.snapshot.match ||
         this.snapshot.cardMatch ||
-        this.snapshot.raceMatch)
+        this.snapshot.raceMatch ||
+        this.snapshot.rpsMatch ||
+        this.snapshot.chessMatch)
     )
       throw new Error('Reconnect an existing seat during a match.');
     if (!existing && this.snapshot.members.length >= 20)
@@ -539,7 +634,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 3,
+        version: 4,
         kind: 'offer',
         roomId: this.snapshot.roomId,
         host: this.peerId,
@@ -621,6 +716,8 @@ export class Room {
       (this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
+        this.snapshot.rpsMatch ||
+        this.snapshot.chessMatch ||
         this.snapshot.members.length >= 20)
     )
       throw new Error(
@@ -650,7 +747,9 @@ export class Room {
     this.emit();
   }
   start(
-    gameId: RoomGameId = this.snapshot?.raceMatch?.gameId ??
+    gameId: RoomGameId = this.snapshot?.chessMatch?.gameId ??
+      this.snapshot?.rpsMatch?.gameId ??
+      this.snapshot?.raceMatch?.gameId ??
       this.snapshot?.cardMatch?.gameId ??
       this.snapshot?.match?.gameId ??
       'tictactoe',
@@ -665,6 +764,8 @@ export class Room {
       throw new Error('Wait for all players to connect.');
     if (
       ![
+        'chess',
+        'rps',
         'tictactoe',
         'connect-four',
         'crazy-eights',
@@ -672,14 +773,47 @@ export class Room {
         'snakes-ladders',
         'ludo',
       ].includes(gameId) ||
-      (['tictactoe', 'connect-four', 'crazy-eights'].includes(gameId) &&
+      (['chess', 'rps', 'tictactoe', 'connect-four', 'crazy-eights'].includes(
+        gameId,
+      ) &&
         s.members.length !== 2) ||
       (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
     )
       throw new Error('Choose a game that supports this number of players.');
     const round =
-      (s.raceMatch?.round ?? s.cardMatch?.round ?? s.match?.round ?? -1) + 1;
-    if (gameId === 'snakes-ladders' || gameId === 'ludo') {
+      (s.chessMatch?.round ??
+        s.rpsMatch?.round ??
+        s.raceMatch?.round ??
+        s.cardMatch?.round ??
+        s.match?.round ??
+        -1) + 1;
+    this.privateRps = null;
+    s.rpsMatch = null;
+    s.chessMatch = null;
+    if (gameId === 'chess') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      s.chessMatch = {
+        gameId: 'chess',
+        round,
+        revision: 0,
+        game: newChess('pvp', 'w'),
+      };
+    } else if (gameId === 'rps') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      this.privateRps = newRpsRoom();
+      s.rpsMatch = {
+        gameId: 'rps',
+        round,
+        revision: 0,
+        view: rpsView(this.privateRps, 0),
+      };
+    } else if (gameId === 'snakes-ladders' || gameId === 'ludo') {
       this.privateGame = null;
       s.match = null;
       s.cardMatch = null;
@@ -863,7 +997,165 @@ export class Room {
     if (next.state.winner != null) room.wins[next.state.winner]++;
     this.publish();
   }
+  chessAction(action: unknown) {
+    const s = this.snapshot?.chessMatch;
+    if (!s) return;
+    if (this.role === 'host')
+      this.commitChess(this.peerId, action, s.round, s.revision);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'chess-action',
+            action,
+            round: s.round,
+            revision: s.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private commitChess(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.chessMatch;
+    if (
+      !room ||
+      !match ||
+      !room.members.every((m) => m.connected) ||
+      match.round !== round ||
+      match.revision !== revision ||
+      room.members[match.game.state.turn === 'w' ? 0 : 1]?.id !== sender
+    )
+      return;
+    const a = action as {
+      type?: string;
+      from?: number;
+      to?: number;
+      promotion?: unknown;
+    };
+    if (
+      !a ||
+      a.type !== 'move' ||
+      !Object.keys(a).every((k) =>
+        ['type', 'from', 'to', 'promotion'].includes(k),
+      ) ||
+      !Number.isInteger(a.from) ||
+      !Number.isInteger(a.to) ||
+      (a.promotion !== undefined &&
+        !['q', 'r', 'b', 'n'].includes(a.promotion as string))
+    )
+      return;
+    const next = moveChess(
+      match.game,
+      a.from!,
+      a.to!,
+      a.promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+    );
+    if (!next) return;
+    match.game = next;
+    match.revision++;
+    if (next.over) {
+      const result = chessResult(next);
+      if (result.winner) room.wins[result.winner === 'w' ? 0 : 1]++;
+      else room.draws++;
+    }
+    this.publish();
+  }
+  rpsAction(action: unknown) {
+    const s = this.snapshot?.rpsMatch;
+    if (!s) return;
+    if (this.role === 'host')
+      this.commitRps(this.peerId, action, s.round, s.revision, s.view.turns);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'rps-action',
+            action,
+            round: s.round,
+            revision: s.revision,
+            turns: s.view.turns,
+          },
+          peer,
+        );
+    }
+  }
+  private commitRps(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+    turns: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.rpsMatch;
+    if (
+      !room ||
+      !match ||
+      !this.privateRps ||
+      !room.members.every((m) => m.connected) ||
+      match.round !== round ||
+      turns !== this.privateRps.turns
+    )
+      return;
+    // Independent throws can cross in flight after the other seat locks in.
+    // Bind to the throw round as well as the match so an old pick cannot replay.
+    const concurrentPick =
+      (action as { type?: string })?.type === 'pick' &&
+      this.privateRps.phase === 'picking' &&
+      this.privateRps.picks.some(Boolean) &&
+      revision === match.revision - 1;
+    if (match.revision !== revision && !concurrentPick) return;
+    const next = applyRpsRoom(
+      this.privateRps,
+      action,
+      room.members.findIndex((m) => m.id === sender),
+    );
+    if (!next) return;
+    this.privateRps = next;
+    match.revision++;
+    match.view = rpsView(next, 0);
+    this.publish();
+  }
+  private scheduleRps() {
+    clearTimeout(this.rpsTimer);
+    const room = this.snapshot,
+      match = room?.rpsMatch;
+    if (
+      this.role !== 'host' ||
+      !match ||
+      !this.privateRps ||
+      this.privateRps.phase !== 'countdown' ||
+      !room?.members.every((m) => m.connected)
+    )
+      return;
+    this.rpsTimer = setTimeout(
+      () => {
+        if (!this.privateRps || this.snapshot?.rpsMatch !== match) return;
+        const next = revealRpsRoom(this.privateRps);
+        if (!next) {
+          this.scheduleRps();
+          return;
+        }
+        this.privateRps = next;
+        match.revision++;
+        match.view = rpsView(next, 0);
+        if (rpsRoomDone(next)) room.wins[next.score[0] === 3 ? 0 : 1]++;
+        this.publish();
+      },
+      Math.max(0, this.privateRps.deadline - Date.now()),
+    );
+  }
   leave() {
+    clearTimeout(this.rpsTimer);
+    this.privateRps = null;
     this.disconnectTransport();
     this.role = null;
     this.peerId = '';
@@ -873,6 +1165,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(RACE_BACKUP);
       sessionStorage.removeItem(CARD_BACKUP);
       sessionStorage.removeItem(OLD_BACKUP);
     } catch {

@@ -24,11 +24,11 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G08](#g08) | Ludo | Board | Implemented |
 | [G09](#g09) | Island Charter | Board | Planned |
 | [G10](#g10) | Business | Board | Planned |
-| [G11](#g11) | Chess | Board | Planned |
+| [G11](#g11) | Chess | Board | Implemented |
 | [G12](#g12) | Imposter | Party | Planned |
 | [G13](#g13) | Mafia | Party | Planned |
 | [G14](#g14) | Dumb Charades | Party | Planned |
-| [G15](#g15) | Rock Paper Scissors | Party | Planned |
+| [G15](#g15) | Rock Paper Scissors | Party | Implemented |
 | [G16](#g16) | Blackjack | Cards | Implemented |
 | [G17](#g17) | Crazy Eights | Cards | Implemented |
 | [G18](#g18) | UNO-inspired | Cards | Implemented |

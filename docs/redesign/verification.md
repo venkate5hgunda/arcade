@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G03, G06–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 9 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G03, G06–G08, G11 and G15–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 7 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -148,3 +148,19 @@ card browser flows passed, including real private-room reload and reconnect.
 The original-app changes from `97216b28` share standard card rendering and deck creation between Blackjack and Crazy Eights, use a common layered pile for Blackjack, Crazy Eights, UNO, Island Charter and Business, and route race-game multiplayer dice through the existing dice utility. The new assets are included in the original service worker cache. The redesign is a separate React runtime: its Blackjack and Crazy Eights use one standard-card component and deck, while UNO keeps its own game-specific faces; all three use a shared pile component. Public discard tops are face up; hidden stock and dealer cards remain face down. No room snapshot fields or checkpoint formats change.
 
 Traced the source card and pile consumers, dice callers, service-worker assets, game-specific card views, seat projections, stock and discard counts, and local/room tests. Original desktop/mobile browser inspection covered Blackjack, Crazy Eights, UNO and Business; Island Charter's discovery pile was inspected in both layouts using a validated saved-game fixture. Island Charter and Business remain unported in the redesign, so their redesigned piles are future port work. The original suite passes 206 Node 22 and 80 Python tests; redesign browser checks include shared card faces, stock depletion, an empty pile, private handoffs, and real room recovery.
+
+## Rock Paper Scissors trace
+
+Traced original setup options, all throws, score/round transitions and absolute countdown through native React controls, baseline checkpoint/settings shape, session expiry, catalog/resume, private projections, host authority, standings, protocol version rejection and host recovery. Protocol v4 adds private showdown snapshots while retaining valid v1–v3 host backups. The room action includes both match and throw-round identity: crossed independent picks can use the immediately preceding revision without allowing a previous throw to replay. Deck/private-hand consumers and existing card tests were updated to the v4 backup key.
+
+Privacy correction: the baseline countdown displayed Player 1's pick before reveal; both throws now remain absent from the rendered showdown until settlement. This intentionally strengthens secret-choice behavior. The host retains authoritative picks only in its tab backup. Countdown settlement is idempotent, timers cancel on navigation/leave, disconnected rooms pause, and only the host advances rounds. No original-app modules were changed.
+
+Validation: five inventory checks and 42 domain/protocol checks; all eight RPS desktop Chromium/mobile WebKit flows pass, including real two-browser wins, rematches and host reload with a locked throw. Inspected mobile result capture. Two initial browser assertions used an invented shelf heading and an overly exact select label; both test assumptions were corrected against the real interface.
+
+## Chess trace
+
+Traced every original engine move flag, castling right, en passant target, promotion choice, captured-piece list, AI heuristic and terminal condition through typed transitions, accessible square controls, orientation, checkpoints/settings, native routes/resume, room seat authority, host backup/reconnection, standings and parity documentation. The native rules are compared with the original source through a complete checkmate; special cases exercise castling, en passant, all promotions, stalemate and insufficient material. Piece SVG paths are retained from the original renderer and visually inspected on mobile.
+
+Six desktop/mobile browser flows pass, including legal move hints, keyboard movement, checkmate/rematch, saved promotion, computer opening as White, real WebRTC turns and host reload/reconnect. The earlier full 108-flow regression run passed after RPS; the final combined duel-port regression is recorded below. No existing game source or production deployment changed.
+
+The combined browser regression passed 112 of 114 on its first run; the two failures were the same missed trace in desktop and mobile artwork checks, which still expected Chess's former placeholder detail page. The assertion now checks Chess's native setup artwork; all 16 affected artwork/Chess checks passed on rerun. The original 206-test JavaScript suite passes under Node 24; Node 26.7.0 fails its pre-existing lobby fixture. All 80 movie tests pass when loopback is allowed.

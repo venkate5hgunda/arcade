@@ -1,3 +1,6 @@
+import { ChessBoard } from '../components/ChessBoard.tsx';
+import { chessResult } from '../lib/chess.ts';
+import { RpsRoomTable } from '../components/RpsRoomTable.tsx';
 import { RaceTable } from '../components/RaceTable.tsx';
 import { CardTable } from '../components/CardTable.tsx';
 import { GAMES } from '../lib/games.ts';
@@ -40,6 +43,9 @@ export function RoomPage({ room }: { room: Room }) {
   const match = s?.match;
   const cards = s?.cardMatch;
   const race = s?.raceMatch;
+  const rps = s?.rpsMatch;
+  const chess = s?.chessMatch;
+  const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
     ((s.members.length > 4 && gameId !== 'uno') ||
@@ -88,8 +94,8 @@ export function RoomPage({ room }: { room: Room }) {
       <h1>Your private table</h1>
       <p className="lede">
         Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-        UNO-inspired, Snakes & Ladders or Ludo. UNO tables welcome 2–20 players;
-        race games welcome 2–4.
+        UNO-inspired, Snakes & Ladders, Ludo, Chess or Rock Paper Scissors. UNO
+        tables welcome 2–20 players; race games welcome 2–4.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -160,7 +166,7 @@ export function RoomPage({ room }: { room: Room }) {
                     ? index === 0
                       ? 'R'
                       : 'G'
-                    : cards || race
+                    : cards || race || rps || chess
                       ? String(index + 1)
                       : index === 0
                         ? 'X'
@@ -282,6 +288,8 @@ export function RoomPage({ room }: { room: Room }) {
             !match &&
             !cards &&
             !race &&
+            !rps &&
+            !chess &&
             room.role === 'host' &&
             s &&
             s.members.length < 20 &&
@@ -299,6 +307,8 @@ export function RoomPage({ room }: { room: Room }) {
             !match &&
             !cards &&
             !race &&
+            !rps &&
+            !chess &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
                 <h2>Everyone’s here.</h2>
@@ -340,6 +350,18 @@ export function RoomPage({ room }: { room: Room }) {
                         value="ludo"
                       >
                         Ludo
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 2}
+                        value="rps"
+                      >
+                        Rock Paper Scissors
+                      </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 2}
+                        value="chess"
+                      >
+                        Chess
                       </option>
                       <option value="uno">UNO-inspired</option>
                     </select>
@@ -498,6 +520,89 @@ export function RoomPage({ room }: { room: Room }) {
                 {s.draws} draws · Round {cards.round + 1}
               </p>
               {cards.view.phase === 'over' &&
+                (room.role === 'host' ? (
+                  <button
+                    className="primary"
+                    disabled={!connected}
+                    onClick={() => room.start()}
+                  >
+                    Play again
+                  </button>
+                ) : (
+                  <p>Waiting for the host to start the next round.</p>
+                ))}
+            </div>
+          )}
+          {rps && s && (
+            <>
+              <RpsRoomTable
+                view={rps.view}
+                names={s.members.map((m) => m.name)}
+                connected={connected}
+                host={room.role === 'host'}
+                action={(action) => room.rpsAction(action)}
+                replay={() => room.start()}
+              />
+              <div className="score-line">
+                {s.members.map((m, i) => (
+                  <span key={m.id}>
+                    {m.name} <strong>{s.wins[i]} wins</strong>
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {chess && s && (
+            <div className="board-panel room-chess-match">
+              <p className="room-game-name">Chess</p>
+              <div className="turn-banner" role="status">
+                <div>
+                  <h2>
+                    {chess.game.over
+                      ? chessEnd?.winner
+                        ? `Checkmate! ${s.members[chessEnd.winner === 'w' ? 0 : 1].name} wins!`
+                        : 'Draw!'
+                      : !connected
+                        ? 'Match paused'
+                        : `${s.members[chess.game.state.turn === 'w' ? 0 : 1].name} to move${chessEnd?.check ? ' — Check!' : ''}`}
+                  </h2>
+                  <p>
+                    {!connected
+                      ? 'Reconnect both players to continue.'
+                      : chess.game.pendingPromotion
+                        ? 'The moving player must choose a promotion.'
+                        : chess.game.over
+                          ? 'Ready for another game?'
+                          : seat === (chess.game.state.turn === 'w' ? 0 : 1)
+                            ? 'Your turn. Select a piece, then a highlighted square.'
+                            : 'Waiting for your opponent’s move.'}
+                  </p>
+                </div>
+              </div>
+              <ChessBoard
+                game={chess.game}
+                blocked={
+                  !connected || seat !== (chess.game.state.turn === 'w' ? 0 : 1)
+                }
+                flip={seat === 1}
+                onMove={(from, to, promotion) =>
+                  room.chessAction({
+                    type: 'move',
+                    from,
+                    to,
+                    ...(promotion ? { promotion } : {}),
+                  })
+                }
+              />
+              <div className="score-line">
+                {s.members.map((m, i) => (
+                  <span key={m.id}>
+                    {m.name} <strong>{s.wins[i]} wins</strong>
+                  </span>
+                ))}
+              </div>
+              <p>{s.draws} draws</p>
+              {chess.game.over &&
                 (room.role === 'host' ? (
                   <button
                     className="primary"

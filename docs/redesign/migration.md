@@ -67,3 +67,7 @@ Public race snapshots extend the room schema, so v3 invitations and messages rej
 ### Shared cards and piles integration
 
 The user requested importing the original app’s shared-card and pile work, superseding the foundation milestone’s restriction on changing original-app files. Commit `97216b28` is carried into the stacked integration branch; no deployment is implied. The redesign retains its isolated React runtime and reuses one typed standard-deck implementation and shared React card/pile components. Island Charter and Business still require native ports.
+
+### Secret-throw protocol update
+
+Chess adds authoritative legal moves, promotions and result accounting; Rock Paper Scissors adds seat-specific secret throws and host-timed reveals in protocol v4. Invitations reject older peers; valid v1 public, v2 private-card and v3 race host backups remain recoverable using fresh v4 invitations. Local checkpoint shapes and first-to-3/5/7 settings remain compatible. This extends the authorized remaining-game work; no merge or production deployment is implied.

@@ -68,7 +68,7 @@ test('every game switches to its own local artwork, including catalog and detail
     ).toHaveCount(1);
   }
   await page.goto('/#/game/chess');
-  await expect(page.locator('.detail-art')).toHaveAttribute(
+  await expect(page.locator('.puzzle-setup-art')).toHaveAttribute(
     'src',
     './art/games/chess.webp',
   );
