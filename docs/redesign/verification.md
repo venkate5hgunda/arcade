@@ -214,3 +214,7 @@ Traced original seeded island generation, opening order, placements, production,
 The first desktop raider test found that number tokens intercepted clicks on land underneath. The token is now non-interactive and the desktop and mobile flow is covered. This was a missed input-hit-area trace. Physical-device and cross-network qualification, shared room features, sound/theme work, offline support and release gates remain open.
 
 The first cross-game protocol run passed 158 of 160 browser checks; both failures were the catalog test matching two newly playable Island links. The selector now targets the featured link, and all 30 affected catalog and Island desktop/mobile checks pass together. This was a missed catalog-test consumer trace.
+
+### Theme preference
+
+Traced the original `arcade:ui.theme` value, system color-scheme changes, header control, document color scheme, browser theme color and theme-change event. Auto, Light and Dark now cycle in the original order, invalid stored modes fall back to Auto, and explicit choices survive reload. Desktop and mobile checks cover system changes, persistence and catalog accessibility. Sound, haptics and the remaining A07 criteria remain open.

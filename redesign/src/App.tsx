@@ -298,7 +298,10 @@ function Shell() {
   const [room] = useState(() => new Room());
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
-  const [theme, setTheme] = useState(() => loadJSON(KEYS.THEME, 'dark'));
+  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>(() => {
+    const saved = loadJSON<unknown>(KEYS.THEME, 'auto');
+    return saved === 'light' || saved === 'dark' ? saved : 'auto';
+  });
   const [warning, setWarning] = useState('');
   const location = useLocation();
   const home = location.pathname === '/';
@@ -312,8 +315,26 @@ function Shell() {
     [],
   );
   useEffect(() => {
-    document.documentElement.dataset.theme =
-      theme === 'light' ? 'light' : 'dark';
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const active =
+        theme === 'auto' ? (media?.matches ? 'dark' : 'light') : theme;
+      document.documentElement.dataset.theme = active;
+      document.documentElement.style.colorScheme = active;
+      const color = document.querySelector<HTMLMetaElement>(
+        'meta[name="theme-color"]',
+      );
+      if (color) color.content = active === 'dark' ? '#191c35' : '#fff8eb';
+      window.dispatchEvent(
+        new CustomEvent('arcade:themechange', { detail: active }),
+      );
+    };
+    apply();
+    const changed = () => {
+      if (theme === 'auto') apply();
+    };
+    media?.addEventListener('change', changed);
+    return () => media?.removeEventListener('change', changed);
   }, [theme]);
   useEffect(() => {
     const heading = document.querySelector('main h1');
@@ -373,18 +394,19 @@ function Shell() {
           </Link>
           <button
             className="icon-button"
-            aria-label={
-              theme === 'dark'
-                ? 'Switch to light theme'
-                : 'Switch to dark theme'
-            }
+            aria-label={`Theme: ${theme}. Select ${theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'}`}
             onClick={() => {
-              const next = theme === 'dark' ? 'light' : 'dark';
+              const next =
+                theme === 'auto'
+                  ? 'light'
+                  : theme === 'light'
+                    ? 'dark'
+                    : 'auto';
               setTheme(next);
               saveJSON(KEYS.THEME, next);
             }}
           >
-            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+            <Icon name={theme === 'light' ? 'moon' : 'sun'} />
           </button>
         </div>
       </header>

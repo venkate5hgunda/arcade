@@ -288,10 +288,10 @@ test('responsive shelf and play screens have no overflow, external assets or ser
   ).toBe(0);
   expect(external).toEqual([]);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await page.getByRole('button', { name: 'Theme: auto. Select light' }).click();
   await page.reload();
   await expect(
-    page.getByRole('button', { name: 'Switch to dark theme' }),
+    page.getByRole('button', { name: 'Theme: light. Select dark' }),
   ).toBeVisible();
 });
 
