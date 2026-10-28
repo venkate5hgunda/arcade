@@ -1,3 +1,5 @@
+import { PlayingCard } from '../components/PlayingCard.tsx';
+import { CardPile } from '../components/CardPile.tsx';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import {
   newBlackjack,
@@ -5,46 +7,7 @@ import {
   handValue,
   validBlackjack,
 } from '../lib/blackjack.ts';
-import type { BlackjackState, Card } from '../lib/blackjack.ts';
-const SUIT_NAMES = {
-  '♠': 'spades',
-  '♥': 'hearts',
-  '♦': 'diamonds',
-  '♣': 'clubs',
-};
-export function PlayingCard({
-  card,
-  hidden = false,
-}: {
-  card: Card;
-  hidden?: boolean;
-}) {
-  return (
-    <div
-      role="img"
-      aria-label={
-        hidden
-          ? 'Face-down dealer card'
-          : `${card.rank} of ${SUIT_NAMES[card.suit]}`
-      }
-      className={`playing-card ${hidden ? 'card-back' : card.suit === '♥' || card.suit === '♦' ? 'card-red' : ''}`}
-    >
-      {hidden ? (
-        <span aria-hidden="true">✦</span>
-      ) : (
-        <>
-          <span className="card-corner" aria-hidden="true">
-            {card.rank}
-            <small>{card.suit}</small>
-          </span>
-          <span className="card-suit" aria-hidden="true">
-            {card.suit}
-          </span>
-        </>
-      )}
-    </div>
-  );
-}
+import type { BlackjackState } from '../lib/blackjack.ts';
 export function BlackjackGame() {
   const run = useRun<BlackjackState>(
     'blackjack',
@@ -129,13 +92,21 @@ export function BlackjackGame() {
                   key={index}
                   card={card}
                   hidden={!s.result && index === 1}
+                  label={
+                    !s.result && index === 1
+                      ? 'Face-down dealer card'
+                      : undefined
+                  }
                 />
               ))}
             </div>
           </section>
-          <p className="round-marker">
-            Round {s.round} · Dealer stands on soft 17
-          </p>
+          <div className="blackjack-pile">
+            <CardPile count={s.deck.length} label="Draw pile" />
+            <p className="round-marker">
+              Round {s.round} · Dealer stands on soft 17
+            </p>
+          </div>
           <section aria-label="Your hand">
             <div className="hand-heading">
               <h3>Your hand</h3>

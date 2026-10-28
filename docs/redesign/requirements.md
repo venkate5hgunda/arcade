@@ -14,12 +14,12 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [A06](#a06) | Room reconnection | Multiplayer | Planned |
 | [A07](#a07) | Sound, feel and themes | Experience | Planned |
 | [A08](#a08) | Offline assets and data pipeline | Platform | Planned |
-| [G01](#g01) | Show | Party | Planned |
-| [G02](#g02) | Taboo | Party | Planned |
-| [G03](#g03) | Wordle | Word | Planned |
+| [G01](#g01) | Show | Party | Implemented |
+| [G02](#g02) | Taboo | Party | Implemented |
+| [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
-| [G06](#g06) | Whack-a-Mole | Action | Planned |
+| [G06](#g06) | Whack-a-Mole | Action | Implemented |
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
 | [G08](#g08) | Ludo | Board | Implemented |
 | [G09](#g09) | Island Charter | Board | Planned |
@@ -38,8 +38,8 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G22](#g22) | Memory Match | Puzzle | Implemented |
 | [G23](#g23) | 2048 | Puzzle | Implemented |
 | [G24](#g24) | Simon Says | Puzzle | Implemented |
-| [G25](#g25) | Hangman | Word | Planned |
-| [G26](#g26) | Word Scramble | Word | Planned |
+| [G25](#g25) | Hangman | Word | Implemented |
+| [G26](#g26) | Word Scramble | Word | Implemented |
 
 ## Shared release requirements
 
@@ -160,7 +160,7 @@ Baseline tests: [test/movie-library.test.js](../../test/movie-library.test.js), 
 
 ## G01
 
-**Show** · Party · Planned
+**Show** · Party · Implemented
 
 - Display name Show; three to eight shared-device players, four chits each, concealed simultaneous clockwise passes.
 - Four matching chits unlock slap, N through 1 stack scoring; 3/5/10 rounds and shared wins on ties; reload conceals hands; local only.
@@ -172,7 +172,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G02
 
-**Taboo** · Party · Planned
+**Taboo** · Party · Implemented
 
 - Four to twenty players in two teams; 30/60/90-second turns, 4/6/8 total turns, correct +1, skip 0, forbidden -1.
 - Fifty original cards without repeats until exhausted; private clue giver/referee handoff; deadline continues hidden/reloaded; local only.
@@ -184,7 +184,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G03
 
-**Wordle** · Word · Planned
+**Wordle** · Word · Implemented
 
 - Solo random five-letter practice, six guesses, curated offline vocabulary, repeated-letter accounting, physical/on-screen keyboard and accessible symbol feedback; new puzzle reset; local only.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
@@ -217,7 +217,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G06
 
-**Whack-a-Mole** · Action · Planned
+**Whack-a-Mole** · Action · Implemented
 
 - Timed solo target interaction, hit/miss scoring and absolute-deadline resume.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.
@@ -432,7 +432,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G25
 
-**Hangman** · Word · Planned
+**Hangman** · Word · Implemented
 
 - One/two-player word modes, keyboard/letter entry, repeated-guess handling, mistake limit and win/loss.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.
@@ -443,7 +443,7 @@ Baseline tests: [test/hangman.test.js](../../test/hangman.test.js).
 
 ## G26
 
-**Word Scramble** · Word · Planned
+**Word Scramble** · Word · Implemented
 
 - Solo shuffled words, answer checking, hints, progress and timer.
 - Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline.

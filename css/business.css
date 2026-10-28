@@ -428,3 +428,6 @@
   .bs-seat small { grid-column: 1; }
   .bs-rent-grid { grid-template-columns: 1fr; }
 }
+.bs-card-piles .arcade-card-back { width: 54px; height: 72px; padding: 4px; }
+.bs-card-piles .arcade-card-back span { font-size: 1.3rem; }
+.bs-card-piles .arcade-card-back strong { font-size: .55rem; margin-top: 2px; }

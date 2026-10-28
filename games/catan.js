@@ -1,3 +1,4 @@
+import { cardPile, cardBack } from '../js/card-pile.js';
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 import { playerName } from '../js/player-names.js';
@@ -1591,7 +1592,10 @@ export default {
           () => dispatch({ type: 'buy-dev' }), !data.deckCount ||
             !GOODS.every(g => data.goods[g] >= (COSTS.development[g] || 0)), 'ct-buy-button');
         buy.append(costIcons(COSTS.development));
-        actions.append(buy);
+        const discoveryPile = document.createElement('div');
+        discoveryPile.className = 'arcade-pile-group';
+        discoveryPile.append(cardPile(cardBack('Discovery', '✧'), { count: data.deckCount, label: 'Discovery draw pile' }), buy);
+        actions.append(discoveryPile);
       } else if (panel === 'trade') {
         const bankTitle = document.createElement('h4');
         bankTitle.textContent = 'Harbor exchange';

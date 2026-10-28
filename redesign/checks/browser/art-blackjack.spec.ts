@@ -193,3 +193,21 @@ test('a natural on the initial deal settles immediately and is never offered as 
     page.getByRole('button', { name: 'Start playing' }),
   ).toBeVisible();
 });
+
+test('Blackjack uses the shared standard card face and a covered draw pile', async ({
+  page,
+}) => {
+  await seed(page, [card('10'), card('8')], [card('A'), card('6')]);
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 48 cards' }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('img', { name: 'Draw pile, 48 cards' })
+      .locator('.card-back'),
+  ).toHaveCount(1);
+  await expect(page.getByRole('img', { name: '10 of spades' })).toHaveClass(
+    /playing-card/,
+  );
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
