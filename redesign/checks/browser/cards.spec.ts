@@ -416,3 +416,57 @@ test('restored UNO player count survives a fresh deal without saved settings', a
     .poll(async () => (await saved<UnoState>(page, 'uno'))?.hands.length)
     .toBe(4);
 });
+
+test('shared piles show a face-down stock and only the public discard top', async ({
+  page,
+}) => {
+  for (const game of [finalEight(), rigUno(3)]) {
+    await seed(page, game);
+    const draw = page.getByRole('img', { name: /^Draw pile, \d+ cards?$/ });
+    const discard = page.getByRole('img', { name: /^Discard pile, top card/ });
+    await expect(draw).toBeVisible();
+    await expect(discard).toBeVisible();
+    await expect(draw.locator('.card-back')).toHaveCount(1);
+    await expect(
+      discard.locator(
+        game.gameId === 'uno' ? '.table-card-face' : '.playing-card',
+      ),
+    ).toHaveCount(1);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+});
+
+test('piles update through a draw and show an empty stock without revealing its contents', async ({
+  page,
+}) => {
+  await seed(page, finalEight());
+  await page.getByRole('button', { name: 'Reveal my hand' }).click();
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 49 cards' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Draw a card' }).click();
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 48 cards' }),
+  ).toBeVisible();
+  const uno = rigUno(2);
+  if (uno.gameId !== 'uno') throw new Error('Expected UNO');
+  uno.state.discard = [...uno.state.stock, ...uno.state.discard];
+  uno.state.stock = [];
+  await seed(page, uno);
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 0 cards' }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('img', { name: 'Draw pile, 0 cards' })
+      .locator('.card-pile-empty'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 0 cards' }).locator('.card-back'),
+  ).toHaveCount(0);
+});
