@@ -32,24 +32,30 @@ reference; the redesign builds clean, typed equivalents.
       Memory Match, 2048 and Simon Says. Typed rules, native React controls,
       baseline-compatible checkpoints/settings, complete-game browser flows.
 - [x] **Blackjack (G16):** native solo table, deck/aces/naturals/doubling, scoring and recovery.
-- [ ] **Remaining cards:** Crazy Eights and UNO-inspired, including private hands.
-- [ ] **Board:** Snakes & Ladders, Ludo, Island Charter, Business, Chess.
-- [ ] **Action:** Air Hockey, 8-Ball Pool, Whack-a-Mole.
-- [ ] **Party:** Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
-- [ ] **Word:** Wordle, Hangman, Word Scramble.
+- [x] **Remaining cards (G17–G18):** Crazy Eights and UNO-inspired, native covered local play and private rooms, full baseline rules, 2–20-player UNO, recovery and replay.
+- [x] **Race board games (G07–G08):** Snakes & Ladders and Ludo, with 2–4-player local/room play and recovery.
+- [ ] **Remaining board:** Island Charter, Business, Chess.
+- [x] **Whack-a-Mole (G06):** timed targets, scoring and absolute-deadline recovery.
+- [ ] **Remaining action:** Air Hockey, 8-Ball Pool.
+- [x] **Taboo (G02):** covered clues, team scoring and deadline recovery.
+- [x] **Show (G01):** covered chits, simultaneous passes and slap-order scoring.
+- [ ] **Remaining party:** Imposter, Mafia, Dumb Charades, Rock Paper Scissors.
+- [x] **Wordle (G03):** offline practice, repeated-letter feedback and local recovery.
+- [x] **Hangman (G25):** original word pool, solo/two-player rounds and recovery.
+- [x] **Word Scramble (G26):** original word pool, hints, rounds and recovery.
 
 See [game-port evidence](game-ports.md). The user has authorized all remaining
 ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G01–G15, G17–G18, G25–G26).** Port the remaining 19 catalog
-      entries in coherent families (Cards, Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
+- [ ] **More games (G04–G05, G09–G15).** Port the remaining 9 catalog
+      entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior
       test per game before flipping its parity status to `implemented`.
-- [ ] **Room breadth (A04–A06).** Add QR admission/scanning and extend beyond the two-player flow. Extend the room to the other
-      room-supported games and add private-hand/role/deck views, spectator
+- [ ] **Room breadth (A04–A06).** Add QR admission/scanning, spectators and the remaining game protocols. Private card hands/decks and 20-seat UNO are implemented; extend the room to remaining
+      room-supported games and private roles, spectator
       seats, per-game/player standings and rankings across replays.
 - [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent
       sound/haptics settings, user-gesture audio unlock and recovery,

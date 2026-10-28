@@ -87,7 +87,14 @@ function Catalog({ query, category }: { query: string; category: string }) {
                     {isImplemented(game.id)
                       ? game.players.type === 'single'
                         ? 'Solo challenge'
-                        : 'Solo or pass & play'
+                        : [
+                              'crazy-eights',
+                              'uno',
+                              'snakes-ladders',
+                              'ludo',
+                            ].includes(game.id)
+                          ? 'Pass & play'
+                          : 'Solo or pass & play'
                       : 'Original Arcade'}
                   </small>
                 </span>
@@ -97,7 +104,15 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <Icon name="confetti" />
                   <span>
                     <b>Private room</b>
-                    <small>2 players, 2 screens</small>
+                    <small>
+                      {game.id === 'uno'
+                        ? '2–20 players, private hands'
+                        : ['snakes-ladders', 'ludo'].includes(game.id)
+                          ? '2–4 players, 2–4 screens'
+                          : game.id === 'crazy-eights'
+                            ? '2 players, private hands'
+                            : '2 players, 2 screens'}
+                    </small>
                   </span>
                 </span>
               )}

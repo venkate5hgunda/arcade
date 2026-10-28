@@ -67,10 +67,10 @@ test('every game switches to its own local artwork, including catalog and detail
       page.locator(`.game-card img[src="${asset.src}"]`),
     ).toHaveCount(1);
   }
-  await page.goto('/#/game/uno');
+  await page.goto('/#/game/chess');
   await expect(page.locator('.detail-art')).toHaveAttribute(
     'src',
-    './art/games/uno.webp',
+    './art/games/chess.webp',
   );
   await page.goto('/#/game/blackjack');
   await expect(page.locator('.puzzle-setup-art')).toHaveAttribute(
@@ -192,4 +192,22 @@ test('a natural on the initial deal settles immediately and is never offered as 
   await expect(
     page.getByRole('button', { name: 'Start playing' }),
   ).toBeVisible();
+});
+
+test('Blackjack uses the shared standard card face and a covered draw pile', async ({
+  page,
+}) => {
+  await seed(page, [card('10'), card('8')], [card('A'), card('6')]);
+  await expect(
+    page.getByRole('img', { name: 'Draw pile, 48 cards' }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('img', { name: 'Draw pile, 48 cards' })
+      .locator('.card-back'),
+  ).toHaveCount(1);
+  await expect(page.getByRole('img', { name: '10 of spades' })).toHaveClass(
+    /playing-card/,
+  );
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

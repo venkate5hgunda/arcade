@@ -1,3 +1,11 @@
+import { ShowGame } from './Show.tsx';
+import { TabooGame } from './Taboo.tsx';
+import { WhackGame } from './Whack.tsx';
+import { ScrambleGame } from './Scramble.tsx';
+import { HangmanGame } from './Hangman.tsx';
+import { WordleGame } from './Wordle.tsx';
+import { RacesGame } from './Races.tsx';
+import { CardsGame } from './Cards.tsx';
 import { GameArt } from '../components/GameArt.tsx';
 import { BlackjackGame } from './Blackjack.tsx';
 import { PuzzleGame } from './Puzzles.tsx';
@@ -321,6 +329,16 @@ export function GameRoute() {
         <p>Choose one of the games on the shelf.</p>
       </section>
     );
+  if (game.id === 'snakes-ladders' || game.id === 'ludo')
+    return <RacesGame id={game.id} key={game.id} />;
+  if (game.id === 'crazy-eights' || game.id === 'uno')
+    return <CardsGame id={game.id} key={game.id} />;
+  if (game.id === 'show-star') return <ShowGame key={game.id} />;
+  if (game.id === 'taboo') return <TabooGame key={game.id} />;
+  if (game.id === 'whack-a-mole') return <WhackGame key={game.id} />;
+  if (game.id === 'word-scramble') return <ScrambleGame key={game.id} />;
+  if (game.id === 'hangman') return <HangmanGame key={game.id} />;
+  if (game.id === 'wordle') return <WordleGame key={game.id} />;
   if (game.id === 'blackjack') return <BlackjackGame key={game.id} />;
   if (game.id === 'tictactoe') return <LocalGame key={game.id} />;
   if (PUZZLE_IDS.includes(game.id as PuzzleId))

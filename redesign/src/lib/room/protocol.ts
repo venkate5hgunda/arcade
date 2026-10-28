@@ -1,3 +1,14 @@
+import { applyRace, newRace, raceCount, validRace } from '../races.ts';
+import type { RaceId, RaceState } from '../races.ts';
+import {
+  newCards,
+  applyCards,
+  cardView,
+  validCardView,
+  validCardState,
+  finishedCards,
+} from '../cards.ts';
+import type { CardGameId, CardState, CardView } from '../cards.ts';
 import { c4Drop, c4Win, validC4 } from '../puzzles.ts';
 import { applyMove, emptyBoard, findWin, isValidState } from '../tictactoe.ts';
 import type { LocalState } from '../tictactoe.ts';
@@ -19,11 +30,26 @@ export interface RoomSnapshot {
   roomId: string;
   members: Member[];
   match: Match | null;
-  wins: [number, number];
+  cardMatch?: CardMatch | null;
+  raceMatch?: RaceMatch | null;
+  wins: number[];
   draws: number;
 }
+export type RoomGameId = 'tictactoe' | 'connect-four' | CardGameId | RaceId;
+export interface RaceMatch {
+  gameId: RaceId;
+  round: number;
+  revision: number;
+  race: RaceState;
+}
+export interface CardMatch {
+  gameId: CardGameId;
+  round: number;
+  revision: number;
+  view: CardView;
+}
 interface Signal {
-  version: 1;
+  version: 3;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -31,7 +57,9 @@ interface Signal {
   name: string;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v1';
+const BACKUP = 'arcade:redesign:room:v3';
+const CARD_BACKUP = 'arcade:redesign:room:v2';
+const OLD_BACKUP = 'arcade:redesign:room:v1';
 const UUID = /^[a-f0-9-]{36}$/i;
 const validId = (id: unknown): id is string =>
   typeof id === 'string' && UUID.test(id);
@@ -39,34 +67,83 @@ const validName = (name: unknown): name is string =>
   typeof name === 'string' && !!name.trim() && name.length <= 24;
 const integer = (n: unknown): n is number =>
   Number.isSafeInteger(n) && (n as number) >= 0;
+const incompatibleLink =
+  'This link uses an incompatible Arcade version. Both players should reload the same version and request a fresh link.';
 
 export function validSnapshot(value: unknown): value is RoomSnapshot {
   const s = value as RoomSnapshot;
   return (
     !!s &&
     typeof s === 'object' &&
+    Object.keys(s).every((k) =>
+      [
+        'roomId',
+        'members',
+        'match',
+        'cardMatch',
+        'raceMatch',
+        'wins',
+        'draws',
+      ].includes(k),
+    ) &&
     validId(s.roomId) &&
     Array.isArray(s.members) &&
     s.members.length >= 1 &&
-    s.members.length <= 2 &&
+    s.members.length <= 20 &&
     s.members.every(
       (m) =>
         m &&
+        Object.keys(m).length === 3 &&
         validId(m.id) &&
         validName(m.name) &&
         typeof m.connected === 'boolean',
     ) &&
     new Set(s.members.map((m) => m.id)).size === s.members.length &&
     Array.isArray(s.wins) &&
-    s.wins.length === 2 &&
+    s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
     integer(s.draws) &&
+    (s.raceMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        Object.keys(s.raceMatch).length === 4 &&
+        integer(s.raceMatch.round) &&
+        integer(s.raceMatch.revision) &&
+        validRace(s.raceMatch.race, true) &&
+        s.raceMatch.gameId === s.raceMatch.race.gameId &&
+        raceCount(s.raceMatch.race) === s.members.length)) &&
+    (s.cardMatch == null ||
+      (!s.match &&
+        !s.raceMatch &&
+        integer(s.cardMatch.round) &&
+        integer(s.cardMatch.revision) &&
+        ['crazy-eights', 'uno'].includes(s.cardMatch.gameId) &&
+        !!s.cardMatch.view &&
+        s.cardMatch.gameId === s.cardMatch.view.gameId &&
+        validCardView(
+          s.cardMatch.view,
+          s.members.length,
+          s.cardMatch.view.seat,
+        ) &&
+        Object.keys(s.cardMatch).length === 4)) &&
     (s.match === null ||
-      (s.members.length === 2 &&
+      (!!s.match &&
+        s.members.length === 2 &&
         (s.match.gameId === 'connect-four'
           ? validC4(s.match, true)
           : (!s.match.gameId || s.match.gameId === 'tictactoe') &&
             isValidState(s.match, true)) &&
+        Object.keys(s.match).every((k) =>
+          [
+            'mode',
+            'board',
+            'current',
+            'over',
+            'gameId',
+            'round',
+            'revision',
+          ].includes(k),
+        ) &&
         s.match.mode === 'pvp' &&
         integer(s.match.round) &&
         integer(s.match.revision)))
@@ -100,8 +177,11 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
+    if (s && typeof s === 'object' && s.version !== 3)
+      throw new Error(incompatibleLink);
     if (
-      s.version !== 1 ||
+      !s ||
+      typeof s !== 'object' ||
       s.kind !== kind ||
       !validId(s.roomId) ||
       !validId(s.host) ||
@@ -114,40 +194,40 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
     )
       throw new Error();
     return s;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === incompatibleLink)
+      throw error;
     throw new Error(
       `Invalid ${kind === 'offer' ? 'invitation' : 'answer'} link. Ask for a fresh link.`,
     );
   }
 }
 
-/** One host and one guest, public Tic-Tac-Toe only. Guests submit intentions;
- * the host commits the board and checks seat, round and revision each time. */
+interface PeerLink {
+  id: string;
+  pc: RTCPeerConnection;
+  channel: RTCDataChannel | null;
+  accepted: boolean;
+  sequence: number;
+  received: number;
+  timer?: ReturnType<typeof setTimeout>;
+}
+/** The host owns all rules/decks. Every data channel receives a seat-specific projection. */
 export class Room {
   role: 'host' | 'guest' | null = null;
   peerId = '';
   snapshot: RoomSnapshot | null = null;
   issue = '';
-  private pc: RTCPeerConnection | null = null;
-  private channel: RTCDataChannel | null = null;
-  private listeners = new Set<() => void>();
+  private peers = new Map<string, PeerLink>();
   private pendingGuest = '';
-  private accepted = false;
-  private generation = 0;
-  private connectionTimer: ReturnType<typeof setTimeout> | undefined;
-  private sequence = 0;
-  private received = 0;
-  private factory: ConnectionFactory;
-  private base: string;
+  private listeners = new Set<() => void>();
+  private privateGame: CardState | null = null;
   constructor(
-    factory = webrtcConnectionFactory,
-    base = typeof location === 'undefined'
+    private factory: ConnectionFactory = webrtcConnectionFactory,
+    private base = typeof location === 'undefined'
       ? 'http://127.0.0.1/'
       : location.href,
-  ) {
-    this.factory = factory;
-    this.base = base;
-  }
+  ) {}
   on(listener: () => void) {
     this.listeners.add(listener);
     return () => {
@@ -160,7 +240,13 @@ export class Room {
   private checkpoint() {
     if (this.role !== 'host' || !this.snapshot) return;
     try {
-      sessionStorage.setItem(BACKUP, JSON.stringify(this.snapshot));
+      sessionStorage.setItem(
+        BACKUP,
+        JSON.stringify({
+          snapshot: this.snapshot,
+          privateGame: this.privateGame,
+        }),
+      );
     } catch {
       this.issue = 'Room recovery cannot be saved. Keep this tab open.';
     }
@@ -168,18 +254,33 @@ export class Room {
   restore() {
     if (this.role) return;
     try {
-      const saved: unknown = JSON.parse(
-        sessionStorage.getItem(BACKUP) ?? 'null',
+      const saved = JSON.parse(
+        sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(CARD_BACKUP) ??
+          'null',
       );
-      if (!validSnapshot(saved)) return;
-      this.snapshot = structuredClone(saved);
+      const snapshot: unknown =
+        saved?.snapshot ??
+        JSON.parse(sessionStorage.getItem(OLD_BACKUP) ?? 'null');
+      if (!validSnapshot(snapshot)) return;
+      if (
+        snapshot.cardMatch &&
+        (!validCardState(saved?.privateGame, true) ||
+          saved.privateGame.gameId !== snapshot.cardMatch.gameId ||
+          saved.privateGame.state.hands.length !== snapshot.members.length ||
+          JSON.stringify(cardView(saved.privateGame, 0)) !==
+            JSON.stringify(snapshot.cardMatch.view))
+      )
+        return;
+      this.snapshot = structuredClone(snapshot);
+      this.privateGame = snapshot.cardMatch
+        ? structuredClone(saved.privateGame)
+        : null;
       this.role = 'host';
-      this.peerId = saved.members[0].id;
-      this.snapshot.members.forEach((m, index) => {
-        m.connected = index === 0;
-      });
+      this.peerId = snapshot.members[0].id;
+      this.snapshot.members.forEach((m, i) => (m.connected = i === 0));
       this.issue =
-        'Room restored. Send your guest a reconnect invitation to continue.';
+        'Room restored. Send each guest a reconnect invitation to continue.';
       this.emit();
     } catch {
       /* Invalid or unavailable tab storage must not prevent local play. */
@@ -200,71 +301,81 @@ export class Room {
     this.checkpoint();
     this.emit();
   }
-  private disconnectTransport() {
-    clearTimeout(this.connectionTimer);
-    this.generation++;
-    if (this.channel) {
-      this.channel.onclose = null;
-      this.channel.onmessage = null;
-      this.channel.onopen = null;
-      this.channel.close();
+  private closePeer(id: string) {
+    const peer = this.peers.get(id);
+    if (!peer) return;
+    this.peers.delete(id);
+    clearTimeout(peer.timer);
+    if (peer.channel) {
+      peer.channel.onclose = null;
+      peer.channel.onmessage = null;
+      peer.channel.onopen = null;
+      peer.channel.close();
     }
-    if (this.pc) {
-      this.pc.onconnectionstatechange = null;
-      this.pc.ondatachannel = null;
-      this.pc.close();
-    }
-    this.pc = null;
-    this.channel = null;
-    this.sequence = 0;
-    this.received = 0;
+    peer.pc.onconnectionstatechange = null;
+    peer.pc.ondatachannel = null;
+    peer.pc.close();
   }
-  private connection(): RTCPeerConnection {
-    this.disconnectTransport();
+  private disconnectTransport() {
+    for (const id of [...this.peers.keys()]) this.closePeer(id);
+  }
+  private connection(id: string): PeerLink {
+    this.closePeer(id);
     const pc = this.factory();
-    this.pc = pc;
+    const peer: PeerLink = {
+      id,
+      pc,
+      channel: null,
+      accepted: false,
+      sequence: 0,
+      received: 0,
+    };
+    this.peers.set(id, peer);
     pc.onconnectionstatechange = () => {
       if (
-        this.pc === pc &&
+        this.peers.get(id) === peer &&
         ['failed', 'disconnected', 'closed'].includes(pc.connectionState)
       )
-        this.disconnected();
+        this.disconnected(id);
     };
-    return pc;
+    return peer;
   }
-  private disconnected() {
+  private disconnected(id: string) {
     if (!this.snapshot) return;
     this.snapshot.members.forEach((m) => {
-      if (m.id !== this.peerId) m.connected = false;
+      if (this.role === 'guest' ? m.id !== this.peerId : m.id === id)
+        m.connected = false;
     });
     this.issue =
-      'Connection lost. Keep both tabs open; the host can send a reconnect invitation.';
-    this.checkpoint();
-    this.emit();
+      'Connection lost. Keep the tabs open; the host can send a reconnect invitation.';
+    if (this.role === 'host') this.publish();
+    else this.emit();
   }
-  private attach(channel: RTCDataChannel, pc: RTCPeerConnection) {
-    this.channel = channel;
+  private attach(channel: RTCDataChannel, peer: PeerLink) {
+    peer.channel = channel;
     channel.onopen = () => {
-      if (this.pc !== pc) return;
-      clearTimeout(this.connectionTimer);
+      if (this.peers.get(peer.id) !== peer) return;
+      clearTimeout(peer.timer);
       this.issue = '';
       if (this.role === 'guest')
-        this.send({
-          type: 'hello',
-          name: this.snapshot?.members.find((m) => m.id === this.peerId)?.name,
-        });
+        this.send(
+          {
+            type: 'hello',
+            name: this.snapshot?.members.find((m) => m.id === this.peerId)
+              ?.name,
+          },
+          peer,
+        );
       this.emit();
     };
     channel.onclose = () => {
-      if (this.pc === pc) this.disconnected();
+      if (this.peers.get(peer.id) === peer) this.disconnected(peer.id);
     };
-    channel.onerror = () => {
-      if (this.pc === pc) this.disconnected();
-    };
+    channel.onerror = channel.onclose;
     channel.onmessage = (event) => {
-      if (this.pc !== pc) return;
+      if (this.peers.get(peer.id) !== peer) return;
       try {
-        this.receive(event.data);
+        this.receive(event.data, peer);
       } catch {
         this.issue =
           'An invalid room message was ignored. Reconnect if play cannot continue.';
@@ -272,63 +383,92 @@ export class Room {
       }
     };
   }
-  private send(fields: Record<string, unknown>) {
-    if (!this.snapshot || this.channel?.readyState !== 'open')
+  private send(fields: Record<string, unknown>, peer: PeerLink) {
+    if (!this.snapshot || peer.channel?.readyState !== 'open')
       throw new Error('Your opponent is not connected. Reconnect to continue.');
-    this.channel.send(
+    peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 1,
+        version: 3,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
-        sequence: ++this.sequence,
+        sequence: ++peer.sequence,
       }),
     );
   }
+  private projection(seat: number): RoomSnapshot {
+    const snapshot = structuredClone(this.snapshot!);
+    if (snapshot.cardMatch && this.privateGame)
+      snapshot.cardMatch.view = cardView(this.privateGame, seat);
+    return snapshot;
+  }
   private publish() {
     this.checkpoint();
-    if (this.channel?.readyState === 'open')
-      this.send({ type: 'snapshot', snapshot: this.snapshot });
+    if (this.snapshot)
+      for (const peer of this.peers.values()) {
+        const seat = this.snapshot.members.findIndex((m) => m.id === peer.id);
+        if (peer.accepted && seat > 0 && peer.channel?.readyState === 'open')
+          this.send(
+            { type: 'snapshot', snapshot: this.projection(seat) },
+            peer,
+          );
+      }
     this.emit();
   }
-  private receive(raw: unknown) {
-    if (typeof raw !== 'string' || raw.length > 32_000 || !this.snapshot)
+  private receive(raw: unknown, peer: PeerLink) {
+    if (typeof raw !== 'string' || raw.length > 64000 || !this.snapshot)
       throw new Error();
     const m = JSON.parse(raw);
-    const other =
-      this.role === 'host' ? this.pendingGuest : this.snapshot.members[0].id;
     if (
-      m.version !== 1 ||
+      m.version !== 3 ||
       m.roomId !== this.snapshot.roomId ||
-      m.sender !== other ||
+      m.sender !== peer.id ||
       !integer(m.sequence) ||
-      m.sequence <= this.received
+      m.sequence <= peer.received
     )
       throw new Error();
-    this.received = m.sequence;
+    peer.received = m.sequence;
     if (this.role === 'host') {
-      if (m.type === 'hello' && this.accepted && validName(m.name)) {
-        const guest = this.snapshot.members[1];
-        if (!guest || guest.id !== other || guest.name !== m.name)
-          throw new Error();
+      if (m.type === 'hello' && peer.accepted && validName(m.name)) {
+        const guest = this.snapshot.members.find(
+          (member) => member.id === peer.id,
+        );
+        if (!guest || guest.name !== m.name) throw new Error();
         guest.connected = true;
         this.issue = '';
         this.publish();
-      } else if (m.type === 'move')
-        this.commitMove(other, m.cell, m.round, m.revision);
-      else if (m.type === 'sync') this.publish();
+      } else if (m.type === 'move' && peer.accepted)
+        this.commitMove(peer.id, m.cell, m.round, m.revision);
+      else if (m.type === 'card-action' && peer.accepted)
+        this.commitCard(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'race-action' && peer.accepted)
+        this.commitRace(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'sync' && peer.accepted) this.publish();
       else throw new Error();
     } else {
       if (
         m.type !== 'snapshot' ||
         !validSnapshot(m.snapshot) ||
         m.snapshot.roomId !== this.snapshot.roomId ||
-        m.snapshot.members[0].id !== other ||
-        m.snapshot.members[1]?.id !== this.peerId
+        m.snapshot.members[0].id !== peer.id ||
+        !m.snapshot.members.some(
+          (member: Member) => member.id === this.peerId,
+        ) ||
+        (m.snapshot.cardMatch &&
+          m.snapshot.cardMatch.view.seat !==
+            m.snapshot.members.findIndex(
+              (member: Member) => member.id === this.peerId,
+            ))
       )
         throw new Error();
-      const previous = this.snapshot.match;
-      const next = m.snapshot.match as Match | null;
+      const previous =
+          this.snapshot.raceMatch ??
+          this.snapshot.cardMatch ??
+          this.snapshot.match,
+        next =
+          (m.snapshot as RoomSnapshot).raceMatch ??
+          (m.snapshot as RoomSnapshot).cardMatch ??
+          m.snapshot.match;
       if (
         previous &&
         next &&
@@ -341,32 +481,71 @@ export class Room {
       this.emit();
     }
   }
-  async createInvite(): Promise<string> {
+  cancelInvite() {
+    if (this.role !== 'host') return;
+    if (
+      this.pendingGuest &&
+      !this.snapshot?.members.some((m) => m.id === this.pendingGuest)
+    )
+      this.closePeer(this.pendingGuest);
+    this.pendingGuest = '';
+    this.issue = '';
+    this.emit();
+  }
+  async createInvite(guestId?: string): Promise<string> {
     if (this.role !== 'host' || !this.snapshot)
       throw new Error('Create a room first.');
-    const guest = this.snapshot.members[1]?.id ?? crypto.randomUUID();
-    if (this.snapshot.members[1]) this.snapshot.members[1].connected = false;
+    const existing = guestId
+      ? this.snapshot.members.find(
+          (m) => m.id === guestId && m.id !== this.peerId,
+        )
+      : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
+        ((this.snapshot.match ||
+          this.snapshot.cardMatch ||
+          this.snapshot.raceMatch) &&
+        this.snapshot.members.length === 2
+          ? this.snapshot.members[1]
+          : undefined));
+    if (guestId && !existing)
+      throw new Error('Choose an existing guest to reconnect.');
+    if (
+      !existing &&
+      (this.snapshot.match ||
+        this.snapshot.cardMatch ||
+        this.snapshot.raceMatch)
+    )
+      throw new Error('Reconnect an existing seat during a match.');
+    if (!existing && this.snapshot.members.length >= 20)
+      throw new Error('This table already has 20 players.');
+    if (
+      this.pendingGuest &&
+      !this.snapshot.members.some((m) => m.id === this.pendingGuest)
+    )
+      this.closePeer(this.pendingGuest);
+    const guest = existing?.id ?? crypto.randomUUID();
+    if (existing) existing.connected = false;
     this.pendingGuest = guest;
-    this.accepted = false;
-    const pc = this.connection();
-    const generation = this.generation;
-    this.attach(pc.createDataChannel('arcade-redesign', { ordered: true }), pc);
-    await pc.setLocalDescription(await pc.createOffer());
-    await waitForIce(pc);
-    if (generation !== this.generation)
+    const peer = this.connection(guest);
+    this.attach(
+      peer.pc.createDataChannel('arcade-redesign', { ordered: true }),
+      peer,
+    );
+    await peer.pc.setLocalDescription(await peer.pc.createOffer());
+    await waitForIce(peer.pc);
+    if (this.peers.get(guest) !== peer)
       throw new Error('Invitation cancelled.');
     this.issue =
       'Send the invitation, then paste your guest’s answer into this tab.';
-    this.emit();
+    this.publish();
     return signalLink(
       {
-        version: 1,
+        version: 3,
         kind: 'offer',
         roomId: this.snapshot.roomId,
         host: this.peerId,
         guest,
         name: this.snapshot.members[0].name,
-        description: pc.localDescription!.toJSON(),
+        description: peer.pc.localDescription!.toJSON(),
       },
       this.base,
     );
@@ -387,23 +566,22 @@ export class Room {
       wins: [0, 0],
       draws: 0,
     };
-    const pc = this.connection();
-    const generation = this.generation;
-    pc.ondatachannel = (event) => {
+    const peer = this.connection(offer.host);
+    peer.pc.ondatachannel = (event) => {
       if (
-        this.pc !== pc ||
+        this.peers.get(peer.id) !== peer ||
         event.channel.label !== 'arcade-redesign' ||
-        this.channel
+        peer.channel
       ) {
         event.channel.close();
         return;
       }
-      this.attach(event.channel, pc);
+      this.attach(event.channel, peer);
     };
-    await pc.setRemoteDescription(offer.description);
-    await pc.setLocalDescription(await pc.createAnswer());
-    await waitForIce(pc);
-    if (generation !== this.generation)
+    await peer.pc.setRemoteDescription(offer.description);
+    await peer.pc.setLocalDescription(await peer.pc.createAnswer());
+    await waitForIce(peer.pc);
+    if (this.peers.get(peer.id) !== peer)
       throw new Error('Invitation cancelled.');
     this.issue = 'Send your answer back to the host. Keep this tab open.';
     this.emit();
@@ -412,70 +590,129 @@ export class Room {
         ...offer,
         kind: 'answer',
         name: name.trim(),
-        description: pc.localDescription!.toJSON(),
+        description: peer.pc.localDescription!.toJSON(),
       },
       this.base,
     );
   }
   async acceptAnswer(link: string) {
-    const answer = readSignal(link, 'answer');
+    const answer = readSignal(link, 'answer'),
+      peer = this.peers.get(this.pendingGuest);
     if (
       this.role !== 'host' ||
       !this.snapshot ||
-      !this.pc ||
-      this.accepted ||
+      !peer ||
+      peer.accepted ||
       answer.roomId !== this.snapshot.roomId ||
       answer.host !== this.peerId ||
-      answer.guest !== this.pendingGuest
+      answer.guest !== peer.id
     )
       throw new Error('This answer does not match the pending invitation.');
-    const existing = this.snapshot.members[1];
+    const existing = this.snapshot.members.find((m) => m.id === answer.guest);
     if (existing && existing.name !== answer.name) {
-      this.disconnectTransport();
+      this.closePeer(peer.id);
       this.pendingGuest = '';
       throw new Error(
         'Reconnect with the same room name. Create a fresh invitation; your seat and board are preserved.',
       );
     }
-    // Admission is committed before the data channel opens and sends hello.
-    this.snapshot.members[1] = {
-      id: answer.guest,
-      name: answer.name,
-      connected: false,
-    };
-    this.accepted = true;
-    await this.pc.setRemoteDescription(answer.description);
-    this.connectionTimer = setTimeout(() => {
-      if (this.channel?.readyState !== 'open') {
+    if (
+      !existing &&
+      (this.snapshot.match ||
+        this.snapshot.cardMatch ||
+        this.snapshot.raceMatch ||
+        this.snapshot.members.length >= 20)
+    )
+      throw new Error(
+        'The table is already playing or full. Rejoin an existing seat.',
+      );
+    if (existing) existing.connected = false;
+    else {
+      this.snapshot.members.push({
+        id: answer.guest,
+        name: answer.name,
+        connected: false,
+      });
+      if (this.snapshot.members.length > this.snapshot.wins.length)
+        this.snapshot.wins.push(0);
+    }
+    peer.accepted = true;
+    await peer.pc.setRemoteDescription(answer.description);
+    peer.timer = setTimeout(() => {
+      if (peer.channel?.readyState !== 'open') {
         this.issue =
           'Could not reach your guest. Try another network, then create a fresh reconnect invitation.';
         this.emit();
       }
-    }, 20_000);
+    }, 20000);
     this.issue = 'Connecting to your guest…';
     this.checkpoint();
     this.emit();
   }
   start(
-    gameId: 'tictactoe' | 'connect-four' = this.snapshot?.match?.gameId ??
+    gameId: RoomGameId = this.snapshot?.raceMatch?.gameId ??
+      this.snapshot?.cardMatch?.gameId ??
+      this.snapshot?.match?.gameId ??
       'tictactoe',
   ) {
+    const s = this.snapshot;
     if (
       this.role !== 'host' ||
-      !this.snapshot ||
-      this.snapshot.members.length !== 2 ||
-      !this.snapshot.members.every((m) => m.connected)
+      !s ||
+      s.members.length < 2 ||
+      !s.members.every((m) => m.connected)
     )
-      throw new Error('Wait for both players to connect.');
-    this.snapshot.match = {
-      mode: 'pvp',
-      board: gameId === 'connect-four' ? Array(42).fill(0) : emptyBoard(),
-      gameId,
-      current: 1,
-      over: false,
-      round: (this.snapshot.match?.round ?? -1) + 1,
-      revision: 0,
-    };
+      throw new Error('Wait for all players to connect.');
+    if (
+      ![
+        'tictactoe',
+        'connect-four',
+        'crazy-eights',
+        'uno',
+        'snakes-ladders',
+        'ludo',
+      ].includes(gameId) ||
+      (['tictactoe', 'connect-four', 'crazy-eights'].includes(gameId) &&
+        s.members.length !== 2) ||
+      (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
+    )
+      throw new Error('Choose a game that supports this number of players.');
+    const round =
+      (s.raceMatch?.round ?? s.cardMatch?.round ?? s.match?.round ?? -1) + 1;
+    if (gameId === 'snakes-ladders' || gameId === 'ludo') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = {
+        gameId,
+        round,
+        revision: 0,
+        race: newRace(gameId, s.members.length),
+      };
+    } else if (gameId === 'crazy-eights' || gameId === 'uno') {
+      s.raceMatch = null;
+      this.privateGame = newCards(gameId, s.members.length);
+      s.match = null;
+      s.cardMatch = {
+        gameId,
+        round,
+        revision: 0,
+        view: cardView(this.privateGame, 0),
+      };
+    } else {
+      this.privateGame = null;
+      s.raceMatch = null;
+      s.cardMatch = null;
+      s.match = {
+        mode: 'pvp',
+        board: gameId === 'connect-four' ? Array(42).fill(0) : emptyBoard(),
+        gameId,
+        current: 1,
+        over: false,
+        round,
+        revision: 0,
+      };
+    }
     this.publish();
   }
   move(cell: number) {
@@ -483,8 +720,14 @@ export class Room {
     if (!s) return;
     if (this.role === 'host')
       this.commitMove(this.peerId, cell, s.round, s.revision);
-    else
-      this.send({ type: 'move', cell, round: s.round, revision: s.revision });
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          { type: 'move', cell, round: s.round, revision: s.revision },
+          peer,
+        );
+    }
   }
   private commitMove(
     sender: string,
@@ -501,10 +744,7 @@ export class Room {
       room.members[s.current - 1]?.id !== sender ||
       !room.members.every((m) => m.connected) ||
       s.round !== round ||
-      s.revision !== revision
-    )
-      return;
-    if (
+      s.revision !== revision ||
       !Number.isInteger(cell) ||
       cell < 0 ||
       cell >= (s.gameId === 'connect-four' ? 7 : 9)
@@ -534,16 +774,107 @@ export class Room {
     }
     this.publish();
   }
+  cardAction(action: unknown) {
+    const s = this.snapshot?.cardMatch;
+    if (!s) return;
+    if (this.role === 'host')
+      this.commitCard(this.peerId, action, s.round, s.revision);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          { type: 'card-action', action, round: s.round, revision: s.revision },
+          peer,
+        );
+    }
+  }
+  private commitCard(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.cardMatch;
+    if (
+      !room ||
+      !match ||
+      !this.privateGame ||
+      !room.members.every((m) => m.connected) ||
+      match.round !== round ||
+      match.revision !== revision
+    )
+      return;
+    const seat = room.members.findIndex((m) => m.id === sender);
+    if (seat < 0) return;
+    const next = applyCards(this.privateGame, action, seat);
+    if (!next) return;
+    this.privateGame = next;
+    match.revision++;
+    match.view = cardView(next, 0);
+    if (finishedCards(next)) {
+      const winner = match.view.winner;
+      if (winner === null || winner === -1) room.draws++;
+      else room.wins[winner]++;
+    }
+    this.publish();
+  }
+  raceAction(action: unknown) {
+    const match = this.snapshot?.raceMatch;
+    if (!match) return;
+    if (this.role === 'host')
+      this.commitRace(this.peerId, action, match.round, match.revision);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'race-action',
+            action,
+            round: match.round,
+            revision: match.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private commitRace(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.raceMatch;
+    if (
+      !room ||
+      !match ||
+      !room.members.every((m) => m.connected) ||
+      match.round !== round ||
+      match.revision !== revision
+    )
+      return;
+    const seat = room.members.findIndex((m) => m.id === sender);
+    if (seat < 0) return;
+    const next = applyRace(match.race, action, seat);
+    if (!next) return;
+    match.race = next;
+    match.revision++;
+    if (next.state.winner != null) room.wins[next.state.winner]++;
+    this.publish();
+  }
   leave() {
     this.disconnectTransport();
     this.role = null;
     this.peerId = '';
     this.snapshot = null;
+    this.privateGame = null;
     this.issue = '';
     this.pendingGuest = '';
-    this.accepted = false;
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(CARD_BACKUP);
+      sessionStorage.removeItem(OLD_BACKUP);
     } catch {
       /* No stored room. */
     }

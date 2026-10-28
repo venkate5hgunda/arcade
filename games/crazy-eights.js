@@ -1,3 +1,4 @@
+import { cardPile } from '../js/card-pile.js';
 import { createShell, wireBack } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
 import { celebrate } from '../js/celebration.js';
@@ -5,18 +6,8 @@ import { remoteMatch, seat } from '../js/remote-match.js';
 import { chooseCardTable } from '../js/card-room-entry.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
 
-const SUITS = ['♠', '♥', '♦', '♣'];
-const SUIT_NAMES = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-
-export function shuffledDeck(random = Math.random) {
-  const cards = SUITS.flatMap(suit => RANKS.map(rank => ({ suit, rank })));
-  for (let i = cards.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [cards[i], cards[j]] = [cards[j], cards[i]];
-  }
-  return cards;
-}
+import { SUITS, SUIT_NAMES, RANKS, shuffledDeck, shuffle, playingCardElement } from '../js/playing-cards.js';
+export { shuffledDeck } from '../js/playing-cards.js';
 
 export function canPlay(card, top, activeSuit) {
   return card.rank === '8' || card.rank === top.rank || card.suit === activeSuit;
@@ -61,14 +52,6 @@ export function newCrazyEightsGame(random = Math.random) {
   return { stock, discard, hands, activeSuit: discard[0].suit, current: 0,
     phase: 'play', drawn: false, passes: 0, pendingEight: null, winner: null,
     ending: '', turn: 1 };
-}
-
-function shuffle(cards, random) {
-  for (let i = cards.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [cards[i], cards[j]] = [cards[j], cards[i]];
-  }
-  return cards;
 }
 
 function replenish(state, random) {
@@ -199,31 +182,6 @@ function sound(kind) {
   if (audio) void audio.prepare().then(() => audio[kind]()).catch(error =>
     console.warn('Card sound unavailable:', error));
   window.haptics?.select();
-}
-
-function cardElement(card, { hidden = false, playable = false, onClick } = {}) {
-  const el = document.createElement(onClick ? 'button' : 'div');
-  el.className = `cg-card${hidden ? ' cg-card--back' : card.suit === '♥' || card.suit === '♦' ? ' cg-card--red' : ''}${onClick ? ' cg-card--button' : ''}`;
-  if (onClick) {
-    el.type = 'button';
-    el.disabled = !playable;
-    el.addEventListener('click', onClick);
-  }
-  el.setAttribute('aria-label', hidden ? 'Face-down card' :
-    `${card.rank} of ${SUIT_NAMES[card.suit]}${onClick ? playable ? ', play card' : ', cannot play' : ''}`);
-  if (hidden) {
-    el.innerHTML = '<span aria-hidden="true" class="cg-card-back-mark">✦</span>';
-  } else {
-    const corner = document.createElement('span');
-    corner.className = 'cg-card-corner';
-    corner.textContent = `${card.rank}${card.suit}`;
-    const middle = document.createElement('span');
-    middle.className = 'cg-card-center';
-    middle.setAttribute('aria-hidden', 'true');
-    middle.textContent = card.suit;
-    el.append(corner, middle);
-  }
-  return el;
 }
 
 function button(label, handler, quiet = false) {
@@ -425,7 +383,7 @@ export default {
       backs.className = 'cg-card-row ce-opponent-backs';
       backs.setAttribute('aria-label', `${data.counts[1 - visibleSeat]} hidden cards`);
       for (let i = 0; i < Math.min(data.counts[1 - visibleSeat], 7); i++) {
-        const back = cardElement(null, { hidden: true });
+        const back = playingCardElement(null, { hidden: true });
         back.setAttribute('aria-hidden', 'true');
         backs.appendChild(back);
       }
@@ -435,7 +393,9 @@ export default {
       middle.className = 'ce-middle';
       const pile = document.createElement('div');
       pile.className = 'ce-pile';
-      pile.append(cardElement(null, { hidden: true }), cardElement(data.top));
+      pile.append(cardPile(playingCardElement(null, { hidden: true }), { count: data.stockCount, label: 'Draw pile' }),
+        cardPile(playingCardElement(data.top), { count: 52 - data.stockCount - data.counts.reduce((a, b) => a + b, 0),
+          label: `Discard pile, top card ${data.top.rank} of ${SUIT_NAMES[data.top.suit]}` }));
       middle.appendChild(pile);
       middle.appendChild(paragraph(`ACTIVE SUIT · ${SUIT_NAMES[data.activeSuit].toUpperCase()} ${data.activeSuit}`, 'ce-active-suit'));
       middle.appendChild(paragraph(`TURN ${data.turn} · ${data.stockCount} in draw pile`, 'cg-eyebrow'));
@@ -455,7 +415,7 @@ export default {
       hand.appendChild(yourTitle);
       const row = document.createElement('div');
       row.className = 'cg-card-row ce-hand-cards';
-      data.hand.forEach(card => row.appendChild(cardElement(card, {
+      data.hand.forEach(card => row.appendChild(playingCardElement(card, {
         playable: canAct && data.phase === 'play' && canPlay(card, data.top, data.activeSuit),
         onClick: () => move({ type: 'play', id: `${card.suit}:${card.rank}` }),
       })));

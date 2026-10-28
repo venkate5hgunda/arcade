@@ -1,15 +1,15 @@
 # Game migration status
 
-**7 of 26 games are implemented.** The remaining 19 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**17 of 26 games are implemented.** The remaining 9 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
-| Cards | Blackjack | Crazy Eights, UNO-inspired |
-| Board | — | Snakes & Ladders, Ludo, Island Charter, Business, Chess |
-| Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
-| Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
-| Word | — | Wordle, Hangman, Word Scramble |
+| Cards | Blackjack, Crazy Eights, UNO-inspired | None |
+| Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
+| Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
+| Party | Show, Taboo | Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
+| Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
 
@@ -31,6 +31,52 @@ Evidence: `redesign/checks/unit/blackjack.check.ts` and `redesign/checks/browser
 
 ![Native Blackjack on mobile](../images/redesign-blackjack-mobile.png)
 
+## Private-card acceptance and evidence
+
+- **Crazy Eights:** native two-player covered local hands and private rooms; suit/rank matching, wild-eight suit selection, one draw per turn, passing, discard recycling, empty-hand victory and blocked-hand penalty scoring. Choosing a suit survives reload; completed games are removed from local resume.
+- **UNO-inspired:** native 2–20-player local tables and rooms; one/two decks, private hands, skip/reverse/+2/wild/+4, drawn-card restriction, challenge/accept, UNO callouts/catches, blocked termination, wins and replay. Names/settings/checkpoints retain baseline shapes. Reload covers local hands again.
+- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v3 rejects older connection links. Valid v1 public and v2 private-card host checkpoints can be restored and re-invited using v3 links.
+
+Evidence: `redesign/checks/unit/cards.check.ts`, `room.check.ts`, and `redesign/checks/browser/cards.spec.ts`. Typed engines are compared against the originals through complete games at 2/3/10/11/20 players. Twenty-seat protocol admission/projection/reconnect is checked with deterministic transports; real WebRTC browser flows cover two-player Crazy Eights and three-player UNO, including host reload, preserved private hands, complete wins and rematches. Physical-device/network qualification and broader shared room criteria remain release gates.
+
+| Crazy Eights | UNO-inspired |
+| --- | --- |
+| ![Crazy Eights mobile](../images/redesign-crazy-eights-mobile.png) | ![UNO mobile](../images/redesign-uno-mobile.png) |
+
+## Race-game acceptance and evidence
+
+Snakes & Ladders and Ludo support 2–4 local or room players, baseline-compatible checkpoints and host-authoritative dice. Snakes preserves the original seeded board, exact finish and 99-to-21 snake. Ludo preserves token release, choice, safe squares, captures, extra turns and exact home. Players can inspect squares or select tokens using touch and keyboard; motion respects reduced-motion settings.
+
+Evidence: `redesign/checks/unit/races.check.ts` compares seeded boards and legal moves with the original engines, and `room.check.ts` exercises four-seat recovery and forged-action rejection. `redesign/checks/browser/races.spec.ts` covers desktop/mobile complete local wins and rematches, accessibility, and three real WebRTC peers reconnecting after host reload. Cross-network and physical-device qualification remain release gates.
+
+## Wordle acceptance and evidence
+
+Wordle retains the original offline vocabulary, repeated-letter scoring, six guesses and local checkpoints. Players can type or use the on-screen keyboard; symbols accompany color feedback. Complete wins, losses, invalid guesses, reload, replay and accessibility are covered in `redesign/checks/browser/wordle.spec.ts`, with original vocabulary and scoring comparisons in `redesign/checks/unit/wordle.check.ts`.
+
+## Hangman acceptance and evidence
+
+Hangman retains the original 85-word pool, category clues, six misses, alternating two-player guesses, repeated-letter handling and compatible local checkpoints. Original-engine comparisons cover complete rounds in `redesign/checks/unit/hangman.check.ts`; `redesign/checks/browser/hangman.spec.ts` covers wins, losses, turns, clues, reload, replay, keyboard and accessibility on desktop and mobile.
+
+## Word Scramble acceptance and evidence
+
+Word Scramble preserves the original word pool, 5/8/12-round options, hints, skips, scoring, saved rounds and delayed advance after a correct answer. Desktop/mobile complete-round and recovery checks are in `redesign/checks/browser/scramble.spec.ts`; checkpoint, pool and completion checks are in `redesign/checks/unit/scramble.check.ts`.
+
+## Whack-a-Mole acceptance and evidence
+
+Whack-a-Mole retains 30/45/60-second rounds, randomly timed targets, hit/miss scoring, best score and absolute-deadline recovery. Interactive illustrated moles support touch and keyboard. `redesign/checks/unit/whack.check.ts` validates saved timed state; `redesign/checks/browser/whack.spec.ts` exercises hit, miss, reload, expiry, score and replay on desktop and mobile.
+
+## Taboo acceptance and evidence
+
+Taboo retains the original clue deck, two-team scoring, 30/60/90-second turns, 4/6/8 turns and absolute deadlines. Covered handoffs keep cards out of the rendered interface until the clue giver reveals them, including after reload. `redesign/checks/unit/taboo.check.ts` compares cards, scoring and deadline rules to the original; `redesign/checks/browser/taboo.spec.ts` covers recovery, scoring, hiding, expiry and complete results on desktop/mobile.
+
+## Show acceptance and evidence
+
+Show retains 3–8 players, 3/5/10 rounds, private chit handoffs, simultaneous clockwise passes, matching hands, slap order and point scoring. Chits are removed from the rendered interface between players and on reload. Original-rule comparisons are in `redesign/checks/unit/show.check.ts`; `redesign/checks/browser/show.spec.ts` covers handoffs, passing, recovery, slap scoring and a complete match on desktop/mobile.
+
 ## Porting rule
 
 Keep each family reviewable and push completed units. Do not flip a game's parity record until complete gameplay and recovery have passed in desktop Chromium and mobile WebKit. Do not substitute original-app links, placeholder boards, simplified rules or a legacy iframe for a native game port. Shared PWA/audio/room breadth remain separate release gates.
+
+## Shared card and pile components
+
+The original app's `js/playing-cards.js` and `js/card-pile.js` centralize standard playing cards and layered piles. The separate redesign runtime shares `PlayingCard` and `CardPile` across Blackjack and Crazy Eights; UNO uses its own face art with the same pile. Face-down draw piles do not reveal hidden cards, and discard stacks show only the public top. Island Charter and Business retain piles in the original app; their redesigned versions are still planned.

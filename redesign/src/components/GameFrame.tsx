@@ -69,6 +69,7 @@ export function Frame<T extends object>({
   children,
   after,
   setupSummary,
+  setupExtra,
 }: {
   run: Run<T>;
   fields: Field[];
@@ -79,6 +80,7 @@ export function Frame<T extends object>({
   children: ReactNode;
   after?: ReactNode;
   setupSummary?: string;
+  setupExtra?: ReactNode;
 }) {
   const game = GAMES.find((g) => g.id === run.id)!;
   return (
@@ -146,6 +148,7 @@ export function Frame<T extends object>({
               </details>
             )}
           </div>
+          {setupExtra}
           <GameArt id={run.id} className="puzzle-setup-art" />
           <details className="help-card">
             <summary>How to play</summary>

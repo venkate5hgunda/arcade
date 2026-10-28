@@ -2,9 +2,9 @@
 
 A vibrant, illustrated shelf for good games and better company.
 
-**Seven games are implemented, with custom artwork for all 26:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
+**Nine games are implemented, with custom artwork for all 26:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
 
-Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. Blackjack also has native solo play. The other 19 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
+Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. Blackjack, Crazy Eights and UNO-inspired now complete the Cards family, with covered local hands and private rooms for Crazy Eights and 2–20-player UNO. The other 17 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
 
 | Document | Purpose |
 | --- | --- |
@@ -44,10 +44,10 @@ Tests and captures normally start their own production preview. To use a preview
 
 1. Open **Room**, enter a name, and create a room.
 2. Send the generated invitation to one guest. They open it, enter their name, and return their answer link.
-3. Paste that answer into the original host tab. When both seats connect, choose Tic-Tac-Toe or Connect Four and start.
-4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. The board and standings survive in the host tab.
+3. Paste that answer into the original host tab. When both seats connect, choose Tic-Tac-Toe, Connect Four, Crazy Eights or UNO-inspired and start. Use **Invite another player** before starting to build a larger UNO table (up to 20 players).
+4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. Reconnect every disconnected seat. The board, private deck/hands and standings survive in the host tab.
 
-Rooms use real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
+Rooms use version 3 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
 
 Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
 

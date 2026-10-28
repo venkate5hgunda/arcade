@@ -17,7 +17,7 @@ User input → route/view → feature controller → domain transition
 ```
 
 - `redesign/src/App.tsx` owns the shelf, header and route composition; `src/features/Game.tsx` and `Room.tsx` own playable flows.
-- `redesign/src/lib/catalog.ts` adapts the durable parity inventory for the retained requirements explorer. `games.ts` owns the typed catalog, `tictactoe.ts` pure rules, `profile.ts` the baseline-shaped preferences/scores/recent entries, and `session.ts` expiring checkpoints. Production logic is not imported into this preview.
+- `redesign/src/lib/catalog.ts` adapts the durable parity inventory for the retained requirements explorer. `games.ts` owns the typed catalog, `tictactoe.ts`, `puzzles.ts`, `blackjack.ts` and `cards.ts` pure rules, `profile.ts` the baseline-shaped preferences/scores/recent entries, and `session.ts` expiring checkpoints. Production logic is not imported into this preview.
 - `redesign/src/styles.css` owns shared layout; `theme.css` owns this product's tokens. Avoid scattered override stylesheets.
 - Add `src/features/<feature>/` for cohesive view/controller code when that feature is implemented, `src/domain/` for pure rules, `src/platform/` for browser persistence/audio/timers/network, and `src/components/` for genuinely shared controls. Do not create empty abstraction layers in advance.
 - `docs/redesign/` owns requirements, decisions, migration and evidence. `docs/images/` owns actual browser captures. Existing root source/tests remain the reference during migration.
@@ -42,7 +42,7 @@ Model multiplayer through a transport interface and an authority controller. Pre
 
 ## Delivery, PWA and security
 
-The redesign serves on loopback on a dedicated port, imports only its own runtime code and public parity JSON, and never registers a service worker. Local data uses the original `arcade:` formats; room host checkpoints use a tab-scoped redesign-specific key. The first room controller supports exactly two named seats, public Tic-Tac-Toe and Connect Four snapshots, host-owned results, and round/revision validation. It is deliberately independent of the broader legacy room wire protocol. Real WebRTC creates offers/answers and encrypted data channels; a factory permits domain tests to supply a transport. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
+The redesign serves on loopback on a dedicated port, imports only its own runtime code and public parity JSON, and never registers a service worker. Local data uses the original `arcade:` formats; room host checkpoints use a tab-scoped redesign-specific key. The room controller supports two-player public Tic-Tac-Toe/Connect Four, private Crazy Eights, 2–20-player UNO, and 2–4-player Snakes & Ladders and Ludo. The host maintains independent guest channels, privileged card state and seat-specific projections, with host-owned results and round/revision validation. Version 3 signals/messages reject older peers; valid v1 public and v2 private-card host checkpoints can restore into fresh v3 invitations. It is deliberately independent of the broader legacy room wire protocol. Real WebRTC creates offers/answers and encrypted data channels; a factory permits domain tests to supply a transport. Vite's filesystem allowlist is restricted to the package and `docs/redesign/`. Build output is not deployed by existing production workflows. A new branch-scoped workflow builds and browser-tests the foundation with read-only permissions.
 
 Before product rollout, introduce a dedicated manifest, asset graph and scope-owned service worker, then test install/update/offline behavior. Avoid CDN runtime dependencies. Static hosting must include the correct repository base path and all lazy feature assets. Use a separate preview origin for any later migration experiments so production storage and workers cannot be modified accidentally.
 
@@ -50,7 +50,7 @@ Treat imported content as text and validate serialized input at boundaries. Keep
 
 ## Design direction
 
-Retain the app's identity while improving clarity and movement. The approved option 2, Living Game Shelf, supersedes the temporary geometric foundation. Use navy/coral/cream/teal, a wide illustrated stage and horizontal selected-game shelf. Original Firefly family illustrations and existing Tabler/Arcade assets are local; see artwork.md. Future game/exercise views require task-specific original artwork, visible action/state feedback, compact secondary settings and full keyboard/touch behavior. Visual approval is based on real desktop/mobile flows and captures, including light/dark and reduced motion.
+Retain the app's identity while improving clarity and movement. The approved option 2, Living Game Shelf, supersedes the temporary geometric foundation. Use navy/coral/cream/teal, a wide illustrated stage and horizontal selected-game shelf. All 26 bespoke covers and existing Tabler/Arcade assets are local; follow [the artwork guide](art-guide.md). Future game/exercise views require task-specific original artwork, visible action/state feedback, compact secondary settings and full keyboard/touch behavior. Visual approval is based on real desktop/mobile flows and captures, including light/dark and reduced motion.
 
 ## Test-runner isolation
 
@@ -66,3 +66,9 @@ The shared room snapshot carries an optional `gameId`; absent IDs are restored
 as Tic-Tac-Toe for compatibility with the first milestone. Both games still
 validate seat, round and revision at the host; guests cannot select a new game
 or publish state.
+
+## Private-card boundary
+
+`lib/cards.ts` contains typed equivalents of the original card engines and strict projected-view validation. `components/CardTable.tsx` renders only the given seat view; `features/Cards.tsx` owns covered local handoffs and baseline-shaped persistence. Every local reload covers the hand, including a pending suit choice. Wild-color selection is temporary UI state until an authoritative action commits it.
+
+`Room` stores full card state outside `RoomSnapshot`. Only the host's tab-scoped v3 backup includes it. Publishing regenerates a distinct projection for every admitted peer. Guest messages are intentions with seat identity, round/revision and per-link sequence validation; they cannot supply cards/decks or snapshots. A disconnected member pauses play, and each reconnect retains its original seat and name. New seats are admitted only in the lobby. Twenty-seat deterministic protocol tests complement actual two/three-browser WebRTC tests.
