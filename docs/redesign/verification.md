@@ -134,6 +134,7 @@ Traced the original card deck, scoring, deadline, numeric settings and checkpoin
 Traced original deals, simultaneous passes, chit conservation, slap ordering, point calculation, settings and checkpoints through covered handoffs, catalog/resume, pointer and keyboard pads, and desktop/mobile gameplay. Chits are removed from the interface during handoff and reload. A synchronous state reference keeps simultaneous pad presses ordered.
 
 A follow-up capability trace caught room introduction copy that still omitted Snakes & Ladders and Ludo. The room now lists both games and their player range. This was a missed consumer in the race-game trace.
+
 ## PR review correction: restored UNO setup
 
 Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
@@ -141,3 +142,9 @@ including when setup preferences are missing or stale. The added cards browser
 regression restores four hands, resets the match, and verifies the new deal still
 has four players. Validation: TypeScript/production build and all seven desktop
 card browser flows passed, including real private-room reload and reconnect.
+
+## Shared cards and piles integration
+
+The original-app changes from `97216b28` share standard card rendering and deck creation between Blackjack and Crazy Eights, use a common layered pile for Blackjack, Crazy Eights, UNO, Island Charter and Business, and route race-game multiplayer dice through the existing dice utility. The new assets are included in the original service worker cache. The redesign is a separate React runtime: its Blackjack and Crazy Eights use one standard-card component and deck, while UNO keeps its own game-specific faces; all three use a shared pile component. Public discard tops are face up; hidden stock and dealer cards remain face down. No room snapshot fields or checkpoint formats change.
+
+Traced the source card and pile consumers, dice callers, service-worker assets, game-specific card views, seat projections, stock and discard counts, and local/room tests. Original desktop/mobile browser inspection covered Blackjack, Crazy Eights, UNO and Business; Island Charter's discovery pile was inspected in both layouts using a validated saved-game fixture. Island Charter and Business remain unported in the redesign, so their redesigned piles are future port work. The original suite passes 206 Node 22 and 80 Python tests; redesign browser checks include shared card faces, stock depletion, an empty pile, private handoffs, and real room recovery.

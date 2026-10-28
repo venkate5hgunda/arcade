@@ -63,3 +63,7 @@ The earlier one-host/one-guest transport assumption is superseded for UNO. A hos
 ### Race-game protocol update
 
 Public race snapshots extend the room schema, so v3 invitations and messages reject older peers. Valid v1 public and v2 private-card host checkpoints remain recoverable through fresh v3 invitations. Snakes & Ladders and Ludo are native 2–4-player ports, stacked on the private-card milestone.
+
+### Shared cards and piles integration
+
+The user requested importing the original app’s shared-card and pile work, superseding the foundation milestone’s restriction on changing original-app files. Commit `97216b28` is carried into the stacked integration branch; no deployment is implied. The redesign retains its isolated React runtime and reuses one typed standard-deck implementation and shared React card/pile components. Island Charter and Business still require native ports.

@@ -2923,3 +2923,67 @@ select:focus-visible {
   background: #d3e5c8;
   color: #244438;
 }
+/* One standard playing-card face and one pile treatment for all card tables. */
+.playing-card {
+  display: inline-block;
+}
+.playing-card.card-back {
+  display: grid;
+}
+.card-pile {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
+  margin: 4px 7px 8px 3px;
+  flex: none;
+}
+.card-pile:not(.empty):not(.single)::before,
+.card-pile:not(.empty):not(.single)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid #b4aa95;
+  border-radius: 10px;
+  background: #f2ede2;
+  box-shadow: 1px 2px 3px #0004;
+  z-index: -1;
+}
+.card-pile:not(.empty):not(.single)::before {
+  transform: translate(6px, 7px) rotate(3deg);
+}
+.card-pile:not(.empty):not(.single)::after {
+  transform: translate(3px, 4px) rotate(-2deg);
+}
+.card-pile-top {
+  display: flex;
+}
+.card-pile-empty {
+  width: 78px;
+  height: 112px;
+  border: 2px dashed #fff9;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff3df;
+}
+.table-piles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.blackjack-pile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+@media (max-width: 600px) {
+  .card-pile-empty {
+    width: 62px;
+    height: 92px;
+  }
+  .card-table-center {
+    flex-wrap: wrap;
+  }
+}

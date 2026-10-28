@@ -1,3 +1,4 @@
+import { cardPile } from '../js/card-pile.js';
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
 import { loadJSON, saveJSON, KEYS } from '../js/storage.js';
@@ -512,7 +513,9 @@ export default {
       middle.className = 'uno-middle';
       const piles = document.createElement('div');
       piles.className = 'uno-pile';
-      piles.append(cardNode(null), cardNode(data.top));
+      piles.append(cardPile(cardNode(null), { count: data.stockCount, label: 'Draw pile' }),
+        cardPile(cardNode(data.top), { count: unoDeck(count).length - data.stockCount - data.counts.reduce((a, b) => a + b, 0),
+          label: `Discard pile, top card ${data.top.color} ${data.top.value}` }));
       const active = document.createElement('p');
       active.className = 'cg-message';
       active.textContent = `${data.color.toUpperCase()} · ${data.direction === 1 ? '↻' : '↺'} · Turn ${data.turn} · ${data.stockCount} to draw`;

@@ -26,8 +26,7 @@ pieces or canvas controls. Shared setup and navigation follow the same grammar.
 ## Theme flexibility
 
 Games can override the tokens on their own shell class, for example
-`--game-ui-primary: #245c48` for Hangman's forest-green actions. Board artwork,
-textures, animation and piece styling remain game-owned. Keep foreground and
+`--game-ui-primary: #245c48` for Hangman's forest-green actions. Distinct board artwork and textures remain game-owned. Reuse shared components for the same physical pieces: standard playing cards use `js/playing-cards.js` and `css/card-games.css`, dice use `js/dice.js`, board tokens use `js/board-tokens.js`, and draw and discard stacks use `js/card-pile.js` and `css/card-pile.css`. Draw piles show card backs; only public discard tops are face up. Keep their appearance and behavior consistent across games; game-specific pieces such as UNO cards can have their own faces. Keep foreground and
 background overrides paired; primary text requires at least 4.5:1 contrast,
 and focus must remain distinguishable in both themes.
 

@@ -1,8 +1,16 @@
+import { PlayingCard } from './PlayingCard.tsx';
+import { CardPile } from './CardPile.tsx';
+import { unoDeck } from '../lib/cards.ts';
+import type { Card } from '../lib/playing-cards.ts';
 import { useEffect, useRef, useState } from 'react';
 import { displayCard } from '../lib/cards.ts';
 import type { CardView } from '../lib/cards.ts';
 export function GameCardFace({ view, id }: { view: CardView; id: string }) {
   const card = displayCard(view.gameId, id);
+  if (view.gameId === 'crazy-eights') {
+    const [suit, rank] = id.split(':') as [Card['suit'], Card['rank']];
+    return <PlayingCard card={{ suit, rank }} />;
+  }
   return (
     <span
       className={`table-card-face tone-${card.tone}`}
@@ -92,11 +100,20 @@ export function CardTable({
         ))}
       </div>
       <div className="card-table-center">
-        <div
-          role="img"
-          aria-label={`Top card: ${displayCard(view.gameId, view.top).label}`}
-        >
-          <GameCardFace view={view} id={view.top} />
+        <div className="table-piles">
+          <CardPile count={view.stockCount} label="Draw pile" />
+          <CardPile
+            count={
+              (view.gameId === 'uno'
+                ? unoDeck(view.counts.length).length
+                : 52) -
+              view.stockCount -
+              view.counts.reduce((a, b) => a + b, 0)
+            }
+            label={`Discard pile, top card ${displayCard(view.gameId, view.top).label}`}
+          >
+            <GameCardFace view={view} id={view.top} />
+          </CardPile>
         </div>
         <div>
           <p className="eyebrow">

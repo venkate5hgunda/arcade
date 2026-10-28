@@ -76,3 +76,7 @@ Show retains 3–8 players, 3/5/10 rounds, private chit handoffs, simultaneous c
 ## Porting rule
 
 Keep each family reviewable and push completed units. Do not flip a game's parity record until complete gameplay and recovery have passed in desktop Chromium and mobile WebKit. Do not substitute original-app links, placeholder boards, simplified rules or a legacy iframe for a native game port. Shared PWA/audio/room breadth remain separate release gates.
+
+## Shared card and pile components
+
+The original app's `js/playing-cards.js` and `js/card-pile.js` centralize standard playing cards and layered piles. The separate redesign runtime shares `PlayingCard` and `CardPile` across Blackjack and Crazy Eights; UNO uses its own face art with the same pile. Face-down draw piles do not reveal hidden cards, and discard stacks show only the public top. Island Charter and Business retain piles in the original app; their redesigned versions are still planned.
