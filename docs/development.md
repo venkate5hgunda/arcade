@@ -33,7 +33,9 @@ arcade/
     game-session.js     # per-game resume windows and local checkpoints
     game-shell.js       # shared chrome for game views
     game-utils.js       # shared board game helpers
+    playing-cards.js    # standard deck, shuffle and playing card rendering
     dice.js             # tabletop die animation
+    board-tokens.js     # shared board token artwork and movement
     disc-physics.js     # fixed-step puck / ball dynamics
     multiplayer.js      # shared WebRTC room + two-link signaling
     remote-match.js     # room seat and turn helpers

@@ -87,8 +87,9 @@ export function RoomPage({ room }: { room: Room }) {
       <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>
       <p className="lede">
-        Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights or
-        UNO-inspired. UNO tables welcome 2–20 players.
+        Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
+        UNO-inspired, Snakes & Ladders or Ludo. UNO tables welcome 2–20 players;
+        race games welcome 2–4.
       </p>
       {!room.role ? (
         <div className="room-columns">
