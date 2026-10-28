@@ -389,7 +389,7 @@ test('20-seat UNO admission keeps existing channels, projects every private hand
   for (const player of players) player.leave();
 });
 
-test('v1 public host checkpoints migrate into v6 invitations without accepting old peers or extra private fields', async () => {
+test('v1 public host checkpoints migrate into v7 invitations without accepting old peers or extra private fields', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -406,7 +406,7 @@ test('v1 public host checkpoints migrate into v6 invitations without accepting o
   restored.restore();
   assert.deepEqual(restored.snapshot!.match, saved.match);
   const invite = await restored.createInvite();
-  assert.equal(readSignal(invite, 'offer').version, 6);
+  assert.equal(readSignal(invite, 'offer').version, 7);
   const url = new URL(invite),
     params = new URLSearchParams(url.hash.split('?')[1]),
     message = JSON.parse(atob(params.get('invite')!));
@@ -472,7 +472,7 @@ test('four-seat race validates actions, propagates turns, and restores a paused 
   for (const guest of guests) guest.leave();
 });
 
-test('v2 private-card host backups restore into v6 without exposing another hand', async () => {
+test('v2 private-card host backups restore into v7 without exposing another hand', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -480,9 +480,9 @@ test('v2 private-card host backups restore into v6 without exposing another hand
   await connect(host, guest);
   host.start('crazy-eights');
   await flush();
-  const old = cache.get('arcade:redesign:room:v6')!;
+  const old = cache.get('arcade:redesign:room:v7')!;
   cache.set('arcade:redesign:room:v2', old);
-  cache.delete('arcade:redesign:room:v6');
+  cache.delete('arcade:redesign:room:v7');
   const restored = new Room(factory);
   restored.restore();
   assert.equal(restored.role, 'host');
@@ -591,7 +591,7 @@ test('Chess room enforces seats, restores, completes checkmate and records one r
   guest.leave();
 });
 
-test('v3 race host backup restores into v6 with a fresh invitation', async () => {
+test('v3 race host backup restores into v7 with a fresh invitation', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -599,13 +599,13 @@ test('v3 race host backup restores into v6 with a fresh invitation', async () =>
   await connect(host, guest);
   host.start('ludo');
   await flush();
-  const saved = cache.get('arcade:redesign:room:v6')!;
+  const saved = cache.get('arcade:redesign:room:v7')!;
   host.leave();
   cache.set('arcade:redesign:room:v3', saved);
   const restored = new Room(factory);
   restored.restore();
   assert.equal(restored.snapshot?.raceMatch?.gameId, 'ludo');
-  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 6);
+  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 7);
   restored.leave();
   guest.leave();
 });
@@ -629,7 +629,7 @@ test('Mafia keeps roles and votes private, recovers host state and records a com
     assert.equal('roles' in JSON.parse(JSON.stringify(match.view)), false);
     assert.equal('actions' in match.view, false);
   }
-  const hidden = JSON.parse(cache.get('arcade:redesign:room:v6')!).privateMafia;
+  const hidden = JSON.parse(cache.get('arcade:redesign:room:v7')!).privateMafia;
   const spy = hidden.roles.indexOf('mafia'),
     doctor = hidden.roles.indexOf('doctor'),
     detective = hidden.roles.indexOf('detective'),
@@ -709,7 +709,7 @@ test('Mafia host can skip a disconnected pending seat but not a connected one', 
   assert.ok(host.snapshot!.mafiaMatch!.view.skipped.includes(guestSeat));
   for (const p of players) p.leave();
 });
-test('v4 duel host backup restores into v6', async () => {
+test('v4 duel host backup restores into v7', async () => {
   cache.clear();
   const host = new Room(factory),
     guest = new Room(factory);
@@ -717,13 +717,13 @@ test('v4 duel host backup restores into v6', async () => {
   await connect(host, guest);
   host.start('chess');
   await flush();
-  const saved = cache.get('arcade:redesign:room:v6')!;
+  const saved = cache.get('arcade:redesign:room:v7')!;
   host.leave();
   cache.set('arcade:redesign:room:v4', saved);
   const restored = new Room(factory);
   restored.restore();
   assert.equal(restored.snapshot?.chessMatch?.gameId, 'chess');
-  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 6);
+  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 7);
   restored.leave();
   guest.leave();
 });
@@ -761,7 +761,7 @@ test('Business room hides decks, rejects forged dice and restores the host befor
   assert.equal('decks' in view, false);
   assert.ok(validSnapshot(guest.snapshot));
   assert.ok(
-    JSON.parse(cache.get('arcade:redesign:room:v6')!).privateBusiness.decks,
+    JSON.parse(cache.get('arcade:redesign:room:v7')!).privateBusiness.decks,
   );
   guest.businessAction({ type: 'end' });
   await flush();
@@ -798,7 +798,7 @@ test('Business room hides decks, rejects forged dice and restores the host befor
   guest.leave();
 });
 
-test('v5 Mafia host backup restores into v6 with private roles intact', async () => {
+test('v5 Mafia host backup restores into v7 with private roles intact', async () => {
   cache.clear();
   const host = new Room(factory),
     guests: Room[] = [];
@@ -811,7 +811,7 @@ test('v5 Mafia host backup restores into v6 with private roles intact', async ()
   host.start('mafia');
   await flush();
   const role = host.snapshot!.mafiaMatch!.view.role;
-  const saved = cache.get('arcade:redesign:room:v6')!;
+  const saved = cache.get('arcade:redesign:room:v7')!;
   host.leave();
   const legacy = JSON.parse(saved);
   delete legacy.snapshot.businessMatch;
@@ -820,7 +820,7 @@ test('v5 Mafia host backup restores into v6 with private roles intact', async ()
   const restored = new Room(factory);
   restored.restore();
   assert.equal(restored.snapshot!.mafiaMatch!.view.role, role);
-  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 6);
+  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 7);
   restored.leave();
   for (const guest of guests) guest.leave();
 });
@@ -833,7 +833,7 @@ test('Business room records a completed game once and replays with its house rul
   await connect(host, guest);
   host.start('business', { turnLimit: 1 });
   await flush();
-  const backup = JSON.parse(cache.get('arcade:redesign:room:v6')!);
+  const backup = JSON.parse(cache.get('arcade:redesign:room:v7')!);
   backup.privateBusiness = actBusiness(
     backup.privateBusiness,
     { type: 'roll', dice: [1, 3] },
@@ -843,7 +843,7 @@ test('Business room records a completed game once and replays with its house rul
   backup.snapshot.businessMatch.view = publicBusiness(backup.privateBusiness);
   backup.snapshot.businessMatch.revision = backup.privateBusiness.revision;
   host.leave();
-  cache.set('arcade:redesign:room:v6', JSON.stringify(backup));
+  cache.set('arcade:redesign:room:v7', JSON.stringify(backup));
   const restored = new Room(factory);
   restored.restore();
   await connect(restored, guest);
@@ -864,5 +864,63 @@ test('Business room records a completed game once and replays with its house rul
   assert.equal(guest.snapshot!.businessMatch!.round, 1);
   assert.equal(guest.snapshot!.businessMatch!.view.options.turnLimit, 1);
   restored.leave();
+  guest.leave();
+});
+
+test('Island room keeps each cargo hand private and restores the host', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guests = [new Room(factory), new Room(factory)];
+  host.createHost('Mira');
+  for (const guest of guests) await connect(host, guest);
+  host.start('catan');
+  await flush();
+  for (const [seat, player] of [host, ...guests].entries()) {
+    const match = player.snapshot!.islandMatch!;
+    assert.equal(match.seat, seat);
+    assert.equal('players' in match.view, false);
+    assert.equal('deck' in match.view, false);
+    assert.ok(validSnapshot(player.snapshot));
+  }
+  guests[0].islandAction({ type: 'setup-roll', dice: [6, 6] });
+  await flush();
+  assert.equal(host.snapshot!.islandMatch!.revision, 0);
+  host.islandAction({ type: 'setup-roll' });
+  await flush();
+  assert.equal(guests[0].snapshot!.islandMatch!.revision, 1);
+  const restored = new Room(factory);
+  restored.restore();
+  assert.deepEqual(
+    restored.snapshot!.islandMatch!.view,
+    host.snapshot!.islandMatch!.view,
+  );
+  host.leave();
+  for (const guest of guests) await connect(restored, guest);
+  guests[0].islandAction({ type: 'setup-roll' });
+  await flush();
+  assert.equal(restored.snapshot!.islandMatch!.revision, 2);
+  restored.leave();
+  for (const guest of guests) guest.leave();
+});
+
+test('v6 Business backups restore into v7 and are removed when leaving', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('business');
+  await flush();
+  const saved = JSON.parse(cache.get('arcade:redesign:room:v7')!);
+  delete saved.snapshot.islandMatch;
+  delete saved.privateIsland;
+  host.leave();
+  cache.set('arcade:redesign:room:v6', JSON.stringify(saved));
+  const restored = new Room(factory);
+  restored.restore();
+  assert.equal(restored.snapshot?.businessMatch?.gameId, 'business');
+  assert.equal(readSignal(await restored.createInvite(), 'offer').version, 7);
+  restored.leave();
+  assert.equal(cache.has('arcade:redesign:room:v6'), false);
   guest.leave();
 });

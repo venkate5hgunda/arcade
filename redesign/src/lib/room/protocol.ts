@@ -1,4 +1,13 @@
 import {
+  newCatan,
+  catanView,
+  actCatan,
+  actTradeReply,
+  validCatanCheckpoint,
+} from '../catan-core.js';
+import type { IslandState, IslandView, BoardOptions } from '../catan-core.js';
+import { validIslandMove, validIslandView } from '../catan.ts';
+import {
   createBusiness,
   publicBusiness,
   validBusiness,
@@ -69,18 +78,27 @@ export interface RoomSnapshot {
   chessMatch?: ChessMatch | null;
   mafiaMatch?: MafiaMatch | null;
   businessMatch?: BusinessMatch | null;
+  islandMatch?: IslandMatch | null;
   wins: number[];
   draws: number;
 }
 export type RoomGameId =
   | 'tictactoe'
   | 'connect-four'
+  | 'catan'
   | 'business'
   | 'mafia'
   | 'chess'
   | 'rps'
   | CardGameId
   | RaceId;
+export interface IslandMatch {
+  gameId: 'catan';
+  round: number;
+  revision: number;
+  seat: number;
+  view: IslandView;
+}
 export interface BusinessMatch {
   gameId: 'business';
   round: number;
@@ -119,7 +137,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 6;
+  version: 7;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -127,7 +145,8 @@ interface Signal {
   name: string;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v6';
+const BACKUP = 'arcade:redesign:room:v7';
+const BUSINESS_BACKUP = 'arcade:redesign:room:v6';
 const MAFIA_BACKUP = 'arcade:redesign:room:v5';
 const DUEL_BACKUP = 'arcade:redesign:room:v4';
 const RACE_BACKUP = 'arcade:redesign:room:v3';
@@ -159,6 +178,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'chessMatch',
         'mafiaMatch',
         'businessMatch',
+        'islandMatch',
         'wins',
         'draws',
       ].includes(k),
@@ -180,6 +200,23 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
     integer(s.draws) &&
+    (s.islandMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        !s.raceMatch &&
+        !s.rpsMatch &&
+        !s.chessMatch &&
+        !s.mafiaMatch &&
+        !s.businessMatch &&
+        s.members.length >= 3 &&
+        s.members.length <= 4 &&
+        Object.keys(s.islandMatch).length === 5 &&
+        s.islandMatch.gameId === 'catan' &&
+        integer(s.islandMatch.round) &&
+        integer(s.islandMatch.revision) &&
+        integer(s.islandMatch.seat) &&
+        s.islandMatch.seat < s.members.length &&
+        validIslandView(s.islandMatch.view, s.members.length))) &&
     (s.businessMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -312,7 +349,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 6)
+    if (s && typeof s === 'object' && s.version !== 7)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -360,6 +397,7 @@ export class Room {
   private privateRps: RpsRoomState | null = null;
   private privateMafia: MafiaState | null = null;
   private privateBusiness: BusinessState | null = null;
+  private privateIsland: IslandState | null = null;
   private rpsTimer?: ReturnType<typeof setTimeout>;
   constructor(
     private factory: ConnectionFactory = webrtcConnectionFactory,
@@ -387,6 +425,7 @@ export class Room {
           privateRps: this.privateRps,
           privateMafia: this.privateMafia,
           privateBusiness: this.privateBusiness,
+          privateIsland: this.privateIsland,
         }),
       );
     } catch {
@@ -398,6 +437,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(BUSINESS_BACKUP) ??
           sessionStorage.getItem(MAFIA_BACKUP) ??
           sessionStorage.getItem(DUEL_BACKUP) ??
           sessionStorage.getItem(RACE_BACKUP) ??
@@ -439,6 +479,18 @@ export class Room {
             JSON.stringify(snapshot.businessMatch.view))
       )
         return;
+      if (
+        snapshot.islandMatch &&
+        (!validCatanCheckpoint(saved?.privateIsland, true) ||
+          saved.privateIsland.players.length !== snapshot.members.length ||
+          snapshot.islandMatch.seat !== 0 ||
+          JSON.stringify(catanView(saved.privateIsland, 0)) !==
+            JSON.stringify(snapshot.islandMatch.view))
+      )
+        return;
+      this.privateIsland = snapshot.islandMatch
+        ? structuredClone(saved.privateIsland)
+        : null;
       this.privateBusiness = snapshot.businessMatch
         ? structuredClone(saved.privateBusiness)
         : null;
@@ -565,7 +617,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 6,
+        version: 7,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -581,6 +633,10 @@ export class Room {
     if (snapshot.mafiaMatch && this.privateMafia) {
       snapshot.mafiaMatch.seat = seat;
       snapshot.mafiaMatch.view = viewFor(this.privateMafia, seat);
+    }
+    if (snapshot.islandMatch && this.privateIsland) {
+      snapshot.islandMatch.seat = seat;
+      snapshot.islandMatch.view = catanView(this.privateIsland, seat);
     }
     return snapshot;
   }
@@ -603,7 +659,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 6 ||
+      m.version !== 7 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -624,6 +680,8 @@ export class Room {
         this.commitMove(peer.id, m.cell, m.round, m.revision);
       else if (m.type === 'card-action' && peer.accepted)
         this.commitCard(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'island-action' && peer.accepted)
+        this.commitIsland(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'business-action' && peer.accepted)
         this.commitBusiness(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'mafia-action' && peer.accepted)
@@ -638,7 +696,7 @@ export class Room {
       else throw new Error();
     } else {
       if (
-        ['mafia-error', 'business-error'].includes(m.type) &&
+        ['mafia-error', 'business-error', 'island-error'].includes(m.type) &&
         typeof m.message === 'string' &&
         m.message.length <= 200
       ) {
@@ -662,6 +720,14 @@ export class Room {
       )
         throw new Error();
       if (
+        m.snapshot.islandMatch &&
+        m.snapshot.islandMatch.seat !==
+          m.snapshot.members.findIndex(
+            (member: Member) => member.id === this.peerId,
+          )
+      )
+        throw new Error();
+      if (
         m.snapshot.mafiaMatch &&
         m.snapshot.mafiaMatch.seat !==
           m.snapshot.members.findIndex(
@@ -678,6 +744,7 @@ export class Room {
       )
         throw new Error();
       const previous =
+          this.snapshot.islandMatch ??
           this.snapshot.businessMatch ??
           this.snapshot.mafiaMatch ??
           this.snapshot.chessMatch ??
@@ -686,6 +753,7 @@ export class Room {
           this.snapshot.cardMatch ??
           this.snapshot.match,
         next =
+          (m.snapshot as RoomSnapshot).islandMatch ??
           (m.snapshot as RoomSnapshot).businessMatch ??
           (m.snapshot as RoomSnapshot).mafiaMatch ??
           (m.snapshot as RoomSnapshot).chessMatch ??
@@ -730,7 +798,8 @@ export class Room {
           this.snapshot.rpsMatch ||
           this.snapshot.chessMatch ||
           this.snapshot.mafiaMatch ||
-          this.snapshot.businessMatch) &&
+          this.snapshot.businessMatch ||
+          this.snapshot.islandMatch) &&
         this.snapshot.members.length === 2
           ? this.snapshot.members[1]
           : undefined));
@@ -744,7 +813,8 @@ export class Room {
         this.snapshot.rpsMatch ||
         this.snapshot.chessMatch ||
         this.snapshot.mafiaMatch ||
-        this.snapshot.businessMatch)
+        this.snapshot.businessMatch ||
+        this.snapshot.islandMatch)
     )
       throw new Error('Reconnect an existing seat during a match.');
     if (!existing && this.snapshot.members.length >= 20)
@@ -771,7 +841,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 6,
+        version: 7,
         kind: 'offer',
         roomId: this.snapshot.roomId,
         host: this.peerId,
@@ -857,6 +927,7 @@ export class Room {
         this.snapshot.chessMatch ||
         this.snapshot.mafiaMatch ||
         this.snapshot.businessMatch ||
+        this.snapshot.islandMatch ||
         this.snapshot.members.length >= 20)
     )
       throw new Error(
@@ -886,7 +957,8 @@ export class Room {
     this.emit();
   }
   start(
-    gameId: RoomGameId = this.snapshot?.businessMatch?.gameId ??
+    gameId: RoomGameId = this.snapshot?.islandMatch?.gameId ??
+      this.snapshot?.businessMatch?.gameId ??
       this.snapshot?.mafiaMatch?.gameId ??
       this.snapshot?.chessMatch?.gameId ??
       this.snapshot?.rpsMatch?.gameId ??
@@ -894,7 +966,9 @@ export class Room {
       this.snapshot?.cardMatch?.gameId ??
       this.snapshot?.match?.gameId ??
       'tictactoe',
-    options?: Partial<BusinessOptions>,
+    options?:
+      | Partial<BusinessOptions>
+      | { portMode: 'fixed' | 'shuffled'; boardOptions: BoardOptions },
   ) {
     const s = this.snapshot;
     if (
@@ -906,6 +980,7 @@ export class Room {
       throw new Error('Wait for all players to connect.');
     if (
       ![
+        'catan',
         'business',
         'mafia',
         'chess',
@@ -921,6 +996,7 @@ export class Room {
         gameId,
       ) &&
         s.members.length !== 2) ||
+      (gameId === 'catan' && (s.members.length < 3 || s.members.length > 4)) ||
       (gameId === 'business' && s.members.length > 6) ||
       (gameId === 'mafia' && (s.members.length < 5 || s.members.length > 10)) ||
       (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
@@ -930,12 +1006,34 @@ export class Room {
       gameId === 'business'
         ? createBusiness(
             s.members.length,
-            options ?? s.businessMatch?.view.options ?? {},
+            (options as Partial<BusinessOptions>) ??
+              s.businessMatch?.view.options ??
+              {},
             () => crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000,
           )
         : null;
+    const nextIsland =
+      gameId === 'catan'
+        ? newCatan(
+            s.members.length,
+            () => crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000,
+            (
+              options as
+                | { portMode: 'fixed' | 'shuffled'; boardOptions: BoardOptions }
+                | undefined
+            )?.portMode ??
+              s.islandMatch?.view.portMode ??
+              'fixed',
+            (
+              options as
+                | { portMode: 'fixed' | 'shuffled'; boardOptions: BoardOptions }
+                | undefined
+            )?.boardOptions ?? s.islandMatch?.view.boardOptions,
+          )
+        : null;
     const round =
-      (s.businessMatch?.round ??
+      (s.islandMatch?.round ??
+        s.businessMatch?.round ??
         s.mafiaMatch?.round ??
         s.chessMatch?.round ??
         s.rpsMatch?.round ??
@@ -946,11 +1044,26 @@ export class Room {
     this.privateRps = null;
     this.privateMafia = null;
     this.privateBusiness = null;
+    this.privateIsland = null;
+    s.islandMatch = null;
     s.businessMatch = null;
     s.mafiaMatch = null;
     s.rpsMatch = null;
     s.chessMatch = null;
-    if (gameId === 'business') {
+    if (gameId === 'catan') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      this.privateIsland = nextIsland!;
+      s.islandMatch = {
+        gameId: 'catan',
+        round,
+        revision: 0,
+        seat: 0,
+        view: catanView(this.privateIsland, 0),
+      };
+    } else if (gameId === 'business') {
       this.privateGame = null;
       s.match = null;
       s.cardMatch = null;
@@ -1183,6 +1296,79 @@ export class Room {
     match.race = next;
     match.revision++;
     if (next.state.winner != null) room.wins[next.state.winner]++;
+    this.publish();
+  }
+  islandAction(action: unknown) {
+    const match = this.snapshot?.islandMatch;
+    if (!match) return;
+    if (this.role === 'host')
+      this.commitIsland(this.peerId, action, match.round, match.revision);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'island-action',
+            action,
+            round: match.round,
+            revision: match.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private commitIsland(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.islandMatch,
+      state = this.privateIsland;
+    if (!room || !match || !state) return;
+    const seat = room.members.findIndex((m) => m.id === sender);
+    const report = (message: string) => {
+      if (seat === 0) {
+        this.issue = message;
+        this.emit();
+      } else {
+        const peer = this.peers.get(sender);
+        if (peer?.accepted && peer.channel?.readyState === 'open')
+          this.send({ type: 'island-error', message }, peer);
+      }
+    };
+    if (seat < 0) return;
+    if (match.round !== round || match.revision !== revision) {
+      this.publish();
+      report('The island changed. Check the latest state and try again.');
+      return;
+    }
+    if (!room.members.every((m) => m.connected) || !validIslandMove(action)) {
+      report('Reconnect all navigators and choose a valid action.');
+      return;
+    }
+    const next = structuredClone(state);
+    const random = () =>
+      crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
+    const move = ['roll', 'setup-roll'].includes(action.type)
+      ? {
+          ...action,
+          dice: [1 + Math.floor(random() * 6), 1 + Math.floor(random() * 6)],
+        }
+      : action;
+    const ok = ['accept', 'decline'].includes(move.type)
+      ? actTradeReply(next, move, seat)
+      : actCatan(next, move, seat, random);
+    if (!ok || !validCatanCheckpoint(next, true)) {
+      report('That island action is unavailable.');
+      return;
+    }
+    this.privateIsland = next;
+    match.revision++;
+    match.view = catanView(next, 0);
+    if (next.winner !== null && state.winner === null) room.wins[next.winner]++;
+    this.issue = '';
     this.publish();
   }
   businessAction(action: unknown) {
@@ -1533,6 +1719,7 @@ export class Room {
     this.privateRps = null;
     this.privateMafia = null;
     this.privateBusiness = null;
+    this.privateIsland = null;
     this.disconnectTransport();
     this.role = null;
     this.peerId = '';
@@ -1542,6 +1729,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(BUSINESS_BACKUP);
       sessionStorage.removeItem(MAFIA_BACKUP);
       sessionStorage.removeItem(DUEL_BACKUP);
       sessionStorage.removeItem(RACE_BACKUP);

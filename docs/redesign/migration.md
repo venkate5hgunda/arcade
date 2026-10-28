@@ -79,3 +79,7 @@ Mafia adds host-held roles/actions and seat-specific projections in protocol v5.
 ### Business room protocol update
 
 Business adds host-held decks and authoritative dice in protocol v6. Fresh connections reject older peers; valid v1–v5 host backups restore into fresh v6 invitations. For this complex ruleset, the native React application uses a local copy of the original pure JavaScript engine through a typed interface, rather than translating its internals to TypeScript as earlier game ports did. This preserves the established rules and checkpoint shapes while retaining the isolated runtime, native controls and strict room authority boundaries. The original renderer is not used. No merge or deployment is implied.
+
+### Island Charter protocol update
+
+Island Charter adds host-held cargo and discovery decks with seat-specific views in protocol v7. Fresh connections reject older peers; valid v1–v6 host backups restore into fresh v7 invitations. As with Business, the native React table uses the original pure rules behind a typed interface rather than translating that engine, preserving its board generation, rule transitions and saved state. The original terrain artwork is reused and the renderer is native. This completes the catalog game ports, not the broader shared-feature or release gates. No merge or deployment is implied.

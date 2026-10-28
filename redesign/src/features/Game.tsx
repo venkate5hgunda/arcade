@@ -1,4 +1,5 @@
 import { BusinessGame } from './Business.tsx';
+import { IslandGame } from './Island.tsx';
 import { MafiaGame } from './Mafia.tsx';
 import { PoolGame } from './Pool.tsx';
 import { HockeyGame } from './Hockey.tsx';
@@ -342,6 +343,7 @@ export function GameRoute() {
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
   if (game.id === 'business') return <BusinessGame key={game.id} />;
+  if (game.id === 'catan') return <IslandGame key={game.id} />;
   if (game.id === 'mafia') return <MafiaGame key={game.id} />;
   if (game.id === 'pool') return <PoolGame key={game.id} />;
   if (game.id === 'air-hockey') return <HockeyGame key={game.id} />;

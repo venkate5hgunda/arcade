@@ -288,7 +288,7 @@ for (const gameId of ['crazy-eights', 'uno'] as const) {
         ).toHaveCount(7);
         expect(
           await guest.evaluate(() =>
-            sessionStorage.getItem('arcade:redesign:room:v6'),
+            sessionStorage.getItem('arcade:redesign:room:v7'),
           ),
         ).toBeNull();
       }
@@ -305,12 +305,12 @@ for (const gameId of ['crazy-eights', 'uno'] as const) {
       await host.evaluate(
         ({ game, view }) => {
           const saved = JSON.parse(
-            sessionStorage.getItem('arcade:redesign:room:v6')!,
+            sessionStorage.getItem('arcade:redesign:room:v7')!,
           );
           saved.privateGame = game;
           saved.snapshot.cardMatch.view = view;
           sessionStorage.setItem(
-            'arcade:redesign:room:v6',
+            'arcade:redesign:room:v7',
             JSON.stringify(saved),
           );
         },

@@ -22,7 +22,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G06](#g06) | Whack-a-Mole | Action | Implemented |
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
 | [G08](#g08) | Ludo | Board | Implemented |
-| [G09](#g09) | Island Charter | Board | Planned |
+| [G09](#g09) | Island Charter | Board | Implemented |
 | [G10](#g10) | Business | Board | Implemented |
 | [G11](#g11) | Chess | Board | Implemented |
 | [G12](#g12) | Imposter | Party | Implemented |
@@ -250,7 +250,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G09
 
-**Island Charter** · Board · Planned
+**Island Charter** · Board · Implemented
 
 - Three to four local/room players; opening dice ties and snake placement; roads/distance, resource production, robber/discards, bank/harbor/player trades, development cards and ten-point victory.
 - Classic/changing nine harbors, illustrated/colorblock terrain and four adjacency options retain persistence.
@@ -260,6 +260,8 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 Sources: [games/catan.js](../../games/catan.js), [js/game-catalog.js](../../js/game-catalog.js), [docs/games.md](../../docs/games.md).
 
 Baseline tests: [test/catan.test.js](../../test/catan.test.js).
+
+Implementation evidence: [Island engine comparison](../../redesign/checks/unit/catan.check.ts), [room protocol](../../redesign/checks/unit/room.check.ts), and [desktop/mobile gameplay](../../redesign/checks/browser/island.spec.ts). Physical-device and cross-network qualification remains open.
 
 ## G10
 

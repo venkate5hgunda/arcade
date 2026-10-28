@@ -14,7 +14,7 @@ test('skip link stays hidden until focused and moves keyboard focus to the main 
   await expect(page.locator('main')).toBeFocused();
 });
 
-test('complete shelf, categories, search, selection and original-game handoff', async ({
+test('complete shelf, categories, search and native game handoff', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -34,13 +34,12 @@ test('complete shelf, categories, search, selection and original-game handoff', 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Island Charter',
   );
-  await page.getByRole('link', { name: 'Explore Island Charter' }).click();
+  await page
+    .getByRole('link', { name: 'Play Island Charter', exact: true })
+    .click();
   await expect(
-    page.getByRole('link', { name: 'Play in original Arcade' }),
-  ).toHaveAttribute(
-    'href',
-    'https://venkate5hgunda.github.io/arcade/#/games/catan',
-  );
+    page.getByRole('button', { name: 'Start playing →' }),
+  ).toBeVisible();
   await page.goBack();
   await page.getByRole('button', { name: 'All', exact: true }).click();
   await page.getByRole('searchbox').fill('wordle');

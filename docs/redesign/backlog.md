@@ -36,7 +36,7 @@ reference; the redesign builds clean, typed equivalents.
 - [x] **Race board games (G07–G08):** Snakes & Ladders and Ludo, with 2–4-player local/room play and recovery.
 - [x] **Chess (G11):** full rules, local/computer modes, promotion recovery, native accessible board and authoritative two-browser rooms.
 - [x] **Business (G10):** local and private-room property trading, auctions, debt and recovery.
-- [ ] **Remaining board:** Island Charter.
+- [x] **Island Charter (G09):** 3–4-player local and private-room play, private cargo and recovery.
 - [x] **Whack-a-Mole (G06):** timed targets, scoring and absolute-deadline recovery.
 - [x] **Air Hockey (G04):** native two-player table, fixed-step collisions, touch/keyboard controls, serving and recovery.
 - [x] **8-Ball Pool (G05):** native table, physical shots, house rules, inspection and stable-table recovery.
@@ -55,13 +55,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **Island Charter (G09).** Port the remaining catalog entry. Reuse the shared catalog, setup, turn banner, persistence and
-      (where room-supported) room layer. Preserve per-game rules, options and
-      transitions from the cited `games/*.js` module; add a complete behavior
-      test per game before flipping its parity status to `implemented`.
-- [ ] **Room breadth (A04–A06).** Add QR admission/scanning, spectators and the remaining game protocols. Private card hands/decks and 20-seat UNO are implemented; extend the room to remaining
-      room-supported games and private roles, spectator
-      seats, per-game/player standings and rankings across replays.
+- [ ] **Room breadth (A04–A06).** Add QR admission/scanning, spectator seats, and per-game/player standings and rankings across replays. Private hands, decks, roles and the catalog's room-supported games are implemented.
 - [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent
       sound/haptics settings, user-gesture audio unlock and recovery,
       impact-sensitive synthesized effects and reduced-motion support across all

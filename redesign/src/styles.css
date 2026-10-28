@@ -3519,3 +3519,82 @@ select:focus-visible {
   width: min(100%, 280px);
   height: auto;
 }
+
+.island-table {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.island-table > * {
+  min-width: 0;
+}
+.island-actions {
+  padding: 1rem;
+  border: 2px solid #dfbb82;
+  border-radius: 20px;
+  background: #fff3da;
+  color: #39281f;
+}
+.island-actions button {
+  margin: 0.25rem;
+}
+.island-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.island-seats > div {
+  border: 3px solid;
+  border-radius: 1rem;
+  padding: 0.6rem;
+}
+.island-cargo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.island-cargo > span {
+  display: grid;
+  justify-items: center;
+  padding: 0.5rem;
+  border-radius: 12px;
+  background: #fff3da;
+  color: #39281f;
+}
+.island-cargo img {
+  width: 48px;
+  height: 48px;
+}
+.island-discovery {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.island-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.island-fields input {
+  width: 5rem;
+}
+.island-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.island-scroll {
+  overflow: auto;
+  max-width: 100%;
+  background: #69c9d4;
+  border: 8px solid #7b4c34;
+  border-radius: 20px;
+}
+.island-chart {
+  display: block;
+  min-width: 100%;
+  height: auto;
+}
+.island-chart [role='button']:focus-visible {
+  outline: 3px solid #ff456b;
+}

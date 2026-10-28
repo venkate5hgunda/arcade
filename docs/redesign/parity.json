@@ -371,7 +371,7 @@
       "id": "G09",
       "title": "Island Charter",
       "category": "Board",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/catan.js",
         "js/game-catalog.js",
@@ -385,6 +385,11 @@
       ],
       "baselineTests": [
         "test/catan.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/catan.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/island.spec.ts"
       ]
     },
     {

@@ -1,4 +1,5 @@
 import { validBusiness } from './business-core.js';
+import { validCatanCheckpoint } from './catan-core.js';
 import { validPool } from './pool.ts';
 import { validHockey } from './hockey.ts';
 import { validImposter } from './imposter.ts';
@@ -22,6 +23,7 @@ export function validCheckpoint(id: string, state: unknown): boolean {
   if (id === 'pool') return validPool(state);
   if (id === 'air-hockey') return validHockey(state);
   if (id === 'business') return validBusiness(state);
+  if (id === 'catan') return validCatanCheckpoint(state);
   if (id === 'imposter') return validImposter(state);
   if (id === 'dumb-charades') return validCharades(state);
   if (id === 'chess') return validChess(state);
@@ -44,6 +46,7 @@ export function validCheckpoint(id: string, state: unknown): boolean {
       : false;
 }
 export const roomGameIds = new Set([
+  'catan',
   'business',
   'mafia',
   'chess',

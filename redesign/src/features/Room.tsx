@@ -1,3 +1,7 @@
+import { IslandTable } from '../components/IslandTable.tsx';
+import { IslandOptions } from '../components/IslandOptions.tsx';
+import { DEFAULT_BOARD_OPTIONS } from '../lib/catan-core.js';
+import type { BoardOptions } from '../lib/catan-core.js';
 import { BusinessTable } from '../components/BusinessTable.tsx';
 import { BusinessOptionsForm } from '../components/BusinessOptions.tsx';
 import { DEFAULT_OPTIONS } from '../lib/business-core.js';
@@ -23,17 +27,22 @@ export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
   const [gameId, setGameId] = useState<RoomGameId>(() =>
-    ['mafia', 'business'].includes(
+    ['mafia', 'business', 'catan'].includes(
       new URLSearchParams(location.search).get('game') ?? '',
     )
       ? (new URLSearchParams(location.search).get('game') as
           | 'mafia'
-          | 'business')
+          | 'business'
+          | 'catan')
       : 'tictactoe',
   );
   const [businessOptions, setBusinessOptions] = useState<BusinessOptions>({
     ...DEFAULT_OPTIONS,
   });
+  const [islandOptions, setIslandOptions] = useState<BoardOptions>({
+    ...DEFAULT_BOARD_OPTIONS,
+  });
+  const [islandPorts, setIslandPorts] = useState<'fixed' | 'shuffled'>('fixed');
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
     location.search.includes('invite=') ? window.location.href : '',
@@ -63,15 +72,21 @@ export function RoomPage({ room }: { room: Room }) {
   const chess = s?.chessMatch;
   const mafia = s?.mafiaMatch;
   const business = s?.businessMatch;
+  const island = s?.islandMatch;
   const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
     ((s.members.length > 4 && !['uno', 'mafia', 'business'].includes(gameId)) ||
       (s.members.length > 6 && gameId === 'business') ||
       (s.members.length > 2 &&
-        !['uno', 'mafia', 'business', 'snakes-ladders', 'ludo'].includes(
-          gameId,
-        )))
+        ![
+          'uno',
+          'mafia',
+          'business',
+          'catan',
+          'snakes-ladders',
+          'ludo',
+        ].includes(gameId)))
       ? 'uno'
       : gameId;
   const gameName = (id: string) => GAMES.find((g) => g.id === id)!.name;
@@ -175,7 +190,14 @@ export function RoomPage({ room }: { room: Room }) {
           <details
             className="room-roster-details"
             open={
-              !match && !cards && !race && !rps && !chess && !mafia && !business
+              !match &&
+              !cards &&
+              !race &&
+              !rps &&
+              !chess &&
+              !mafia &&
+              !business &&
+              !island
             }
           >
             <summary>Room players ({s?.members.length ?? 0})</summary>
@@ -195,7 +217,13 @@ export function RoomPage({ room }: { room: Room }) {
                       ? index === 0
                         ? 'R'
                         : 'G'
-                      : cards || race || rps || chess || mafia || business
+                      : cards ||
+                          race ||
+                          rps ||
+                          chess ||
+                          mafia ||
+                          business ||
+                          island
                         ? String(index + 1)
                         : index === 0
                           ? 'X'
@@ -322,6 +350,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !island &&
             room.role === 'host' &&
             s &&
             s.members.length < 20 &&
@@ -343,6 +372,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !island &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
                 <h2>Everyone’s here.</h2>
@@ -412,6 +442,12 @@ export function RoomPage({ room }: { room: Room }) {
                       >
                         Business
                       </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 4}
+                        value="catan"
+                      >
+                        Island Charter
+                      </option>
                       <option value="uno">UNO-inspired</option>
                     </select>
                   </label>
@@ -421,6 +457,24 @@ export function RoomPage({ room }: { room: Room }) {
                     ? 'Your table is ready for a little friendly competition.'
                     : 'Waiting for the host to choose and start a game.'}
                 </p>
+                {room.role === 'host' && selectedGame === 'catan' && (
+                  <details>
+                    <summary>Island options</summary>
+                    <IslandOptions
+                      options={islandOptions}
+                      setOptions={setIslandOptions}
+                      ports={islandPorts}
+                      setPorts={setIslandPorts}
+                    />
+                  </details>
+                )}
+                {room.role === 'host' &&
+                  selectedGame === 'catan' &&
+                  (s?.members.length ?? 0) < 3 && (
+                    <p>
+                      Invite at least three players to start Island Charter.
+                    </p>
+                  )}
                 {room.role === 'host' && selectedGame === 'business' && (
                   <details>
                     <summary>Business house rules</summary>
@@ -439,16 +493,24 @@ export function RoomPage({ room }: { room: Room }) {
                   <button
                     className="primary"
                     disabled={
-                      selectedGame === 'mafia' &&
-                      ((s?.members.length ?? 0) < 5 ||
-                        (s?.members.length ?? 0) > 10)
+                      (selectedGame === 'mafia' &&
+                        ((s?.members.length ?? 0) < 5 ||
+                          (s?.members.length ?? 0) > 10)) ||
+                      (selectedGame === 'catan' &&
+                        ((s?.members.length ?? 0) < 3 ||
+                          (s?.members.length ?? 0) > 4))
                     }
                     onClick={() =>
                       room.start(
                         selectedGame,
                         selectedGame === 'business'
                           ? businessOptions
-                          : undefined,
+                          : selectedGame === 'catan'
+                            ? {
+                                portMode: islandPorts,
+                                boardOptions: islandOptions,
+                              }
+                            : undefined,
                       )
                     }
                   >
@@ -691,6 +753,41 @@ export function RoomPage({ room }: { room: Room }) {
                 ))}
             </div>
           )}
+          {island && s && (
+            <>
+              <IslandTable
+                view={island.view}
+                seat={island.seat}
+                names={s.members.map((m) => m.name)}
+                blocked={!connected}
+                action={(move) => room.islandAction(move)}
+                error={message || room.issue}
+                viewKey={s.roomId}
+              />
+              {island.view.winner !== null && (
+                <div className="board-panel">
+                  <div className="score-line">
+                    {s.members.map((member, i) => (
+                      <span key={member.id}>
+                        {member.name} <strong>{s.wins[i]} wins</strong>
+                      </span>
+                    ))}
+                  </div>
+                  {room.role === 'host' ? (
+                    <button
+                      className="primary"
+                      disabled={!connected}
+                      onClick={() => room.start()}
+                    >
+                      Play again
+                    </button>
+                  ) : (
+                    <p>Waiting for the host to start the next island.</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {business && s && (
             <>
               <BusinessTable
@@ -862,7 +959,7 @@ export function RoomPage({ room }: { room: Room }) {
         <p role="status">Preparing your connection link… Keep this tab open.</p>
       )}
       <p className="room-status" role="status">
-        {!mafia && !business && (message || room.issue)}
+        {!mafia && !business && !island && (message || room.issue)}
       </p>
     </section>
   );
