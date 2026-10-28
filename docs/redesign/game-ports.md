@@ -1,14 +1,14 @@
 # Game migration status
 
-**14 of 26 games are implemented.** The remaining 12 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**17 of 26 games are implemented.** The remaining 9 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo | Island Charter, Business, Chess |
-| Action | — | Air Hockey, 8-Ball Pool, Whack-a-Mole |
-| Party | — | Show, Taboo, Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
+| Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
+| Party | Show, Taboo | Imposter, Mafia, Dumb Charades, Rock Paper Scissors |
 | Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
@@ -61,6 +61,22 @@ Hangman retains the original 85-word pool, category clues, six misses, alternati
 
 Word Scramble preserves the original word pool, 5/8/12-round options, hints, skips, scoring, saved rounds and delayed advance after a correct answer. Desktop/mobile complete-round and recovery checks are in `redesign/checks/browser/scramble.spec.ts`; checkpoint, pool and completion checks are in `redesign/checks/unit/scramble.check.ts`.
 
+## Whack-a-Mole acceptance and evidence
+
+Whack-a-Mole retains 30/45/60-second rounds, randomly timed targets, hit/miss scoring, best score and absolute-deadline recovery. Interactive illustrated moles support touch and keyboard. `redesign/checks/unit/whack.check.ts` validates saved timed state; `redesign/checks/browser/whack.spec.ts` exercises hit, miss, reload, expiry, score and replay on desktop and mobile.
+
+## Taboo acceptance and evidence
+
+Taboo retains the original clue deck, two-team scoring, 30/60/90-second turns, 4/6/8 turns and absolute deadlines. Covered handoffs keep cards out of the rendered interface until the clue giver reveals them, including after reload. `redesign/checks/unit/taboo.check.ts` compares cards, scoring and deadline rules to the original; `redesign/checks/browser/taboo.spec.ts` covers recovery, scoring, hiding, expiry and complete results on desktop/mobile.
+
+## Show acceptance and evidence
+
+Show retains 3–8 players, 3/5/10 rounds, private chit handoffs, simultaneous clockwise passes, matching hands, slap order and point scoring. Chits are removed from the rendered interface between players and on reload. Original-rule comparisons are in `redesign/checks/unit/show.check.ts`; `redesign/checks/browser/show.spec.ts` covers handoffs, passing, recovery, slap scoring and a complete match on desktop/mobile.
+
 ## Porting rule
 
 Keep each family reviewable and push completed units. Do not flip a game's parity record until complete gameplay and recovery have passed in desktop Chromium and mobile WebKit. Do not substitute original-app links, placeholder boards, simplified rules or a legacy iframe for a native game port. Shared PWA/audio/room breadth remain separate release gates.
+
+## Shared card and pile components
+
+The original app's `js/playing-cards.js` and `js/card-pile.js` centralize standard playing cards and layered piles. The separate redesign runtime shares `PlayingCard` and `CardPile` across Blackjack and Crazy Eights; UNO uses its own face art with the same pile. Face-down draw piles do not reveal hidden cards, and discard stacks show only the public top. Island Charter and Business retain piles in the original app; their redesigned versions are still planned.

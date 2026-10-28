@@ -1,17 +1,9 @@
+import { cardPile } from '../js/card-pile.js';
 import { createShell, wireBack } from '../js/game-shell.js';
 import { celebrate } from '../js/celebration.js';
 
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-
-export function shuffledDeck() {
-  const deck = SUITS.flatMap(suit => RANKS.map(rank => ({ suit, rank })));
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
+import { SUITS, RANKS, shuffledDeck, playingCardElement } from '../js/playing-cards.js';
+export { shuffledDeck } from '../js/playing-cards.js';
 
 export function handValue(cards) {
   let total = 0;
@@ -27,26 +19,6 @@ export function handValue(cards) {
 function sound(kind) {
   const audio = window.arcadeAudio;
   if (audio) void audio.prepare().then(() => audio[kind]()).catch(() => {});
-}
-
-function cardElement(card, hidden = false) {
-  const el = document.createElement('div');
-  el.className = `cg-card${hidden ? ' cg-card--back' : card.suit === '♥' || card.suit === '♦' ? ' cg-card--red' : ''}`;
-  el.setAttribute('role', 'img');
-  el.setAttribute('aria-label', hidden ? 'Face-down card' : `${card.rank} of ${{ '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' }[card.suit]}`);
-  if (hidden) {
-    el.innerHTML = '<span aria-hidden="true" class="cg-card-back-mark">✦</span>';
-  } else {
-    const corner = document.createElement('span');
-    corner.className = 'cg-card-corner';
-    corner.textContent = `${card.rank}${card.suit}`;
-    const center = document.createElement('span');
-    center.className = 'cg-card-center';
-    center.setAttribute('aria-hidden', 'true');
-    center.textContent = card.suit;
-    el.append(corner, center);
-  }
-  return el;
 }
 
 function validCheckpoint(s) {
@@ -81,7 +53,7 @@ export default {
           <div class="bj-seat-head"><h2>Dealer</h2><span class="bj-dealer-score"></span></div>
           <div class="cg-card-row bj-dealer-cards"></div>
         </section>
-        <div class="bj-center"><span class="bj-round"></span><p class="cg-message bj-message" role="status" aria-live="polite"></p></div>
+        <div class="bj-center"><div class="bj-deck"></div><span class="bj-round"></span><p class="cg-message bj-message" role="status" aria-live="polite"></p></div>
         <section class="bj-seat" aria-label="Your hand">
           <div class="bj-seat-head"><h2>Your hand</h2><span class="bj-player-score"></span></div>
           <div class="cg-card-row bj-player-cards"></div>
@@ -184,12 +156,13 @@ export default {
 
     function render() {
       const done = result !== null;
-      dealerCards.replaceChildren(...dealer.map((card, i) => cardElement(card, !done && i === 1)));
-      playerCards.replaceChildren(...player.map(card => cardElement(card)));
+      dealerCards.replaceChildren(...dealer.map((card, i) => playingCardElement(card, { hidden: !done && i === 1 })));
+      playerCards.replaceChildren(...player.map(card => playingCardElement(card)));
       stage.querySelector('.bj-dealer-score').textContent = done
         ? `${handValue(dealer).total}${handValue(dealer).soft ? ' · soft' : ''}`
         : `${handValue([dealer[0]]).total} + ?`;
       stage.querySelector('.bj-player-score').textContent = `${handValue(player).total}${handValue(player).soft ? ' · soft' : ''}`;
+      stage.querySelector('.bj-deck').replaceChildren(cardPile(playingCardElement(null, { hidden: true }), { count: deck.length, label: 'Draw pile' }));
       stage.querySelector('.bj-round').textContent = `ROUND ${round} · ${deck.length} CARDS LEFT`;
       stage.querySelector('.bj-record').textContent =
         `${record.wins} wins · ${record.losses} losses · ${record.pushes} pushes · ${record.net >= 0 ? '+' : ''}${record.net} units`;

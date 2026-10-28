@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G03, G07–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 12 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G03, G06–G08 and G16–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 9 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -120,6 +120,21 @@ Traced the original word pool, category clues and round transitions through nati
 ## Word Scramble milestone
 
 Traced word selection, 5/8/12-round settings, hints, solved-round timer, checkpoint recovery, catalog and resume paths. Desktop/mobile tests exercise hints, wrong answers, automatic advance, completion, solved-checkpoint recovery and fresh-match input cleanup. The shuffle guarantees a changed arrangement by swapping distinct letters if the initial shuffle matches the original; this avoids an unbounded retry while preserving a valid scramble.
+
+## Whack-a-Mole milestone
+
+Traced duration options, target timing, scores, best-score storage, absolute-deadline checkpoint and expiry through setup, catalog, resume and desktop/mobile complete-game checks. Browser review showed the initial board extended below the viewport during a timed round; it was resized to keep targets accessible.
+
+## Taboo milestone
+
+Traced the original card deck, scoring, deadline, numeric settings and checkpoint validation through covered clue-giver handoffs, turn transitions, catalog, resume and desktop/mobile gameplay. The replay control now has a distinct label from the header reset; legacy numeric settings are restored. Cards are omitted from the rendered handoff screen, while the timer continues across reload.
+
+## Show milestone
+
+Traced original deals, simultaneous passes, chit conservation, slap ordering, point calculation, settings and checkpoints through covered handoffs, catalog/resume, pointer and keyboard pads, and desktop/mobile gameplay. Chits are removed from the interface during handoff and reload. A synchronous state reference keeps simultaneous pad presses ordered.
+
+A follow-up capability trace caught room introduction copy that still omitted Snakes & Ladders and Ludo. The room now lists both games and their player range. This was a missed consumer in the race-game trace.
+
 ## PR review correction: restored UNO setup
 
 Restored UNO checkpoints now reconcile the setup player count before a fresh deal,
@@ -127,3 +142,9 @@ including when setup preferences are missing or stale. The added cards browser
 regression restores four hands, resets the match, and verifies the new deal still
 has four players. Validation: TypeScript/production build and all seven desktop
 card browser flows passed, including real private-room reload and reconnect.
+
+## Shared cards and piles integration
+
+The original-app changes from `97216b28` share standard card rendering and deck creation between Blackjack and Crazy Eights, use a common layered pile for Blackjack, Crazy Eights, UNO, Island Charter and Business, and route race-game multiplayer dice through the existing dice utility. The new assets are included in the original service worker cache. The redesign is a separate React runtime: its Blackjack and Crazy Eights use one standard-card component and deck, while UNO keeps its own game-specific faces; all three use a shared pile component. Public discard tops are face up; hidden stock and dealer cards remain face down. No room snapshot fields or checkpoint formats change.
+
+Traced the source card and pile consumers, dice callers, service-worker assets, game-specific card views, seat projections, stock and discard counts, and local/room tests. Original desktop/mobile browser inspection covered Blackjack, Crazy Eights, UNO and Business; Island Charter's discovery pile was inspected in both layouts using a validated saved-game fixture. Island Charter and Business remain unported in the redesign, so their redesigned piles are future port work. The original suite passes 206 Node 22 and 80 Python tests; redesign browser checks include shared card faces, stock depletion, an empty pile, private handoffs, and real room recovery.

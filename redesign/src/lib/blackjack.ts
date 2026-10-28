@@ -1,25 +1,8 @@
-import { shuffle } from './puzzles.ts';
+import { SUITS, RANKS, shuffledDeck } from './playing-cards.ts';
+import type { Card } from './playing-cards.ts';
 import type { Random } from './puzzles.ts';
-export const SUITS = ['♠', '♥', '♦', '♣'] as const;
-export const RANKS = [
-  'A',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  'J',
-  'Q',
-  'K',
-] as const;
-export interface Card {
-  suit: (typeof SUITS)[number];
-  rank: (typeof RANKS)[number];
-}
+export { SUITS, RANKS, shuffledDeck } from './playing-cards.ts';
+export type { Card } from './playing-cards.ts';
 export interface BlackjackState {
   deck: Card[];
   dealer: Card[];
@@ -29,12 +12,6 @@ export interface BlackjackState {
   round: number;
   record: { wins: number; losses: number; pushes: number; net: number };
   message: string;
-}
-export function shuffledDeck(random: Random = Math.random): Card[] {
-  return shuffle(
-    SUITS.flatMap((suit) => RANKS.map((rank) => ({ suit, rank }))),
-    random,
-  );
 }
 export function handValue(cards: Card[]): { total: number; soft: boolean } {
   let total = 0,
