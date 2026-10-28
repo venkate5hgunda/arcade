@@ -1,4 +1,6 @@
-import type { Card } from './blackjack.ts';
+import { shuffledDeck, SUITS, RANKS } from './playing-cards.ts';
+export { SUITS } from './playing-cards.ts';
+import type { Card } from './playing-cards.ts';
 import type { Random } from './puzzles.ts';
 export type { Card };
 export interface EightState {
@@ -42,31 +44,7 @@ export interface UnoState {
 export type UnoAction =
   | { type: 'play'; id: number; color?: UnoCard['color'] }
   | { type: 'draw' | 'pass' | 'uno' | 'catch' | 'accept' | 'challenge' };
-export const SUITS: Card['suit'][] = ['♠', '♥', '♦', '♣'];
-const RANKS: Card['rank'][] = [
-  'A',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  'J',
-  'Q',
-  'K',
-];
-
-export function eightDeck(random: Random = Math.random): Card[] {
-  const cards = SUITS.flatMap((suit) => RANKS.map((rank) => ({ suit, rank })));
-  for (let i = cards.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [cards[i], cards[j]] = [cards[j], cards[i]];
-  }
-  return cards;
-}
+export const eightDeck = shuffledDeck;
 
 export function canPlay(card: Card, top: Card, activeSuit: Card['suit']) {
   return (
