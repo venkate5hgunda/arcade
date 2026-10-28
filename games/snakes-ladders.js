@@ -3,7 +3,7 @@
 
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { nextPlayer } from '../js/game-utils.js';
-import { dieMarkup, pauseAfterRoll, rollDie } from '../js/dice.js';
+import { dieMarkup, pauseAfterRoll, rollDie, rollDiceValues } from '../js/dice.js';
 import { boardArt, createBoardLayout, ladderTravelPoints, snakeTravelPoints, squareCenter } from '../js/snakes-board.js';
 import { decorateBoardToken, travelBoardToken } from '../js/board-tokens.js';
 import { remoteMatch, seat } from '../js/remote-match.js';
@@ -349,7 +349,7 @@ export default {
           typeof event.action.seed === 'string' && event.action.seed.length <= 48) reset(event.action.seed);
       if (event.action?.type === 'request-roll' && match.role === 'host' &&
           event.from === match.activeGame.playerIds[current] && !rolling && !gameOver)
-        match.sendAction({ type: 'roll', value: 1 + Math.floor(Math.random() * 6) });
+        match.sendAction({ type: 'roll', value: rollDiceValues(1)[0] });
       if (event.action?.type === 'roll' && event.from === match.activeGame.playerIds[0] &&
           current < playerCount && Number.isInteger(event.action.value) && event.action.value >= 1 &&
           event.action.value <= 6 && !gameOver) {
