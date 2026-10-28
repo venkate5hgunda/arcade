@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { feedback } from '../lib/feedback.ts';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { canvasPoint, clamp, fixedStepper } from '../lib/discs.ts';
 import {
@@ -237,6 +238,7 @@ function PoolTable({
         start: { x: number; y: number };
         pull: boolean;
       } | null = null;
+    let lastImpact = 0;
     const save = () => {
       if (w.winner === null && !w.rolling) session.save(snapshotPool(w));
     };
@@ -248,14 +250,22 @@ function PoolTable({
       if (w.rolling || w.winner !== null) return;
       save();
       if (shootPool(w)) {
+        feedback.audio.impact(w.state.power);
         setRolling(true);
         onMessage('Balls in motion…');
       }
     };
     shootRef.current = shoot;
     const stepper = fixedStepper((dt) => {
-      const text = stepPool(w, dt);
+      const text = stepPool(w, dt, (force) => {
+        const now = performance.now();
+        if (force > 50 && now - lastImpact > 70) {
+          lastImpact = now;
+          feedback.audio.impact(Math.min(1, force / 800));
+        }
+      });
       if (text !== null) {
+        if (w.winner !== null) feedback.win();
         setRolling(false);
         onMessage(text);
         onChange({ ...snapshotPool(w), message: text });

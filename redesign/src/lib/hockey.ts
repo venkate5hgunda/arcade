@@ -150,6 +150,7 @@ export function hockeyStep(
   w: HockeyWorld,
   dt: number,
   desired: [{ x: number; y: number }, { x: number; y: number }],
+  onImpact?: (force: number) => void,
 ): number | null {
   if (w.winner !== null) return null;
   w.paddles.forEach((p, i) =>
@@ -172,8 +173,9 @@ export function hockeyStep(
     bounds: { left: 23, right: 577, top: -10000, bottom: 10000 },
     friction: 190,
     restitution: 0.93,
-    onCollision(a, b) {
+    onCollision(a, b, force) {
       if (a === w.puck || b === w.puck) {
+        onImpact?.(force);
         const speed = Math.hypot(w.puck.vx, w.puck.vy);
         if (speed > 1050) {
           w.puck.vx *= 1050 / speed;

@@ -13,6 +13,7 @@ import {
 import type { HockeyState, HockeyWorld } from '../lib/hockey.ts';
 import { createGameSession } from '../lib/session.ts';
 import { names as readNames } from '../lib/profile.ts';
+import { feedback } from '../lib/feedback.ts';
 export function HockeyGame() {
   const run = useRun<HockeyState>(
     'air-hockey',
@@ -203,6 +204,7 @@ function HockeyArena({
     let raf = 0,
       lastSave = 0,
       disposed = false;
+    let lastImpact = 0;
     const save = () => {
       if (w.winner === null && canSave()) session.save(snapshotHockey(w));
     };
@@ -228,8 +230,18 @@ function HockeyArena({
       }) as [{ x: number; y: number }, { x: number; y: number }];
       const before = w.openingFaceoff,
         waiting = w.waitingFor,
-        scorer = hockeyStep(w, dt, desired);
+        scorer = hockeyStep(w, dt, desired, (force) => {
+          const now = performance.now();
+          if (force > 50 && now - lastImpact > 70) {
+            lastImpact = now;
+            feedback.audio.impact(Math.min(1, force / 800));
+          }
+        });
       if (scorer !== null) {
+        if (w.winner === null) {
+          feedback.audio.goal();
+          feedback.vibrate('success');
+        } else feedback.win();
         onStatus(
           w.winner === null
             ? `Player ${scorer + 1} scores! · Player ${w.waitingFor! + 1} serves`

@@ -17,6 +17,7 @@ import type {
   IslandState,
 } from '../lib/catan-core.js';
 import { names as readNames } from '../lib/profile.ts';
+import { feedback } from '../lib/feedback.ts';
 
 export function IslandGame() {
   const [options, setOptions] = useState<BoardOptions>({
@@ -84,6 +85,7 @@ export function IslandGame() {
       return;
     }
     setError('');
+    if (next.winner !== null && state.winner === null) feedback.win();
     const after = nextSeat(next);
     if (
       next.winner === null &&

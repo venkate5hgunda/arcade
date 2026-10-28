@@ -83,6 +83,20 @@ test('a legal and early 8-ball shot complete through the physical solver', () =>
     assert.equal(w.balls.find((b) => b.number === 8)?.pocketed, true);
   }
 });
+test('pool collision reports impact without changing the shot', () => {
+  const initial = newPool('1'),
+    a = worldPool(initial),
+    b = worldPool(structuredClone(initial));
+  assert.ok(shootPool(a));
+  assert.ok(shootPool(b));
+  const forces: number[] = [];
+  for (let i = 0; i < 3000 && a.rolling; i++) {
+    stepPool(a, 1 / 120, (force) => forces.push(force));
+    stepPool(b, 1 / 120);
+  }
+  assert.ok(forces.some((n) => n > 0));
+  assert.deepEqual(a, b);
+});
 test('scratch, group assignment, wrong-first-ball and turn retention match house rules', () => {
   const w = worldPool(newPool('1'));
   w.shot = {

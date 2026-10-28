@@ -1,5 +1,6 @@
 import { BusinessGame } from './Business.tsx';
 import { IslandGame } from './Island.tsx';
+import { feedback } from '../lib/feedback.ts';
 import { MafiaGame } from './Mafia.tsx';
 import { PoolGame } from './Pool.tsx';
 import { HockeyGame } from './Hockey.tsx';
@@ -69,6 +70,7 @@ function LocalGame() {
     setState(next);
     if (next.over) {
       session.finish();
+      feedback.win();
       if (findWin(next.board))
         setScores(
           recordWin(

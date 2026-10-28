@@ -86,3 +86,23 @@ test('opening, both goals, receiving serves and finished session follow the prod
   assert.equal(w.winner, 0);
   assert.equal(validCheckpoint('air-hockey', snapshotHockey(w)), false);
 });
+
+test('hockey collision reports impact without changing the physical result', () => {
+  const a = worldHockey(newHockey(5)),
+    b = worldHockey(newHockey(5));
+  for (const w of [a, b]) {
+    w.openingFaceoff = false;
+    w.puck.x = w.paddles[0].x;
+    w.puck.y = w.paddles[0].y - 50;
+    w.puck.vy = 400;
+  }
+  const forces: number[] = [];
+  const idle = [
+    { x: 0, y: 0 },
+    { x: 0, y: 0 },
+  ] as [{ x: number; y: number }, { x: number; y: number }];
+  hockeyStep(a, 1 / 120, idle, (force) => forces.push(force));
+  hockeyStep(b, 1 / 120, idle);
+  assert.ok(forces.some((n) => n > 0));
+  assert.deepEqual(a, b);
+});

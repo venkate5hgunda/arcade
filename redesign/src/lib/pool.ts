@@ -252,14 +252,19 @@ export function finishPoolShot(w: PoolWorld): string {
       ? 'Pocketed your ball — shoot again!'
       : 'Turn passes.';
 }
-export function stepPool(w: PoolWorld, dt: number): string | null {
+export function stepPool(
+  w: PoolWorld,
+  dt: number,
+  onImpact?: (force: number) => void,
+): string | null {
   if (!w.rolling || !w.shot) return null;
   stepDiscs(w.balls, dt, {
     bounds: TABLE,
     pockets: POCKETS,
     friction: 175,
     restitution: 0.92,
-    onCollision(a, b) {
+    onCollision(a, b, force) {
+      onImpact?.(force);
       if (!w.shot!.firstHit && (a.number === 0 || b.number === 0))
         w.shot!.firstHit = a.number === 0 ? b.number : a.number;
     },

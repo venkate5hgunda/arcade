@@ -1,4 +1,6 @@
 import { GameArt } from './components/GameArt.tsx';
+import { FeedbackControl } from './components/FeedbackControl.tsx';
+import { feedback } from './lib/feedback.ts';
 import { useEffect, useState } from 'react';
 import {
   HashRouter,
@@ -315,6 +317,33 @@ function Shell() {
     [],
   );
   useEffect(() => {
+    const pointer = (event: PointerEvent) => {
+      void feedback.audio.prepare();
+      if (
+        event.target instanceof Element &&
+        event.target.closest('main button:not(:disabled), main [role="button"]')
+      ) {
+        feedback.audio.tone(720, 0.025, 'sine', 0.07);
+        if (event.pointerType !== 'mouse') feedback.vibrate('light');
+      }
+    };
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.repeat || !['Enter', ' '].includes(event.key)) return;
+      void feedback.audio.prepare();
+      if (
+        event.target instanceof Element &&
+        event.target.closest('main button:not(:disabled), main [role="button"]')
+      )
+        feedback.audio.tone(720, 0.025, 'sine', 0.07);
+    };
+    document.addEventListener('pointerdown', pointer, true);
+    document.addEventListener('keydown', keyboard, true);
+    return () => {
+      document.removeEventListener('pointerdown', pointer, true);
+      document.removeEventListener('keydown', keyboard, true);
+    };
+  }, []);
+  useEffect(() => {
     const media = window.matchMedia?.('(prefers-color-scheme: dark)');
     const apply = () => {
       const active =
@@ -392,6 +421,7 @@ function Shell() {
             <Icon name="users" />
             Room
           </Link>
+          <FeedbackControl />
           <button
             className="icon-button"
             aria-label={`Theme: ${theme}. Select ${theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'}`}

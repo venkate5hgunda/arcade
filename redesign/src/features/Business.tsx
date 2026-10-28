@@ -18,6 +18,7 @@ import type {
 import { businessResponder, validBusinessMove } from '../lib/business.ts';
 import { names as readNames } from '../lib/profile.ts';
 import { KEYS, loadJSON, saveJSON } from '../lib/storage.ts';
+import { feedback } from '../lib/feedback.ts';
 export function BusinessGame() {
   const raw = loadJSON<unknown>(`${KEYS.SETTINGS}:business`, {}),
     saved =
@@ -83,6 +84,7 @@ export function BusinessGame() {
         next = actBusiness(s, move, viewer),
         after = businessResponder(next);
       setError('');
+      if (next.phase === 'win' && s.phase !== 'win') feedback.win();
       if (
         next.phase !== 'win' &&
         after !== viewer &&
