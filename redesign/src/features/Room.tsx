@@ -1,3 +1,7 @@
+import { BusinessTable } from '../components/BusinessTable.tsx';
+import { BusinessOptionsForm } from '../components/BusinessOptions.tsx';
+import { DEFAULT_OPTIONS } from '../lib/business-core.js';
+import type { BusinessOptions } from '../lib/business-core.js';
 import { MafiaTable } from '../components/MafiaTable.tsx';
 import { ChessBoard } from '../components/ChessBoard.tsx';
 import { chessResult } from '../lib/chess.ts';
@@ -19,10 +23,17 @@ export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
   const [gameId, setGameId] = useState<RoomGameId>(() =>
-    new URLSearchParams(location.search).get('game') === 'mafia'
-      ? 'mafia'
+    ['mafia', 'business'].includes(
+      new URLSearchParams(location.search).get('game') ?? '',
+    )
+      ? (new URLSearchParams(location.search).get('game') as
+          | 'mafia'
+          | 'business')
       : 'tictactoe',
   );
+  const [businessOptions, setBusinessOptions] = useState<BusinessOptions>({
+    ...DEFAULT_OPTIONS,
+  });
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
     location.search.includes('invite=') ? window.location.href : '',
@@ -51,12 +62,16 @@ export function RoomPage({ room }: { room: Room }) {
   const rps = s?.rpsMatch;
   const chess = s?.chessMatch;
   const mafia = s?.mafiaMatch;
+  const business = s?.businessMatch;
   const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
-    ((s.members.length > 4 && !['uno', 'mafia'].includes(gameId)) ||
+    ((s.members.length > 4 && !['uno', 'mafia', 'business'].includes(gameId)) ||
+      (s.members.length > 6 && gameId === 'business') ||
       (s.members.length > 2 &&
-        !['uno', 'mafia', 'snakes-ladders', 'ludo'].includes(gameId)))
+        !['uno', 'mafia', 'business', 'snakes-ladders', 'ludo'].includes(
+          gameId,
+        )))
       ? 'uno'
       : gameId;
   const gameName = (id: string) => GAMES.find((g) => g.id === id)!.name;
@@ -100,8 +115,9 @@ export function RoomPage({ room }: { room: Room }) {
       <h1>Your private table</h1>
       <p className="lede">
         Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-        UNO-inspired, Snakes & Ladders, Ludo, Chess, Mafia or Rock Paper
-        Scissors. UNO welcomes 2–20 players, Mafia 5–10, and race games 2–4.
+        UNO-inspired, Snakes & Ladders, Ludo, Chess, Business, Mafia or Rock
+        Paper Scissors. UNO welcomes 2–20 players, Mafia 5–10, Business 2–6, and
+        race games 2–4.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -158,7 +174,9 @@ export function RoomPage({ room }: { room: Room }) {
         <>
           <details
             className="room-roster-details"
-            open={!match && !cards && !race && !rps && !chess && !mafia}
+            open={
+              !match && !cards && !race && !rps && !chess && !mafia && !business
+            }
           >
             <summary>Room players ({s?.members.length ?? 0})</summary>
             <div className="room-roster" aria-label="Room players">
@@ -177,7 +195,7 @@ export function RoomPage({ room }: { room: Room }) {
                       ? index === 0
                         ? 'R'
                         : 'G'
-                      : cards || race || rps || chess || mafia
+                      : cards || race || rps || chess || mafia || business
                         ? String(index + 1)
                         : index === 0
                           ? 'X'
@@ -303,6 +321,7 @@ export function RoomPage({ room }: { room: Room }) {
             !rps &&
             !chess &&
             !mafia &&
+            !business &&
             room.role === 'host' &&
             s &&
             s.members.length < 20 &&
@@ -323,6 +342,7 @@ export function RoomPage({ room }: { room: Room }) {
             !rps &&
             !chess &&
             !mafia &&
+            !business &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
                 <h2>Everyone’s here.</h2>
@@ -386,6 +406,12 @@ export function RoomPage({ room }: { room: Room }) {
                       >
                         Mafia
                       </option>
+                      <option
+                        disabled={(s?.members.length ?? 0) > 6}
+                        value="business"
+                      >
+                        Business
+                      </option>
                       <option value="uno">UNO-inspired</option>
                     </select>
                   </label>
@@ -395,6 +421,15 @@ export function RoomPage({ room }: { room: Room }) {
                     ? 'Your table is ready for a little friendly competition.'
                     : 'Waiting for the host to choose and start a game.'}
                 </p>
+                {room.role === 'host' && selectedGame === 'business' && (
+                  <details>
+                    <summary>Business house rules</summary>
+                    <BusinessOptionsForm
+                      options={businessOptions}
+                      onChange={setBusinessOptions}
+                    />
+                  </details>
+                )}
                 {room.role === 'host' &&
                   selectedGame === 'mafia' &&
                   (s?.members.length ?? 0) < 5 && (
@@ -408,7 +443,14 @@ export function RoomPage({ room }: { room: Room }) {
                       ((s?.members.length ?? 0) < 5 ||
                         (s?.members.length ?? 0) > 10)
                     }
-                    onClick={() => room.start(selectedGame)}
+                    onClick={() =>
+                      room.start(
+                        selectedGame,
+                        selectedGame === 'business'
+                          ? businessOptions
+                          : undefined,
+                      )
+                    }
                   >
                     Start {gameName(selectedGame)}
                   </button>
@@ -649,6 +691,44 @@ export function RoomPage({ room }: { room: Room }) {
                 ))}
             </div>
           )}
+          {business && s && (
+            <>
+              <BusinessTable
+                view={business.view}
+                seat={seat}
+                names={s.members.map((m) => m.name)}
+                blocked={
+                  !s.members.every(
+                    (m, i) => m.connected || business.view.players[i].out,
+                  )
+                }
+                onAction={(action) => room.businessAction(action)}
+                error={message || room.issue}
+              />
+              {business.view.phase === 'win' && (
+                <div className="board-panel">
+                  <div className="score-line">
+                    {s.members.map((member, i) => (
+                      <span key={member.id}>
+                        {member.name} <strong>{s.wins[i]} wins</strong>
+                      </span>
+                    ))}
+                  </div>
+                  {room.role === 'host' ? (
+                    <button
+                      className="primary"
+                      disabled={!connected}
+                      onClick={() => room.start()}
+                    >
+                      Play again
+                    </button>
+                  ) : (
+                    <p>Waiting for the host to start the next round.</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {mafia && s && (
             <MafiaTable
               view={mafia.view}
@@ -782,7 +862,7 @@ export function RoomPage({ room }: { room: Room }) {
         <p role="status">Preparing your connection link… Keep this tab open.</p>
       )}
       <p className="room-status" role="status">
-        {!mafia && (message || room.issue)}
+        {!mafia && !business && (message || room.issue)}
       </p>
     </section>
   );

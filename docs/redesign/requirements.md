@@ -23,7 +23,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
 | [G08](#g08) | Ludo | Board | Implemented |
 | [G09](#g09) | Island Charter | Board | Planned |
-| [G10](#g10) | Business | Board | Planned |
+| [G10](#g10) | Business | Board | Implemented |
 | [G11](#g11) | Chess | Board | Implemented |
 | [G12](#g12) | Imposter | Party | Implemented |
 | [G13](#g13) | Mafia | Party | Implemented |
@@ -263,7 +263,7 @@ Baseline tests: [test/catan.test.js](../../test/catan.test.js).
 
 ## G10
 
-**Business** · Board · Planned
+**Business** · Board · Implemented
 
 - Two to six local/room players; Indian-city property board, buying, auctions, rent ladders, even building, mortgages, jail, cards, trades, debt and bankruptcy.
 - Inspect any deed; primary decisions precede scrollable board; non-turn auction/trade responses are authorized; preserve private deck and round/revision checks.
@@ -272,6 +272,8 @@ Baseline tests: [test/catan.test.js](../../test/catan.test.js).
 Sources: [games/business.js](../../games/business.js), [js/game-catalog.js](../../js/game-catalog.js), [docs/games.md](../../docs/games.md).
 
 Baseline tests: [test/business.test.js](../../test/business.test.js).
+
+Implementation evidence: [Business engine comparison](../../redesign/checks/unit/business.check.ts), [room protocol](../../redesign/checks/unit/room.check.ts), and [desktop/mobile gameplay](../../redesign/checks/browser/business.spec.ts). Broader physical-device and cross-network qualification remains a release gate.
 
 ## G11
 

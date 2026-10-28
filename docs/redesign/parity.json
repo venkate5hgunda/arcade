@@ -391,7 +391,7 @@
       "id": "G10",
       "title": "Business",
       "category": "Board",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/business.js",
         "js/game-catalog.js",
@@ -404,6 +404,11 @@
       ],
       "baselineTests": [
         "test/business.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/business.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/business.spec.ts"
       ]
     },
     {

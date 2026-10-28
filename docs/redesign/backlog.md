@@ -35,7 +35,8 @@ reference; the redesign builds clean, typed equivalents.
 - [x] **Remaining cards (G17–G18):** Crazy Eights and UNO-inspired, native covered local play and private rooms, full baseline rules, 2–20-player UNO, recovery and replay.
 - [x] **Race board games (G07–G08):** Snakes & Ladders and Ludo, with 2–4-player local/room play and recovery.
 - [x] **Chess (G11):** full rules, local/computer modes, promotion recovery, native accessible board and authoritative two-browser rooms.
-- [ ] **Remaining board:** Island Charter, Business.
+- [x] **Business (G10):** local and private-room property trading, auctions, debt and recovery.
+- [ ] **Remaining board:** Island Charter.
 - [x] **Whack-a-Mole (G06):** timed targets, scoring and absolute-deadline recovery.
 - [x] **Air Hockey (G04):** native two-player table, fixed-step collisions, touch/keyboard controls, serving and recovery.
 - [x] **8-Ball Pool (G05):** native table, physical shots, house rules, inspection and stable-table recovery.
@@ -54,8 +55,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **More games (G04–G05, G09–G15).** Port the remaining 2 catalog
-      entries in coherent families (Board, Action, Party, then Word). Each reuses the shared catalog, setup, turn banner, persistence and
+- [ ] **Island Charter (G09).** Port the remaining catalog entry. Reuse the shared catalog, setup, turn banner, persistence and
       (where room-supported) room layer. Preserve per-game rules, options and
       transitions from the cited `games/*.js` module; add a complete behavior
       test per game before flipping its parity status to `implemented`.

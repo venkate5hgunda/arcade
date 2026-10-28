@@ -105,15 +105,17 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <span>
                     <b>Private room</b>
                     <small>
-                      {game.id === 'mafia'
-                        ? '5–10 players, private roles'
-                        : game.id === 'uno'
-                          ? '2–20 players, private hands'
-                          : ['snakes-ladders', 'ludo'].includes(game.id)
-                            ? '2–4 players, 2–4 screens'
-                            : game.id === 'crazy-eights'
-                              ? '2 players, private hands'
-                              : '2 players, 2 screens'}
+                      {game.id === 'business'
+                        ? '2–6 players, private decks'
+                        : game.id === 'mafia'
+                          ? '5–10 players, private roles'
+                          : game.id === 'uno'
+                            ? '2–20 players, private hands'
+                            : ['snakes-ladders', 'ludo'].includes(game.id)
+                              ? '2–4 players, 2–4 screens'
+                              : game.id === 'crazy-eights'
+                                ? '2 players, private hands'
+                                : '2 players, 2 screens'}
                     </small>
                   </span>
                 </span>

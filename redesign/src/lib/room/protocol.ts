@@ -1,4 +1,16 @@
 import {
+  createBusiness,
+  publicBusiness,
+  validBusiness,
+  actBusiness,
+} from '../business-core.js';
+import type {
+  BusinessState,
+  BusinessPublic,
+  BusinessOptions,
+} from '../business-core.js';
+import { validBusinessMove } from '../business.ts';
+import {
   newMafia,
   validMafia,
   validMafiaView,
@@ -56,17 +68,25 @@ export interface RoomSnapshot {
   rpsMatch?: RpsMatch | null;
   chessMatch?: ChessMatch | null;
   mafiaMatch?: MafiaMatch | null;
+  businessMatch?: BusinessMatch | null;
   wins: number[];
   draws: number;
 }
 export type RoomGameId =
   | 'tictactoe'
   | 'connect-four'
+  | 'business'
   | 'mafia'
   | 'chess'
   | 'rps'
   | CardGameId
   | RaceId;
+export interface BusinessMatch {
+  gameId: 'business';
+  round: number;
+  revision: number;
+  view: BusinessPublic;
+}
 export interface MafiaMatch {
   gameId: 'mafia';
   round: number;
@@ -99,7 +119,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 5;
+  version: 6;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -107,7 +127,8 @@ interface Signal {
   name: string;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v5';
+const BACKUP = 'arcade:redesign:room:v6';
+const MAFIA_BACKUP = 'arcade:redesign:room:v5';
 const DUEL_BACKUP = 'arcade:redesign:room:v4';
 const RACE_BACKUP = 'arcade:redesign:room:v3';
 const CARD_BACKUP = 'arcade:redesign:room:v2';
@@ -137,6 +158,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'rpsMatch',
         'chessMatch',
         'mafiaMatch',
+        'businessMatch',
         'wins',
         'draws',
       ].includes(k),
@@ -158,6 +180,23 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
     integer(s.draws) &&
+    (s.businessMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        !s.raceMatch &&
+        !s.rpsMatch &&
+        !s.chessMatch &&
+        !s.mafiaMatch &&
+        s.members.length >= 2 &&
+        s.members.length <= 6 &&
+        Object.keys(s.businessMatch).length === 4 &&
+        s.businessMatch.gameId === 'business' &&
+        integer(s.businessMatch.round) &&
+        integer(s.businessMatch.revision) &&
+        s.businessMatch.view?.revision === s.businessMatch.revision &&
+        validBusiness(s.businessMatch.view, s.members.length, {
+          publicView: true,
+        }))) &&
     (s.mafiaMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -273,7 +312,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 5)
+    if (s && typeof s === 'object' && s.version !== 6)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -320,6 +359,7 @@ export class Room {
   private privateGame: CardState | null = null;
   private privateRps: RpsRoomState | null = null;
   private privateMafia: MafiaState | null = null;
+  private privateBusiness: BusinessState | null = null;
   private rpsTimer?: ReturnType<typeof setTimeout>;
   constructor(
     private factory: ConnectionFactory = webrtcConnectionFactory,
@@ -346,6 +386,7 @@ export class Room {
           privateGame: this.privateGame,
           privateRps: this.privateRps,
           privateMafia: this.privateMafia,
+          privateBusiness: this.privateBusiness,
         }),
       );
     } catch {
@@ -357,6 +398,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(MAFIA_BACKUP) ??
           sessionStorage.getItem(DUEL_BACKUP) ??
           sessionStorage.getItem(RACE_BACKUP) ??
           sessionStorage.getItem(CARD_BACKUP) ??
@@ -390,6 +432,16 @@ export class Room {
             JSON.stringify(snapshot.mafiaMatch.view))
       )
         return;
+      if (
+        snapshot.businessMatch &&
+        (!validBusiness(saved?.privateBusiness, snapshot.members.length) ||
+          JSON.stringify(publicBusiness(saved.privateBusiness)) !==
+            JSON.stringify(snapshot.businessMatch.view))
+      )
+        return;
+      this.privateBusiness = snapshot.businessMatch
+        ? structuredClone(saved.privateBusiness)
+        : null;
       this.privateMafia = snapshot.mafiaMatch
         ? structuredClone(saved.privateMafia)
         : null;
@@ -513,7 +565,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 5,
+        version: 6,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -551,7 +603,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 5 ||
+      m.version !== 6 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -572,6 +624,8 @@ export class Room {
         this.commitMove(peer.id, m.cell, m.round, m.revision);
       else if (m.type === 'card-action' && peer.accepted)
         this.commitCard(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'business-action' && peer.accepted)
+        this.commitBusiness(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'mafia-action' && peer.accepted)
         this.commitMafia(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'chess-action' && peer.accepted)
@@ -624,6 +678,7 @@ export class Room {
       )
         throw new Error();
       const previous =
+          this.snapshot.businessMatch ??
           this.snapshot.mafiaMatch ??
           this.snapshot.chessMatch ??
           this.snapshot.rpsMatch ??
@@ -631,6 +686,7 @@ export class Room {
           this.snapshot.cardMatch ??
           this.snapshot.match,
         next =
+          (m.snapshot as RoomSnapshot).businessMatch ??
           (m.snapshot as RoomSnapshot).mafiaMatch ??
           (m.snapshot as RoomSnapshot).chessMatch ??
           (m.snapshot as RoomSnapshot).rpsMatch ??
@@ -673,7 +729,8 @@ export class Room {
           this.snapshot.raceMatch ||
           this.snapshot.rpsMatch ||
           this.snapshot.chessMatch ||
-          this.snapshot.mafiaMatch) &&
+          this.snapshot.mafiaMatch ||
+          this.snapshot.businessMatch) &&
         this.snapshot.members.length === 2
           ? this.snapshot.members[1]
           : undefined));
@@ -686,7 +743,8 @@ export class Room {
         this.snapshot.raceMatch ||
         this.snapshot.rpsMatch ||
         this.snapshot.chessMatch ||
-        this.snapshot.mafiaMatch)
+        this.snapshot.mafiaMatch ||
+        this.snapshot.businessMatch)
     )
       throw new Error('Reconnect an existing seat during a match.');
     if (!existing && this.snapshot.members.length >= 20)
@@ -713,7 +771,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 5,
+        version: 6,
         kind: 'offer',
         roomId: this.snapshot.roomId,
         host: this.peerId,
@@ -798,6 +856,7 @@ export class Room {
         this.snapshot.rpsMatch ||
         this.snapshot.chessMatch ||
         this.snapshot.mafiaMatch ||
+        this.snapshot.businessMatch ||
         this.snapshot.members.length >= 20)
     )
       throw new Error(
@@ -827,13 +886,15 @@ export class Room {
     this.emit();
   }
   start(
-    gameId: RoomGameId = this.snapshot?.mafiaMatch?.gameId ??
+    gameId: RoomGameId = this.snapshot?.businessMatch?.gameId ??
+      this.snapshot?.mafiaMatch?.gameId ??
       this.snapshot?.chessMatch?.gameId ??
       this.snapshot?.rpsMatch?.gameId ??
       this.snapshot?.raceMatch?.gameId ??
       this.snapshot?.cardMatch?.gameId ??
       this.snapshot?.match?.gameId ??
       'tictactoe',
+    options?: Partial<BusinessOptions>,
   ) {
     const s = this.snapshot;
     if (
@@ -845,6 +906,7 @@ export class Room {
       throw new Error('Wait for all players to connect.');
     if (
       ![
+        'business',
         'mafia',
         'chess',
         'rps',
@@ -859,12 +921,22 @@ export class Room {
         gameId,
       ) &&
         s.members.length !== 2) ||
+      (gameId === 'business' && s.members.length > 6) ||
       (gameId === 'mafia' && (s.members.length < 5 || s.members.length > 10)) ||
       (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
     )
       throw new Error('Choose a game that supports this number of players.');
+    const nextBusiness =
+      gameId === 'business'
+        ? createBusiness(
+            s.members.length,
+            options ?? s.businessMatch?.view.options ?? {},
+            () => crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000,
+          )
+        : null;
     const round =
-      (s.mafiaMatch?.round ??
+      (s.businessMatch?.round ??
+        s.mafiaMatch?.round ??
         s.chessMatch?.round ??
         s.rpsMatch?.round ??
         s.raceMatch?.round ??
@@ -873,10 +945,24 @@ export class Room {
         -1) + 1;
     this.privateRps = null;
     this.privateMafia = null;
+    this.privateBusiness = null;
+    s.businessMatch = null;
     s.mafiaMatch = null;
     s.rpsMatch = null;
     s.chessMatch = null;
-    if (gameId === 'mafia') {
+    if (gameId === 'business') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      this.privateBusiness = nextBusiness!;
+      s.businessMatch = {
+        gameId: 'business',
+        round,
+        revision: 0,
+        view: publicBusiness(this.privateBusiness),
+      };
+    } else if (gameId === 'mafia') {
       this.privateGame = null;
       s.match = null;
       s.cardMatch = null;
@@ -1098,6 +1184,99 @@ export class Room {
     match.revision++;
     if (next.state.winner != null) room.wins[next.state.winner]++;
     this.publish();
+  }
+  businessAction(action: unknown) {
+    const s = this.snapshot?.businessMatch;
+    if (!s) return;
+    if (this.role === 'host')
+      this.commitBusiness(this.peerId, action, s.round, s.revision);
+    else {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'business-action',
+            action,
+            round: s.round,
+            revision: s.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private businessError(sender: string, message: string) {
+    if (sender === this.peerId) {
+      this.issue = message;
+      this.emit();
+      return;
+    }
+    const peer = this.peers.get(sender);
+    if (peer?.accepted && peer.channel?.readyState === 'open')
+      this.send({ type: 'business-error', message }, peer);
+  }
+  private commitBusiness(
+    sender: string,
+    action: unknown,
+    round: number,
+    revision: number,
+  ) {
+    const room = this.snapshot,
+      match = room?.businessMatch,
+      state = this.privateBusiness;
+    if (
+      !room ||
+      !match ||
+      !state ||
+      match.round !== round ||
+      match.revision !== revision
+    ) {
+      if (room) {
+        this.publish();
+        this.businessError(sender, 'That turn has passed. Choose again.');
+      }
+      return;
+    }
+    const seat = room.members.findIndex((m) => m.id === sender);
+    if (
+      seat < 0 ||
+      !room.members[seat].connected ||
+      !room.members.every((m, i) => m.connected || state.players[i].out) ||
+      !validBusinessMove(action)
+    )
+      return;
+    try {
+      const random = () =>
+        crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
+      const next = actBusiness(
+        state,
+        action.type === 'roll'
+          ? {
+              ...action,
+              dice: [
+                1 + Math.floor(random() * 6),
+                1 + Math.floor(random() * 6),
+              ],
+            }
+          : action,
+        seat,
+        random,
+      );
+      this.privateBusiness = next;
+      match.revision = next.revision;
+      match.view = publicBusiness(next);
+      if (next.phase === 'win' && state.phase !== 'win')
+        for (const winner of next.winners ?? []) room.wins[winner]++;
+      this.issue = '';
+      this.publish();
+    } catch (error) {
+      this.publish();
+      this.businessError(
+        sender,
+        error instanceof Error
+          ? error.message.slice(0, 200)
+          : 'That action is unavailable.',
+      );
+    }
   }
   mafiaAction(action: unknown) {
     const s = this.snapshot?.mafiaMatch;
@@ -1353,6 +1532,7 @@ export class Room {
     clearTimeout(this.rpsTimer);
     this.privateRps = null;
     this.privateMafia = null;
+    this.privateBusiness = null;
     this.disconnectTransport();
     this.role = null;
     this.peerId = '';
@@ -1362,6 +1542,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(MAFIA_BACKUP);
       sessionStorage.removeItem(DUEL_BACKUP);
       sessionStorage.removeItem(RACE_BACKUP);
       sessionStorage.removeItem(CARD_BACKUP);

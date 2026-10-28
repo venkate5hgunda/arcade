@@ -5,7 +5,7 @@ export function CardPile({
   label,
   children,
 }: {
-  count: number;
+  count: number | null;
   label: string;
   children?: ReactNode;
 }) {
@@ -13,7 +13,11 @@ export function CardPile({
     <span
       className={`card-pile ${count === 0 ? 'empty' : count === 1 ? 'single' : ''}`}
       role="img"
-      aria-label={`${label}, ${count} ${count === 1 ? 'card' : 'cards'}`}
+      aria-label={
+        count === null
+          ? `${label}, cards face down`
+          : `${label}, ${count} ${count === 1 ? 'card' : 'cards'}`
+      }
     >
       {count === 0 ? (
         <span className="card-pile-empty" aria-hidden="true">

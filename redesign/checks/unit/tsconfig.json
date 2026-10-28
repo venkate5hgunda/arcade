@@ -7,5 +7,5 @@
     "noEmitOnError": true,
     "rewriteRelativeImportExtensions": true
   },
-  "include": ["../../src/lib/**/*.ts", "./*.check.ts"]
+  "include": ["../../src/lib/**/*.ts", "./*.check.ts", "../../src/lib/**/*.js"]
 }

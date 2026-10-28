@@ -75,3 +75,7 @@ Chess adds authoritative legal moves, promotions and result accounting; Rock Pap
 ### Mafia private-room protocol update
 
 Mafia adds host-held roles/actions and seat-specific projections in protocol v5. Fresh connections reject older peers; valid v1–v4 host backups restore into fresh v5 invitations. Unlike other games, the host may explicitly mark a disconnected pending Mafia seat absent for the current phase, matching the original game. No merge or production deployment is implied.
+
+### Business room protocol update
+
+Business adds host-held decks and authoritative dice in protocol v6. Fresh connections reject older peers; valid v1–v5 host backups restore into fresh v6 invitations. For this complex ruleset, the native React application uses a local copy of the original pure JavaScript engine through a typed interface, rather than translating its internals to TypeScript as earlier game ports did. This preserves the established rules and checkpoint shapes while retaining the isolated runtime, native controls and strict room authority boundaries. The original renderer is not used. No merge or deployment is implied.
