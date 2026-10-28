@@ -1,3 +1,4 @@
+import { HockeyGame } from './Hockey.tsx';
 import { ImposterGame } from './Imposter.tsx';
 import { CharadesGame } from './Charades.tsx';
 import { ChessGame } from './Chess.tsx';
@@ -337,6 +338,7 @@ export function GameRoute() {
     return <RacesGame id={game.id} key={game.id} />;
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
+  if (game.id === 'air-hockey') return <HockeyGame key={game.id} />;
   if (game.id === 'imposter') return <ImposterGame key={game.id} />;
   if (game.id === 'dumb-charades') return <CharadesGame key={game.id} />;
   if (game.id === 'chess') return <ChessGame key={game.id} />;

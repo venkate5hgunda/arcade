@@ -17,7 +17,7 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G01](#g01) | Show | Party | Implemented |
 | [G02](#g02) | Taboo | Party | Implemented |
 | [G03](#g03) | Wordle | Word | Implemented |
-| [G04](#g04) | Air Hockey | Action | Planned |
+| [G04](#g04) | Air Hockey | Action | Implemented |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
 | [G06](#g06) | Whack-a-Mole | Action | Implemented |
 | [G07](#g07) | Snakes & Ladders | Board | Implemented |
@@ -195,7 +195,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G04
 
-**Air Hockey** · Action · Planned
+**Air Hockey** · Action · Implemented
 
 - Two-player paddle/puck controls; fixed-step collisions, drag, rebounds and goals; opening puck waits at center and post-goal serve waits on conceding half.
 - Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline.

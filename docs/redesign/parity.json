@@ -264,7 +264,7 @@
       "id": "G04",
       "title": "Air Hockey",
       "category": "Action",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/air-hockey.js",
         "js/game-catalog.js",
@@ -276,6 +276,10 @@
       ],
       "baselineTests": [
         "test/air-hockey.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/hockey.check.ts",
+        "redesign/checks/browser/hockey.spec.ts"
       ]
     },
     {

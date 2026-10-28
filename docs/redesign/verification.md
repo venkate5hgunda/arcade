@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G03, G06–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 5 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G04, G06–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 4 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -178,3 +178,9 @@ Traced every original category/word/hint/decoy, count constraint, random selecti
 The original could randomly select a single matching movie in Pair mode while another category was selected, producing an empty decoy. That was a missed choice-pool trace; the native port excludes a movie category that cannot provide a second prompt and adds a regression. Votes remain private during handoff and are saved while selected; the result shows aggregate totals as in the original. Desktop/mobile checks cover a complete win, Pair secrecy, hidden/background/reload handoffs, legacy saves and movie setup. Mobile result was inspected. Physical-device qualification and the remaining platform gates remain open.
 
 The combined party-game build passed all 126 desktop Chromium and mobile WebKit browser checks. The design inventory and 51 domain/protocol tests also pass.
+
+## Air Hockey trace
+
+Traced fixed-step physics, disc collisions, paddle acceleration and limits, opening and receiving serves, target settings, score/finish, saved puck/paddle coordinates, input ownership and teardown through the typed solver, canvas, local session and catalog/resume consumers. Direct comparisons exercise original strikes, acceleration, friction and collisions; state tests cover both goals, valid serving checkpoints and finished-state removal. The reusable typed disc solver is also available to the upcoming Pool port.
+
+Browser inspection found the initial mobile table extended below the viewport; responsive sizing and a viewport assertion correct that missed trace. A separate reset test exposed another missed trace: unmount cleanup could re-save a deliberately cleared checkpoint. Reset now suppresses that cleanup save. All eight desktop/mobile browser checks pass for keyboard and pointer movement, goals, serves, resume, replay, reset and accessibility. Multi-touch on physical devices and shared audio/haptics remain release gates.

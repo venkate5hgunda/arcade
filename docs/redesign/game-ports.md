@@ -1,13 +1,13 @@
 # Game migration status
 
-**21 of 26 games are implemented.** The remaining 5 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**22 of 26 games are implemented.** The remaining 4 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
 | Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo, Chess | Island Charter, Business |
-| Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
+| Action | Whack-a-Mole, Air Hockey | 8-Ball Pool |
 | Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter | Mafia |
 | Word | Wordle, Hangman, Word Scramble | None |
 
@@ -106,3 +106,9 @@ Evidence: `redesign/checks/unit/charades.check.ts` compares checkpoint shapes an
 Native 3–20-player Classic and Pair modes retain the original 21 word/movie categories, category/hint/team intel, one to six imposters, optional secret random counts, private card handoffs, decoy words, discussion, covered ballots, tied votes, elimination history and both win conditions. Old single-imposter checkpoints migrate; cards and ballots return covered on reload or backgrounding. Telugu movie selections share the approved catalog and year/difficulty filters.
 
 Evidence: `redesign/checks/unit/imposter.check.ts` compares original categories, limits and checkpoint validation; `redesign/checks/browser/imposter.spec.ts` exercises complete Classic games, Pair secrecy, legacy recovery, movie options, replay and accessibility on desktop/mobile. A Pair game with one eligible movie and other selected categories now picks a viable category instead of dealing an empty decoy.
+
+## Air Hockey acceptance and evidence
+
+Native two-player Air Hockey retains first-to-5/7/10 options, fixed-step disc physics, accelerated paddles, keyboard and independent pointer controls, opening faceoff, rebounds, scoring, receiving serves, win/replay and baseline-shaped checkpoints. The entire table fits in the initial mobile viewport; each half accepts a drag without requiring a precise paddle hit.
+
+Evidence: `redesign/checks/unit/hockey.check.ts` compares collisions, drag, acceleration and impacts directly with the original solver and exercises both goals and serving; `redesign/checks/browser/hockey.spec.ts` covers desktop/mobile keyboard and pointer play, recovery, scoring, rematch, accessibility and reset. Shared sound/haptics and physical-device qualification remain A07/release gates.
