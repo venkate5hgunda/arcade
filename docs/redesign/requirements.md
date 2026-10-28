@@ -14,8 +14,8 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [A06](#a06) | Room reconnection | Multiplayer | Planned |
 | [A07](#a07) | Sound, feel and themes | Experience | Planned |
 | [A08](#a08) | Offline assets and data pipeline | Platform | Planned |
-| [G01](#g01) | Show | Party | Planned |
-| [G02](#g02) | Taboo | Party | Planned |
+| [G01](#g01) | Show | Party | Implemented |
+| [G02](#g02) | Taboo | Party | Implemented |
 | [G03](#g03) | Wordle | Word | Implemented |
 | [G04](#g04) | Air Hockey | Action | Planned |
 | [G05](#g05) | 8-Ball Pool | Action | Planned |
@@ -160,7 +160,7 @@ Baseline tests: [test/movie-library.test.js](../../test/movie-library.test.js), 
 
 ## G01
 
-**Show** · Party · Planned
+**Show** · Party · Implemented
 
 - Display name Show; three to eight shared-device players, four chits each, concealed simultaneous clockwise passes.
 - Four matching chits unlock slap, N through 1 stack scoring; 3/5/10 rounds and shared wins on ties; reload conceals hands; local only.
@@ -172,7 +172,7 @@ Baseline tests: [test/party-word-games.test.js](../../test/party-word-games.test
 
 ## G02
 
-**Taboo** · Party · Planned
+**Taboo** · Party · Implemented
 
 - Four to twenty players in two teams; 30/60/90-second turns, 4/6/8 total turns, correct +1, skip 0, forbidden -1.
 - Fifty original cards without repeats until exhausted; private clue giver/referee handoff; deadline continues hidden/reloaded; local only.

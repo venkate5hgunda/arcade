@@ -1,3 +1,5 @@
+import { ShowGame } from './Show.tsx';
+import { TabooGame } from './Taboo.tsx';
 import { WhackGame } from './Whack.tsx';
 import { ScrambleGame } from './Scramble.tsx';
 import { HangmanGame } from './Hangman.tsx';
@@ -331,6 +333,8 @@ export function GameRoute() {
     return <RacesGame id={game.id} key={game.id} />;
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
+  if (game.id === 'show-star') return <ShowGame key={game.id} />;
+  if (game.id === 'taboo') return <TabooGame key={game.id} />;
   if (game.id === 'whack-a-mole') return <WhackGame key={game.id} />;
   if (game.id === 'word-scramble') return <ScrambleGame key={game.id} />;
   if (game.id === 'hangman') return <HangmanGame key={game.id} />;

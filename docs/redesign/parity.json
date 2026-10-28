@@ -193,7 +193,7 @@
       "id": "G01",
       "title": "Show",
       "category": "Party",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/show-star.js",
         "js/game-catalog.js",
@@ -206,13 +206,18 @@
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/show.check.ts",
+        "redesign/checks/browser/show.spec.ts"
+      ],
+      "implementationScope": "Native 3–8-player shared-device Show with covered chits, simultaneous passing and slap-order scoring."
     },
     {
       "id": "G02",
       "title": "Taboo",
       "category": "Party",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/taboo.js",
         "js/game-catalog.js",
@@ -225,7 +230,12 @@
       ],
       "baselineTests": [
         "test/party-word-games.test.js"
-      ]
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/taboo.check.ts",
+        "redesign/checks/browser/taboo.spec.ts"
+      ],
+      "implementationScope": "Native two-team Taboo with original clue deck, covered handoff, scoring and absolute-deadline recovery."
     },
     {
       "id": "G03",
