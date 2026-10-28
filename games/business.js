@@ -1,3 +1,4 @@
+import { cardPile, cardBack } from '../js/card-pile.js';
 import { createShell, wireBack, renderSetup } from '../js/game-shell.js';
 import { playerName } from '../js/player-names.js';
 import { createTurnIndicator } from '../js/turn-indicator.js';
@@ -622,6 +623,12 @@ export default {
       text(crest, 'strong', 'BUSINESS');
       text(crest, 'p', 'A city of opportunities');
       center.append(crest);
+      const decks = document.createElement('div');
+      decks.className = 'arcade-pile-group bs-card-piles';
+      for (const title of ['City Fund', 'Fortune']) {
+        decks.append(cardPile(cardBack(title, title === 'Fortune' ? '✦' : '₹'), { label: `${title} draw pile` }));
+      }
+      center.append(decks);
       text(center, 'small', `${s.houses}/32 houses · ${s.hotels}/12 hotels${s.options.jackpot ? ` · jackpot ${cost(s.jackpot)}` : ''}`, 'bs-bank-stock');
       board.append(center); frame.append(board);
       const sidebar = document.createElement('div'); sidebar.className = 'bs-priority';
