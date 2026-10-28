@@ -1,6 +1,6 @@
 # Game migration status
 
-**19 of 26 games are implemented.** The remaining 7 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**21 of 26 games are implemented.** The remaining 5 are authorized and tracked in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -8,7 +8,7 @@
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
 | Board | Snakes & Ladders, Ludo, Chess | Island Charter, Business |
 | Action | Whack-a-Mole | Air Hockey, 8-Ball Pool |
-| Party | Show, Taboo, Rock Paper Scissors | Imposter, Mafia, Dumb Charades |
+| Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter | Mafia |
 | Word | Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
@@ -94,3 +94,15 @@ Native local/computer play preserves White/Black selection, automatic board orie
 Host-authoritative rooms enforce White/Black seat turns, legal moves and promotions, stale-action rejection, disconnected-seat pauses, host reload, same-seat reconnect, exactly-once wins/draws and replay. Chess is included with RPS in protocol v4.
 
 Evidence: `redesign/checks/unit/chess.check.ts`, `room.check.ts`, and `redesign/checks/browser/chess.spec.ts`. Legal-move/position comparisons run through a complete original-engine checkmate; special-move and draw fixtures plus six desktop/mobile flows cover promotion recovery, AI, keyboard/accessibility and a real two-browser recovered game. The original engine's supported draw rules are preserved; repetition/50-move claims were never baseline capabilities.
+
+## Dumb Charades acceptance and evidence
+
+Native 2/4/6/8-player teams retain classic prompts, 10–360-second turns, actor/team rotation, skipped/correct scoring, the ten-success end rule, replay and absolute-deadline recovery. Telugu movies use the 4,814-record approved catalog from the original publishing pipeline, with year/difficulty filters and cast/synopsis for the actor and after a turn. The build copies indexed, validated catalog partitions into the isolated preview; loading errors offer a retry.
+
+Evidence: `redesign/checks/unit/charades.check.ts` compares checkpoint shapes and filters to the original implementation; `redesign/checks/browser/charades.spec.ts` covers six desktop/mobile flows including completion, replay, timeout, movie details, filters, retry and accessibility. Full production offline caching remains a Phase 4 gate.
+
+## Imposter acceptance and evidence
+
+Native 3–20-player Classic and Pair modes retain the original 21 word/movie categories, category/hint/team intel, one to six imposters, optional secret random counts, private card handoffs, decoy words, discussion, covered ballots, tied votes, elimination history and both win conditions. Old single-imposter checkpoints migrate; cards and ballots return covered on reload or backgrounding. Telugu movie selections share the approved catalog and year/difficulty filters.
+
+Evidence: `redesign/checks/unit/imposter.check.ts` compares original categories, limits and checkpoint validation; `redesign/checks/browser/imposter.spec.ts` exercises complete Classic games, Pair secrecy, legacy recovery, movie options, replay and accessibility on desktop/mobile. A Pair game with one eligible movie and other selected categories now picks a viable category instead of dealing an empty decoy.

@@ -3183,3 +3183,76 @@ select:focus-visible {
   width: 100%;
   margin: 0;
 }
+
+.charades-prompt {
+  padding: 1.5rem;
+  border-radius: 24px;
+  text-align: center;
+  background: #fff0ca;
+  color: #48251e;
+  margin: 1rem 0;
+}
+.charades-prompt > p:first-child {
+  font-weight: 800;
+  font-size: clamp(1.7rem, 6vw, 3rem);
+}
+.charades-prompt > strong {
+  font-size: 2rem;
+}
+.movie-filters {
+  display: grid;
+  gap: 0.75rem;
+}
+.movie-filters fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.movie-filters fieldset label {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+.movie-brief {
+  text-align: left;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.imposter-card {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: #f8dff3;
+  color: #482150;
+  text-align: center;
+}
+.imposter-card strong {
+  font-size: clamp(1.6rem, 6vw, 3rem);
+}
+.imposter-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.imposter-votes button[aria-pressed='true'] {
+  background: #f9d578;
+  color: #44201b;
+}
+.imposter-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.imposter-tally p {
+  width: 100%;
+  margin: 0;
+}
+.imposter-tally span {
+  padding: 0.4rem 0.7rem;
+  border-radius: 1rem;
+  background: #3d4463;
+  color: #fff;
+}

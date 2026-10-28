@@ -425,7 +425,7 @@
       "id": "G12",
       "title": "Imposter",
       "category": "Party",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/imposter.js",
         "js/game-catalog.js",
@@ -439,6 +439,10 @@
       ],
       "baselineTests": [
         "test/imposter.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/imposter.check.ts",
+        "redesign/checks/browser/imposter.spec.ts"
       ]
     },
     {
@@ -463,7 +467,7 @@
       "id": "G14",
       "title": "Dumb Charades",
       "category": "Party",
-      "status": "planned",
+      "status": "implemented",
       "sources": [
         "games/dumb-charades.js",
         "js/game-catalog.js",
@@ -473,7 +477,11 @@
         "Two to eight players; actor/team turns, timer, categories, scoring and reveal; Telugu movies show cast/synopsis to actor and after turn.",
         "Preserve catalog player range 2\u20138; full rules/options and transitions in the cited game are the baseline."
       ],
-      "baselineTests": []
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/charades.check.ts",
+        "redesign/checks/browser/charades.spec.ts"
+      ]
     },
     {
       "id": "G15",

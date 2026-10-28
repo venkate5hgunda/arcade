@@ -15,10 +15,11 @@ export function useRun<T extends object>(
   valid: (s: unknown) => boolean,
   make: (settings: Settings) => T,
   done: (state: T) => boolean = (state) => !!(state as { over?: boolean }).over,
+  restore: (value: unknown) => T = (value) => value as T,
 ) {
   const session = useMemo(() => createGameSession(id), [id]);
   const [state, view] = useState<T | null>(() => {
-    if (valid(session.state)) return session.state as T;
+    if (valid(session.state)) return restore(session.state);
     if (session.state) session.finish();
     return null;
   });
@@ -70,6 +71,7 @@ export function Frame<T extends object>({
   after,
   setupSummary,
   setupExtra,
+  optionsExtra,
 }: {
   run: Run<T>;
   fields: Field[];
@@ -81,6 +83,7 @@ export function Frame<T extends object>({
   after?: ReactNode;
   setupSummary?: string;
   setupExtra?: ReactNode;
+  optionsExtra?: ReactNode;
 }) {
   const game = GAMES.find((g) => g.id === run.id)!;
   return (
@@ -145,6 +148,7 @@ export function Frame<T extends object>({
                     </select>
                   </label>
                 ))}
+                {optionsExtra}
               </details>
             )}
           </div>

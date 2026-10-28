@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G03, G06–G08, G11 and G15–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 7 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+G01–G03, G06–G08, G11–G12 and G14–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 5 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
 
 ## Puzzle-family trace
 
@@ -164,3 +164,17 @@ Traced every original engine move flag, castling right, en passant target, promo
 Six desktop/mobile browser flows pass, including legal move hints, keyboard movement, checkmate/rematch, saved promotion, computer opening as White, real WebRTC turns and host reload/reconnect. The earlier full 108-flow regression run passed after RPS; the final combined duel-port regression is recorded below. No existing game source or production deployment changed.
 
 The combined browser regression passed 112 of 114 on its first run; the two failures were the same missed trace in desktop and mobile artwork checks, which still expected Chess's former placeholder detail page. The assertion now checks Chess's native setup artwork; all 16 affected artwork/Chess checks passed on rerun. The original 206-test JavaScript suite passes under Node 24; Node 26.7.0 fails its pre-existing lobby fixture. All 80 movie tests pass when loopback is allowed.
+
+## Dumb Charades and movie-library trace
+
+Traced original prompt list, team/actor selection, timer and score transitions, ten-success termination, old checkpoints and settings, catalog/resume readers, filters, approved movie index/partitions and actor/result metadata. The Vite build copies only catalog-listed files from the existing publishing output; development serves the same files. No movie-generation or approval rules changed. Missing or invalid data shows retry rather than silently substituting a smaller pool.
+
+The shared setup frame gained an expandable options slot for timer and movie filters. A test initially assumed navigating to the current hash would reload the page before injecting a failure; it now performs a real reload. Six desktop/mobile browser checks pass, including deterministic cast/synopsis and credit display, legacy-shaped recovery, timeout, completion and replay; the rule tests compare real catalog filters and checkpoints with the original. Mobile result view was inspected. Full offline asset-graph, install/update, physical-device and cross-network qualification remain release gates.
+
+## Imposter trace
+
+Traced every original category/word/hint/decoy, count constraint, random selection, classic intel, pair role concealment, movie filters, private cards, saved ballot, tied votes, elimination/win rules and single-imposter legacy migration through native controls, settings/session validators, catalog/resume and tests. Original category data is copied exactly into a typed source catalog and compared to the unchanged source in a unit test. The shared run hook now accepts an optional checkpoint migration function; existing games keep their original behavior.
+
+The original could randomly select a single matching movie in Pair mode while another category was selected, producing an empty decoy. That was a missed choice-pool trace; the native port excludes a movie category that cannot provide a second prompt and adds a regression. Votes remain private during handoff and are saved while selected; the result shows aggregate totals as in the original. Desktop/mobile checks cover a complete win, Pair secrecy, hidden/background/reload handoffs, legacy saves and movie setup. Mobile result was inspected. Physical-device qualification and the remaining platform gates remain open.
+
+The combined party-game build passed all 126 desktop Chromium and mobile WebKit browser checks. The design inventory and 51 domain/protocol tests also pass.

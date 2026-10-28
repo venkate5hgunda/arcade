@@ -25,9 +25,9 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 | [G09](#g09) | Island Charter | Board | Planned |
 | [G10](#g10) | Business | Board | Planned |
 | [G11](#g11) | Chess | Board | Implemented |
-| [G12](#g12) | Imposter | Party | Planned |
+| [G12](#g12) | Imposter | Party | Implemented |
 | [G13](#g13) | Mafia | Party | Planned |
-| [G14](#g14) | Dumb Charades | Party | Planned |
+| [G14](#g14) | Dumb Charades | Party | Implemented |
 | [G15](#g15) | Rock Paper Scissors | Party | Implemented |
 | [G16](#g16) | Blackjack | Cards | Implemented |
 | [G17](#g17) | Crazy Eights | Cards | Implemented |
@@ -275,7 +275,7 @@ Baseline tests: [test/business.test.js](../../test/business.test.js).
 
 ## G11
 
-**Chess** · Board · Planned
+**Chess** · Board · Implemented
 
 - Local one/two-player modes and room duel; legal moves, check, castling, en passant, promotion and end conditions represented by current game.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.
@@ -286,7 +286,7 @@ Baseline tests: [test/chess-pieces.test.js](../../test/chess-pieces.test.js).
 
 ## G12
 
-**Imposter** · Party · Planned
+**Imposter** · Party · Implemented
 
 - Three to twenty players; 630 original prompts across 21 categories plus approved Telugu movies; Classic/Pair mode.
 - Choose fixed/random imposter count bounded by table size, hint/category/fellow-imposter visibility and categories.
@@ -310,7 +310,7 @@ Baseline tests: [test/mafia.test.js](../../test/mafia.test.js).
 
 ## G14
 
-**Dumb Charades** · Party · Planned
+**Dumb Charades** · Party · Implemented
 
 - Two to eight players; actor/team turns, timer, categories, scoring and reveal; Telugu movies show cast/synopsis to actor and after turn.
 - Preserve catalog player range 2–8; full rules/options and transitions in the cited game are the baseline.
@@ -321,7 +321,7 @@ Baseline tests: No dedicated test mapped; add a complete flow test before parity
 
 ## G15
 
-**Rock Paper Scissors** · Party · Planned
+**Rock Paper Scissors** · Party · Implemented
 
 - One/two-player local modes and room duel; simultaneous hidden choices, reveal, win/draw scoring and replay.
 - Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline.

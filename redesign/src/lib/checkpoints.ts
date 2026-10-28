@@ -1,3 +1,5 @@
+import { validImposter } from './imposter.ts';
+import { validCharades } from './charades.ts';
 import { validChess } from './chess.ts';
 import { validRps } from './rps.ts';
 import { validShow } from './show.ts';
@@ -14,6 +16,8 @@ import type { LocalState } from './tictactoe.ts';
 import { puzzleValidators, PUZZLE_IDS } from './puzzles.ts';
 import type { PuzzleId } from './puzzles.ts';
 export function validCheckpoint(id: string, state: unknown): boolean {
+  if (id === 'imposter') return validImposter(state);
+  if (id === 'dumb-charades') return validCharades(state);
   if (id === 'chess') return validChess(state);
   if (id === 'rps') return validRps(state);
   if (id === 'show-star') return validShow(state);

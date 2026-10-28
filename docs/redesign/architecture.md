@@ -72,3 +72,7 @@ or publish state.
 `lib/cards.ts` contains typed equivalents of the original card engines and strict projected-view validation. `components/CardTable.tsx` renders only the given seat view; `features/Cards.tsx` owns covered local handoffs and baseline-shaped persistence. Every local reload covers the hand, including a pending suit choice. Wild-color selection is temporary UI state until an authoritative action commits it.
 
 `Room` stores full card state outside `RoomSnapshot`. Only the host's tab-scoped v4 backup includes it. Publishing regenerates a distinct projection for every admitted peer. Guest messages are intentions with seat identity, round/revision and per-link sequence validation; they cannot supply cards/decks or snapshots. A disconnected member pauses play, and each reconnect retains its original seat and name. New seats are admitted only in the lobby. Twenty-seat deterministic protocol tests complement actual two/three-browser WebRTC tests.
+
+### Approved movie catalog
+
+The Vite preview build copies the index and only its listed JSONL partitions from `data/movies/`, and the dev server exposes the same source. The native library validates counts and records, retries failures and retains existing year/difficulty filtering; it does not duplicate or modify the publishing pipeline. Offline install and update behavior remains a later release gate.
