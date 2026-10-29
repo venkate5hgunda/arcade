@@ -3226,6 +3226,9 @@ select:focus-visible {
   font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
+.movie-brief details {
+  color: inherit;
+}
 
 .imposter-card {
   margin: 1rem 0;

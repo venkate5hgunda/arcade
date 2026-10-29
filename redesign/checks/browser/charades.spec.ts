@@ -93,6 +93,7 @@ test('Charades loads movie records, filters them, presents cast and synopsis and
   await expect(page.getByText(/Difficulty \d\/5/)).toBeVisible();
   await page.getByText('Why this rating?').click();
   await expect(page.locator('.movie-brief')).toContainText('actability');
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Switch teams' }).click();
   await expect(
     page.getByRole('heading', { name: 'Team 2 · Player 3' }),

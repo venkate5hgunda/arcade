@@ -61,9 +61,6 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Later
 
-- [ ] **PWA and recovery (Phase 4).** Verified offline asset graph, scoped updates, install/standalone UI and cache-failure recovery are implemented; see [offline and install](pwa.md). Versioned raw backup/migration, private export and competing-tab saves are implemented and verified; see [saved games and tabs](storage.md). Physical-device installation qualification remains open.
-- [ ] **Real-model qualification.** Integrate the user-requested local OpenAI-compatible endpoint with three candidate inferences, a separate judging/selection call, strict contracts and live qualification, then inspect resulting approved content in a fresh browser.
-- [ ] **Full parity release (Phase 5).** Execute every acceptance case and the
-      complete original regression suite; review documented corrections, data
-      migration, artwork and real-device behavior. No open blocker may hide
-      behind an `implemented` status.
+- [x] **PWA and recovery implementation (Phase 4).** Verified offline graph, scoped updates, install/standalone UI, cache-failure recovery, raw backup/migration, private export and competing-tab saves are implemented and verified. See [offline/install](pwa.md) and [saved games/tabs](storage.md). Physical-device release qualification remains below.
+- [x] **Compatible model pipeline and live qualification.** Default local OpenAI-compatible API, three parallel validated candidates, generous candidate/judge retries, fresh rounds after rejection or confidence below 5/10, exact contracts and source-bound promotion/export guards. One fresh live source record completed with three candidates and an approving 9/10 judge after 16 recorded attempts; the real isolated export passed fresh desktop/mobile browser inspection. See [provider operation](../movie-model-provider.md) and [verification](verification.md#compatible-models-parallel-retries-and-confidence--2026-10-29).
+- [ ] **Full parity release (Phase 5).** Automated acceptance and original regressions pass; all implementation units have trace/evidence. Physical installation, camera/audio/haptics, actual two-touch play and separate-network rooms still require qualification with real devices. See the exact [release checks](release-qualification.md). No automatic merge or deployment is authorized.

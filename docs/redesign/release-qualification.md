@@ -51,18 +51,18 @@ movie files. It contains no model provider client, model credential or runtime
 inference. A fresh-browser local/offline play pass therefore does not make a
 live-model claim.
 
-The retained developer-only native Gemini annotation/review path lives in
-`dev/movies/gemini_annotation.py`; the provider-neutral adapter path lives in
-`dev/movies/llm_annotation.py`. They are outside the deployed app and remain
-unchanged by this migration. Their offline/schema tests pass, but those tests
-are not live provider qualification.
+The developer pipeline now defaults to the user-configured local OpenAI-compatible
+API in `dev/movies/compatible_annotation.py`. It collects three schema/domain-valid
+candidates in parallel, retries each slot and the judge, and regenerates candidate
+rounds when the judge rejects or gives confidence below 5 on the explicit 1–10
+scale. Promotion and later annotation reads recheck the confidence and all three
+source receipts. See [provider operation](../movie-model-provider.md).
 
-The 2026-10-29 environment audit found neither a configured Gemini credential
-nor the ignored local movie SQLite catalog in this checkout. Live inference
-cannot be qualified here until that runtime/catalog is supplied. Resolve
-credentials locally through the existing runtime configuration; do not paste
-secrets into chat, commit them or expose provider payloads in browser assets.
-Use an isolated catalog copy and a bounded non-promoting run, retain actual
-provider/model receipts, then check approved export rendering in a fresh browser.
-Do not activate new annotations or expand the catalog as a side effect of
-redesign release verification.
+Native Gemini and the provider-neutral adapter remain explicit optional paths.
+Credentials, catalog snapshots and all model receipts remain developer-only.
+The missing-runtime audit from earlier on 2026-10-29 was superseded by the user's
+local endpoint instruction. A fresh isolated catalog can be reconstructed from
+checked-in source CSV facts for qualification, without importing private machine
+history or modifying the production catalog. Live service and fresh-browser
+qualification evidence is recorded in [verification](verification.md); synthetic
+tests alone do not establish those results.
