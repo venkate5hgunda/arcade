@@ -127,6 +127,9 @@ test('sound and haptics controls persist and test a gesture-unlocked chime', asy
 test('a real hockey collision produces an impact sound', async ({ page }) => {
   await page.addInitScript(fakeFeedback);
   await page.goto('/');
+  await page.getByLabel('Sound & feel').click();
+  await page.getByRole('button', { name: 'Test sound' }).click();
+  await page.keyboard.press('Escape');
   const state = newHockey(5);
   state.openingFaceoff = false;
   state.puck = { x: 300, y: 660, vx: 0, vy: 350 };
@@ -139,7 +142,6 @@ test('a real hockey collision produces an impact sound', async ({ page }) => {
     state,
   );
   await page.goto('/#/game/air-hockey');
-  await page.getByLabel('Sound & feel').click();
   await expect
     .poll(
       () =>
