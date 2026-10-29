@@ -1,3 +1,4 @@
+import { playCue, playSimonPad } from '../lib/feedback.ts';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import type { Field } from '../components/GameFrame.tsx';
 import { useEffect, useRef, useState } from 'react';
@@ -461,6 +462,7 @@ function MemoryGame() {
     if (!s || pending) return;
     const result = memoryFlip(s, index);
     if (result.mismatch) {
+      playCue({ sound: 'buzz', haptic: 'failure' });
       run.commit(memoryHide(result.state, result.mismatch));
       run.view(result.state);
       setPending(result.mismatch);
@@ -585,7 +587,10 @@ function SimonGame() {
     s.sequence.forEach((pad, index) => {
       const start = 500 + index * step * 0.95;
       timers.push(
-        setTimeout(() => setActive(pad), start),
+        setTimeout(() => {
+          setActive(pad);
+          playSimonPad(pad, (step * 0.6) / 1000);
+        }, start),
         setTimeout(() => setActive(null), start + step * 0.6),
       );
     });
@@ -666,8 +671,10 @@ function SimonGame() {
             aria-label={`Play ${name} pad`}
             aria-disabled={phase !== 'input' || !!s?.over}
             onClick={() => {
-              if (s && phase === 'input' && !s.over)
+              if (s && phase === 'input' && !s.over) {
+                playSimonPad(pad);
                 run.commit(simonPress(s, pad));
+              }
             }}
           >
             <b>{pad + 1}</b>

@@ -1,6 +1,6 @@
 # Game migration status
 
-**All 26 games have native implementations.** Shared room breadth, sound, themes, offline support and release qualification remain in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**All 26 games have native implementations.** Shared room breadth, sound and themes have implementation evidence; offline support and release qualification remain in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |

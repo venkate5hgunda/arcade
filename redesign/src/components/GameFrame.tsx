@@ -1,5 +1,7 @@
 import { GameArt } from './GameArt.tsx';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { localCue } from '../lib/game-feedback.ts';
+import { playCue } from '../lib/feedback.ts';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { GAMES } from '../lib/games.ts';
@@ -23,6 +25,10 @@ export function useRun<T extends object>(
     if (session.state) session.finish();
     return null;
   });
+  const latest = useRef(state);
+  latest.current = state;
+  const ended = useRef(false);
+  if (!state) ended.current = false;
   const [settings, setSettings] = useState<Settings>(() => {
     const raw = loadJSON<unknown>(`${KEYS.SETTINGS}:${id}`, defaults);
     return raw && typeof raw === 'object' && !Array.isArray(raw)
@@ -37,6 +43,11 @@ export function useRun<T extends object>(
       : defaults;
   });
   function commit(next: T, finished = done(next)) {
+    playCue(() =>
+      localCue(id, latest.current, next, finished && !ended.current),
+    );
+    latest.current = next;
+    ended.current = finished;
     view(next);
     if (finished) session.finish();
     else session.save(next);
@@ -44,6 +55,8 @@ export function useRun<T extends object>(
   function start() {
     saveJSON(`${KEYS.SETTINGS}:${id}`, settings);
     markPlayed(id);
+    latest.current = null;
+    ended.current = false;
     commit(make(settings));
   }
   function reset() {

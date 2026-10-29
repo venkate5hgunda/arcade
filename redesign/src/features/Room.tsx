@@ -1,3 +1,6 @@
+import { playCue } from '../lib/feedback.ts';
+import { roomCue } from '../lib/game-feedback.ts';
+import type { RoomSnapshot } from '../lib/room/protocol.ts';
 import { RoomStandings } from '../components/RoomStandings.tsx';
 import { IslandTable } from '../components/IslandTable.tsx';
 import { RoomQr, RoomScanner } from '../components/RoomQr.tsx';
@@ -54,7 +57,15 @@ export function RoomPage({ room }: { room: Room }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [raceMoving, setRaceMoving] = useState<number | null>(null);
-  useEffect(() => room.on(() => refresh((v) => v + 1)), [room]);
+  const heard = useRef<RoomSnapshot | null>(null);
+  useEffect(() => {
+    heard.current = room.snapshot ? structuredClone(room.snapshot) : null;
+    return room.on(() => {
+      playCue(() => roomCue(heard.current, room.snapshot, room.peerId));
+      heard.current = room.snapshot ? structuredClone(room.snapshot) : null;
+      refresh((v) => v + 1);
+    });
+  }, [room]);
   useEffect(() => {
     room.restore();
   }, [room]);

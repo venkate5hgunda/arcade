@@ -1,6 +1,7 @@
 import { BusinessGame } from './Business.tsx';
 import { IslandGame } from './Island.tsx';
-import { feedback } from '../lib/feedback.ts';
+import { playCue } from '../lib/feedback.ts';
+import { localCue } from '../lib/game-feedback.ts';
 import { MafiaGame } from './Mafia.tsx';
 import { PoolGame } from './Pool.tsx';
 import { HockeyGame } from './Hockey.tsx';
@@ -67,10 +68,10 @@ function LocalGame() {
       ? 'Computer'
       : names[seat - 1]?.trim() || `Player ${seat}`;
   function commit(next: LocalState) {
+    playCue(() => localCue('tictactoe', state, next));
     setState(next);
     if (next.over) {
       session.finish();
-      feedback.win();
       if (findWin(next.board))
         setScores(
           recordWin(

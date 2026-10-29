@@ -1,3 +1,4 @@
+import type { GameCue } from './game-feedback.ts';
 import { ArcadeAudio } from './audio-core.js';
 import { KEYS, loadJSON, saveJSON } from './storage.ts';
 
@@ -41,3 +42,18 @@ export const feedback = {
     this.vibrate('success');
   },
 };
+
+export function playCue(cue: GameCue | null | (() => GameCue | null)) {
+  try {
+    const next = typeof cue === 'function' ? cue() : cue;
+    if (!next) return;
+    feedback.audio[next.sound]();
+    if (next.haptic) feedback.vibrate(next.haptic);
+  } catch {
+    // Optional feedback must never prevent an accepted move or room refresh.
+  }
+}
+export function playSimonPad(pad: number, duration = 0.2) {
+  const tone = [261.63, 329.63, 392, 523.25][pad];
+  if (tone !== undefined) feedback.audio.tone(tone, duration, 'sine', 0.3);
+}

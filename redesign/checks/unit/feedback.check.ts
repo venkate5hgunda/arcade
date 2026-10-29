@@ -76,3 +76,22 @@ test('audio unlocks on a gesture, resumes after interruption and mutes the share
     else Reflect.deleteProperty(globalThis, 'window');
   }
 });
+
+test('optional feedback failures cannot block accepted gameplay', async () => {
+  const prior = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: { getItem: () => null },
+  });
+  try {
+    const { playCue } = await import('../../src/lib/feedback.ts');
+    assert.doesNotThrow(() =>
+      playCue(() => {
+        throw Error('Unsupported feedback');
+      }),
+    );
+  } finally {
+    if (prior) Object.defineProperty(globalThis, 'localStorage', prior);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+});

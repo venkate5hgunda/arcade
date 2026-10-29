@@ -1,3 +1,4 @@
+import { playCue } from '../lib/feedback.ts';
 import { useEffect, useState } from 'react';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { newScramble, nextScramble, validScramble } from '../lib/scramble.ts';
@@ -38,6 +39,7 @@ export function ScrambleGame() {
   function guess() {
     if (!game || done || game.solved) return;
     if (input.trim().toUpperCase() !== game.word) {
+      playCue({ sound: 'buzz', haptic: 'failure' });
       setFeedback('Not quite — try again.');
       return;
     }

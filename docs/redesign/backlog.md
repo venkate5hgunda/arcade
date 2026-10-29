@@ -57,7 +57,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 - [x] **QR admission and sharing (A04, partial).** Local QR generation and scanning, native share, selected-text clipboard fallback, camera cleanup and readable errors. See [verification](verification.md#qr-admission-and-sharing).
 - [x] **Room breadth (A04–A06).** Spectator admission, selected player seats, public-only views, recovery and per-game/player standings across replays are implemented for all eleven room games. Physical-device and cross-network qualification remain release gates.
-- [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent sound/haptics controls, audio unlock/recovery and action-game impact sounds are implemented. Reduced-motion CSS and live race/2048 travel handling are verified across native surfaces; complete game-specific feedback remains. See [verification](verification.md#reduced-motion).
+- [x] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent sound/haptics, audio unlock/recovery, game-specific moves/results/dice/captures/timers and Simon notes are implemented. Reduced-motion CSS and live scripted travel are verified. Physical-device audio/haptics remain release gates. See [verification](verification.md#game-specific-feedback).
 
 ## Later
 

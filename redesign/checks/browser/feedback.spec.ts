@@ -8,10 +8,12 @@ const fakeFeedback = () => {
     audioStarts: number;
     vibrations: number;
     impacts: number;
+    tones: number[];
   };
   w.audioStarts = 0;
   w.vibrations = 0;
   w.impacts = 0;
+  w.tones = [];
   class FakeContext {
     state = 'running';
     currentTime = 0;
@@ -31,13 +33,15 @@ const fakeFeedback = () => {
       };
     }
     createOscillator() {
+      const frequency = { value: 0 };
       return {
-        frequency: { value: 0 },
+        frequency,
         connect() {
           return this;
         },
         start() {
           w.audioStarts++;
+          w.tones.push(frequency.value);
         },
         stop() {},
       };
@@ -241,15 +245,164 @@ test('a losing Blackjack round does not play a win chime', async ({ page }) => {
   );
   await page.goto('/#/game/blackjack');
   const before = await page.evaluate(
-    () => (window as unknown as { audioStarts: number }).audioStarts,
+    () => (window as unknown as { tones: number[] }).tones.length,
   );
   await page.getByRole('button', { name: 'Stand', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'The house takes this round.' }),
   ).toBeVisible();
+  const tones = await page.evaluate(
+    (start) => (window as unknown as { tones: number[] }).tones.slice(start),
+    before,
+  );
+  expect(tones).toContain(160);
+  expect(tones).not.toContain(880);
+});
+
+test('Simon plays distinct sequence notes and mute silences both playback and correct-answer feedback', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeFeedback);
+  await page.goto('/#/game/simon');
+  await page.clock.install();
+  await page.clock.pauseAt(Date.now() + 1000);
+  await page.getByRole('button', { name: 'Start playing' }).click();
+  await page.clock.runFor(600);
+  const state = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('arcade:game.sessions')!).simon.state,
+  );
+  const note = [261.63, 329.63, 392, 523.25][state.sequence[0]];
   expect(
-    (await page.evaluate(
+    await page.evaluate(() => (window as unknown as { tones: number[] }).tones),
+  ).toContain(note);
+  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Game sounds').uncheck();
+  await page.getByLabel('Sound & feel').click();
+  const muted = await page.evaluate(
+    () => (window as unknown as { audioStarts: number }).audioStarts,
+  );
+  await page.clock.runFor(1000);
+  await page
+    .getByRole('button', {
+      name: `Play ${['Red', 'Blue', 'Yellow', 'Green'][state.sequence[0]]} pad`,
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Nice! Next round…' }),
+  ).toBeVisible();
+  await page.clock.runFor(1600);
+  expect(
+    await page.evaluate(
       () => (window as unknown as { audioStarts: number }).audioStarts,
-    )) - before,
-  ).toBe(1);
+    ),
+  ).toBe(muted);
+});
+
+test('a real Tic-Tac-Toe draw has a neutral cue instead of a victory chime', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeFeedback);
+  await page.goto('/');
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'arcade:game.sessions',
+      JSON.stringify({
+        tictactoe: {
+          state: {
+            mode: 'pvp',
+            board: [1, 2, 1, 1, 2, 2, 2, 1, 0],
+            current: 1,
+            over: false,
+          },
+          savedAt: Date.now(),
+        },
+      }),
+    ),
+  );
+  await page.goto('/#/game/tictactoe');
+  await page.getByRole('button', { name: 'Row 3, column 3: empty' }).click();
+  await expect(page.getByRole('heading', { name: /draw/i })).toBeVisible();
+  const tones = await page.evaluate(
+    () => (window as unknown as { tones: number[] }).tones,
+  );
+  expect(tones).toContain(600);
+  expect(tones).not.toContain(880);
+});
+
+test('room guests hear their own victory while the losing host hears a failure cue', async ({
+  page: host,
+  browser,
+}) => {
+  test.setTimeout(60000);
+  const context = await browser.newContext();
+  const guest = await context.newPage();
+  const localIce = () => {
+    Object.defineProperty(navigator, 'onLine', { get: () => false });
+    const Native = window.RTCPeerConnection;
+    window.RTCPeerConnection = class extends Native {
+      setRemoteDescription(description: RTCSessionDescriptionInit) {
+        return super.setRemoteDescription({
+          ...description,
+          sdp: description.sdp?.replace(
+            /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
+            (_match, prefix) => prefix + '127.0.0.1',
+          ),
+        });
+      }
+    };
+  };
+  try {
+    for (const page of [host, guest]) {
+      await page.addInitScript(fakeFeedback);
+      await page.addInitScript(localIce);
+    }
+    await host.goto('/#/room');
+    await host.getByLabel('Your room name').fill('Mira');
+    await host
+      .getByRole('button', { name: 'Create a room', exact: true })
+      .click();
+    await expect(host.getByLabel('Invitation to share')).toHaveValue(/invite=/);
+    await guest.goto(await host.getByLabel('Invitation to share').inputValue());
+    await guest.getByLabel('Your room name').fill('Kai');
+    await guest.getByRole('button', { name: 'Join room', exact: true }).click();
+    await expect(guest.getByLabel('Answer to share')).toHaveValue(/answer=/);
+    await host
+      .getByLabel('Guest’s answer link')
+      .fill(await guest.getByLabel('Answer to share').inputValue());
+    await host.getByRole('button', { name: 'Accept answer' }).click();
+    await expect(
+      host.getByRole('button', { name: 'Start Tic-Tac-Toe' }),
+    ).toBeVisible();
+    await host.getByRole('button', { name: 'Start Tic-Tac-Toe' }).click();
+    for (const [player, cell] of [
+      [host, 0],
+      [guest, 3],
+      [host, 1],
+      [guest, 4],
+      [host, 8],
+      [guest, 5],
+    ] as const) {
+      await expect(
+        player.getByRole('heading', { name: 'Your turn' }),
+      ).toBeVisible();
+      await player.locator('.square').nth(cell).click();
+    }
+    await expect(
+      host.getByRole('heading', { name: 'Kai wins!' }),
+    ).toBeVisible();
+    await expect(
+      guest.getByRole('heading', { name: 'Kai wins!' }),
+    ).toBeVisible();
+    const hostTones = await host.evaluate(
+      () => (window as unknown as { tones: number[] }).tones,
+    );
+    const guestTones = await guest.evaluate(
+      () => (window as unknown as { tones: number[] }).tones,
+    );
+    expect(hostTones).toContain(160);
+    expect(hostTones).not.toContain(880);
+    expect(guestTones).toContain(880);
+  } finally {
+    await context.close();
+  }
 });

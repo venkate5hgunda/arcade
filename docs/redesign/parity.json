@@ -163,7 +163,7 @@
         "test/haptics.test.js",
         "test/theme.test.js"
       ],
-      "implementationScope": "Partial: persistent Auto/Light/Dark theme, shared sound/haptics controls, audio unlock/recovery, action-game impacts and reduced-motion CSS across all 26 native game entry/play surfaces. Race and 2048 scripted travel responds to live motion-preference changes; Simon retains sequence timing and outline cues. Game-specific feedback breadth and physical-device qualification remain open. See docs/redesign/verification.md and backlog.md."
+      "implementationScope": "Persistent Auto/Light/Dark theme, shared sound/haptics controls, gesture unlock/recovery, per-game move/result/capture/dice/timer cues, Simon notes, recipient-specific room outcomes and action-game impacts. Reduced-motion CSS covers all 26 native game entry/play surfaces, with live race/2048 travel cancellation. Physical-device audible-output/haptics qualification remains open."
     },
     {
       "id": "A08",
