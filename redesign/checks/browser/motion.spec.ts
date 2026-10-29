@@ -138,6 +138,7 @@ test('2048 cancels active travel and still completes a win, continuation and rec
   await page.getByRole('button', { name: 'Keep going' }).click();
   await page.getByRole('button', { name: 'Move right', exact: true }).click();
   await expect(page.locator('.tile-motion-layer')).toHaveCount(0);
+  await settleStorage(page);
   const saved = await page.evaluate(
     () =>
       JSON.parse(localStorage.getItem('arcade:game.sessions')!)['2048'].state,

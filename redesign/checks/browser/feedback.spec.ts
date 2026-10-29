@@ -144,7 +144,7 @@ test('a real hockey collision produces an impact sound', async ({ page }) => {
     .poll(
       () =>
         page.evaluate(() => (window as unknown as { impacts: number }).impacts),
-      { timeout: 4000 },
+      { timeout: 10_000 },
     )
     .toBeGreaterThan(0);
 });

@@ -3109,7 +3109,7 @@ select:focus-visible {
   color: #4d2a25;
 }
 .chess-dark {
-  background: #56847a;
+  background: #476f67;
   color: #fff4d5;
 }
 .chess-square > span {
@@ -3291,8 +3291,12 @@ select:focus-visible {
   font-size: 0.85rem;
 }
 @media (max-width: 600px) {
+  .puzzle-tictactoe .ttt-board {
+    width: min(100%, max(230px, calc(100dvh - 370px)));
+    margin-inline: auto;
+  }
   .puzzle-air-hockey .hockey-canvas {
-    width: min(100%, max(180px, calc((100dvh - 335px) * 0.6667)));
+    width: min(100%, max(180px, calc((100dvh - 370px) * 0.6667)));
     margin: 0.5rem auto;
   }
   .puzzle-air-hockey .board-panel {
