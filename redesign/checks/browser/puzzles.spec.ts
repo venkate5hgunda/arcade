@@ -8,12 +8,14 @@ async function checkpoint<T>(
   page: import('@playwright/test').Page,
   id: string,
 ): Promise<T> {
-  return page.evaluate(
-    (id) =>
+  return page.evaluate(async (id) => {
+    const read = () =>
       JSON.parse(localStorage.getItem('arcade:game.sessions') ?? '{}')[id]
-        ?.state,
-    id,
-  );
+        ?.state;
+    return navigator.locks
+      ? navigator.locks.request('arcade:game.sessions', read)
+      : read();
+  }, id);
 }
 
 test('Connect Four plays a complete gravity match, restores a board, and blocks full columns', async ({
@@ -27,6 +29,9 @@ test('Connect Four plays a complete gravity match, restores a board, and blocks 
       exact: true,
     });
   await drop(0).click();
+  await expect(
+    page.getByRole('heading', { name: 'Player 2’s turn' }),
+  ).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole('heading', { name: 'Player 2’s turn' }),
@@ -79,6 +84,12 @@ test('2048 restores, reaches a win, continues, accepts controls and retains its 
   await page.getByRole('button', { name: 'Keep going' }).click();
   await page.getByRole('group', { name: '2048 board' }).focus();
   await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(
+      async () =>
+        (await checkpoint<{ keepPlaying: boolean }>(page, '2048'))?.keepPlaying,
+    )
+    .toBe(true);
   await page.reload();
   await expect(
     page.getByRole('heading', { name: 'Slide. Merge. Repeat.' }),

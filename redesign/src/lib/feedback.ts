@@ -15,6 +15,10 @@ export const feedback = {
   get hapticsEnabled() {
     return hapticsEnabled;
   },
+  syncPreferences() {
+    audio.setEnabled(loadJSON(KEYS.SOUND_ENABLED, true) === true);
+    hapticsEnabled = loadJSON(KEYS.HAPTICS_ENABLED, true) === true;
+  },
   setSound(enabled: boolean) {
     audio.setEnabled(enabled);
     saveJSON(KEYS.SOUND_ENABLED, enabled);

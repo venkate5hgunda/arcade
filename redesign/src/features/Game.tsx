@@ -34,7 +34,7 @@ import {
 } from '../lib/tictactoe.ts';
 import type { LocalState, Mode } from '../lib/tictactoe.ts';
 import { createGameSession } from '../lib/session.ts';
-import { KEYS, loadJSON, saveJSON } from '../lib/storage.ts';
+import { KEYS, loadJSON, saveJSON, observeStorage } from '../lib/storage.ts';
 import {
   names as readNames,
   markPlayed,
@@ -44,7 +44,10 @@ import {
 import { Board } from '../components/Board.tsx';
 
 function LocalGame() {
-  const session = useMemo(() => createGameSession('tictactoe'), []);
+  const session = useMemo(
+    () => createGameSession('tictactoe', { fresh: true }),
+    [],
+  );
   const [state, setState] = useState<LocalState | null>(() => {
     if (isValidState(session.state as LocalState))
       return session.state as LocalState;
@@ -60,6 +63,11 @@ function LocalGame() {
   });
   const [names, setNames] = useState(readNames);
   const [scores, setScores] = useState(localScores);
+  useEffect(
+    () => observeStorage([KEYS.HIGH_SCORES], () => setScores(localScores())),
+    [],
+  );
+  const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const win = state && findWin(state.board);
   const finished = !!state?.over;
@@ -67,11 +75,11 @@ function LocalGame() {
     state?.mode === 'ai' && seat === 2
       ? 'Computer'
       : names[seat - 1]?.trim() || `Player ${seat}`;
-  function commit(next: LocalState) {
+  async function commit(next: LocalState) {
+    setSaving(true);
     playCue(() => localCue('tictactoe', state, next));
-    setState(next);
     if (next.over) {
-      session.finish();
+      await session.finish();
       if (findWin(next.board))
         setScores(
           recordWin(
@@ -80,7 +88,9 @@ function LocalGame() {
               : names[next.current - 1]?.trim() || `Player ${next.current}`,
           ),
         );
-    } else session.save(next);
+    } else await session.save(next);
+    setState(next);
+    setSaving(false);
   }
   useEffect(() => {
     if (!state || state.over || state.mode !== 'ai' || state.current !== 2)
@@ -194,7 +204,7 @@ function LocalGame() {
         </div>
       ) : (
         <div className="match-layout">
-          <div className="board-panel">
+          <div className="board-panel" aria-busy={saving} inert={saving}>
             <div
               className={`turn-banner ${finished ? 'finished' : ''}`}
               role="status"
@@ -291,8 +301,8 @@ function LocalGame() {
               </button>
               <button
                 className="primary"
-                onClick={() => {
-                  session.finish();
+                onClick={async () => {
+                  await session.finish();
                   setState(null);
                   setConfirm(false);
                 }}

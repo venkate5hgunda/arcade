@@ -128,8 +128,8 @@ export function ScrambleGame() {
             <button
               className="quiet"
               disabled={game.solved}
-              onClick={() => {
-                run.commit({
+              onClick={async () => {
+                await run.commit({
                   ...game,
                   hinted: true,
                   hintsUsed: game.hintsUsed + 1,

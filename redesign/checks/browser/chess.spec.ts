@@ -1,3 +1,4 @@
+import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -20,6 +21,7 @@ async function move(page: Page, from: string, to: string) {
   await page
     .getByRole('button', { name: new RegExp(`^${to},.*legal move`) })
     .click();
+  await settleStorage(page);
 }
 test('Chess plays checkmate with legal hints, reload, keyboard board and rematch', async ({
   page,

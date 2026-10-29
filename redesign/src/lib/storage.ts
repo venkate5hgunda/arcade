@@ -4,6 +4,11 @@
 // a failed save simply does not persist and never blocks an in-memory session.
 
 const PREFIX = 'arcade:';
+let protection: string | null = null;
+export const storageProtectionReason = () => protection;
+export function protectStorage(reason: string | null) {
+  protection = reason;
+}
 
 type FailureCallback = (operation: string, key: string, error: unknown) => void;
 
@@ -19,8 +24,8 @@ export function onStorageFailure(cb: FailureCallback) {
   };
 }
 
-function reportFailure(op: string, key: string, err: unknown) {
-  console.warn(`Storage ${op} failed for ${key}:`, err);
+export function reportFailure(op: string, key: string, err: unknown) {
+  console.warn(`Storage ${op} failed for ${key}.`);
   let operations = failedKeys.get(key);
   if (!operations) failedKeys.set(key, (operations = new Map()));
   if (operations.has(op)) return;
@@ -47,8 +52,13 @@ export function loadJSON<T>(key: string, fallback: T): T {
 
 export function saveJSON(key: string, value: unknown): boolean {
   try {
+    if (protection) throw new Error(protection);
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
     failedKeys.delete(key);
+    if (typeof window !== 'undefined')
+      window.dispatchEvent(
+        new CustomEvent('arcade:storagechange', { detail: key }),
+      );
     return true;
   } catch (err) {
     reportFailure('save', key, err);
@@ -58,8 +68,13 @@ export function saveJSON(key: string, value: unknown): boolean {
 
 export function remove(key: string): boolean {
   try {
+    if (protection) throw new Error(protection);
     localStorage.removeItem(PREFIX + key);
     failedKeys.delete(key);
+    if (typeof window !== 'undefined')
+      window.dispatchEvent(
+        new CustomEvent('arcade:storagechange', { detail: key }),
+      );
     return true;
   } catch (err) {
     reportFailure('remove', key, err);
@@ -68,6 +83,8 @@ export function remove(key: string): boolean {
 }
 
 export const KEYS = {
+  STORAGE_VERSION: 'redesign.storageVersion',
+  LEGACY_BACKUP: 'redesign.storageBackup:v0',
   THEME: 'ui.theme',
   SOUND_ENABLED: 'ui.soundEnabled',
   HAPTICS_ENABLED: 'ui.hapticsEnabled',
@@ -80,3 +97,46 @@ export const KEYS = {
 } as const;
 
 export type StorageKey = (typeof KEYS)[keyof typeof KEYS];
+
+/** Serialize whole-key read/modify/write operations across supported browser tabs. */
+export function withStorageLock<T>(
+  key: string,
+  change: () => T,
+): Promise<T | undefined> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+      return navigator.locks.request(`arcade:${key}`, change).catch(() => {
+        reportFailure(
+          'lock',
+          key,
+          new Error('Storage coordination unavailable.'),
+        );
+        return undefined;
+      });
+    }
+    return Promise.resolve(change());
+  } catch {
+    reportFailure('update', key, new Error('Storage update unavailable.'));
+    return Promise.resolve(undefined);
+  }
+}
+
+/** Observe both other tabs and successful writes in this page without writing back. */
+export function observeStorage(keys: readonly string[], refresh: () => void) {
+  const remote = (event: StorageEvent) => {
+    if (
+      event.storageArea === localStorage &&
+      (event.key === null || keys.some((key) => event.key === PREFIX + key))
+    )
+      refresh();
+  };
+  const local = (event: Event) => {
+    if (keys.includes((event as CustomEvent<string>).detail)) refresh();
+  };
+  window.addEventListener('storage', remote);
+  window.addEventListener('arcade:storagechange', local);
+  return () => {
+    window.removeEventListener('storage', remote);
+    window.removeEventListener('arcade:storagechange', local);
+  };
+}

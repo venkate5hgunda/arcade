@@ -76,13 +76,14 @@ export function BusinessGame() {
     setViewer(seat);
     setCovered(true);
   }
-  function action(move: BusinessAction) {
+  async function action(move: BusinessAction) {
     if (!s || !validBusinessMove(move)) return;
     try {
       const before = businessResponder(s),
         next = actBusiness(s, move, viewer),
         after = businessResponder(next);
       setError('');
+      await run.commit(next, next.phase === 'win');
       if (
         next.phase !== 'win' &&
         after !== viewer &&
@@ -93,7 +94,6 @@ export function BusinessGame() {
         setViewer(after);
         setCovered(true);
       }
-      run.commit(next, next.phase === 'win');
     } catch (e) {
       setError(
         e instanceof Error ? e.message : 'That action is not available.',

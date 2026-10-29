@@ -61,9 +61,8 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Later
 
-- [ ] **PWA and recovery (Phase 4).** Verified offline asset graph, scoped updates, install/standalone UI and cache-failure recovery are implemented; see [offline and install](pwa.md). Finish versioned storage migration, competing-tab saves and physical-device installation qualification.
-- [ ] **Real-model qualification.** Any model/inference paths are qualified on a
-      fresh browser per the user's standing gate, not from cached reports.
+- [ ] **PWA and recovery (Phase 4).** Verified offline asset graph, scoped updates, install/standalone UI and cache-failure recovery are implemented; see [offline and install](pwa.md). Versioned raw backup/migration, private export and competing-tab saves are implemented and verified; see [saved games and tabs](storage.md). Physical-device installation qualification remains open.
+- [ ] **Real-model qualification.** Integrate the user-requested local OpenAI-compatible endpoint with three candidate inferences, a separate judging/selection call, strict contracts and live qualification, then inspect resulting approved content in a fresh browser.
 - [ ] **Full parity release (Phase 5).** Execute every acceptance case and the
       complete original regression suite; review documented corrections, data
       migration, artwork and real-device behavior. No open blocker may hide

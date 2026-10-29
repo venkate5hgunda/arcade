@@ -1,3 +1,4 @@
+import { migrateStorage } from './lib/migration.ts';
 import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
 import { FeedbackControl } from './components/FeedbackControl.tsx';
@@ -27,7 +28,14 @@ import {
 } from './lib/session.ts';
 import { validCheckpoint, roomGameIds } from './lib/checkpoints.ts';
 import { recentGames } from './lib/profile.ts';
-import { KEYS, loadJSON, onStorageFailure, saveJSON } from './lib/storage.ts';
+import {
+  KEYS,
+  loadJSON,
+  onStorageFailure,
+  saveJSON,
+  storageProtectionReason,
+  observeStorage,
+} from './lib/storage.ts';
 import { requirements } from './lib/catalog.ts';
 import { Room } from './lib/room/protocol.ts';
 import { RoomPage } from './features/Room.tsx';
@@ -47,15 +55,23 @@ function Icon({ name }: { name: string }) {
 }
 function Catalog({ query, category }: { query: string; category: string }) {
   const [selected, setSelected] = useState('tictactoe');
-  const [recent] = useState(recentGames);
-  const [resumable] = useState(() =>
+  const [recent, setRecent] = useState(recentGames);
+  const readResumable = () =>
     unfinishedGames().filter((id) => {
       if (!isImplemented(id)) return false;
       const session = createGameSession(id);
       if (validCheckpoint(id, session.state)) return true;
-      deleteGameSession(id);
+      void deleteGameSession(id);
       return false;
-    }),
+    });
+  const [resumable, setResumable] = useState(readResumable);
+  useEffect(
+    () =>
+      observeStorage([KEYS.RECENT_GAMES, KEYS.GAME_SESSIONS], () => {
+        setRecent(recentGames());
+        setResumable(readResumable());
+      }),
+    [],
   );
   const visible = GAMES.filter(
     (game) =>
@@ -310,11 +326,29 @@ function Shell() {
   const home = location.pathname === '/';
   useEffect(
     () =>
-      onStorageFailure(() =>
+      observeStorage([KEYS.STORAGE_VERSION], () => {
+        migrateStorage();
+      }),
+    [],
+  );
+  useEffect(
+    () =>
+      onStorageFailure((operation) =>
         setWarning(
-          'Your browser could not save progress. You can keep playing, but leave this tab open.',
+          storageProtectionReason() ??
+            (operation === 'conflict'
+              ? 'Newer progress is saved in another tab. This tab will not overwrite it. Reload to continue from the saved game.'
+              : 'Your browser could not save progress. You can keep playing, but leave this tab open.'),
         ),
       ),
+    [],
+  );
+  useEffect(
+    () =>
+      observeStorage([KEYS.THEME], () => {
+        const saved = loadJSON<unknown>(KEYS.THEME, 'auto');
+        setTheme(saved === 'light' || saved === 'dark' ? saved : 'auto');
+      }),
     [],
   );
   useEffect(() => {

@@ -62,7 +62,7 @@ export function IslandGame() {
     setError('');
     run.start();
   }
-  function dispatch(move: IslandAction) {
+  async function dispatch(move: IslandAction) {
     if (!state) return;
     const next = structuredClone(state),
       before = nextSeat(state);
@@ -85,6 +85,7 @@ export function IslandGame() {
     }
     setError('');
     const after = nextSeat(next);
+    await run.commit(next, next.winner !== null);
     if (
       next.winner === null &&
       (after !== viewer ||
@@ -102,7 +103,6 @@ export function IslandGame() {
       setViewer(after);
       setCovered(true);
     }
-    run.commit(next, next.winner !== null);
   }
   return (
     <Frame

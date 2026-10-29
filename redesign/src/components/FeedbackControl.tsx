@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { KEYS, observeStorage } from '../lib/storage.ts';
 import { feedback } from '../lib/feedback.ts';
 export function FeedbackControl() {
   const [sound, setSound] = useState(feedback.audio.enabled);
@@ -27,6 +28,15 @@ export function FeedbackControl() {
       document.removeEventListener('pointerdown', outside);
     };
   }, []);
+  useEffect(
+    () =>
+      observeStorage([KEYS.SOUND_ENABLED, KEYS.HAPTICS_ENABLED], () => {
+        feedback.syncPreferences();
+        setSound(feedback.audio.enabled);
+        setHaptics(feedback.hapticsEnabled);
+      }),
+    [],
+  );
   const supported = feedback.hasVibration() || feedback.hasNativeSwitch();
   async function testSound() {
     feedback.audio.chime();

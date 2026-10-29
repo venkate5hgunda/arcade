@@ -1,3 +1,4 @@
+import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 test('Whack-a-Mole restores a timed round, scores hits and misses, ends and replays', async ({
@@ -27,6 +28,7 @@ test('Whack-a-Mole restores a timed round, scores hits and misses, ends and repl
   await mole.click();
   await expect(page.getByText('Score 3', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Hole 1', exact: true }).click();
+  await settleStorage(page);
   await page.reload();
   await expect(page.getByText('Score 3', { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

@@ -34,14 +34,14 @@ export function HockeyGame() {
     <Frame
       run={{
         ...run,
-        reset: () => {
+        reset: async () => {
           if (
             window.confirm(
               'Start a fresh match? Your current progress will be cleared.',
             )
           ) {
             discard.current = true;
-            createGameSession('air-hockey').finish();
+            await createGameSession('air-hockey').finish();
             run.view(null);
           }
         },

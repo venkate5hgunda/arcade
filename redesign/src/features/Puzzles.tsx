@@ -1,3 +1,4 @@
+import { useBestScore } from '../lib/useBestScore.ts';
 import { playCue, playSimonPad } from '../lib/feedback.ts';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import type { Field } from '../components/GameFrame.tsx';
@@ -124,10 +125,7 @@ function TileGame() {
     keepPlaying: false,
   }));
   const s = run.state;
-  const [best, setBest] = useState(() => {
-    const n = loadJSON<unknown>(`${KEYS.HIGH_SCORES}:2048`, 0);
-    return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? n : 0;
-  });
+  const [best, setBest] = useBestScore('2048');
   const boardRef = useRef<HTMLDivElement>(null);
   const [motion, setMotion] = useState<{
     tiles: ReturnType<typeof tileMove>['tiles'];
@@ -168,7 +166,6 @@ function TileGame() {
     const next = { ...s, grid, score, won, over: !tileHasMoves(grid) };
     if (score > best) {
       setBest(score);
-      saveJSON(`${KEYS.HIGH_SCORES}:2048`, score);
     }
     setEffects({
       merges: result.merges.map(({ r, c }) => r * 4 + c),
@@ -463,8 +460,12 @@ function MemoryGame() {
     const result = memoryFlip(s, index);
     if (result.mismatch) {
       playCue({ sound: 'buzz', haptic: 'failure' });
-      run.commit(memoryHide(result.state, result.mismatch));
-      run.view(result.state);
+      // Save the covered handoff while showing the temporary mismatch until its timer ends.
+      void run.commit(
+        memoryHide(result.state, result.mismatch),
+        false,
+        result.state,
+      );
       setPending(result.mismatch);
     } else run.commit(result.state);
   }
@@ -573,10 +574,7 @@ function SimonGame() {
   const [phase, setPhase] = useState<'watch' | 'input' | 'next'>('watch');
   const [active, setActive] = useState<number | null>(null);
   const [epoch, setEpoch] = useState(0);
-  const [best, setBest] = useState(() => {
-    const n = loadJSON<unknown>(`${KEYS.HIGH_SCORES}:simon`, 0);
-    return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? n : 0;
-  });
+  const [best, setBest] = useBestScore('simon');
   const sequenceKey = s?.sequence.join(',');
   useEffect(() => {
     if (!s || s.over || s.playerStep === s.sequence.length) return;
@@ -610,7 +608,6 @@ function SimonGame() {
     setPhase('next');
     if (s.sequence.length > best) {
       setBest(s.sequence.length);
-      saveJSON(`${KEYS.HIGH_SCORES}:simon`, s.sequence.length);
     }
     const timer = setTimeout(
       () =>
@@ -653,9 +650,9 @@ function SimonGame() {
         s?.over && (
           <button
             className="primary rematch"
-            onClick={() => {
+            onClick={async () => {
+              await run.start();
               setEpoch((v) => v + 1);
-              run.start();
             }}
           >
             Play again

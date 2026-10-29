@@ -4,14 +4,16 @@ A vibrant, illustrated shelf for good games and better company.
 
 **All 26 games have native implementations and distinct custom artwork.** Browse the Living Game Shelf, resume saved games, and play eleven supported games in private rooms. The requirements explorer remains at `#/requirements/:id`.
 
-Game ports are complete; shared room features and release qualification remain in the [backlog](backlog.md). This is a reviewable migration milestone, not a production deployment.
+Game ports and shared room features are complete; release qualification remains in the [backlog](backlog.md). This is a reviewable migration milestone, not a production deployment.
 
 | Document | Purpose |
 | --- | --- |
 | [Requirements](requirements.md) | Acceptance criteria and original behavior evidence |
 | [Architecture](architecture.md) | React/TypeScript ownership and state boundaries |
 | [Migration and decisions](migration.md) | Prior decisions, data contracts and rollout |
+| [Release qualification](release-qualification.md) | Automated evidence and outstanding hardware/network/model gates |
 | [Verification](verification.md) | Current test evidence and trace findings |
+| [Saved games and tabs](storage.md) | Migration, private export and competing-tab behavior |
 | [Offline and install](pwa.md) | Asset graph, installation, update and scope behavior |
 | [Design QA](design-qa.md) | Reference comparison and responsive checks |
 | [Game ports](game-ports.md) | Family-by-family migration status and current evidence |

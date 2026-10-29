@@ -19,12 +19,13 @@ export function useRun<T extends object>(
   done: (state: T) => boolean = (state) => !!(state as { over?: boolean }).over,
   restore: (value: unknown) => T = (value) => value as T,
 ) {
-  const session = useMemo(() => createGameSession(id), [id]);
+  const session = useMemo(() => createGameSession(id, { fresh: true }), [id]);
   const [state, view] = useState<T | null>(() => {
     if (valid(session.state)) return restore(session.state);
     if (session.state) session.finish();
     return null;
   });
+  const [saving, setSaving] = useState(false);
   const latest = useRef(state);
   latest.current = state;
   const ended = useRef(false);
@@ -42,37 +43,51 @@ export function useRun<T extends object>(
         )
       : defaults;
   });
-  function commit(next: T, finished = done(next)) {
+  async function commit(next: T, finished = done(next), display = next) {
     playCue(() =>
       localCue(id, latest.current, next, finished && !ended.current),
     );
-    latest.current = next;
+    latest.current = display;
     ended.current = finished;
-    view(next);
-    if (finished) session.finish();
-    else session.save(next);
+    setSaving(true);
+    if (finished) await session.finish();
+    else await session.save(next);
+    view(display);
+    setSaving(false);
   }
   function start() {
     saveJSON(`${KEYS.SETTINGS}:${id}`, settings);
     markPlayed(id);
     latest.current = null;
     ended.current = false;
-    commit(make(settings));
+    return commit(make(settings));
   }
-  function reset() {
+  async function reset() {
     if (
       !state ||
       window.confirm(
         'Start a fresh match? Your current progress will be cleared.',
       )
     ) {
-      session.finish();
+      await session.finish();
       view(null);
     }
   }
-  return { id, state, settings, setSettings, commit, view, start, reset };
+  return {
+    id,
+    state,
+    settings,
+    setSettings,
+    commit,
+    view,
+    start,
+    reset,
+    saving,
+  };
 }
-type Run<T extends object> = ReturnType<typeof useRun<T>>;
+type Run<T extends object> = Omit<ReturnType<typeof useRun<T>>, 'start'> & {
+  start(): void | Promise<void>;
+};
 export function Frame<T extends object>({
   run,
   fields,
@@ -174,7 +189,11 @@ export function Frame<T extends object>({
         </div>
       ) : (
         <div className="puzzle-play">
-          <div className="board-panel">
+          <div
+            className="board-panel"
+            aria-busy={run.saving}
+            inert={run.saving}
+          >
             <div className="turn-banner" role="status">
               <div>
                 <h2>{title}</h2>

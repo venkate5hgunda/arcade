@@ -1,3 +1,4 @@
+import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page, BrowserContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -69,6 +70,7 @@ async function seed(page: Page, game: CardState) {
   await page.goto(`/#/game/${game.gameId}`);
 }
 async function saved<T>(page: Page, id: string): Promise<T> {
+  await settleStorage(page);
   return page.evaluate(
     (id) =>
       JSON.parse(localStorage.getItem('arcade:game.sessions') ?? '{}')[id]

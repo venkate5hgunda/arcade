@@ -106,12 +106,15 @@ test('local match saves names, resumes from home, announces O win once and remat
   await cell(3, 3).click();
   await cell(2, 3).click();
   await expect(page.getByRole('heading', { name: 'Kai wins!' })).toBeVisible();
-  expect(
-    await page.evaluate(
-      () =>
-        JSON.parse(localStorage.getItem('arcade:scores.highScores')!).tictactoe,
-    ),
-  ).toEqual({ Kai: 1 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem('arcade:scores.highScores') ?? '{}')
+            .tictactoe,
+      ),
+    )
+    .toEqual({ Kai: 1 });
   await page.getByRole('button', { name: 'Play again' }).click();
   await expect(page.locator('.square')).toHaveCount(9);
   await page.getByRole('button', { name: 'New match', exact: true }).click();
@@ -229,7 +232,7 @@ test('storage denial warns while local gameplay remains playable', async ({
   await page.goto('/#/game/tictactoe');
   await page.getByRole('button', { name: 'Start playing' }).click();
   await expect(
-    page.getByText(/Your browser could not save progress/),
+    page.getByText(/Saved-game migration could not finish/),
   ).toBeVisible();
   await page.locator('.square').first().click();
   await expect(

@@ -25,7 +25,7 @@
         "test/game-categories.test.js",
         "test/game-session.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "All 26 native entries retain IDs, routes, categories, player limits and artwork. Live recent/resume links follow coordinated storage updates across tabs, with native aliases, errors, keyboard navigation and desktop/mobile evidence. Full release qualification remains separate."
     },
     {
       "id": "A02",
@@ -52,7 +52,7 @@
         "test/player-names.test.js",
         "test/turn-indicator.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "Shared collapsed setup, help, options, reset confirmation and actor/result feedback cover all 26 native games. Memory display/checkpoint separation and private handoffs retain recovery behavior with coordinated saves. Browser accessibility, reduced motion and complete-game flows pass; physical-device release qualification remains open."
     },
     {
       "id": "A03",
@@ -72,7 +72,7 @@
       "baselineTests": [
         "test/game-session.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "All 26 native checkpoint/settings shapes retain the original keys and expiry/validation. Version 1 preserves raw legacy backups before mounting React, protects failed/future migrations and offers private exports. Web Locks coordinate competing checkpoint/score/recent writes, reject stale same-game replacement/deletion and refresh shelf/preferences across tabs. Complete-game and two-tab desktop/mobile flows pass; physical-device release qualification remains open."
     },
     {
       "id": "A04",
@@ -188,7 +188,7 @@
         "test/movie-library.test.js",
         "test/movie-offline.test.js"
       ],
-      "implementationScope": "Verified production asset graph includes HTML, JS/CSS, fonts, all 26 covers, boards, local QR tools and approved movie files. Scope-owned workers, explicit updates, failed-install cleanup, prior-release retention and install/standalone UI have real desktop/mobile browser evidence. Versioned storage migration, competing-tab save coordination and physical-device release qualification remain open."
+      "implementationScope": "Verified production asset graph includes HTML, JS/CSS, fonts, all 26 covers, boards, local QR tools and approved movie files. Scope-owned workers, explicit updates, failed-install cleanup, prior-release retention and install/standalone UI have real desktop/mobile browser evidence. Versioned raw backups, private exports, unsupported-schema protection and coordinated competing-tab saves have desktop/mobile browser evidence. Physical-device and live developer-model release qualification remain open."
     },
     {
       "id": "G01",

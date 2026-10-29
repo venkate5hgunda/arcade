@@ -55,13 +55,14 @@ test('Classic Imposter covers each card and ballot, catches a spy and replays', 
       page.getByRole('group', { name: 'Choose a suspect' }),
     ).toHaveCount(0);
     await page.getByRole('button', { name: 'Open my ballot' }).click();
-    await page
+    const suspect = page
       .getByRole('group', { name: 'Choose a suspect' })
       .getByRole('button', {
         name: `Player ${i === spy ? (spy === 0 ? 2 : 1) : spy + 1}`,
         exact: true,
-      })
-      .click();
+      });
+    await suspect.click();
+    await expect(suspect).toHaveAttribute('aria-pressed', 'true');
     if (i === 0) {
       await page.reload();
       await expect(

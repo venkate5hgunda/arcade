@@ -1,3 +1,4 @@
+import { downloadSavedGames } from '../lib/migration.ts';
 import { useEffect, useRef, useState } from 'react';
 interface InstallPrompt extends Event {
   prompt(): Promise<void>;
@@ -187,6 +188,24 @@ export function PwaControl() {
           {waiting && <strong> · Update ready</strong>}
         </summary>
         <p role="status">{status}</p>
+        <button
+          className="quiet"
+          onClick={() => {
+            try {
+              downloadSavedGames();
+            } catch {
+              setStatus(
+                'Saved games could not be read. Check browser storage permissions and try again.',
+              );
+            }
+          }}
+        >
+          Download saved games
+        </button>
+        <p>
+          The download may include secret cards, roles and word answers. Keep it
+          private.
+        </p>
         {installed ? (
           <p>Running as an installed app.</p>
         ) : prompt ? (

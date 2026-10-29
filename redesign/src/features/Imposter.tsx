@@ -475,11 +475,11 @@ function ImposterLoaded({ movies }: { movies: Movie[] }) {
               className="quiet"
               disabled={i === s.currentPlayer || s.out.includes(i)}
               aria-pressed={selection === i}
-              onClick={() => {
-                setSelection(i);
+              onClick={async () => {
                 const votes = [...s.votes];
                 votes[s.currentPlayer] = i;
-                run.commit({ ...s, votes });
+                await run.commit({ ...s, votes });
+                setSelection(i);
               }}
             >
               {label(i)}

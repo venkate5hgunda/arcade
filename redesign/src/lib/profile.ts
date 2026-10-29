@@ -1,4 +1,4 @@
-import { KEYS, loadJSON, saveJSON } from './storage.ts';
+import { KEYS, loadJSON, saveJSON, withStorageLock } from './storage.ts';
 import { GAMES } from './games.ts';
 export function names(): string[] {
   const raw = loadJSON<unknown>(KEYS.PLAYER_NAMES, []);
@@ -29,11 +29,13 @@ export function recentGames(): Recent[] {
     .slice(0, 8);
 }
 export function markPlayed(id: string) {
-  saveJSON(
-    KEYS.RECENT_GAMES,
-    [{ id, at: Date.now() }, ...recentGames().filter((g) => g.id !== id)].slice(
-      0,
-      8,
+  void withStorageLock(KEYS.RECENT_GAMES, () =>
+    saveJSON(
+      KEYS.RECENT_GAMES,
+      [
+        { id, at: Date.now() },
+        ...recentGames().filter((g) => g.id !== id),
+      ].slice(0, 8),
     ),
   );
 }
@@ -52,10 +54,31 @@ export function localScores(): Record<string, number> {
     : {};
 }
 export function recordWin(name: string): Record<string, number> {
-  const raw = loadJSON<unknown>(KEYS.HIGH_SCORES, {});
-  const all = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
   const scores = localScores();
-  const next = { ...scores, [name]: (scores[name] ?? 0) + 1 };
-  saveJSON(KEYS.HIGH_SCORES, { ...all, tictactoe: next });
-  return next;
+  const optimistic = { ...scores, [name]: (scores[name] ?? 0) + 1 };
+  void withStorageLock(KEYS.HIGH_SCORES, () => {
+    const raw = loadJSON<unknown>(KEYS.HIGH_SCORES, {});
+    const all =
+      raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+    const latest = localScores();
+    saveJSON(KEYS.HIGH_SCORES, {
+      ...all,
+      tictactoe: { ...latest, [name]: (latest[name] ?? 0) + 1 },
+    });
+  });
+  return optimistic;
+}
+
+export function bestScore(id: string): number {
+  const value = loadJSON<unknown>(`${KEYS.HIGH_SCORES}:${id}`, 0);
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+export function recordBest(id: string, score: number) {
+  return withStorageLock(`${KEYS.HIGH_SCORES}:${id}`, () => {
+    const best = Math.max(bestScore(id), score);
+    saveJSON(`${KEYS.HIGH_SCORES}:${id}`, best);
+    return best;
+  });
 }

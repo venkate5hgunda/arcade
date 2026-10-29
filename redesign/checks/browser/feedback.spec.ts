@@ -1,3 +1,4 @@
+import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import { newHockey } from '../../src/lib/hockey.ts';
 import { RANKS, SUITS } from '../../src/lib/blackjack.ts';
@@ -178,6 +179,7 @@ test('gameplay emits a distinct win chime and respects mute', async ({
   await page.getByText('Match options & player names').click();
   await page.getByRole('button', { name: '2 players', exact: true }).click();
   await page.getByRole('button', { name: 'Start playing' }).click();
+  await settleStorage(page);
   for (const [row, col] of [
     [1, 1],
     [2, 1],
@@ -267,6 +269,7 @@ test('Simon plays distinct sequence notes and mute silences both playback and co
   await page.clock.install();
   await page.clock.pauseAt(Date.now() + 1000);
   await page.getByRole('button', { name: 'Start playing' }).click();
+  await settleStorage(page);
   await page.clock.runFor(600);
   const state = await page.evaluate(
     () => JSON.parse(localStorage.getItem('arcade:game.sessions')!).simon.state,

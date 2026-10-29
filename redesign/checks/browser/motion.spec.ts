@@ -1,3 +1,4 @@
+import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import { newRace } from '../../src/lib/races.ts';
 import { GAMES } from '../../src/lib/games.ts';
@@ -157,10 +158,14 @@ test('reduced motion preserves Simon sequence timing and outline cues without pa
   page,
 }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    Math.random = () => 0.1;
+  });
   await page.goto('/#/game/simon');
   await page.clock.install();
   await page.clock.pauseAt(Date.now() + 1000);
   await page.getByRole('button', { name: 'Start playing' }).click();
+  await settleStorage(page);
   await expect(
     page.getByRole('heading', { name: 'Watch the sequence.' }),
   ).toBeVisible();
@@ -195,6 +200,7 @@ test('reduced motion preserves Simon sequence timing and outline cues without pa
     page.getByRole('heading', { name: 'Game over — reached round 1' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Play again' }).click();
+  await settleStorage(page);
   await expect(
     page.getByRole('heading', { name: 'Watch the sequence.' }),
   ).toBeVisible();
@@ -213,6 +219,7 @@ test('reduced motion removes interactive hover travel while keeping game control
   );
   await page.goto('/#/game/tictactoe');
   await page.getByRole('button', { name: 'Start playing' }).click();
+  await settleStorage(page);
   const square = page.getByRole('button', { name: 'Row 1, column 1: empty' });
   if (!isMobile) await square.hover();
   expect(await square.evaluate((el) => getComputedStyle(el).transform)).toBe(
@@ -224,6 +231,7 @@ test('reduced motion removes interactive hover travel while keeping game control
   ).toBeVisible();
   await page.goto('/#/game/rps');
   await page.getByRole('button', { name: 'Start playing' }).click();
+  await settleStorage(page);
   const choice = page.locator('.rps-choices button').first();
   if (!isMobile) await choice.hover();
   expect(await choice.evaluate((el) => getComputedStyle(el).transform)).toBe(

@@ -1,8 +1,8 @@
+import { useBestScore } from '../lib/useBestScore.ts';
 import { useEffect, useRef, useState } from 'react';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { validWhack, newWhack } from '../lib/whack.ts';
 import type { WhackState } from '../lib/whack.ts';
-import { KEYS, loadJSON, saveJSON } from '../lib/storage.ts';
 export function WhackGame() {
   const run = useRun<WhackState>(
     'whack-a-mole',
@@ -13,11 +13,8 @@ export function WhackGame() {
   );
   const [now, setNow] = useState(Date.now()),
     [active, setActive] = useState(-1),
-    [over, setOver] = useState(false),
-    [best, setBest] = useState(() => {
-      const n = loadJSON<unknown>(`${KEYS.HIGH_SCORES}:whack-a-mole`, 0);
-      return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? n : 0;
-    });
+    [over, setOver] = useState(false);
+  const [best, setBest] = useBestScore('whack-a-mole');
   const latest = useRef(run.state);
   latest.current = run.state;
   const game = run.state;
@@ -76,7 +73,6 @@ export function WhackGame() {
       setActive(-1);
       if (next.score > best) {
         setBest(next.score);
-        saveJSON(`${KEYS.HIGH_SCORES}:whack-a-mole`, next.score);
       }
     }
     run.commit(next);
