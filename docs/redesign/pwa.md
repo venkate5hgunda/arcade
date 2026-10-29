@@ -12,7 +12,7 @@ A new release waits until **Update and reload** is selected. Local checkpoints r
 
 Caches include the exact origin and app scope in their name. Activation cleans only that namespace, removes interrupted-install caches and retains the previous verified release. Requests outside the scope or origin are untouched. Existing production/foreign service workers are preserved; the redesign refuses registration under a conflicting controller and asks for an isolated preview origin. It never unregisters the original worker or changes the original app's deployment.
 
-Serve the contents of `redesign/node_modules/.cache/redesign-dist/` over HTTPS (localhost also works), at the root of a separate preview origin or a correctly scoped directory. The existing movie asset pipeline and relative build paths support either layout. Root repository commands still serve the original app. This work does not authorize production deployment.
+Serve the contents of `redesign/node_modules/.cache/redesign-dist/` over HTTPS (localhost also works), at the root of an origin or a correctly scoped directory. The existing movie asset pipeline and relative build paths support either layout. Root repository commands still serve the original app for migration comparison. The user authorized production deployment of this artifact on 2026-10-29.
 
 ## Evidence and limits
 

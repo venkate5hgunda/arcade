@@ -2,8 +2,9 @@
 
 All 26 games have native implementations, original artwork and automated
 complete-game/recovery evidence. All eleven supported room games have
-host-authoritative projections and recovery evidence. This is a migration
-branch; merging or deploying is a separate decision.
+host-authoritative projections and recovery evidence. The user authorized the
+production merge and deployment on 2026-10-29; the public release uses the
+verified `redesign/` build artifact.
 
 ## Automated evidence
 

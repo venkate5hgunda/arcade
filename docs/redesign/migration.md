@@ -36,6 +36,12 @@ Push this milestone to `codex/redesign-foundation`; do not merge or deploy it au
 
 Use a separate preview origin during later implementation. Before replacing the public app, validate old-to-new storage fixtures, an explicit return/backup path, inbound URLs, service-worker update behavior and full feature parity. An old service worker can intercept new paths on the same origin, so preview isolation must be operational rather than a folder name alone.
 
+### Production rollout decision — 2026-10-29
+
+The user authorized merging all pending Arcade changes and deploying them to the public app. This supersedes the earlier milestone-specific instructions not to merge or deploy automatically. The completed migration branch is merged through review into `main`; GitHub Pages builds the checked-in `redesign/` package and deploys its verified production artifact at the repository Pages URL. The original source remains in the repository as the migration baseline and rollback reference, but it is no longer the public Pages artifact.
+
+The previously deferred physical-device and cross-network checks remain documented limitations rather than silently passing gates. Automated production-build, browser, storage-migration, service-worker, room, accessibility and original-suite checks remain required before the merge.
+
 ## Trace checklist for every migrated feature
 
 Trace UI entry points → controller/actions → domain rules → persistence/transport → projections/rendering → serialized output → docs and tests. Include every consumer of changed roles, phases, flags, IDs and fields. Revisit the original decision when changing its premise. Record newly discovered requirements and additional edits; identify missed traces explicitly if they cause a defect.

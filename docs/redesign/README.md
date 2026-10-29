@@ -4,7 +4,7 @@ A vibrant, illustrated shelf for good games and better company.
 
 **All 26 games have native implementations and distinct custom artwork.** Browse the Living Game Shelf, resume saved games, and play eleven supported games in private rooms. The requirements explorer remains at `#/requirements/:id`.
 
-Game ports and shared room features are complete; release qualification remains in the [backlog](backlog.md). This is a reviewable migration milestone, not a production deployment.
+Game ports and shared room features are complete. The production rollout was authorized on 2026-10-29 after the automated release suite passed; deferred physical-device and cross-network checks remain explicit in [release qualification](release-qualification.md).
 
 | Document | Purpose |
 | --- | --- |
@@ -54,7 +54,7 @@ Tests and captures normally start their own production preview. To use a preview
 
 Rooms use version 9 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account or microphone is required. Camera scanning is optional and requires HTTPS (or localhost) and camera permission. QR generation and scanning run locally; a long link may exceed QR capacity, in which case use copy/share.
 
-Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. The production build registers only its own scoped offline worker and preserves foreign workers. Production data migration remains a separate release gate. Root commands still run the original application.
+The redesign deliberately preserves the original `arcade:` local-data contracts. Its production build registers only its own scoped offline worker and preserves foreign workers. Root commands still run the original application for migration comparison; production development commands live in `redesign/`.
 
 Use **Return to lobby** in Room options to change games or selected players. Unfinished match progress is cleared after confirmation; standings and seat identities survive.
 

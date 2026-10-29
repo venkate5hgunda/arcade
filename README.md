@@ -72,6 +72,6 @@ docs/                              documentation, rules and screenshots
 
 [MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code stay under their own licenses — see [credits](docs/credits.md) and `js/vendor/`.
 
-## 🧭 Redesign
+## 🧭 Living Game Shelf
 
-The Living Game Shelf and first playable redesign are on `codex/redesign-first-game`, for review into `codex/redesign-foundation`. See the [redesign preview and documentation](docs/redesign/README.md) for scope, local play and parity tracking.
+The public app is the React/TypeScript Living Game Shelf. See the [redesign documentation](docs/redesign/README.md) for local development, architecture, parity evidence and release qualification.
