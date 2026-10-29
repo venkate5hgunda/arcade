@@ -15,11 +15,25 @@ test('every feature has unique identity, existing evidence and explicit acceptan
     manifest.requirements.length,
   );
   for (const entry of manifest.requirements) {
-    assert.ok(['planned', 'implemented'].includes(entry.status));
-    if (entry.status === 'implemented') {
-      assert.ok(entry.implementationTests?.length);
+    assert.ok(
+      ['planned', 'implemented', 'partial'].includes(entry.status),
+      `${entry.id}: unknown status ${entry.status}`,
+    );
+    // implemented/partial both carry automated evidence; partial also names the
+    // exact physical-device or cross-network release gate that remains open.
+    if (entry.status === 'implemented' || entry.status === 'partial') {
+      assert.ok(
+        entry.implementationTests?.length,
+        `${entry.id}: ${entry.status} requires implementationTests`,
+      );
       for (const path of entry.implementationTests)
-        assert.ok(existsSync(resolve(root, path)), path);
+        assert.ok(existsSync(resolve(root, path)), `${entry.id}: ${path}`);
+    }
+    if (entry.status === 'partial') {
+      assert.ok(
+        entry.releaseGate,
+        `${entry.id}: partial status requires a releaseGate`,
+      );
     }
     assert.ok(entry.acceptance.length);
     assert.ok(entry.sources.length);

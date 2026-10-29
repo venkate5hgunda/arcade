@@ -4,7 +4,7 @@
 
 - Start from refreshed `origin/main` at `ae1136d6e544784811e5c334ee76d6c54b6921a3`. The existing code, its tests, product documentation and the [source snapshot](source-snapshot.json) anchor the requirements.
 - The initial no-build architecture optimized direct static deployment. The user's redesign request supersedes that implementation constraint, while preserving user capabilities and allowing new logic, flows and backend internals.
-- The agreed first milestone is requirements, architecture and runnable foundations. The subsequent Phase 2 request implements the first complete game; G19 now has implementation evidence and broader parity records retain planned status.
+- The agreed first milestone is requirements, architecture and runnable foundations. The subsequent Phase 2 request implements the first complete game; G19 now has implementation evidence, and the broader shared requirements (A01–A08) are now implemented or partial with all 26 games implemented. Dated checkpoint notes below record each milestone's state at the time; physical-device and cross-network qualification remain explicit release gates.
 - The practical stack chosen in the conversation is Svelte/TypeScript/Vite for Pick and React/TypeScript/Vite/React Router for Arcade and Sharp. Vue was considered for Sharp; common React tooling across the larger apps is the selected tradeoff.
 - Maintain product-specific implementations in their own repos. Share conventions first; extract a shared package only after actual duplication and compatible ownership justify it.
 

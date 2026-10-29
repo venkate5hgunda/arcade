@@ -6,14 +6,14 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 
 | ID | Feature | Area | Redesign status |
 | --- | --- | --- | --- |
-| [A01](#a01) | Catalog and navigation | Platform | Planned |
-| [A02](#a02) | Shared game experience | Platform | Planned |
-| [A03](#a03) | Persistence and recovery | Platform | Planned |
-| [A04](#a04) | Room admission and sharing | Multiplayer | Planned |
-| [A05](#a05) | Authority and private information | Multiplayer | Planned |
-| [A06](#a06) | Room reconnection | Multiplayer | Planned |
-| [A07](#a07) | Sound, feel and themes | Experience | Planned |
-| [A08](#a08) | Offline assets and data pipeline | Platform | Planned |
+| [A01](#a01) | Catalog and navigation | Platform | Implemented |
+| [A02](#a02) | Shared game experience | Platform | Implemented |
+| [A03](#a03) | Persistence and recovery | Platform | Implemented |
+| [A04](#a04) | Room admission and sharing | Multiplayer | Partial |
+| [A05](#a05) | Authority and private information | Multiplayer | Partial |
+| [A06](#a06) | Room reconnection | Multiplayer | Partial |
+| [A07](#a07) | Sound, feel and themes | Experience | Partial |
+| [A08](#a08) | Offline assets and data pipeline | Platform | Partial |
 | [G01](#g01) | Show | Party | Implemented |
 | [G02](#g02) | Taboo | Party | Implemented |
 | [G03](#g03) | Wordle | Word | Implemented |
@@ -47,12 +47,12 @@ The inventory has **34 feature groups**. Groups contain multiple acceptance case
 - Preserve bright original artwork, legible contrast, touch and keyboard operation, focus management, reduced motion, and mobile/landscape/desktop layouts. Primary action and active actor remain apparent.
 - Treat installation, first-load caching, fully offline operation, interrupted updates and multi-tab version consistency as separate cases.
 - Keep behavior, domain state, persistent data and presentation independently testable; one authoritative owner for each state transition.
-- A planned or merely implemented feature is not verified parity. Track pending, implemented and verified evidence separately when migration begins. Foundation status was all planned; Phase 2 implements G19 and Phase 3 implements G20–G24, with scoped progress on platform and room requirements. See verification.md for current evidence.
+- A planned or merely implemented feature is not verified parity; a **partial** feature is implemented with automated evidence but still carries a named physical-device or cross-network release gate. Track planned, implemented, partial and verified evidence separately. The eight shared platform, multiplayer and experience requirements (A01–A08) are now **implemented** (A01–A03) or **partial** (A04–A08, device/network gates open); all 26 game requirements (G01–G26) are implemented. See the [parity inventory](parity.json) and [verification](verification.md) for current evidence.
 - A backend replacement must specify user-visible availability, consent, data retention, authority and recovery semantics before activation. Architectural freedom does not erase these requirements.
 
 ## A01
 
-**Catalog and navigation** · Platform · Planned
+**Catalog and navigation** · Platform · Implemented
 
 - All 26 catalog entries retain IDs, player ranges, categories, rules and supported modes.
 - Category filtering, deduplicated recent games, per-game resume and deep links remain available.
@@ -66,7 +66,7 @@ Baseline tests: [test/game-categories.test.js](../../test/game-categories.test.j
 
 ## A02
 
-**Shared game experience** · Platform · Planned
+**Shared game experience** · Platform · Implemented
 
 - Collapsed setup shows a useful summary and immediate start; persist per-game choices.
 - Help offers rules, controls and goals; player names and auxiliary settings stay expandable.
@@ -80,7 +80,7 @@ Baseline tests: [test/game-shell.test.js](../../test/game-shell.test.js), [test/
 
 ## A03
 
-**Persistence and recovery** · Platform · Planned
+**Persistence and recovery** · Platform · Implemented
 
 - Preserve arcade-prefixed settings, names, scores, recent games and local checkpoints.
 - Use each game’s actual expiry from game-session.js; timed games retain absolute deadlines across hide/reload.
@@ -93,7 +93,7 @@ Baseline tests: [test/game-session.test.js](../../test/game-session.test.js).
 
 ## A04
 
-**Room admission and sharing** · Multiplayer · Planned
+**Room admission and sharing** · Multiplayer · Partial
 
 - Host creates unique per-guest invitations; guest returns answer accepted in original host tab.
 - Native share, clipboard fallback, local QR generation/scanning and raw-link fallback remain available.
@@ -106,7 +106,7 @@ Baseline tests: [test/multiplayer.test.js](../../test/multiplayer.test.js), [tes
 
 ## A05
 
-**Authority and private information** · Multiplayer · Planned
+**Authority and private information** · Multiplayer · Partial
 
 - Retain the eleven room-supported games and room-only Mafia behavior.
 - Host validates actor, seat, round and revision; guests submit intents and cannot set authoritative outcomes.
@@ -119,7 +119,7 @@ Baseline tests: [test/multiplayer.test.js](../../test/multiplayer.test.js), [tes
 
 ## A06
 
-**Room reconnection** · Multiplayer · Planned
+**Room reconnection** · Multiplayer · Partial
 
 - Transient disconnection pauses turns; same-seat invitation/answer recovery retains the round.
 - Host reload restores a tab-scoped checkpoint; guests exchange fresh links and receive only their own views.
@@ -133,7 +133,7 @@ Baseline tests: [test/multiplayer.test.js](../../test/multiplayer.test.js).
 
 ## A07
 
-**Sound, feel and themes** · Experience · Planned
+**Sound, feel and themes** · Experience · Partial
 
 - Auto/light/dark theme, persistent sound/haptics settings, user-gesture audio unlock and recovery.
 - Impact-sensitive synthesized effects, distinct wins and optional haptics; reflect actual platform support.
@@ -146,7 +146,7 @@ Baseline tests: [test/audio.test.js](../../test/audio.test.js), [test/haptics.te
 
 ## A08
 
-**Offline assets and data pipeline** · Platform · Planned
+**Offline assets and data pipeline** · Platform · Partial
 
 - Cache shell, all game modules, icons, QR worker and approved movie content for local offline play.
 - Retain Telugu movie sources/credits, top three actors and synopsis in appropriate revealed contexts.

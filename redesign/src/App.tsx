@@ -300,9 +300,14 @@ function RequirementRoute() {
       {entry && (
         <>
           <p>
-            Migration status: {entry.status}. See the redesign documentation for
-            the exact implemented scope.
+            <strong>Migration status: {entry.status}.</strong> See the redesign
+            documentation for the exact implemented scope.
           </p>
+          {entry.releaseGate && (
+            <p className="release-gate" role="note">
+              <strong>Release gate.</strong> {entry.releaseGate}
+            </p>
+          )}
           <ul>
             {entry.acceptance.map((text) => (
               <li key={text}>{text}</li>

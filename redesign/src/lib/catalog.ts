@@ -7,6 +7,10 @@ export interface Requirement {
   sources: string[];
   acceptance: string[];
   baselineTests: string[];
+  // Automated evidence for implemented/partial requirements (runtime-validated by
+  // the inventory check); releaseGate names the deferred device/network gate.
+  implementationTests?: string[];
+  releaseGate?: string;
 }
 export const requirements: Requirement[] = baseline.requirements;
 export const categories = [
