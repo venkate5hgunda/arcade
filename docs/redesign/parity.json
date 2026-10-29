@@ -117,7 +117,7 @@
         "test/multiplayer.test.js",
         "test/remote-match.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "Partial: all eleven room games use host authority and seat-specific private views. Host-only per-player/per-game wins, losses, draws and rankings persist across replays and reconnects; protocol v8 restores valid v1\u2013v7 host backups. Spectator projections and physical-device/cross-network release qualification remain open."
     },
     {
       "id": "A06",
@@ -138,7 +138,7 @@
       "baselineTests": [
         "test/multiplayer.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "All eleven room games have authoritative tab-scoped recovery, fresh same-seat invitations, name validation and disconnection handling; protocol v8 retains valid v1\u2013v7 backups. Eliminated Business seats and Mafia absent-seat rules retain their game-specific behavior. Spectator recovery and physical-device/cross-network qualification remain open."
     },
     {
       "id": "A07",

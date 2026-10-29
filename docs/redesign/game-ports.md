@@ -35,7 +35,7 @@ Evidence: `redesign/checks/unit/blackjack.check.ts` and `redesign/checks/browser
 
 - **Crazy Eights:** native two-player covered local hands and private rooms; suit/rank matching, wild-eight suit selection, one draw per turn, passing, discard recycling, empty-hand victory and blocked-hand penalty scoring. Choosing a suit survives reload; completed games are removed from local resume.
 - **UNO-inspired:** native 2–20-player local tables and rooms; one/two decks, private hands, skip/reverse/+2/wild/+4, drawn-card restriction, challenge/accept, UNO callouts/catches, blocked termination, wins and replay. Names/settings/checkpoints retain baseline shapes. Reload covers local hands again.
-- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v7 rejects older connection links. Valid v1–v6 host checkpoints can be restored and re-invited using v7 links.
+- **Rooms:** independent host-to-guest data channels, strict seat projections, host-only deck backup, per-link sequence checks plus match round/revision, same-seat reconnect, pause while any player is disconnected and exactly-once results. Protocol v8 rejects older connection links. Valid v1–v7 host checkpoints can be restored and re-invited using v8 links.
 
 Evidence: `redesign/checks/unit/cards.check.ts`, `room.check.ts`, and `redesign/checks/browser/cards.spec.ts`. Typed engines are compared against the originals through complete games at 2/3/10/11/20 players. Twenty-seat protocol admission/projection/reconnect is checked with deterministic transports; real WebRTC browser flows cover two-player Crazy Eights and three-player UNO, including host reload, preserved private hands, complete wins and rematches. Physical-device/network qualification and broader shared room criteria remain release gates.
 
@@ -83,7 +83,7 @@ The original app's `js/playing-cards.js` and `js/card-pile.js` centralize standa
 
 ## Rock Paper Scissors acceptance and evidence
 
-Native computer/pass-and-play modes preserve first-to-3/5/7 settings, secret handoffs, all nine throw outcomes, ties, absolute countdown recovery and replay. Rooms preserve independently chosen throws, first-to-3 matches, host-only next-round control, standings, reconnect and tab recovery. Guest projections contain their own throw and opponent lock status; neither throw is revealed until the host finishes the countdown. Protocol v7 rejects older peers and restores valid v1–v6 host backups with fresh invitations.
+Native computer/pass-and-play modes preserve first-to-3/5/7 settings, secret handoffs, all nine throw outcomes, ties, absolute countdown recovery and replay. Rooms preserve independently chosen throws, first-to-3 matches, host-only next-round control, standings, reconnect and tab recovery. Guest projections contain their own throw and opponent lock status; neither throw is revealed until the host finishes the countdown. Protocol v8 rejects older peers and restores valid v1–v7 host backups with fresh invitations.
 
 Evidence: `redesign/checks/unit/rps.check.ts`, `room.check.ts`, and `redesign/checks/browser/rps.spec.ts`; eight desktop/mobile flows cover full matches, computer play, deadlines, navigation cleanup, accessibility and real two-browser reload/reconnect. Physical-device and cross-network qualification remains a release gate.
 
@@ -91,7 +91,7 @@ Evidence: `redesign/checks/unit/rps.check.ts`, `room.check.ts`, and `redesign/ch
 
 Native local/computer play preserves White/Black selection, automatic board orientation, legal moves, check/checkmate, stalemate, insufficient material, castling, en passant and four promotion choices. Original piece silhouettes and checkpoint fields are retained. Keyboard arrows navigate squares; legal moves and piece identities have accessible names. Pending promotion and AI turns recover after reload, and disposed AI timers cannot act on another game.
 
-Host-authoritative rooms enforce White/Black seat turns, legal moves and promotions, stale-action rejection, disconnected-seat pauses, host reload, same-seat reconnect, exactly-once wins/draws and replay. Chess and RPS use protocol v7.
+Host-authoritative rooms enforce White/Black seat turns, legal moves and promotions, stale-action rejection, disconnected-seat pauses, host reload, same-seat reconnect, exactly-once wins/draws and replay. Chess and RPS use protocol v8.
 
 Evidence: `redesign/checks/unit/chess.check.ts`, `room.check.ts`, and `redesign/checks/browser/chess.spec.ts`. Legal-move/position comparisons run through a complete original-engine checkmate; special-move and draw fixtures plus six desktop/mobile flows cover promotion recovery, AI, keyboard/accessibility and a real two-browser recovered game. The original engine's supported draw rules are preserved; repetition/50-move claims were never baseline capabilities.
 
@@ -121,7 +121,7 @@ Evidence: `redesign/checks/unit/pool.check.ts` compares the seeded rack and save
 
 ## Mafia acceptance and evidence
 
-Native private rooms support five to ten players, host-held shuffled roles, Mafia night targets, Doctor protection, Detective private clues, daytime discussion, secret votes and abstentions, ties, elimination, winning teams and replay. Each seat receives only its role, permitted allies, own clues and own action until final role reveal. The host may mark a disconnected pending seat absent, and host tab recovery retains private state and seat identities. Protocol v7 rejects old connections and restores valid v1–v6 host backups via fresh invitations.
+Native private rooms support five to ten players, host-held shuffled roles, Mafia night targets, Doctor protection, Detective private clues, daytime discussion, secret votes and abstentions, ties, elimination, winning teams and replay. Each seat receives only its role, permitted allies, own clues and own action until final role reveal. The host may mark a disconnected pending seat absent, and host tab recovery retains private state and seat identities. Protocol v8 rejects old connections and restores valid v1–v7 host backups via fresh invitations.
 
 ## Business acceptance and evidence
 

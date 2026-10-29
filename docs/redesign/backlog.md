@@ -56,7 +56,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 ## Next
 
 - [x] **QR admission and sharing (A04, partial).** Local QR generation and scanning, native share, selected-text clipboard fallback, camera cleanup and readable errors. See [verification](verification.md#qr-admission-and-sharing).
-- [ ] **Remaining room breadth (A04–A06).** Add spectator seats and per-game/player standings and rankings across replays. Private hands, decks, roles and all eleven room-supported games are implemented.
+- [ ] **Remaining room breadth (A04–A06).** Per-game/player wins, losses, draws and rankings across replays are implemented. Add spectator seats. Private hands, decks, roles and all eleven room-supported games are implemented.
 - [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent sound/haptics controls, audio unlock/recovery and action-game impact sounds are implemented. Reduced-motion CSS and live race/2048 travel handling are verified across native surfaces; complete game-specific feedback remains. See [verification](verification.md#reduced-motion).
 
 ## Later

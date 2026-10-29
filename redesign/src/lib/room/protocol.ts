@@ -1,3 +1,5 @@
+import { recordStanding, validStandings } from './standings.ts';
+import type { Standings, RoomGame } from './standings.ts';
 import {
   newCatan,
   catanView,
@@ -79,6 +81,7 @@ export interface RoomSnapshot {
   mafiaMatch?: MafiaMatch | null;
   businessMatch?: BusinessMatch | null;
   islandMatch?: IslandMatch | null;
+  standings?: Standings;
   wins: number[];
   draws: number;
 }
@@ -137,7 +140,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 7;
+  version: 8;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -145,7 +148,8 @@ interface Signal {
   name: string;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v7';
+const BACKUP = 'arcade:redesign:room:v8';
+const ISLAND_BACKUP = 'arcade:redesign:room:v7';
 const BUSINESS_BACKUP = 'arcade:redesign:room:v6';
 const MAFIA_BACKUP = 'arcade:redesign:room:v5';
 const DUEL_BACKUP = 'arcade:redesign:room:v4';
@@ -179,6 +183,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'mafiaMatch',
         'businessMatch',
         'islandMatch',
+        'standings',
         'wins',
         'draws',
       ].includes(k),
@@ -200,6 +205,11 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
     integer(s.draws) &&
+    (s.standings === undefined ||
+      validStandings(
+        s.standings,
+        s.members.map((m) => m.id),
+      )) &&
     (s.islandMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -349,7 +359,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 7)
+    if (s && typeof s === 'object' && s.version !== 8)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -437,6 +447,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(ISLAND_BACKUP) ??
           sessionStorage.getItem(BUSINESS_BACKUP) ??
           sessionStorage.getItem(MAFIA_BACKUP) ??
           sessionStorage.getItem(DUEL_BACKUP) ??
@@ -525,6 +536,7 @@ export class Room {
       match: null,
       wins: [0, 0],
       draws: 0,
+      standings: { players: [], recorded: [] },
     };
     this.checkpoint();
     this.emit();
@@ -617,7 +629,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 7,
+        version: 8,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -659,7 +671,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 7 ||
+      m.version !== 8 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -841,7 +853,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 7,
+        version: 8,
         kind: 'offer',
         roomId: this.snapshot.roomId,
         host: this.peerId,
@@ -867,6 +879,7 @@ export class Room {
       match: null,
       wins: [0, 0],
       draws: 0,
+      standings: { players: [], recorded: [] },
     };
     const peer = this.connection(offer.host);
     peer.pc.ondatachannel = (event) => {
@@ -1150,6 +1163,25 @@ export class Room {
     }
     this.publish();
   }
+  private recordResult(
+    gameId: RoomGame,
+    round: number,
+    winners: number[] | null,
+  ) {
+    const room = this.snapshot!;
+    const prior = room.standings ?? { players: [], recorded: [] };
+    const next = recordStanding(
+      prior,
+      room.members.map((m) => m.id),
+      gameId,
+      round,
+      winners,
+    );
+    if (next === prior) return;
+    room.standings = next;
+    if (winners === null) room.draws++;
+    else for (const winner of winners) room.wins[winner]++;
+  }
   move(cell: number) {
     const s = this.snapshot?.match;
     if (!s) return;
@@ -1204,8 +1236,11 @@ export class Room {
     if (next.over) {
       const win =
         s.gameId === 'connect-four' ? c4Win(next.board) : findWin(next.board);
-      if (win) room.wins[next.current - 1]++;
-      else room.draws++;
+      this.recordResult(
+        s.gameId ?? 'tictactoe',
+        s.round,
+        win ? [next.current - 1] : null,
+      );
     }
     this.publish();
   }
@@ -1249,8 +1284,11 @@ export class Room {
     match.view = cardView(next, 0);
     if (finishedCards(next)) {
       const winner = match.view.winner;
-      if (winner === null || winner === -1) room.draws++;
-      else room.wins[winner]++;
+      this.recordResult(
+        match.gameId,
+        match.round,
+        winner === null || winner === -1 ? null : [winner],
+      );
     }
     this.publish();
   }
@@ -1295,7 +1333,8 @@ export class Room {
     if (!next) return;
     match.race = next;
     match.revision++;
-    if (next.state.winner != null) room.wins[next.state.winner]++;
+    if (next.state.winner != null)
+      this.recordResult(match.gameId, match.round, [next.state.winner]);
     this.publish();
   }
   islandAction(action: unknown) {
@@ -1367,7 +1406,8 @@ export class Room {
     this.privateIsland = next;
     match.revision++;
     match.view = catanView(next, 0);
-    if (next.winner !== null && state.winner === null) room.wins[next.winner]++;
+    if (next.winner !== null && state.winner === null)
+      this.recordResult('catan', match.round, [next.winner]);
     this.issue = '';
     this.publish();
   }
@@ -1451,7 +1491,11 @@ export class Room {
       match.revision = next.revision;
       match.view = publicBusiness(next);
       if (next.phase === 'win' && state.phase !== 'win')
-        for (const winner of next.winners ?? []) room.wins[winner]++;
+        this.recordResult(
+          'business',
+          match.round,
+          next.winners?.length ? next.winners : null,
+        );
       this.issue = '';
       this.publish();
     } catch (error) {
@@ -1548,9 +1592,13 @@ export class Room {
       match.revision = next.revision;
       match.view = viewFor(next, 0);
       if (next.winner && !state.winner)
-        for (let i = 0; i < next.roles.length; i++)
-          if ((next.roles[i] === 'mafia' ? 'mafia' : 'town') === next.winner)
-            room.wins[i]++;
+        this.recordResult(
+          'mafia',
+          match.round,
+          next.roles.flatMap((role, i) =>
+            (role === 'mafia' ? 'mafia' : 'town') === next.winner ? [i] : [],
+          ),
+        );
       this.issue = '';
       this.publish();
     } catch {
@@ -1623,8 +1671,11 @@ export class Room {
     match.revision++;
     if (next.over) {
       const result = chessResult(next);
-      if (result.winner) room.wins[result.winner === 'w' ? 0 : 1]++;
-      else room.draws++;
+      this.recordResult(
+        'chess',
+        match.round,
+        result.winner ? [result.winner === 'w' ? 0 : 1] : null,
+      );
     }
     this.publish();
   }
@@ -1708,7 +1759,8 @@ export class Room {
         this.privateRps = next;
         match.revision++;
         match.view = rpsView(next, 0);
-        if (rpsRoomDone(next)) room.wins[next.score[0] === 3 ? 0 : 1]++;
+        if (rpsRoomDone(next))
+          this.recordResult('rps', match.round, [next.score[0] === 3 ? 0 : 1]);
         this.publish();
       },
       Math.max(0, this.privateRps.deadline - Date.now()),
@@ -1729,6 +1781,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(ISLAND_BACKUP);
       sessionStorage.removeItem(BUSINESS_BACKUP);
       sessionStorage.removeItem(MAFIA_BACKUP);
       sessionStorage.removeItem(DUEL_BACKUP);

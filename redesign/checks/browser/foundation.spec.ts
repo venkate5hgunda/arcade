@@ -431,6 +431,16 @@ for (const roomGame of ['tictactoe', 'connect-four'] as const) {
         await expect(
           player.getByRole('heading', { name: 'Mira wins!' }),
         ).toBeVisible();
+      for (const player of [host, guest]) {
+        await player.getByText('Room standings', { exact: true }).click();
+        await expect(
+          player.getByRole('list', { name: 'Room leaderboard' }),
+        ).toContainText('Mira · 1 W / 0 L / 0 D');
+        await expect(
+          player.getByRole('list', { name: 'Room leaderboard' }),
+        ).toContainText('Kai · 0 W / 1 L / 0 D');
+        await player.getByLabel('Standings game').selectOption(roomGame);
+      }
       await host.getByRole('button', { name: 'Play again' }).click();
       await move(host, roomGame === 'connect-four' ? 3 : 4);
       await expect(

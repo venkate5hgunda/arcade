@@ -146,7 +146,7 @@ test('Business room connects two browsers, trades and restores the host without 
     ).toBeVisible();
     expect(
       await guest.evaluate(() =>
-        sessionStorage.getItem('arcade:redesign:room:v7'),
+        sessionStorage.getItem('arcade:redesign:room:v8'),
       ),
     ).toBeNull();
     await host.reload();

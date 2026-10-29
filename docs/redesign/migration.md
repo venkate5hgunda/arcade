@@ -83,3 +83,7 @@ Business adds host-held decks and authoritative dice in protocol v6. Fresh conne
 ### Island Charter protocol update
 
 Island Charter adds host-held cargo and discovery decks with seat-specific views in protocol v7. Fresh connections reject older peers; valid v1–v6 host backups restore into fresh v7 invitations. As with Business, the native React table uses the original pure rules behind a typed interface rather than translating that engine, preserving its board generation, rule transitions and saved state. The original terrain artwork is reused and the renderer is native. This completes the catalog game ports, not the broader shared-feature or release gates. No merge or deployment is implied.
+
+### Room standings and protocol v8
+
+All eleven room games now record per-player/per-game wins, losses and draws through one host-owned result path, with exactly-once round accounting and baseline ranking order (wins, fewer losses, draws, name, ID). Team Mafia and shared Business wins credit every winner and record losses for other participants. The shared expandable leaderboard supports all-game and per-game views. Protocol v8 rejects older peers and restores valid v1–v7 tab backups; historical aggregate wins survive, while unavailable historical losses/per-game results are not invented. Spectator admission remains the next room task. No merge or deployment is implied.

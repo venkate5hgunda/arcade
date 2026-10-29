@@ -1,3 +1,4 @@
+import { RoomStandings } from '../components/RoomStandings.tsx';
 import { IslandTable } from '../components/IslandTable.tsx';
 import { RoomQr, RoomScanner } from '../components/RoomQr.tsx';
 import { IslandOptions } from '../components/IslandOptions.tsx';
@@ -940,6 +941,12 @@ export function RoomPage({ room }: { room: Room }) {
                   <p>Waiting for the host to start the next round.</p>
                 ))}
             </div>
+          )}
+          {s && (
+            <RoomStandings
+              standings={s.standings ?? { players: [], recorded: [] }}
+              members={s.members}
+            />
           )}
           <details className="help-card">
             <summary>Room options</summary>
