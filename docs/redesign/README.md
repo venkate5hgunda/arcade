@@ -11,6 +11,7 @@ Game ports and shared room features are complete; release qualification remains 
 | [Requirements](requirements.md) | Acceptance criteria and original behavior evidence |
 | [Architecture](architecture.md) | React/TypeScript ownership and state boundaries |
 | [Migration and decisions](migration.md) | Prior decisions, data contracts and rollout |
+| [Device validation](device-validation.md) | Deferred install, camera, sound, touch and cross-network checks |
 | [Release qualification](release-qualification.md) | Automated evidence and outstanding hardware/network/model gates |
 | [Verification](verification.md) | Current test evidence and trace findings |
 | [Saved games and tabs](storage.md) | Migration, private export and competing-tab behavior |

@@ -21,4 +21,4 @@ Serve the contents of `redesign/node_modules/.cache/redesign-dist/` over HTTPS (
 - `redesign/checks/browser/pwa-lifecycle.spec.ts`: actual waiting-worker activation, checkpoint retention, old-tab preservation, neighboring scopes, corrupt downloads, interrupted caches and foreign worker preservation.
 - Other browser suites block workers because they deliberately intercept asset/movie failures; the dedicated PWA suites explicitly allow real workers.
 
-Storage version migration and competing-tab save coordination are tracked separately until their implementation evidence is recorded. Browser event injection and display-mode emulation do not prove physical OS installation, camera focus, audible output, vibration or cross-network transport.
+Storage version migration and competing-tab save coordination are implemented and verified; see [saved games and tabs](storage.md). Browser event injection and display-mode emulation do not prove physical OS installation, camera focus, audible output, vibration or cross-network transport.

@@ -25,24 +25,11 @@ Python suites remain required. Test emulation does not qualify physical devices.
 
 ## Physical devices and networks
 
-These remain unverified in the automated runner. Record the device, OS/browser,
-build revision and actual result for each case; do not substitute API readiness,
-emulated permissions or an injected install event for a physical result.
-
-- On iPhone/iPad Safari and Android Chrome, install from the browser, open the
-  installed app, complete a local game, close/reopen and reload it offline.
-  Verify install icon, safe areas, standalone status and a waiting update.
-- Scan a real invitation QR with the camera, exercise denial/cancellation,
-  re-enable access and verify the camera indicator stops after closing scanning.
-- Hear Test sound and distinct in-game effects after gesture unlock, mute/unmute,
-  background/resume and an output-device change. Verify actual Android vibration
-  when enabled; confirm the documented iOS native-switch limitation.
-- Play Air Hockey with two simultaneous physical touches. Verify canvas controls,
-  device rotation, reduced motion and readable local private-hand handoffs.
-- Connect room peers on separate Wi-Fi/cellular networks, play turns, interrupt
-  transport, reload the host and reconnect with fresh links. Inspect spectator
-  privacy and a private-hand game. Record network-dependent failures and the
-  disclosed absence of a signaling service/TURN relay.
+The user deferred these checks on 2026-10-29 despite having Wi-Fi/cellular
+devices available. They remain unverified and are outside the immediate
+implementation-completion gate. Use the concise [device validation guide](device-validation.md)
+for exact steps, pass criteria and a result format. Deferral is not a passing
+physical-device result.
 
 ## Model-path applicability
 
