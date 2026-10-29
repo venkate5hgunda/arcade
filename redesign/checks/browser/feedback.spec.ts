@@ -129,7 +129,7 @@ test('a real hockey collision produces an impact sound', async ({ page }) => {
   await page.goto('/');
   const state = newHockey(5);
   state.openingFaceoff = false;
-  state.puck = { x: 300, y: 600, vx: 0, vy: 350 };
+  state.puck = { x: 300, y: 660, vx: 0, vy: 350 };
   await page.evaluate(
     (value) =>
       localStorage.setItem(

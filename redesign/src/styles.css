@@ -3291,7 +3291,7 @@ select:focus-visible {
   font-size: 0.85rem;
 }
 @media (max-width: 600px) {
-  .puzzle-tictactoe .ttt-board {
+  .match-layout .ttt-board {
     width: min(100%, max(230px, calc(100dvh - 370px)));
     margin-inline: auto;
   }
