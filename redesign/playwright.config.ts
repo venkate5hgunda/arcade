@@ -5,7 +5,12 @@ export default defineConfig({
   fullyParallel: true,
   workers: 2,
   retries: process.env.CI ? 1 : 0,
-  use: { baseURL: 'http://127.0.0.1:5174', trace: 'retain-on-failure' },
+  // Most suites intercept movie/asset failures; real-worker lifecycle is covered separately by pwa.spec.ts.
+  use: {
+    serviceWorkers: 'block',
+    baseURL: 'http://127.0.0.1:5174',
+    trace: 'retain-on-failure',
+  },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['iPhone 13'] } },

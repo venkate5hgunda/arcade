@@ -1,3 +1,4 @@
+import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
 import { FeedbackControl } from './components/FeedbackControl.tsx';
 import { feedback } from './lib/feedback.ts';
@@ -475,6 +476,7 @@ function Shell() {
         </div>
       )}
       <footer>
+        <PwaControl />
         <Link className="brand" to="/">
           ARCADE<span aria-hidden="true">✦</span>
         </Link>

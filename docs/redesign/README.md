@@ -12,6 +12,7 @@ Game ports are complete; shared room features and release qualification remain i
 | [Architecture](architecture.md) | React/TypeScript ownership and state boundaries |
 | [Migration and decisions](migration.md) | Prior decisions, data contracts and rollout |
 | [Verification](verification.md) | Current test evidence and trace findings |
+| [Offline and install](pwa.md) | Asset graph, installation, update and scope behavior |
 | [Design QA](design-qa.md) | Reference comparison and responsive checks |
 | [Game ports](game-ports.md) | Family-by-family migration status and current evidence |
 | [Backlog](backlog.md) | Remaining shared features and release work |
@@ -50,7 +51,7 @@ Tests and captures normally start their own production preview. To use a preview
 
 Rooms use version 9 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account or microphone is required. Camera scanning is optional and requires HTTPS (or localhost) and camera permission. QR generation and scanning run locally; a long link may exceed QR capacity, in which case use copy/share.
 
-Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
+Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. The production build registers only its own scoped offline worker and preserves foreign workers. Production data migration remains a separate release gate. Root commands still run the original application.
 
 Use **Return to lobby** in Room options to change games or selected players. Unfinished match progress is cleared after confirmation; standings and seat identities survive.
 

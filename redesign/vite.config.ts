@@ -1,3 +1,4 @@
+import { buildOfflineAssets } from './scripts/pwa.ts';
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 import {
@@ -6,7 +7,7 @@ import {
   readFileSync,
   createReadStream,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 
 const movieRoot = fileURLToPath(new URL('../data/movies/', import.meta.url));
@@ -46,9 +47,30 @@ function movieAssets(): Plugin {
   };
 }
 
+function offlineAssets(): Plugin {
+  let output = '';
+  return {
+    name: 'arcade-offline-graph',
+    apply: 'build',
+    configResolved(config) {
+      output = resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      buildOfflineAssets(
+        output,
+        readFileSync(
+          fileURLToPath(
+            new URL('./scripts/service-worker.js', import.meta.url),
+          ),
+          'utf8',
+        ),
+      );
+    },
+  };
+}
 export default defineConfig({
   base: './',
-  plugins: [movieAssets()],
+  plugins: [movieAssets(), offlineAssets()],
   server: {
     port: 5174,
     strictPort: true,

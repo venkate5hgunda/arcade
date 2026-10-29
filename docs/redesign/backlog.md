@@ -61,9 +61,7 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Later
 
-- [ ] **PWA and recovery (Phase 4).** Versioned storage migration, offline
-      asset graph, scope-safe service-worker update handling, install/standalone
-      testing, quota/private-mode and multi-tab behavior.
+- [ ] **PWA and recovery (Phase 4).** Verified offline asset graph, scoped updates, install/standalone UI and cache-failure recovery are implemented; see [offline and install](pwa.md). Finish versioned storage migration, competing-tab saves and physical-device installation qualification.
 - [ ] **Real-model qualification.** Any model/inference paths are qualified on a
       fresh browser per the user's standing gate, not from cached reports.
 - [ ] **Full parity release (Phase 5).** Execute every acceptance case and the

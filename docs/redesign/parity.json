@@ -187,7 +187,8 @@
       "baselineTests": [
         "test/movie-library.test.js",
         "test/movie-offline.test.js"
-      ]
+      ],
+      "implementationScope": "Verified production asset graph includes HTML, JS/CSS, fonts, all 26 covers, boards, local QR tools and approved movie files. Scope-owned workers, explicit updates, failed-install cleanup, prior-release retention and install/standalone UI have real desktop/mobile browser evidence. Versioned storage migration, competing-tab save coordination and physical-device release qualification remain open."
     },
     {
       "id": "G01",

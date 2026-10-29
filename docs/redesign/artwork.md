@@ -17,3 +17,5 @@ The earlier shared six-family atlas has been retired. The user's per-game artwor
 Adobe produced a coherent tactile world across game-specific prompts. Wordle was regenerated to replace rune-like glyphs; Crazy Eights was regenerated to remove contradictory corner ranks. Complete Connect Four racks remained incorrect across Adobe and built-in attempts, so the accepted cover deliberately focuses on discs beside a cropped rack edge. Generated geometry must be inspected, not inferred from prompt compliance. Exporting the accepted images as WebP preserves their visual content while reducing download size.
 
 Inventory checks enforce distinct hashes/paths and exact catalog coverage; desktop Chromium and mobile WebKit exercise all 26 hero selections and verify image decoding and consistent catalog/detail assets.
+
+The redesign PWA copies the existing `assets/icons/icon-{192,512}.png` and maskable variants unchanged into its local install-icon directory. These retain original Arcade branding and credits; no new illustration or game-cover generation is involved.
