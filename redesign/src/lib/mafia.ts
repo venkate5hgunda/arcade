@@ -28,7 +28,7 @@ export interface MafiaView {
   submitted: number[];
   announcement: string;
   winner: 'town' | 'mafia' | null;
-  role: Role;
+  role: Role | 'spectator';
   allies: number[];
   clues: Clue[];
   ownTarget?: number | null;
@@ -196,6 +196,23 @@ export function resolveMafia(source: MafiaState, actor: number): MafiaState {
 }
 
 export function viewFor(s: MafiaState, seat: number): MafiaView {
+  if (seat === -1) {
+    return {
+      phase: s.phase,
+      day: s.day,
+      revision: s.revision,
+      alive: [...s.alive],
+      pending: [],
+      skipped: [],
+      submitted: [],
+      announcement: s.announcement,
+      winner: s.winner,
+      role: 'spectator',
+      allies: [],
+      clues: [],
+      roles: s.phase === 'over' ? [...s.roles] : undefined,
+    };
+  }
   if (!Number.isInteger(seat) || seat < 0 || seat >= s.roles.length)
     throw Error('Invalid seat.');
   const role = s.roles[Number(seat)];
@@ -397,14 +414,26 @@ export function validMafiaView(
     !unique(v.skipped) ||
     !unique(v.submitted) ||
     !unique(v.allies) ||
-    !index(seat) ||
-    !['mafia', 'doctor', 'detective', 'town'].includes(v.role) ||
+    !(seat === -1 || index(seat)) ||
+    !(seat === -1
+      ? v.role === 'spectator'
+      : ['mafia', 'doctor', 'detective', 'town'].includes(v.role)) ||
     typeof v.announcement !== 'string' ||
     !v.announcement.trim() ||
     v.announcement.length > 500 ||
     ![null, 'town', 'mafia'].includes(v.winner) ||
     (v.phase === 'over') !== (v.winner !== null) ||
     !Array.isArray(v.clues)
+  )
+    return false;
+  if (
+    seat === -1 &&
+    (v.allies.length ||
+      v.clues.length ||
+      v.pending.length ||
+      v.submitted.length ||
+      v.skipped.length ||
+      v.ownTarget !== undefined)
   )
     return false;
   if (
@@ -437,7 +466,7 @@ export function validMafiaView(
       !v.roles.every((r) =>
         ['mafia', 'doctor', 'detective', 'town'].includes(r),
       ) ||
-      v.roles[seat] !== v.role)
+      (seat !== -1 && v.roles[seat] !== v.role))
   )
     return false;
   if (v.phase === 'over' && !Array.isArray(v.roles)) return false;

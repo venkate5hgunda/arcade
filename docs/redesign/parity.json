@@ -94,7 +94,7 @@
         "test/multiplayer.test.js",
         "test/room-qr.test.js"
       ],
-      "implementationScope": "Partial: all eleven room-supported games, per-guest invitations, native share, clipboard/manual-copy fallback and local QR generation/scanning. Desktop/mobile browser evidence: redesign/checks/browser/room-qr.spec.ts. Spectator admission remains open; see docs/redesign/backlog.md."
+      "implementationScope": "Native per-guest invitations, native share/clipboard/QR fallback, selected guest player/spectator seats, mid-match spectator admission and supported-game filtering. Protocol v9 and all eleven room games have desktop/mobile browser evidence; physical-camera and cross-network qualification remain release gates."
     },
     {
       "id": "A05",
@@ -117,7 +117,7 @@
         "test/multiplayer.test.js",
         "test/remote-match.test.js"
       ],
-      "implementationScope": "Partial: all eleven room games use host authority and seat-specific private views. Host-only per-player/per-game wins, losses, draws and rankings persist across replays and reconnects; protocol v8 restores valid v1\u2013v7 host backups. Spectator projections and physical-device/cross-network release qualification remain open."
+      "implementationScope": "All eleven room games enforce host authority, player seats and revision/round checks, private player views and public-only spectator projections. Per-player/per-game wins, losses, draws and baseline rankings persist across replay, lobby and reconnect. Protocol v9 restores valid v1\u2013v8 backups. Physical-device/cross-network release qualification remains open."
     },
     {
       "id": "A06",
@@ -138,7 +138,7 @@
       "baselineTests": [
         "test/multiplayer.test.js"
       ],
-      "implementationScope": "All eleven room games have authoritative tab-scoped recovery, fresh same-seat invitations, name validation and disconnection handling; protocol v8 retains valid v1\u2013v7 backups. Eliminated Business seats and Mafia absent-seat rules retain their game-specific behavior. Spectator recovery and physical-device/cross-network qualification remain open."
+      "implementationScope": "All eleven room games have authoritative tab-scoped player/spectator recovery, fresh same-seat invitations and name validation. Spectators do not pause players; eliminated Business seats and Mafia absent-seat rules retain their behavior. Protocol v9 retains valid v1\u2013v8 backups. Physical-device/cross-network qualification remains open."
     },
     {
       "id": "A07",

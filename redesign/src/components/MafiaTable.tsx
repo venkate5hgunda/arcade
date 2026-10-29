@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { MafiaView, Role } from '../lib/mafia.ts';
-const ROLES: Record<Role, [string, string, string]> = {
+const ROLES: Record<Role | 'spectator', [string, string, string]> = {
+  spectator: [
+    'The Balcony',
+    'Watch the public story. Secret cards and ballots stay with the players.',
+    '◎',
+  ],
   mafia: [
     'The Shadow',
     'Choose a target after dark. Find your ally, blend in by day.',
@@ -75,7 +80,9 @@ export function MafiaTable({
         <p role="status">{view.announcement}</p>
         <div className="mafia-role">
           <span aria-hidden="true">{ROLES[view.role][2]}</span>
-          <p>YOUR SECRET CARD · {names[seat]}</p>
+          <p>
+            {seat === -1 ? 'SPECTATING' : `YOUR SECRET CARD · ${names[seat]}`}
+          </p>
           <strong>{ROLES[view.role][0]}</strong>
           <small>{ROLES[view.role][1]}</small>
           {view.allies.length > 0 && (

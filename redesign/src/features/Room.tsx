@@ -96,6 +96,17 @@ export function RoomPage({ room }: { room: Room }) {
   const connected =
     !!s && s.members.length >= 2 && s.members.every((m) => m.connected);
   const seat = s?.members.findIndex((m) => m.id === room.peerId) ?? -1;
+  const spectating = !!s?.spectators?.some((m) => m.id === room.peerId);
+  const inMatch = !!(
+    match ||
+    cards ||
+    race ||
+    rps ||
+    chess ||
+    mafia ||
+    business ||
+    island
+  );
   const win =
     match &&
     (match.gameId === 'connect-four'
@@ -153,10 +164,16 @@ export function RoomPage({ room }: { room: Room }) {
       <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>
       <p className="lede">
-        Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-        UNO-inspired, Snakes & Ladders, Ludo, Chess, Business, Island Charter,
-        Mafia or Rock Paper Scissors. UNO welcomes 2–20 players, Mafia 5–10,
-        Business 2–6, and race games 2–4, and Island Charter 3–4.
+        {inMatch ? (
+          `${s?.members.length ?? 0} players · ${s?.spectators?.length ?? 0} spectators · One shared table.`
+        ) : (
+          <>
+            Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
+            UNO-inspired, Snakes &amp; Ladders, Ludo, Chess, Business, Island
+            Charter, Mafia or Rock Paper Scissors. UNO welcomes 2–20 players,
+            Mafia 5–10, Business 2–6, race games 2–4, and Island Charter 3–4.
+          </>
+        )}
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -269,11 +286,51 @@ export function RoomPage({ room }: { room: Room }) {
                   <span>
                     {m.connected ? 'Connected' : 'Waiting to reconnect'}
                   </span>
+                  {room.role === 'host' && index > 0 && !inMatch && (
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked
+                        onChange={() => room.setSpectating(m.id, true)}
+                      />
+                      Play in next game: {m.name}
+                    </label>
+                  )}
                 </div>
               ))}
               {s?.members.length === 1 && <p>Your guest’s seat is waiting.</p>}
             </div>
           </details>
+          {!!s?.spectators?.length && (
+            <details className="help-card">
+              <summary>Spectators ({s.spectators.length})</summary>
+              <ul>
+                {s.spectators.map((member) => (
+                  <li key={member.id}>
+                    {member.name}
+                    {member.id === room.peerId ? ' (you)' : ''} ·{' '}
+                    {member.connected ? 'Connected' : 'Waiting to reconnect'}
+                    {room.role === 'host' && !inMatch && (
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          onChange={() => room.setSpectating(member.id, false)}
+                        />
+                        Play in next game: {member.name}
+                      </label>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {spectating && (
+            <p className="room-callout" role="status">
+              You’re spectating. Watch the public table; private hands, cargo
+              and roles stay with the players.
+            </p>
+          )}
           {(!connected || (room.role === 'host' && output)) && (
             <div className="room-columns">
               <section className="setup-card">
@@ -377,6 +434,21 @@ export function RoomPage({ room }: { room: Room }) {
               )}
             </div>
           )}
+          {room.role === 'host' &&
+            !output &&
+            (s?.spectators?.length ?? 0) < 20 && (
+              <button
+                className="quiet"
+                disabled={busy}
+                onClick={() =>
+                  run(async () =>
+                    setOutput(await room.createInvite(undefined, true)),
+                  )
+                }
+              >
+                Invite a spectator
+              </button>
+            )}
           {connected &&
             !match &&
             !cards &&
@@ -945,15 +1017,32 @@ export function RoomPage({ room }: { room: Room }) {
           {s && (
             <RoomStandings
               standings={s.standings ?? { players: [], recorded: [] }}
-              members={s.members}
+              members={[...s.members, ...(s.spectators ?? [])]}
             />
           )}
           <details className="help-card">
             <summary>Room options</summary>
+            {room.role === 'host' && inMatch && (
+              <button
+                className="quiet"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'Return to the lobby? Unfinished match progress will be cleared.',
+                    )
+                  ) {
+                    room.returnLobby();
+                    setOutput('');
+                  }
+                }}
+              >
+                Return to lobby
+              </button>
+            )}
             <p>
-              Connections pause if either tab closes. The host’s board is backed
-              up in this tab; use a fresh invitation to reconnect the same
-              guest.
+              Reconnect disconnected player seats to continue. Spectators can
+              come and go. The host’s board is backed up in this tab; use a
+              fresh invitation to reconnect the same guest.
             </p>
             <p>
               Direct connections may be blocked on restrictive networks. Try
@@ -961,8 +1050,7 @@ export function RoomPage({ room }: { room: Room }) {
               connect.
             </p>
             {room.role === 'host' &&
-              s?.members
-                .slice(1)
+              [...(s?.members.slice(1) ?? []), ...(s?.spectators ?? [])]
                 .filter((m) => !m.connected)
                 .map((member) => (
                   <button

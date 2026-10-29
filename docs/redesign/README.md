@@ -45,11 +45,14 @@ Tests and captures normally start their own production preview. To use a preview
 1. Open **Room**, enter a name, and create a room.
 2. Send the generated invitation using **Share link**, **Copy link**, or the expandable **QR code**. The guest opens or scans it, enters a name, and returns their answer link.
 3. Paste or scan the answer in the original host tab, then select a game and start once every player connects. Use **Invite another player** before starting to build a larger table. Game options reflect the connected player count.
-4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. Reconnect every disconnected seat. The board, private deck/hands and standings survive in the host tab.
+4. In the lobby, uncheck **Play in next game** for a guest to make them a spectator. The host always plays; games reflect the selected player count. Use **Invite a spectator** to add a viewer before or during play. Spectators see public boards, counts and outcomes; hands, cargo, roles, ballots and locked throws remain private. Disconnected spectators do not pause the players.
+5. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. Reconnect every disconnected player seat; reconnect spectators separately in **Room options**. The board, private deck/hands and standings survive in the host tab.
 
-Rooms use version 8 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account or microphone is required. Camera scanning is optional and requires HTTPS (or localhost) and camera permission. QR generation and scanning run locally; a long link may exceed QR capacity, in which case use copy/share.
+Rooms use version 9 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account or microphone is required. Camera scanning is optional and requires HTTPS (or localhost) and camera permission. QR generation and scanning run locally; a long link may exceed QR capacity, in which case use copy/share.
 
 Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
+
+Use **Return to lobby** in Room options to change games or selected players. Unfinished match progress is cleared after confirmation; standings and seat identities survive.
 
 ## Preview
 

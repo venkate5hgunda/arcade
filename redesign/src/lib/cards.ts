@@ -791,6 +791,20 @@ export interface CardView {
   unoDeclared: boolean;
 }
 export function cardView(s: CardState, seat: number): CardView {
+  if (seat === -1) {
+    const view = cardView(s, 0);
+    return {
+      ...view,
+      seat: -1,
+      hand: [],
+      legal: [],
+      canDraw: false,
+      canPass: false,
+      drawn: false,
+      challenge: false,
+      phase: view.phase === 'choose' ? 'play' : view.phase,
+    };
+  }
   if (s.gameId === 'crazy-eights') {
     const v = crazyEightsView(s.state, seat);
     return {
@@ -887,13 +901,13 @@ export function validCardView(
     count < 2 ||
     count > (v.gameId === 'crazy-eights' ? 2 : 20) ||
     v.seat !== seat ||
-    !integer(seat) ||
+    !(seat === -1 || integer(seat)) ||
     seat >= count ||
     !Array.isArray(v.hand) ||
     !Array.isArray(v.counts) ||
     v.counts.length !== count ||
     !v.counts.every(integer) ||
-    v.hand.length !== v.counts[seat] ||
+    v.hand.length !== (seat === -1 ? 0 : v.counts[seat]) ||
     !integer(v.current) ||
     v.current >= count ||
     !['play', 'choose', 'over'].includes(v.phase) ||
@@ -922,6 +936,16 @@ export function validCardView(
         v.scores.every(integer))
     ) ||
     !['', 'empty', 'blocked'].includes(v.ending)
+  )
+    return false;
+  if (
+    seat === -1 &&
+    (v.legal.length ||
+      v.canDraw ||
+      v.canPass ||
+      v.drawn ||
+      v.challenge ||
+      v.phase === 'choose')
   )
     return false;
   const ids =

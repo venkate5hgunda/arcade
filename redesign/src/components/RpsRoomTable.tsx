@@ -42,9 +42,11 @@ export function RpsRoomTable({
                     : `${names[winner]} wins the round!`
                   : view.phase === 'countdown'
                     ? 'Ready… set… throw!'
-                    : view.ownPick
-                      ? 'Throw locked in!'
-                      : 'Choose your secret throw'}
+                    : view.seat === -1
+                      ? 'Watching the secret throws'
+                      : view.ownPick
+                        ? 'Throw locked in!'
+                        : 'Choose your secret throw'}
           </h2>
           <p>
             {!connected
@@ -60,7 +62,7 @@ export function RpsRoomTable({
       <RpsTable
         names={names}
         picks={view.revealed}
-        choosing={view.phase === 'picking' && !view.ownPick}
+        choosing={view.seat !== -1 && view.phase === 'picking' && !view.ownPick}
         countdown={
           view.phase === 'countdown'
             ? Math.max(0, Math.ceil((view.deadline - now) / 560) - 1)

@@ -50,7 +50,7 @@ export function BusinessTable({
   const responder = businessResponder(view),
     me = view.players[seat],
     offer = view.offer,
-    can = !blocked && !me.out && view.phase !== 'win',
+    can = seat >= 0 && !blocked && !me.out && view.phase !== 'win',
     isResponder = seat === responder,
     own = DEEDS.filter((id) => view.deeds[id].owner === seat),
     space = BOARD[inspected],

@@ -73,6 +73,9 @@ export interface Match extends LocalState {
 export interface RoomSnapshot {
   roomId: string;
   members: Member[];
+  spectators?: Member[];
+  spectatorWins?: number[];
+  nextRound?: number;
   match: Match | null;
   cardMatch?: CardMatch | null;
   raceMatch?: RaceMatch | null;
@@ -140,15 +143,17 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 8;
+  version: 9;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
   guest: string;
   name: string;
+  spectating: boolean;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v8';
+const BACKUP = 'arcade:redesign:room:v9';
+const STANDINGS_BACKUP = 'arcade:redesign:room:v8';
 const ISLAND_BACKUP = 'arcade:redesign:room:v7';
 const BUSINESS_BACKUP = 'arcade:redesign:room:v6';
 const MAFIA_BACKUP = 'arcade:redesign:room:v5';
@@ -166,6 +171,16 @@ const integer = (n: unknown): n is number =>
 const incompatibleLink =
   'This link uses an incompatible Arcade version. Both players should reload the same version and request a fresh link.';
 
+const validMembers = (members: Member[]) =>
+  Array.isArray(members) &&
+  members.every(
+    (m) =>
+      m &&
+      Object.keys(m).length === 3 &&
+      validId(m.id) &&
+      validName(m.name) &&
+      typeof m.connected === 'boolean',
+  );
 export function validSnapshot(value: unknown): value is RoomSnapshot {
   const s = value as RoomSnapshot;
   return (
@@ -175,6 +190,9 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
       [
         'roomId',
         'members',
+        'spectators',
+        'spectatorWins',
+        'nextRound',
         'match',
         'cardMatch',
         'raceMatch',
@@ -192,15 +210,17 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     Array.isArray(s.members) &&
     s.members.length >= 1 &&
     s.members.length <= 20 &&
-    s.members.every(
-      (m) =>
-        m &&
-        Object.keys(m).length === 3 &&
-        validId(m.id) &&
-        validName(m.name) &&
-        typeof m.connected === 'boolean',
-    ) &&
-    new Set(s.members.map((m) => m.id)).size === s.members.length &&
+    validMembers(s.members) &&
+    (s.spectators === undefined ||
+      (validMembers(s.spectators) && s.spectators.length <= 20)) &&
+    (s.spectatorWins === undefined
+      ? !s.spectators?.length
+      : Array.isArray(s.spectatorWins) &&
+        s.spectatorWins.length === (s.spectators?.length ?? 0) &&
+        s.spectatorWins.every(integer)) &&
+    (s.nextRound === undefined || integer(s.nextRound)) &&
+    new Set([...s.members, ...(s.spectators ?? [])].map((m) => m.id)).size ===
+      s.members.length + (s.spectators?.length ?? 0) &&
     Array.isArray(s.wins) &&
     s.wins.length === Math.max(2, s.members.length) &&
     s.wins.every(integer) &&
@@ -208,7 +228,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
     (s.standings === undefined ||
       validStandings(
         s.standings,
-        s.members.map((m) => m.id),
+        [...s.members, ...(s.spectators ?? [])].map((m) => m.id),
       )) &&
     (s.islandMatch == null ||
       (!s.match &&
@@ -224,9 +244,13 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         s.islandMatch.gameId === 'catan' &&
         integer(s.islandMatch.round) &&
         integer(s.islandMatch.revision) &&
-        integer(s.islandMatch.seat) &&
+        (s.islandMatch.seat === -1 || integer(s.islandMatch.seat)) &&
         s.islandMatch.seat < s.members.length &&
-        validIslandView(s.islandMatch.view, s.members.length))) &&
+        validIslandView(s.islandMatch.view, s.members.length) &&
+        (s.islandMatch.seat !== -1 ||
+          (!s.islandMatch.view.dev.length &&
+            s.islandMatch.view.myScore === 0 &&
+            Object.values(s.islandMatch.view.goods).every((n) => n === 0))))) &&
     (s.businessMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -359,7 +383,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 8)
+    if (s && typeof s === 'object' && s.version !== 9)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -370,6 +394,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
       !validId(s.guest) ||
       s.host === s.guest ||
       !validName(s.name) ||
+      typeof s.spectating !== 'boolean' ||
       s.description?.type !== kind ||
       typeof s.description.sdp !== 'string' ||
       !s.description.sdp.startsWith('v=0')
@@ -390,6 +415,7 @@ interface PeerLink {
   pc: RTCPeerConnection;
   channel: RTCDataChannel | null;
   accepted: boolean;
+  spectating: boolean;
   sequence: number;
   received: number;
   timer?: ReturnType<typeof setTimeout>;
@@ -447,6 +473,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(STANDINGS_BACKUP) ??
           sessionStorage.getItem(ISLAND_BACKUP) ??
           sessionStorage.getItem(BUSINESS_BACKUP) ??
           sessionStorage.getItem(MAFIA_BACKUP) ??
@@ -518,6 +545,7 @@ export class Room {
       this.role = 'host';
       this.peerId = snapshot.members[0].id;
       this.snapshot.members.forEach((m, i) => (m.connected = i === 0));
+      this.snapshot.spectators?.forEach((m) => (m.connected = false));
       this.issue =
         'Room restored. Send each guest a reconnect invitation to continue.';
       this.emit();
@@ -534,12 +562,85 @@ export class Room {
       roomId: crypto.randomUUID(),
       members: [{ id: this.peerId, name: name.trim(), connected: true }],
       match: null,
+      spectators: [],
+      spectatorWins: [],
+      nextRound: 0,
       wins: [0, 0],
       draws: 0,
       standings: { players: [], recorded: [] },
     };
     this.checkpoint();
     this.emit();
+  }
+  private allMembers() {
+    return [
+      ...(this.snapshot?.members ?? []),
+      ...(this.snapshot?.spectators ?? []),
+    ];
+  }
+  private activeMatch() {
+    const s = this.snapshot;
+    return (
+      s?.islandMatch ??
+      s?.businessMatch ??
+      s?.mafiaMatch ??
+      s?.chessMatch ??
+      s?.rpsMatch ??
+      s?.raceMatch ??
+      s?.cardMatch ??
+      s?.match
+    );
+  }
+  setSpectating(id: string, spectating: boolean) {
+    const s = this.snapshot;
+    if (this.role !== 'host' || !s || this.activeMatch() || id === this.peerId)
+      throw Error('Choose guest seats in the lobby. The host must play.');
+    s.spectators ??= [];
+    s.spectatorWins ??= [];
+    const source = spectating ? s.members : s.spectators;
+    const index = source.findIndex((m) => m.id === id);
+    if (index < 0) return;
+    if ((spectating ? s.spectators.length : s.members.length) >= 20)
+      throw Error('That roster already has 20 seats.');
+    const [member] = source.splice(index, 1);
+    if (spectating) {
+      const [wins] = s.wins.splice(index, 1);
+      s.spectators.push(member);
+      s.spectatorWins.push(wins);
+    } else {
+      const [wins] = s.spectatorWins.splice(index, 1);
+      s.members.push(member);
+      s.wins[s.members.length - 1] = wins;
+    }
+    s.wins.length = Math.max(2, s.members.length);
+    for (let i = 0; i < s.wins.length; i++) s.wins[i] ??= 0;
+    const peer = this.peers.get(id);
+    if (peer) peer.spectating = spectating;
+    this.publish();
+  }
+  returnLobby() {
+    if (this.role !== 'host' || !this.snapshot)
+      throw Error('Only the host can return to the lobby.');
+    clearTimeout(this.rpsTimer);
+    const s = this.snapshot;
+    s.nextRound = Math.max(
+      s.nextRound ?? 0,
+      (this.activeMatch()?.round ?? -1) + 1,
+    );
+    s.match = null;
+    s.cardMatch = null;
+    s.raceMatch = null;
+    s.rpsMatch = null;
+    s.chessMatch = null;
+    s.mafiaMatch = null;
+    s.businessMatch = null;
+    s.islandMatch = null;
+    this.privateGame = null;
+    this.privateRps = null;
+    this.privateMafia = null;
+    this.privateBusiness = null;
+    this.privateIsland = null;
+    this.publish();
   }
   private closePeer(id: string) {
     const peer = this.peers.get(id);
@@ -567,6 +668,7 @@ export class Room {
       pc,
       channel: null,
       accepted: false,
+      spectating: false,
       sequence: 0,
       received: 0,
     };
@@ -582,12 +684,14 @@ export class Room {
   }
   private disconnected(id: string) {
     if (!this.snapshot) return;
-    this.snapshot.members.forEach((m) => {
+    this.allMembers().forEach((m) => {
       if (this.role === 'guest' ? m.id !== this.peerId : m.id === id)
         m.connected = false;
     });
     this.issue =
-      'Connection lost. Keep the tabs open; the host can send a reconnect invitation.';
+      this.role === 'host' && this.snapshot.spectators?.some((m) => m.id === id)
+        ? 'A spectator disconnected. Players can keep playing.'
+        : 'Connection lost. Keep the tabs open; the host can send a reconnect invitation.';
     if (this.role === 'host') this.publish();
     else this.emit();
   }
@@ -601,8 +705,7 @@ export class Room {
         this.send(
           {
             type: 'hello',
-            name: this.snapshot?.members.find((m) => m.id === this.peerId)
-              ?.name,
+            name: this.allMembers().find((m) => m.id === this.peerId)?.name,
           },
           peer,
         );
@@ -629,7 +732,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 8,
+        version: 9,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -648,7 +751,21 @@ export class Room {
     }
     if (snapshot.islandMatch && this.privateIsland) {
       snapshot.islandMatch.seat = seat;
-      snapshot.islandMatch.view = catanView(this.privateIsland, seat);
+      snapshot.islandMatch.view = catanView(
+        this.privateIsland,
+        Math.max(0, seat),
+      );
+      if (seat === -1) {
+        snapshot.islandMatch.view.goods = {
+          timber: 0,
+          clay: 0,
+          wool: 0,
+          grain: 0,
+          ore: 0,
+        };
+        snapshot.islandMatch.view.dev = [];
+        snapshot.islandMatch.view.myScore = 0;
+      }
     }
     return snapshot;
   }
@@ -658,7 +775,12 @@ export class Room {
     if (this.snapshot)
       for (const peer of this.peers.values()) {
         const seat = this.snapshot.members.findIndex((m) => m.id === peer.id);
-        if (peer.accepted && seat > 0 && peer.channel?.readyState === 'open')
+        if (
+          peer.accepted &&
+          (seat > 0 ||
+            this.snapshot.spectators?.some((m) => m.id === peer.id)) &&
+          peer.channel?.readyState === 'open'
+        )
           this.send(
             { type: 'snapshot', snapshot: this.projection(seat) },
             peer,
@@ -671,7 +793,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 8 ||
+      m.version !== 9 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -680,10 +802,13 @@ export class Room {
       throw new Error();
     peer.received = m.sequence;
     if (this.role === 'host') {
+      if (
+        !['hello', 'sync'].includes(m.type) &&
+        this.snapshot.spectators?.some((p) => p.id === peer.id)
+      )
+        return;
       if (m.type === 'hello' && peer.accepted && validName(m.name)) {
-        const guest = this.snapshot.members.find(
-          (member) => member.id === peer.id,
-        );
+        const guest = this.allMembers().find((member) => member.id === peer.id);
         if (!guest || guest.name !== m.name) throw new Error();
         guest.connected = true;
         this.issue = '';
@@ -721,9 +846,9 @@ export class Room {
         !validSnapshot(m.snapshot) ||
         m.snapshot.roomId !== this.snapshot.roomId ||
         m.snapshot.members[0].id !== peer.id ||
-        !m.snapshot.members.some(
-          (member: Member) => member.id === this.peerId,
-        ) ||
+        !(
+          [...m.snapshot.members, ...(m.snapshot.spectators ?? [])] as Member[]
+        ).some((member) => member.id === this.peerId) ||
         (m.snapshot.cardMatch &&
           m.snapshot.cardMatch.view.seat !==
             m.snapshot.members.findIndex(
@@ -789,36 +914,41 @@ export class Room {
     if (this.role !== 'host') return;
     if (
       this.pendingGuest &&
-      !this.snapshot?.members.some((m) => m.id === this.pendingGuest)
+      !this.allMembers().some((m) => m.id === this.pendingGuest)
     )
       this.closePeer(this.pendingGuest);
     this.pendingGuest = '';
     this.issue = '';
     this.emit();
   }
-  async createInvite(guestId?: string): Promise<string> {
+  async createInvite(guestId?: string, spectating = false): Promise<string> {
     if (this.role !== 'host' || !this.snapshot)
       throw new Error('Create a room first.');
     const existing = guestId
-      ? this.snapshot.members.find(
-          (m) => m.id === guestId && m.id !== this.peerId,
-        )
-      : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
-        ((this.snapshot.match ||
-          this.snapshot.cardMatch ||
-          this.snapshot.raceMatch ||
-          this.snapshot.rpsMatch ||
-          this.snapshot.chessMatch ||
-          this.snapshot.mafiaMatch ||
-          this.snapshot.businessMatch ||
-          this.snapshot.islandMatch) &&
-        this.snapshot.members.length === 2
-          ? this.snapshot.members[1]
-          : undefined));
+      ? this.allMembers().find((m) => m.id === guestId && m.id !== this.peerId)
+      : spectating
+        ? this.snapshot.spectators?.find((m) => !m.connected)
+        : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
+          ((this.snapshot.match ||
+            this.snapshot.cardMatch ||
+            this.snapshot.raceMatch ||
+            this.snapshot.rpsMatch ||
+            this.snapshot.chessMatch ||
+            this.snapshot.mafiaMatch ||
+            this.snapshot.businessMatch ||
+            this.snapshot.islandMatch) &&
+          this.snapshot.members.length === 2
+            ? this.snapshot.members[1]
+            : undefined));
+    if (existing)
+      spectating = !!this.snapshot.spectators?.some(
+        (m) => m.id === existing.id,
+      );
     if (guestId && !existing)
       throw new Error('Choose an existing guest to reconnect.');
     if (
       !existing &&
+      !spectating &&
       (this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
@@ -829,17 +959,23 @@ export class Room {
         this.snapshot.islandMatch)
     )
       throw new Error('Reconnect an existing seat during a match.');
-    if (!existing && this.snapshot.members.length >= 20)
+    if (
+      !existing &&
+      (spectating
+        ? (this.snapshot.spectators?.length ?? 0)
+        : this.snapshot.members.length) >= 20
+    )
       throw new Error('This table already has 20 players.');
     if (
       this.pendingGuest &&
-      !this.snapshot.members.some((m) => m.id === this.pendingGuest)
+      !this.allMembers().some((m) => m.id === this.pendingGuest)
     )
       this.closePeer(this.pendingGuest);
     const guest = existing?.id ?? crypto.randomUUID();
     if (existing) existing.connected = false;
     this.pendingGuest = guest;
     const peer = this.connection(guest);
+    peer.spectating = spectating;
     this.attach(
       peer.pc.createDataChannel('arcade-redesign', { ordered: true }),
       peer,
@@ -853,8 +989,9 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 8,
+        version: 9,
         kind: 'offer',
+        spectating,
         roomId: this.snapshot.roomId,
         host: this.peerId,
         guest,
@@ -881,6 +1018,13 @@ export class Room {
       draws: 0,
       standings: { players: [], recorded: [] },
     };
+    if (offer.spectating) {
+      this.snapshot.spectators = [this.snapshot.members.pop()!];
+      this.snapshot.spectatorWins = [0];
+    } else {
+      this.snapshot.spectators = [];
+      this.snapshot.spectatorWins = [];
+    }
     const peer = this.connection(offer.host);
     peer.pc.ondatachannel = (event) => {
       if (
@@ -920,10 +1064,11 @@ export class Room {
       peer.accepted ||
       answer.roomId !== this.snapshot.roomId ||
       answer.host !== this.peerId ||
-      answer.guest !== peer.id
+      answer.guest !== peer.id ||
+      answer.spectating !== peer.spectating
     )
       throw new Error('This answer does not match the pending invitation.');
-    const existing = this.snapshot.members.find((m) => m.id === answer.guest);
+    const existing = this.allMembers().find((m) => m.id === answer.guest);
     if (existing && existing.name !== answer.name) {
       this.closePeer(peer.id);
       this.pendingGuest = '';
@@ -933,6 +1078,7 @@ export class Room {
     }
     if (
       !existing &&
+      !peer.spectating &&
       (this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
@@ -947,7 +1093,18 @@ export class Room {
         'The table is already playing or full. Rejoin an existing seat.',
       );
     if (existing) existing.connected = false;
-    else {
+    else if (peer.spectating) {
+      this.snapshot.spectators ??= [];
+      this.snapshot.spectatorWins ??= [];
+      if (this.snapshot.spectators.length >= 20)
+        throw Error('This table already has 20 spectators.');
+      this.snapshot.spectators.push({
+        id: answer.guest,
+        name: answer.name,
+        connected: false,
+      });
+      this.snapshot.spectatorWins.push(0);
+    } else {
       this.snapshot.members.push({
         id: answer.guest,
         name: answer.name,
@@ -1044,7 +1201,8 @@ export class Room {
             )?.boardOptions ?? s.islandMatch?.view.boardOptions,
           )
         : null;
-    const round =
+    const round = Math.max(
+      s.nextRound ?? 0,
       (s.islandMatch?.round ??
         s.businessMatch?.round ??
         s.mafiaMatch?.round ??
@@ -1053,7 +1211,9 @@ export class Room {
         s.raceMatch?.round ??
         s.cardMatch?.round ??
         s.match?.round ??
-        -1) + 1;
+        -1) + 1,
+    );
+    s.nextRound = round + 1;
     this.privateRps = null;
     this.privateMafia = null;
     this.privateBusiness = null;
@@ -1781,6 +1941,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(STANDINGS_BACKUP);
       sessionStorage.removeItem(ISLAND_BACKUP);
       sessionStorage.removeItem(BUSINESS_BACKUP);
       sessionStorage.removeItem(MAFIA_BACKUP);

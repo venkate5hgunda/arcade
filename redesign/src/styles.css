@@ -3402,6 +3402,10 @@ select:focus-visible {
   gap: 1rem;
   min-width: 0;
 }
+.business-table > .turn-banner p,
+.island-table > .turn-banner p {
+  color: inherit;
+}
 .business-table > * {
   min-width: 0;
 }

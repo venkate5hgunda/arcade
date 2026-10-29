@@ -55,7 +55,7 @@ export function CardTable({
   useEffect(() => setPending(null), [view.gameId, view.turn, covered]);
   const ownTurn = view.current === view.seat,
     over = view.phase === 'over';
-  const canAct = !blocked && !over && !covered;
+  const canAct = view.seat !== -1 && !blocked && !over && !covered;
   const choose = view.phase === 'choose' || pending !== null;
   useEffect(() => {
     if (over) resultHeading.current?.focus();
@@ -243,25 +243,27 @@ export function CardTable({
               )}
             </div>
           )}
-          <section className="private-hand" aria-label="Your cards">
-            <h3 ref={handHeading} tabIndex={-1}>
-              {label(view.seat)}’s hand{' '}
-              <small>· {view.hand.length} cards</small>
-            </h3>
-            <div className="private-hand-cards">
-              {view.hand.map((id) => (
-                <button
-                  key={id}
-                  className="table-card-button"
-                  aria-label={`${displayCard(view.gameId, id).label}${view.legal.includes(id) ? ', play card' : ', cannot play'}`}
-                  disabled={!canAct || choose || !view.legal.includes(id)}
-                  onClick={() => play(id)}
-                >
-                  <GameCardFace view={view} id={id} />
-                </button>
-              ))}
-            </div>
-          </section>
+          {view.seat !== -1 && (
+            <section className="private-hand" aria-label="Your cards">
+              <h3 ref={handHeading} tabIndex={-1}>
+                {label(view.seat)}’s hand{' '}
+                <small>· {view.hand.length} cards</small>
+              </h3>
+              <div className="private-hand-cards">
+                {view.hand.map((id) => (
+                  <button
+                    key={id}
+                    className="table-card-button"
+                    aria-label={`${displayCard(view.gameId, id).label}${view.legal.includes(id) ? ', play card' : ', cannot play'}`}
+                    disabled={!canAct || choose || !view.legal.includes(id)}
+                    onClick={() => play(id)}
+                  >
+                    <GameCardFace view={view} id={id} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           <div className="private-card-actions">
             {view.gameId === 'uno' &&
               ((view.hand.length === 2 && ownTurn) ||

@@ -137,12 +137,14 @@ export function validRpsView(value: unknown): value is RpsView {
         'deadline',
       ].includes(k),
     ) &&
-    [0, 1].includes(s.seat) &&
+    [-1, 0, 1].includes(s.seat) &&
     (s.ownPick === null || isThrow(s.ownPick)) &&
     Array.isArray(s.locked) &&
     s.locked.length === 2 &&
     s.locked.every((n) => typeof n === 'boolean') &&
-    s.locked[s.seat] === (s.ownPick !== null) &&
+    (s.seat === -1
+      ? s.ownPick === null
+      : s.locked[s.seat] === (s.ownPick !== null)) &&
     Array.isArray(s.score) &&
     s.score.length === 2 &&
     s.score.every((n) => Number.isSafeInteger(n) && n >= 0 && n <= 3) &&
@@ -166,7 +168,7 @@ export function validRpsView(value: unknown): value is RpsView {
           Array.isArray(s.revealed) &&
           s.revealed.length === 2 &&
           s.revealed.every(isThrow) &&
-          s.revealed[s.seat] === s.ownPick &&
+          (s.seat === -1 || s.revealed[s.seat] === s.ownPick) &&
           s.deadline === 0 &&
           s.turns > 0)
   );
@@ -174,7 +176,7 @@ export function validRpsView(value: unknown): value is RpsView {
 export function rpsView(s: RpsRoomState, seat: number): RpsView {
   return {
     seat,
-    ownPick: s.picks[seat],
+    ownPick: seat === -1 ? null : s.picks[seat],
     locked: [s.picks[0] !== null, s.picks[1] !== null],
     revealed: s.phase === 'reveal' ? (s.picks as [Throw, Throw]) : null,
     score: [...s.score],

@@ -404,81 +404,85 @@ export function IslandTable({
         <CardPile count={view.deckCount} label="Discovery deck" />
         <span>Discovery deck · {view.deckCount} cards</span>
       </div>
-      <details>
-        <summary>Your private cargo and discoveries</summary>
-        <div className="island-cargo">
-          {GOODS.map((g) => (
-            <span key={g}>
-              <img src={`./catan/resources/${g}.svg`} alt="" />
-              {labels[g]} <strong>{view.goods[g]}</strong>
-            </span>
+      {seat !== -1 && (
+        <details>
+          <summary>Your private cargo and discoveries</summary>
+          <div className="island-cargo">
+            {GOODS.map((g) => (
+              <span key={g}>
+                <img src={`./catan/resources/${g}.svg`} alt="" />
+                {labels[g]} <strong>{view.goods[g]}</strong>
+              </span>
+            ))}
+          </div>
+          <p>
+            Your score: {view.myScore}. Discovery deck: {view.deckCount} cards.
+          </p>
+          {view.dev.map((c, i) => (
+            <p key={i}>
+              {c.type}
+              {c.bought >= view.turn ? ' · playable next turn' : ''}
+              {current &&
+                c.type !== 'victory' &&
+                c.bought < view.turn &&
+                !view.devPlayed &&
+                ['roll', 'main'].includes(view.phase) &&
+                (c.type === 'knight' || c.type === 'roads') && (
+                  <button
+                    className="quiet"
+                    onClick={() => action({ type: 'play-dev', card: c.type })}
+                  >
+                    Play {c.type}
+                  </button>
+                )}
+            </p>
           ))}
-        </div>
-        <p>
-          Your score: {view.myScore}. Discovery deck: {view.deckCount} cards.
-        </p>
-        {view.dev.map((c, i) => (
-          <p key={i}>
-            {c.type}
-            {c.bought >= view.turn ? ' · playable next turn' : ''}
-            {current &&
-              c.type !== 'victory' &&
-              c.bought < view.turn &&
-              !view.devPlayed &&
-              ['roll', 'main'].includes(view.phase) &&
-              (c.type === 'knight' || c.type === 'roads') && (
+          {current &&
+            !view.devPlayed &&
+            ['roll', 'main'].includes(view.phase) &&
+            view.dev.some(
+              (c) => c.type === 'monopoly' && c.bought < view.turn,
+            ) && (
+              <div>
+                {selectGood('Choose monopoly cargo', give, setGive)}
                 <button
                   className="quiet"
-                  onClick={() => action({ type: 'play-dev', card: c.type })}
+                  onClick={() =>
+                    action({ type: 'play-dev', card: 'monopoly', good: give })
+                  }
                 >
-                  Play {c.type}
+                  Play monopoly
                 </button>
-              )}
-          </p>
-        ))}
-        {current &&
-          !view.devPlayed &&
-          ['roll', 'main'].includes(view.phase) &&
-          view.dev.some(
-            (c) => c.type === 'monopoly' && c.bought < view.turn,
-          ) && (
-            <div>
-              {selectGood('Choose monopoly cargo', give, setGive)}
-              <button
-                className="quiet"
-                onClick={() =>
-                  action({ type: 'play-dev', card: 'monopoly', good: give })
-                }
-              >
-                Play monopoly
-              </button>
-            </div>
-          )}
-        {current &&
-          !view.devPlayed &&
-          ['roll', 'main'].includes(view.phase) &&
-          view.dev.some((c) => c.type === 'plenty' && c.bought < view.turn) && (
-            <div>
-              {selectGood('First supply', give, setGive)}
-              {selectGood('Second supply', receive, setReceive)}
-              <button
-                className="quiet"
-                onClick={() =>
-                  action({
-                    type: 'play-dev',
-                    card: 'plenty',
-                    goods: {
-                      [give]: give === receive ? 2 : 1,
-                      ...(give === receive ? {} : { [receive]: 1 }),
-                    },
-                  })
-                }
-              >
-                Play plenty
-              </button>
-            </div>
-          )}
-      </details>
+              </div>
+            )}
+          {current &&
+            !view.devPlayed &&
+            ['roll', 'main'].includes(view.phase) &&
+            view.dev.some(
+              (c) => c.type === 'plenty' && c.bought < view.turn,
+            ) && (
+              <div>
+                {selectGood('First supply', give, setGive)}
+                {selectGood('Second supply', receive, setReceive)}
+                <button
+                  className="quiet"
+                  onClick={() =>
+                    action({
+                      type: 'play-dev',
+                      card: 'plenty',
+                      goods: {
+                        [give]: give === receive ? 2 : 1,
+                        ...(give === receive ? {} : { [receive]: 1 }),
+                      },
+                    })
+                  }
+                >
+                  Play plenty
+                </button>
+              </div>
+            )}
+        </details>
+      )}
       {current && view.phase === 'main' && !view.freeRoads && (
         <details>
           <summary>Trade and build costs</summary>
