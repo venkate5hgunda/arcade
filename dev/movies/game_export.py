@@ -23,6 +23,15 @@ def approved_movies(db):
         automation = annotation.get("automation")
         if automation and automation["review_decision"] != "approve":
             continue
+        if automation and "openai-compatible" in (
+                automation.get("annotation_model", {}).get("provider"),
+                automation.get("review_model", {}).get("provider")):
+            from . import llm_annotation as llm
+            job = db.execute("SELECT * FROM llm_jobs WHERE job_key=?", (automation.get("job_key"),)).fetchone()
+            if not job or job["status"] != "promoted":
+                raise ValueError("Compatible public annotation lacks a promoted source job.")
+            # A standalone export must enforce the same confidence/receipt rule as promotion.
+            llm.checked_job(db, job, allow_drift=True)
         payload = tmdb_payload(db, row["id"])
         if payload.get("adult") or (row["year"] and row["year"] > catalog.dt.date.today().year):
             continue

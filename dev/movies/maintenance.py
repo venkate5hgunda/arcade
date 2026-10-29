@@ -239,18 +239,27 @@ def new_cycle(kind, today, timestamp):
 
 
 def annotation_work(db, state, daily_calls):
-    from . import gemini_annotation
-
+    catalog.load_env()
+    provider = os.environ.get("MOVIE_LLM_PROVIDER", "openai-compatible")
+    if provider == "openai-compatible":
+        from . import compatible_annotation as annotation
+    elif provider == "gemini":
+        from . import gemini_annotation as annotation
+    else:
+        state["annotations"] = {"error": "Unsupported MOVIE_LLM_PROVIDER."}
+        return ["Movie annotation: unsupported provider configuration."]
     try:
-        result = gemini_annotation.annotate_existing(db, daily_calls=daily_calls)
+        result = annotation.annotate_existing(db, daily_calls=daily_calls)
         state["annotations"] = result
         failures = [result["provider_error"]] if result["provider_error"] else []
+        if result.get("rejected"):
+            failures.append(f"{result['rejected']} annotation jobs exhausted confidence/review rounds.")
         if result["singleton_failures"]:
             failures.append(f"{len(result['singleton_failures'])} annotation jobs need schema/identity review.")
         return failures
-    except (gemini_annotation.ProviderFailure, ValueError, RuntimeError) as error:
+    except (annotation.ProviderFailure, ValueError, RuntimeError) as error:
         state["annotations"] = {"error": str(error)}
-        return [f"Gemini annotation: {error}"]
+        return [f"Movie annotation: {error}"]
 
 
 def wikidata_work(db, state, tmdb_budget):
@@ -338,7 +347,7 @@ def agent_definition(hour, minute, db_path, export_dir, tmdb_budget, omdb_budget
                              "--db", str(db_path.resolve()), "--export", str(export_dir.resolve()),
                              "--tmdb-budget", str(tmdb_budget), "--omdb-budget", str(omdb_budget),
                              "--refresh-days", str(refresh_days),
-                             "--gemini-daily-calls", str(gemini_daily_calls)],
+                             "--llm-daily-calls", str(gemini_daily_calls)],
         "StartCalendarInterval": {"Hour": hour, "Minute": minute}, "RunAtLoad": True,
         "StandardOutPath": str(LOCAL / "stdout.log"), "StandardErrorPath": str(LOCAL / "stderr.log"),
         "ProcessType": "Background",
@@ -381,7 +390,7 @@ def main():
     parser.add_argument("--tmdb-budget", type=int, default=5000)
     parser.add_argument("--omdb-budget", type=int, default=950)
     parser.add_argument("--refresh-days", type=int, default=7)
-    parser.add_argument("--gemini-daily-calls", type=int, default=1000)
+    parser.add_argument("--llm-daily-calls", "--gemini-daily-calls", dest="gemini_daily_calls", type=int, default=1000)
     parser.add_argument("--hour", type=int, default=11)
     parser.add_argument("--minute", type=int, default=0)
     args = parser.parse_args()

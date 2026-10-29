@@ -826,7 +826,7 @@ def export(db, directory, run_errors=None):
         ("redirects.jsonl", (dict(row) for row in db.execute("SELECT * FROM redirects ORDER BY alias_id"))),
     ]
     for table in ("llm_jobs", "llm_calls", "llm_promotions", "llm_batches", "llm_batch_items",
-                  "llm_daily_budget", "maintenance_budgets"):
+                  "llm_daily_budget", "llm_compatible_calls", "maintenance_budgets"):
         if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
             outputs.append((table + ".jsonl", (dict(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid"))))
     for name, rows in outputs:

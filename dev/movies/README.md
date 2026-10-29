@@ -233,29 +233,29 @@ replaces editorial reasoning.
 
 `llm_annotation.py` automates a separate annotation inference and critical review
 inference using the existing rubric. The provider-neutral adapter remains
-available; `gemini_annotation.py` implements the configured native Gemini
-connection. No LLM calls occur in an ordinary catalog build or offline preparation.
+available; `compatible_annotation.py` implements the default local compatible
+connection and `gemini_annotation.py` retains the optional native Gemini path. No LLM calls occur in an ordinary catalog build or offline preparation.
 
 ```sh
 # Annotate existing records; model-review approvals activate automatically:
-python3 -m dev.movies.gemini_annotation --limit 10000 --daily-calls 1000
+python3 -m dev.movies.compatible_annotation --limit 10000 --daily-calls 1000
 # Bounded acceptance run, or retain approvals without activating them:
-python3 -m dev.movies.gemini_annotation --limit 40 --no-promote
+python3 -m dev.movies.compatible_annotation --limit 1 --no-promote --verbose
 ```
 
-Native batches use `gemini-3.8-flash` for annotation and
-`gemini-3.1-pro-preview` for separate critical review. At most two requests run
-simultaneously. Batch sizing targets 35% of the limiting input/output capacity,
-accepts 20–50%, and adapts from measured output and thinking usage. It does not
-pad prompts to meet a token target. Exact count/order/identity and output schemas
-are checked locally. Invalid/truncated generations recursively halve to single
-movies, with at most three singleton attempts per run; HTTP/auth/quota failures
-stop the provider rather than triggering expensive batch-splitting retries.
-Reviews requesting revisions can be retried up to three successful proposals;
-human-review decisions are not automatically revised. Native batch envelopes,
-usage, per-movie projections and every attempted call are durably indexed.
-Unknown-outcome calls are not repeated without `--recover-interrupted`, which
-warns that earlier calls may already have been billed.
+The default maintenance provider is now the local OpenAI-compatible API. See
+[compatible-provider operation](../../docs/movie-model-provider.md) for the
+three validated candidates, separately retried judge, exact schema binding,
+private credentials, limits and live qualification evidence. Run:
+
+```sh
+npm run movies:annotate:local -- --limit 1 --no-promote --verbose
+```
+
+The native Gemini implementation remains available only through an explicit
+`MOVIE_LLM_PROVIDER=gemini` setting or its direct module command. Its existing
+batch sizing, quotas and receipts remain intact. The provider-neutral adapter
+commands below are also retained for explicitly configured adapters.
 
 ```sh
 # Prepare five real, snapshot-bound requests without calling any model:
@@ -313,7 +313,8 @@ protocol and profile. Change the profile when endpoint/model/settings change;
 otherwise successfully reviewed jobs are not called again. A call intent is
 committed before invoking the adapter. Immutable completed receipts retain
 requests, raw response envelopes, parsed outputs, model identities, usage and
-errors. These live in `llm_jobs`, `llm_calls` and `llm_promotions`, with matching
+errors. These live in `llm_jobs`, `llm_calls` and `llm_promotions`, plus all compatible attempts in
+`llm_compatible_calls`, with matching
 private JSONL exports and manifest status counts.
 
 An interrupted in-flight call has an unknown billing/result outcome and is not
@@ -413,8 +414,9 @@ explicitly partial even when a later offline rebuild succeeds.
 
 `catalog.py` contains the coupled ingestion, identity, cache and annotation flow;
 `__main__.py` is the module entry point. `sources/` preserves supplied inputs,
-`maintenance.py` owns scheduling/quota cursors, `gemini_annotation.py` native
-batching, `llm_annotation.py` validation/audits, and `partitions.py` period exports.
+`maintenance.py` owns scheduling/quota cursors, `compatible_annotation.py` the
+default candidate/judge API, `gemini_annotation.py` optional native batching,
+`llm_annotation.py` validation/audits, and `partitions.py` period exports.
 `game_export.py` owns the minimal public gameplay projection.
 `editorial/` holds versioned review definitions, and `.local/` holds the private
 SQLite system of record and regenerable `export/` snapshots. Do not commit

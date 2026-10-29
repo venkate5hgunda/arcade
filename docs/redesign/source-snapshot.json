@@ -1,0 +1,581 @@
+{
+  "baselineCommit": "ae1136d6e544784811e5c334ee76d6c54b6921a3",
+  "files": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "sha256": "f3bfd6a72af6ad16cf93cdef1e8376522a21caf4b5c498a111568e7dc6cc7ea9"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "ac448824b666852ad12c396c45bd6b008013fae2887a665cce66b1c779ab2bae"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a644a56bf1d98303e8190eca4aefa66c3f1126688e93c0276c354ea571f58d7d"
+    },
+    {
+      "path": "css/board-games.css",
+      "sha256": "797eda600c2a85bf4adf566aa601175bf60aea0021e6653313942e78e30338b9"
+    },
+    {
+      "path": "css/business.css",
+      "sha256": "dfb18215f9d0df59c9e6ada91a925d759c71e8a3f43048ac85dd1b1382e5c4e2"
+    },
+    {
+      "path": "css/card-games.css",
+      "sha256": "feacf9b3cd2a29d3a6b0795f386cdff46fdcea04c9ad40f8deb8de749fa32225"
+    },
+    {
+      "path": "css/catan.css",
+      "sha256": "43e29644676c3f0f9c51d45883c2ae8a6fcf93629d48655706df3d133e848402"
+    },
+    {
+      "path": "css/game-interface.css",
+      "sha256": "9b7a6c0168b976653c69ee8dc6f674a7aafdfc4d0aafe1d937ce22c50e5e5974"
+    },
+    {
+      "path": "css/hangman.css",
+      "sha256": "fc54c487063f4700212225cd0905eead63ad69bd4c53f77f8889f644d1fdca30"
+    },
+    {
+      "path": "css/mafia.css",
+      "sha256": "a3fd49b3bb8d44496e11bcde6f1ea7da495dffe8b25917df037095ab60305949"
+    },
+    {
+      "path": "css/multiplayer.css",
+      "sha256": "ea1de0e1601f6c0a89b54c0d6f435900cf99936152d74fb967d16c1f9cda6cb0"
+    },
+    {
+      "path": "css/party-word-games.css",
+      "sha256": "dcb6e08486cbe77d4d7a370602493ac6eca1c3aae349de0d650d4819d9840a96"
+    },
+    {
+      "path": "css/physical-games.css",
+      "sha256": "0d3ae83885cb04ce38da9bcb5d3d995f6a34a3da07f441e52d88e9ca05a76ffd"
+    },
+    {
+      "path": "css/styles.css",
+      "sha256": "a534d7fe179d765282bf233e467b06fb286f71b31e878c952e0a2a922d5a0a8f"
+    },
+    {
+      "path": "data/movies/README.md",
+      "sha256": "9f1fb43ccccc80d91d7ba2bd068ed1fba5a2bc7c65799d90ebf00b5f0c498728"
+    },
+    {
+      "path": "data/movies/index.json",
+      "sha256": "89ef5f0ee630fe29df329e0508d573e5e6189d9984f3c097ec9e7553fd572ef3"
+    },
+    {
+      "path": "dev/README.md",
+      "sha256": "fea106837869b2dd758f14ed36f60cf1e833780c6e2423d33bf59a91251dd9d9"
+    },
+    {
+      "path": "dev/__init__.py",
+      "sha256": "8a8ca52f7e398e5130f2364243c0472c5dabbce9d3c5e8fa35cd3663a8f98fe7"
+    },
+    {
+      "path": "dev/movies/BACKLOG.md",
+      "sha256": "bc24911a68460961a1a15a82a760c1f8f81e621c59e447077d833ec86ca3e777"
+    },
+    {
+      "path": "dev/movies/README.md",
+      "sha256": "6e9ee67b1d050af6c726e9b98e70787223a0f71587919f471f178afba0262349"
+    },
+    {
+      "path": "dev/movies/__init__.py",
+      "sha256": "5b8d87f5b94000631b757bdc5c8865b0ba5752b1aa098f49c940bc97ec3bcad4"
+    },
+    {
+      "path": "dev/movies/__main__.py",
+      "sha256": "a9a2aafa2697160e59a6f421d8a956bb02558c959c62ade5fd7880b5a1ca9f62"
+    },
+    {
+      "path": "dev/movies/catalog.py",
+      "sha256": "742bd52ad511e0504a40b9003bfa632e347ae9957665212fe79db8655dfedd2d"
+    },
+    {
+      "path": "dev/movies/editorial/annotations.json",
+      "sha256": "ee679141e715075a20e39f1d957067fb447fff1ebb9ada9e9601bfb8d772277f"
+    },
+    {
+      "path": "dev/movies/game_export.py",
+      "sha256": "7a74abb4cb2adf8bdf1681cb87eda8cf00c8baa0b54f9612ae634961f4e95066"
+    },
+    {
+      "path": "dev/movies/gemini_annotation.py",
+      "sha256": "4cbbe488833ed3509312877aded989414652a9cbef39e5c6f1bf55521a563016"
+    },
+    {
+      "path": "dev/movies/llm_annotation.py",
+      "sha256": "3cab71ee3331d7b9907731773de47d77a58d580c385f6a881bd58ebee32c99c1"
+    },
+    {
+      "path": "dev/movies/maintenance.py",
+      "sha256": "511203ad4eede0720ce02b4cb7251b3a9e5023f5276f166d262166d4687a1717"
+    },
+    {
+      "path": "dev/movies/partitions.py",
+      "sha256": "dcbd7ace3e1257ab1b19f9003d5b00e67486eae7a7f5e5f30d29e5ebd80909f3"
+    },
+    {
+      "path": "dev/movies/sources/README.md",
+      "sha256": "8fe1e4cd2c77a28aae687401fa800a70226aea943e0e31a812b361f9ce54b178"
+    },
+    {
+      "path": "dev/movies/wikidata.py",
+      "sha256": "a78ca5b6c8ede3855826c3b6ea4bd0ac45b94c13447e466a9daf2862d1975d7d"
+    },
+    {
+      "path": "dev/serve.py",
+      "sha256": "e47850f858121c5416db188b02b8c40ddfee0e8c7537acff4008a0b9d94df68f"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "d1ce6a1712ac938af44542c8f898e670168b46bd9de9b22ef72c466fd5895c3c"
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "sha256": "0fb508666da3d4312afd1725a82f550afba336684010d171748d18b33b882c7c"
+    },
+    {
+      "path": "docs/DESIGN_LANGUAGE.md",
+      "sha256": "c5ce9f5e78ffad31fdd7867f1b785348c1beb1a6e8033217ed0ec4d45a471c27"
+    },
+    {
+      "path": "docs/credits.md",
+      "sha256": "5d6ef04da92ac32773e372e80e4bd8da4323ecb4fea4ce4fe2334e99f0853afa"
+    },
+    {
+      "path": "docs/development.md",
+      "sha256": "f080d110deb09a40cae8d8c55c107ee72c22f970421d3a07a89091368f2266dc"
+    },
+    {
+      "path": "docs/features.md",
+      "sha256": "e40a890428d8e5ecacfc42476b89b95432bfd105d3d7aaf559789b87f520536a"
+    },
+    {
+      "path": "docs/games.md",
+      "sha256": "f7c6d398e04aab45cba2bd6f14c33d5a36c5d27ea99fd53e64051e36ba0f2356"
+    },
+    {
+      "path": "docs/improvement_instructions.md",
+      "sha256": "0abc96c7459ba7f34ad6849e97d71f420fe76545dc8f641fb6c215028223dd44"
+    },
+    {
+      "path": "docs/limitations.md",
+      "sha256": "1573f72739b0d9576c86b7aad9b4d979c23d4485c806168df1154904ee92e614"
+    },
+    {
+      "path": "docs/rooms.md",
+      "sha256": "9a440ae3eafece3899dce93a5d39fdea72150ff383173cca5c099446dc513cc3"
+    },
+    {
+      "path": "docs/rules/business.md",
+      "sha256": "c32318edbcac427c4db7486a767972115f0829964a1838d61ff8411cea7a1877"
+    },
+    {
+      "path": "docs/rules/mafia.md",
+      "sha256": "79e281a78384cb31036a589bdea71cc30564a5899911b93980a5275adcaaeaf1"
+    },
+    {
+      "path": "games/2048.js",
+      "sha256": "2af8a973fe3aaddf7f0eaf8e7d3b91de59dbe35d601411d6bee1bf734f8221a2"
+    },
+    {
+      "path": "games/air-hockey.js",
+      "sha256": "99254e56fe81c8f375eee65e7ffae18d58eeaf64f1691f35168d70021bf1d86b"
+    },
+    {
+      "path": "games/blackjack.js",
+      "sha256": "d7e1256b44789a51471dea3b99f319a88fb79184e873029b4fd884fec156683e"
+    },
+    {
+      "path": "games/business-engine.js",
+      "sha256": "f4d3b4be736e72bce221ab00e2de4de6b489650035bae2dc6a6c3fbe02913c8c"
+    },
+    {
+      "path": "games/business.js",
+      "sha256": "a5ecb225182756d37729f055e20770f592a1ea1456e7ea1b90c5e15cee53fbd7"
+    },
+    {
+      "path": "games/catan-art.js",
+      "sha256": "02a329d1b51883a1839e96949160228083e13f33f61f93f409892cb05e3bf0af"
+    },
+    {
+      "path": "games/catan.js",
+      "sha256": "b239767209cc3482b2f77398d4fc3671112ba816a283faad4672eeacd89f54f7"
+    },
+    {
+      "path": "games/chess.js",
+      "sha256": "fc3a3401d97e8f825e1090279f0fe0077c882b5913161ebd7e7e83768224cc7f"
+    },
+    {
+      "path": "games/connect-four.js",
+      "sha256": "e1601d4472fdd335fce39e31418403f9a5f9f7b20a698fa615f02eac905a6eaf"
+    },
+    {
+      "path": "games/crazy-eights.js",
+      "sha256": "66b93e0e635587f24dc3da0164987951b700fd95edc2a12146a7a0090c14869d"
+    },
+    {
+      "path": "games/dumb-charades.js",
+      "sha256": "0e13ef8be5c8dc33376461e205cd722d2ec60d70af87dac94145881c84dbf584"
+    },
+    {
+      "path": "games/hangman-engine.js",
+      "sha256": "59e57b089012182ce7488460f3e0a5034c66f03bade85c10f9a799e4673d93bc"
+    },
+    {
+      "path": "games/hangman.js",
+      "sha256": "8978ff253ba029f88c99912e8cbbfec14f80a594143177e2112ff4a40b466d97"
+    },
+    {
+      "path": "games/imposter.js",
+      "sha256": "cff240a50e06a5419cfa0b7e8a0b63f33928ffcb9a8964d4a977f927162ef5b8"
+    },
+    {
+      "path": "games/ludo.js",
+      "sha256": "0bad0d48ca6815a666821c44eedb3d2877821907e306e4d510e1c6357517331e"
+    },
+    {
+      "path": "games/mafia-engine.js",
+      "sha256": "784d6b8a4baa0754a245ffa88690cf0ce7ae8b3fe57595c54a650bc63cf3f718"
+    },
+    {
+      "path": "games/mafia.js",
+      "sha256": "b5536e76afcc08e206236789c4cbe0032bb0e8f8212244b9c9490d1036bf819e"
+    },
+    {
+      "path": "games/memory.js",
+      "sha256": "14e1917f742da737a6f04c34a1a5fa2b755dbd79227a555fa71d01a25b7fa653"
+    },
+    {
+      "path": "games/minesweeper.js",
+      "sha256": "3d10a27f3c8b1c05ff44f858c975796421e0f6e8567b9a36999fa2da502f2ef0"
+    },
+    {
+      "path": "games/pool.js",
+      "sha256": "1084567ba55055f2a020a612a517283be438051bf08f31a4330c697bcc2c6f29"
+    },
+    {
+      "path": "games/rps.js",
+      "sha256": "ef6109531da698d19058c0291a320a9cfd136529187ba6d4657eda57f46c909c"
+    },
+    {
+      "path": "games/show-star.js",
+      "sha256": "e3f7b48843f6dcb1b1e9500120f5623b1ee3a5c8c261b0470259514b1898c98a"
+    },
+    {
+      "path": "games/simon.js",
+      "sha256": "baae6f87a67b524e5b1968e3db60494a8a9f4e040e7e1a8eb9fd6fa8720724c6"
+    },
+    {
+      "path": "games/snakes-ladders.js",
+      "sha256": "a256299642c9307c2f5f77f5880b13389edd4eedbb0af715b16697eb1db7a5cd"
+    },
+    {
+      "path": "games/taboo.js",
+      "sha256": "5792e4c55a19781708bfe4b0ce48a6270bb656def074a0b4151fe82978915bd1"
+    },
+    {
+      "path": "games/tictactoe.js",
+      "sha256": "28e1010b050b64f440a59d089ccab8dda075828cf16b46d0aeb97bf83bf79e8e"
+    },
+    {
+      "path": "games/uno.js",
+      "sha256": "7e2b0c0b61a3138b0046f2d49fcdef7a241087ecb541a01756646cd314d559ef"
+    },
+    {
+      "path": "games/whack-a-mole.js",
+      "sha256": "3c5f1abb784053d210481d2ff017d7dc618bb35cd678b2923194553103d05209"
+    },
+    {
+      "path": "games/word-scramble.js",
+      "sha256": "653aa53d98989c0a2b016907952362043b7165d2f3dde538e50584b6cd9d5801"
+    },
+    {
+      "path": "games/wordle.js",
+      "sha256": "830d5c5214b3df2b5feab0568ded9de08e78a40fc569eaaf135a713a8d54b584"
+    },
+    {
+      "path": "index.html",
+      "sha256": "dccfa781f3b51fafe1b2f5a7e292bfb789b76bee70e24e0d18b41cc6591c28a0"
+    },
+    {
+      "path": "js/app.js",
+      "sha256": "9a1fabc0d7ac1cf69614d0d5861c11df5f994f6abcd3609e7a6405fc052d3b50"
+    },
+    {
+      "path": "js/audio.js",
+      "sha256": "bf7fc56ee435366dd9f5974788b04b7445b0ffdc913f6a613a71bfddfe3ee618"
+    },
+    {
+      "path": "js/board-tokens.js",
+      "sha256": "42d981f9154daf5fcf19202a40ca1b1e204dadc90b7dc52093bf6c1418baee67"
+    },
+    {
+      "path": "js/card-room-entry.js",
+      "sha256": "aa3d76dd6fcb8c78c6cc6b9d38643ddd64c53121eb54a278b12ba4518e87236c"
+    },
+    {
+      "path": "js/celebration.js",
+      "sha256": "86f740bac86d843d5d8a226320852ffc6db2d7d5b875541c6623eda0ca64d1d3"
+    },
+    {
+      "path": "js/dice.js",
+      "sha256": "7330677c6eb712ea864c4ba06142f5a40a3c0ab7af230a9e2666a838fef89c1c"
+    },
+    {
+      "path": "js/disc-physics.js",
+      "sha256": "5db8c7d073709b7530f3fba1b3423fa3384965e60865545e98669d2bc9bfb86a"
+    },
+    {
+      "path": "js/game-catalog.js",
+      "sha256": "3beac75698ae5b71383ea51bd20de64ee51e8eda4bba456b8b5c57f55768b351"
+    },
+    {
+      "path": "js/game-help.js",
+      "sha256": "46c6baf2cbe9fa4700f488b01f4648ed9d41e2eac86d2bfa7961d7910fd2f630"
+    },
+    {
+      "path": "js/game-session.js",
+      "sha256": "0859f146eac382faf8f11cb398cf2720d80ac2c8d6d0705da8cad2b08f06d98b"
+    },
+    {
+      "path": "js/game-shell.js",
+      "sha256": "80e3fcb5744e120953700b4e47d38790b6c89778e8965e6c9dba578c35392bcd"
+    },
+    {
+      "path": "js/game-utils.js",
+      "sha256": "f771e6ccff2a7ed479484001867ccc2b0cceb6d3e49ac313bf429657be7f5037"
+    },
+    {
+      "path": "js/haptics.js",
+      "sha256": "883fa31c5db48ea5af12e7efe249d9be59c22cb68084133f95f1156442551966"
+    },
+    {
+      "path": "js/icons.js",
+      "sha256": "604b1c67c148741d8df6e2fa30c72ad8b79052f1427120fcea4c57e8baacc50a"
+    },
+    {
+      "path": "js/imposter-words.js",
+      "sha256": "a6cc11af1b5959f0712b5010db2c7ed6daacbf4ddaaec355578c18e99be119ad"
+    },
+    {
+      "path": "js/motion.js",
+      "sha256": "9180a90608e730e66baee8b632bfc9abaab4ffb3b4d1b782e0ee2a79524ce263"
+    },
+    {
+      "path": "js/movie-library.js",
+      "sha256": "cae966168bf23df43eafed850dc13e57c9ac9c598cd91544cd8c114e1e62b4a8"
+    },
+    {
+      "path": "js/multiplayer.js",
+      "sha256": "248ccc946bfff427d3930cd3dae6a3ae3db2bd381ec7dc69aacca751542a2cce"
+    },
+    {
+      "path": "js/party-prompts.js",
+      "sha256": "c81e44cf9635b482dd16c4d7f7f93b556cb1fddcb997602069337615f774cc50"
+    },
+    {
+      "path": "js/player-names.js",
+      "sha256": "e6871357c320eff7e0dfdd67f3c471eb453cb8bac3269a77e894d4f6231ce2cf"
+    },
+    {
+      "path": "js/remote-match.js",
+      "sha256": "0e1c8d26906e6ca102f70cc135154362c6d7e5a5b03323a66d619467af084d5f"
+    },
+    {
+      "path": "js/room-qr.js",
+      "sha256": "6757e8645df236c57159ab665444a3fc04752c1f4e0ff557db672ccd3c2c66ff"
+    },
+    {
+      "path": "js/router.js",
+      "sha256": "c482ad35d15621067c36e1d64cd4a6ab42f2841abb31ff3fe385618db7a3d3b9"
+    },
+    {
+      "path": "js/snakes-board.js",
+      "sha256": "ce78f2ac7f77e03bfbdc7547db1215e53273798953ca46867c406a085b3c908e"
+    },
+    {
+      "path": "js/storage.js",
+      "sha256": "d95d52958755b1d6f48aeef30d3882c5e0e2b70c6e4a7c23133e8c23abcd31aa"
+    },
+    {
+      "path": "js/theme.js",
+      "sha256": "1b1a9508ba99f5ff78eb7e39a811a90fee1017b0fe499ea1f8de34d89cf2dd32"
+    },
+    {
+      "path": "js/turn-indicator.js",
+      "sha256": "85761dc39b117380998ea09c94ce2e3ccd23fa2354a1481bc9d0cf217e15122c"
+    },
+    {
+      "path": "js/vendor/qr-scanner-worker.min.js",
+      "sha256": "f4d8445f5a15c4e5f71a8c8c062c6443f09db370b8d3fe1fbdc7fe7889630d14"
+    },
+    {
+      "path": "js/vendor/qr-scanner.min.js",
+      "sha256": "0564e4cf84b94cac80213b4f779bd215bb0876a91c19df28baf97766f4fd5484"
+    },
+    {
+      "path": "js/vendor/qrcode.mjs",
+      "sha256": "ea91d7118a5395289170da848b7c6758b996163bfbccf312591ab65a4911b7c0"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "15de30fa6129f0ab59ed2f7f799ad78dc5a03d7be1d8417cade7056a47c237f0"
+    },
+    {
+      "path": "package.json",
+      "sha256": "a9c12580b52a6e858fdfa97fde344c41ca9924e3db9f9e1aa6725c0be0309e4d"
+    },
+    {
+      "path": "sw.js",
+      "sha256": "d00457fb26abf178262af4c2838434ec1cae5883d79fec3b1f8809ed41fdcfad"
+    },
+    {
+      "path": "test/2048.test.js",
+      "sha256": "1b86f09b15aff751b6f9ab909994a55392f36f7ce570d56c67b008fa735210e7"
+    },
+    {
+      "path": "test/air-hockey.test.js",
+      "sha256": "9956c5cb7bb71e23e900cda543e6fade101d4852cdd352c5783a1fa55fccc8de"
+    },
+    {
+      "path": "test/audio.test.js",
+      "sha256": "a82a86c78d4477caac4c4105ed55fc6086d21657ffb722c98cc73ab678596356"
+    },
+    {
+      "path": "test/board-games.test.js",
+      "sha256": "360e874a624be5a8548fc92273d6082f0bb74c28936958d187f1d6f30344497a"
+    },
+    {
+      "path": "test/business.test.js",
+      "sha256": "50ee9c0f611b58def052c66178aa14aca465bda12b899cd54f6c9465b26a8d80"
+    },
+    {
+      "path": "test/catan.test.js",
+      "sha256": "91115be09b7d7c48e2d1677d9b630d430a12dd16bfade00ed60b661603ef0545"
+    },
+    {
+      "path": "test/chess-pieces.test.js",
+      "sha256": "b2287e7f1da6750a5dca1caf1c9c79ed98e523303ae60c2136b9a8f1efc444eb"
+    },
+    {
+      "path": "test/crazy-eights.test.js",
+      "sha256": "955a82287c155247c3c0a96a1e632477ffff305b7eaf453cb0b4a108409d5577"
+    },
+    {
+      "path": "test/dice.test.js",
+      "sha256": "3ebd58310bd96a5e1cd921ffd57fee30eaab4bf2c60191f23df894a7a04ba7ae"
+    },
+    {
+      "path": "test/disc-physics.test.js",
+      "sha256": "7ea7833406a44ae67bf98888526d38f41f3964bf5a6fbe482279b99b0b84e617"
+    },
+    {
+      "path": "test/game-categories.test.js",
+      "sha256": "6648afe6da941396eb1f2fbd5067211813c0f5e11e0e7b34595e3d10f46056f1"
+    },
+    {
+      "path": "test/game-help.test.js",
+      "sha256": "fca70b70a9fce2b1ad883a570b0c039b57b20cf0d2371bba3251a714978b9ab9"
+    },
+    {
+      "path": "test/game-session.test.js",
+      "sha256": "9d38748a40e9588fc49c94d2ad2e82218a0f14077af3e17374318345174b6498"
+    },
+    {
+      "path": "test/game-shell.test.js",
+      "sha256": "540c349baa4db17663c2bf57c13e051884684c9d07ea55b9b1474f7652b23807"
+    },
+    {
+      "path": "test/hangman.test.js",
+      "sha256": "96a79feaaf0889b4c699e6d170542b714c65af001234913a1bdd390355b1018a"
+    },
+    {
+      "path": "test/haptics.test.js",
+      "sha256": "a1d69dd7714527946ec3b23de671fe34aac65bb20157be7cbb83b19e5b76b6ab"
+    },
+    {
+      "path": "test/icons.test.js",
+      "sha256": "624b9a506083675d7ced260351ea59460f223d1a9567e501f25e3fdad09279e4"
+    },
+    {
+      "path": "test/imposter.test.js",
+      "sha256": "57164173a754329641d9b0dce10fe795a60c69d348c314b86b4b73eb76d4fa56"
+    },
+    {
+      "path": "test/mafia.test.js",
+      "sha256": "988d57133d02b5d439a26f947273f5b55f9b25ee3fff13cc79e6014840a8d633"
+    },
+    {
+      "path": "test/movie-library.test.js",
+      "sha256": "ac041fbb391df637cf69ca1967d9a18dd3be63fdf39168de76ccf5fd9ba0d6f4"
+    },
+    {
+      "path": "test/movie-offline.test.js",
+      "sha256": "0073153db72b3d57f5c5bd0c7360dc3f0b60b87722b863d2761ffa0c1ed5a83c"
+    },
+    {
+      "path": "test/multiplayer.test.js",
+      "sha256": "81734ff05e4e55fc55693074cafb4ed8bd11aaf1c8ea428cbac1651833612e7b"
+    },
+    {
+      "path": "test/party-word-games.test.js",
+      "sha256": "3d71ab5772ff75505f187914d8aecd01a8d8f9b2d4dd88e09ddd515328b7b541"
+    },
+    {
+      "path": "test/player-names.test.js",
+      "sha256": "cb7ea6b29dca108650a82b7b0aad3ecc6e82b3d2d2ccc9a50edb8160e8038f4c"
+    },
+    {
+      "path": "test/remote-match.test.js",
+      "sha256": "ca53d37157910ff7f6230269b6f3ff60ab59779db3cb2d445d56bb8e301b8c8a"
+    },
+    {
+      "path": "test/room-qr.test.js",
+      "sha256": "1faac8c0e0e73f00d31d8d38759a7a03c30fe78cb25ed4e3ab8c933a8756fc6d"
+    },
+    {
+      "path": "test/test_movie_catalog.py",
+      "sha256": "4071400eed816d83c577a93415b4cdd59e4ddd138d4f5a5e7f345713b021f956"
+    },
+    {
+      "path": "test/test_movie_game_export.py",
+      "sha256": "951c3bf29cc30cf16d8f0a569b066cc900af4b441c4237a13e60359fd7d2b4dc"
+    },
+    {
+      "path": "test/test_movie_gemini.py",
+      "sha256": "fe9b6e8ae9ab7e69d223ba6c8085ad9cc37dbc255d570b5b4d2ad3e356953632"
+    },
+    {
+      "path": "test/test_movie_llm_annotation.py",
+      "sha256": "83777d5def20619779392014bf912e2225a336aeb00398f73bd6e79f386c1458"
+    },
+    {
+      "path": "test/test_movie_maintenance.py",
+      "sha256": "ce857c7cb0d65a315ef0dd2ab81126358f1f6cfea3dc861cc8c07392bf258c4c"
+    },
+    {
+      "path": "test/test_movie_partitions.py",
+      "sha256": "0ee5a864533e38a88d7f0a8b0be7c990d0c03aef39d04af0dbfa0585a187f970"
+    },
+    {
+      "path": "test/test_movie_wikidata.py",
+      "sha256": "b2f5b7224e3879907cf93bae4c24881a10d86ee75aac9ba9482a30fcd1634c98"
+    },
+    {
+      "path": "test/theme.test.js",
+      "sha256": "18ffaf270d182ef297add3eb00a20fd2e2d824916e22ba824fb0d24227eed8ec"
+    },
+    {
+      "path": "test/turn-indicator.test.js",
+      "sha256": "271485d377a7c6e24ba4d23a630bba64b6f322aa0d0c8fed8ecca9bf0e1a696c"
+    },
+    {
+      "path": "test/uno.test.js",
+      "sha256": "ed677af1a6001b89efd0e0fc2efb9f6fe8bca39ad4e340687a7f3698d07338cc"
+    }
+  ]
+}

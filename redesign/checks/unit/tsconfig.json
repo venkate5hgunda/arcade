@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../node_modules/.cache/unit",
+    "rootDir": "../..",
+    "noEmit": false,
+    "noEmitOnError": true,
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["../../src/lib/**/*.ts", "./*.check.ts", "../../src/lib/**/*.js"]
+}

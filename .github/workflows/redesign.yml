@@ -1,0 +1,46 @@
+name: Arcade redesign
+on:
+  push:
+    branches: [codex/redesign-foundation, codex/redesign-first-game]
+  pull_request:
+    paths: ['redesign/**', 'docs/redesign/**', 'docs/images/redesign-*', '.github/workflows/redesign.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: redesign
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: redesign/package-lock.json
+      - run: npm ci
+      - name: Install baseline dependencies if needed
+        working-directory: .
+        run: if [ -f package-lock.json ]; then npm ci; fi
+      - name: Baseline regression suite
+        working-directory: .
+        run: node --test test/*.test.js
+      - name: Baseline supporting checks
+        working-directory: .
+        run: npm run test:movies
+      - run: npm run check:format
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: redesign-browser-failures
+          path: redesign/node_modules/.cache/test-results/
+          retention-days: 7

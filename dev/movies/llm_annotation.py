@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -215,6 +216,7 @@ def validate_schema(value, schema, path="output"):
     kinds = [kinds] if isinstance(kinds, str) else kinds
     matches = {"object": isinstance(value, dict), "array": isinstance(value, list),
                "string": isinstance(value, str), "integer": type(value) is int,
+               "number": type(value) is int or (type(value) is float and math.isfinite(value)),
                "null": value is None}
     if kinds and not any(matches[kind] for kind in kinds):
         raise ValueError(f"{path}: invalid type")
@@ -232,7 +234,7 @@ def validate_schema(value, schema, path="output"):
             validate_schema(item, schema["items"], path + "[]")
     if "string" in kinds and not value.strip():
         raise ValueError(f"{path}: empty text")
-    if type(value) is int and not schema.get("minimum", value) <= value <= schema.get("maximum", value):
+    if type(value) in (int, float) and not schema.get("minimum", value) <= value <= schema.get("maximum", value):
         raise ValueError(f"{path}: value out of range")
 
 
@@ -257,6 +259,8 @@ def validate_output(request, output):
     paths.update("tmdb." + name for name in context["tmdb"])
     if context["source_rows"]:
         paths.add("source_rows")
+    for provider in ("wikidata", "wikipedia", "omdb"):
+        paths.update(f"{provider}.{key}" for key in context.get(provider, {}))
     for name in DIMENSIONS:
         component = output[name]
         if not set(component["evidence"]) <= paths:
@@ -383,6 +387,9 @@ def checked_job(db, job, allow_drift=False):
     validate_output(request_for(job, "review", proposal), decision)
     if decision["decision"] != "approve":
         raise ValueError("Job was not approved by model review.")
+    if "openai-compatible" in (annotation["provider"], review["provider"]):
+        from .compatible_annotation import validate_accepted_selection
+        validate_accepted_selection(db, job, annotation, review)
     return context, proposal, annotation, review
 
 
@@ -432,6 +439,9 @@ def promoted_reviews(db):
                 "human_verified": False,
             },
         }
+        if review["provider"] == "openai-compatible":
+            reviews[context["movie"]["id"]]["automation"]["selection_confidence"] = json.loads(review["response_text"])["selection_confidence"]
+            reviews[context["movie"]["id"]]["automation"]["selection_confidence_scale"] = "1-10"
         if drifted:
             reviews[context["movie"]["id"]]["automation"]["evidence_drift"] = True
         if context["tmdb_id"] is not None:

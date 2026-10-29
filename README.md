@@ -71,3 +71,7 @@ docs/                              documentation, rules and screenshots
 ## 📄 License
 
 [MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code stay under their own licenses — see [credits](docs/credits.md) and `js/vendor/`.
+
+## 🧭 Living Game Shelf
+
+The public app is the React/TypeScript Living Game Shelf. See the [redesign documentation](docs/redesign/README.md) for local development, architecture, parity evidence and release qualification.

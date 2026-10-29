@@ -98,7 +98,7 @@ class MaintenanceTests(unittest.TestCase):
         state.update(mode="idle", next_refresh_at="2999-01-01")
         maintenance.save_state(self.db, state)
         result = {"provider_error": None, "singleton_failures": [], "promoted": 3}
-        with patch("dev.movies.gemini_annotation.annotate_existing", return_value=result) as annotate:
+        with patch("dev.movies.compatible_annotation.annotate_existing", return_value=result) as annotate:
             with patch.object(catalog, "import_csv") as ingest, \
                     patch("dev.movies.wikidata.run", return_value={"added": 2}) as enrich:
                 output = maintenance.run(self.db, self.path / "export", gemini_daily_calls=17)

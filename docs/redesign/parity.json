@@ -1,0 +1,823 @@
+{
+  "schemaVersion": 1,
+  "app": "Arcade",
+  "baselineCommit": "ae1136d6e544784811e5c334ee76d6c54b6921a3",
+  "milestone": "puzzle-games",
+  "requirements": [
+    {
+      "id": "A01",
+      "title": "Catalog and navigation",
+      "category": "Platform",
+      "status": "implemented",
+      "sources": [
+        "js/game-catalog.js",
+        "js/router.js",
+        "docs/features.md"
+      ],
+      "acceptance": [
+        "All 26 catalog entries retain IDs, player ranges, categories, rules and supported modes.",
+        "Category filtering, deduplicated recent games, per-game resume and deep links remain available.",
+        "Home stays home even with unfinished rounds; game deep links open the named game.",
+        "Back/Forward and keyboard navigation dispose the old game; stale lazy loads cannot mount.",
+        "Load failures are actionable errors rather than false Coming soon screens."
+      ],
+      "baselineTests": [
+        "test/game-categories.test.js",
+        "test/game-session.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/foundation.spec.ts",
+        "redesign/checks/unit/domain.check.ts"
+      ],
+      "implementationScope": "All 26 native entries retain IDs, routes, categories, player limits and artwork. Live recent/resume links follow coordinated storage updates across tabs, with native aliases, errors, keyboard navigation and desktop/mobile evidence. Full release qualification remains separate."
+    },
+    {
+      "id": "A02",
+      "title": "Shared game experience",
+      "category": "Platform",
+      "status": "implemented",
+      "sources": [
+        "js/game-shell.js",
+        "js/game-help.js",
+        "js/player-names.js",
+        "js/turn-indicator.js",
+        "docs/features.md"
+      ],
+      "acceptance": [
+        "Collapsed setup shows a useful summary and immediate start; persist per-game choices.",
+        "Help offers rules, controls and goals; player names and auxiliary settings stay expandable.",
+        "Reset confirms intention; active actor, last outcome and next action stay visible above secondary content.",
+        "Distinctive original pieces/boards, inspectable objects, touch/keyboard controls and reduced-motion feedback.",
+        "Victory announces player/team; room guests celebrate their own wins."
+      ],
+      "baselineTests": [
+        "test/game-shell.test.js",
+        "test/game-help.test.js",
+        "test/player-names.test.js",
+        "test/turn-indicator.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/foundation.spec.ts",
+        "redesign/checks/browser/motion.spec.ts",
+        "redesign/checks/unit/domain.check.ts"
+      ],
+      "implementationScope": "Shared collapsed setup, help, options, reset confirmation and actor/result feedback cover all 26 native games. Memory display/checkpoint separation and private handoffs retain recovery behavior with coordinated saves. Browser accessibility, reduced motion and complete-game flows pass; physical-device release qualification remains open."
+    },
+    {
+      "id": "A03",
+      "title": "Persistence and recovery",
+      "category": "Platform",
+      "status": "implemented",
+      "sources": [
+        "js/storage.js",
+        "js/game-session.js"
+      ],
+      "acceptance": [
+        "Preserve arcade-prefixed settings, names, scores, recent games and local checkpoints.",
+        "Use each game’s actual expiry from game-session.js; timed games retain absolute deadlines across hide/reload.",
+        "Validate checkpoints; finished/expired rounds never resurrect; preference/high-score data survives expiry.",
+        "Surface storage failures without blocking playable in-memory sessions."
+      ],
+      "baselineTests": [
+        "test/game-session.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/storage.spec.ts",
+        "redesign/checks/unit/migration.check.ts",
+        "redesign/checks/unit/concurrency.check.ts",
+        "redesign/checks/unit/domain.check.ts"
+      ],
+      "implementationScope": "All 26 native checkpoint/settings shapes retain the original keys and expiry/validation. Version 1 preserves raw legacy backups before mounting React, protects failed/future migrations and offers private exports. Web Locks coordinate competing checkpoint/score/recent writes, reject stale same-game replacement/deletion and refresh shelf/preferences across tabs. Complete-game and two-tab desktop/mobile flows pass; physical-device release qualification remains open."
+    },
+    {
+      "id": "A04",
+      "title": "Room admission and sharing",
+      "category": "Multiplayer",
+      "status": "partial",
+      "sources": [
+        "js/multiplayer.js",
+        "js/room-qr.js",
+        "docs/rooms.md"
+      ],
+      "acceptance": [
+        "Host creates unique per-guest invitations; guest returns answer accepted in original host tab.",
+        "Native share, clipboard fallback, local QR generation/scanning and raw-link fallback remain available.",
+        "Camera denial, QR overflow and connection failure explain the next action.",
+        "Connected guests default selected; host may spectate seats and sees games valid for selected count."
+      ],
+      "baselineTests": [
+        "test/multiplayer.test.js",
+        "test/room-qr.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/room-qr.spec.ts",
+        "redesign/checks/browser/foundation.spec.ts",
+        "redesign/checks/unit/room.check.ts"
+      ],
+      "implementationScope": "Native per-guest invitations, native share/clipboard/QR fallback, selected guest player/spectator seats, mid-match spectator admission and supported-game filtering. Protocol v9 and all eleven room games have desktop/mobile browser evidence; physical-camera and cross-network qualification remain release gates.",
+      "releaseGate": "Physical camera scanning and cross-network (Wi-Fi/cellular) room qualification remain release gates; see release-qualification.md and device-validation.md."
+    },
+    {
+      "id": "A05",
+      "title": "Authority and private information",
+      "category": "Multiplayer",
+      "status": "partial",
+      "sources": [
+        "js/multiplayer.js",
+        "js/remote-match.js",
+        "js/card-room-entry.js",
+        "docs/ARCHITECTURE.md"
+      ],
+      "acceptance": [
+        "Retain the eleven room-supported games and room-only Mafia behavior.",
+        "Host validates actor, seat, round and revision; guests submit intents and cannot set authoritative outcomes.",
+        "Private hands/roles/deck order stay on host; each recipient sees only its permitted view.",
+        "Room standings retain per-game/player wins, losses, draws and rankings across replays."
+      ],
+      "baselineTests": [
+        "test/multiplayer.test.js",
+        "test/remote-match.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/unit/standings.check.ts",
+        "redesign/checks/browser/spectators.spec.ts",
+        "redesign/checks/browser/cards.spec.ts",
+        "redesign/checks/browser/business.spec.ts",
+        "redesign/checks/browser/island.spec.ts",
+        "redesign/checks/browser/mafia.spec.ts"
+      ],
+      "implementationScope": "All eleven room games enforce host authority, player seats and revision/round checks, private player views and public-only spectator projections. Per-player/per-game wins, losses, draws and baseline rankings persist across replay, lobby and reconnect. Protocol v9 restores valid v1–v8 backups. Physical-device/cross-network release qualification remains open.",
+      "releaseGate": "Cross-network room qualification and on-device private-view inspection remain release gates; see release-qualification.md and device-validation.md."
+    },
+    {
+      "id": "A06",
+      "title": "Room reconnection",
+      "category": "Multiplayer",
+      "status": "partial",
+      "sources": [
+        "js/multiplayer.js",
+        "docs/rooms.md"
+      ],
+      "acceptance": [
+        "Transient disconnection pauses turns; same-seat invitation/answer recovery retains the round.",
+        "Host reload restores a tab-scoped checkpoint; guests exchange fresh links and receive only their own views.",
+        "Mismatched reconnect name cancels invitation without destroying seat or game.",
+        "Eliminated Business seats do not block resume; surviving selected seats must reconnect.",
+        "Disclose STUN/network need and absence of signaling/TURN; offline local play remains available."
+      ],
+      "baselineTests": [
+        "test/multiplayer.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/spectators.spec.ts",
+        "redesign/checks/browser/foundation.spec.ts"
+      ],
+      "implementationScope": "All eleven room games have authoritative tab-scoped player/spectator recovery, fresh same-seat invitations and name validation. Spectators do not pause players; eliminated Business seats and Mafia absent-seat rules retain their behavior. Protocol v9 retains valid v1–v8 backups. Physical-device/cross-network qualification remains open.",
+      "releaseGate": "Cross-network reconnection and physical two-device qualification remain release gates; see release-qualification.md and device-validation.md."
+    },
+    {
+      "id": "A07",
+      "title": "Sound, feel and themes",
+      "category": "Experience",
+      "status": "partial",
+      "sources": [
+        "js/audio.js",
+        "js/haptics.js",
+        "js/theme.js",
+        "js/motion.js",
+        "docs/features.md"
+      ],
+      "acceptance": [
+        "Auto/light/dark theme, persistent sound/haptics settings, user-gesture audio unlock and recovery.",
+        "Impact-sensitive synthesized effects, distinct wins and optional haptics; reflect actual platform support.",
+        "No promise of audible output from API readiness alone; test controls explain iOS limitations.",
+        "High contrast, reduced motion and responsive original artwork across all game surfaces."
+      ],
+      "baselineTests": [
+        "test/audio.test.js",
+        "test/haptics.test.js",
+        "test/theme.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/feedback.spec.ts",
+        "redesign/checks/unit/feedback.check.ts",
+        "redesign/checks/unit/game-feedback.check.ts",
+        "redesign/checks/browser/motion.spec.ts",
+        "redesign/checks/browser/theme.spec.ts"
+      ],
+      "implementationScope": "Persistent Auto/Light/Dark theme, shared sound/haptics controls, gesture unlock/recovery, per-game move/result/capture/dice/timer cues, Simon notes, recipient-specific room outcomes and action-game impacts. Reduced-motion CSS covers all 26 native game entry/play surfaces, with live race/2048 travel cancellation. Physical-device audible-output/haptics qualification remains open.",
+      "releaseGate": "Physical audible-output and haptics qualification remain release gates; see release-qualification.md and device-validation.md."
+    },
+    {
+      "id": "A08",
+      "title": "Offline assets and data pipeline",
+      "category": "Platform",
+      "status": "partial",
+      "sources": [
+        "sw.js",
+        "js/movie-library.js",
+        "dev/movies/README.md",
+        "dev/serve.py",
+        "docs/credits.md"
+      ],
+      "acceptance": [
+        "Cache shell, all game modules, icons, QR worker and approved movie content for local offline play.",
+        "Retain Telugu movie sources/credits, top three actors and synopsis in appropriate revealed contexts.",
+        "No movie details leak through hidden Imposter handoffs.",
+        "Preserve developer-only ingestion/annotation/export tools and keep credentials/raw development data outside deployment.",
+        "Keep attribution for original and third-party art/code."
+      ],
+      "baselineTests": [
+        "test/movie-library.test.js",
+        "test/movie-offline.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/browser/pwa.spec.ts",
+        "redesign/checks/browser/pwa-lifecycle.spec.ts",
+        "redesign/checks/unit/pwa.check.ts",
+        "redesign/checks/browser/storage.spec.ts"
+      ],
+      "implementationScope": "Verified production asset graph, scoped workers/updates, raw backups, private exports and competing-tab saves have desktop/mobile evidence. The developer pipeline defaults to the local OpenAI-compatible API with three parallel validated candidates, generous retries, repeated quality rounds and a 5/10 confidence gate rechecked through promotion/publication. Live three-candidate approval at 9/10 and fresh desktop/mobile export inspection pass; physical-device release qualification remains open.",
+      "releaseGate": "Physical install/standalone and cross-network offline qualification remain release gates; see release-qualification.md and device-validation.md."
+    },
+    {
+      "id": "G01",
+      "title": "Show",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/show-star.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Display name Show; three to eight shared-device players, four chits each, concealed simultaneous clockwise passes.",
+        "Four matching chits unlock slap, N through 1 stack scoring; 3/5/10 rounds and shared wins on ties; reload conceals hands; local only.",
+        "Preserve catalog player range 3–8; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/party-word-games.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/show.check.ts",
+        "redesign/checks/browser/show.spec.ts"
+      ],
+      "implementationScope": "Native 3–8-player shared-device Show with covered chits, simultaneous passing and slap-order scoring."
+    },
+    {
+      "id": "G02",
+      "title": "Taboo",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/taboo.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Four to twenty players in two teams; 30/60/90-second turns, 4/6/8 total turns, correct +1, skip 0, forbidden -1.",
+        "Fifty original cards without repeats until exhausted; private clue giver/referee handoff; deadline continues hidden/reloaded; local only.",
+        "Preserve catalog player range 4–20; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/party-word-games.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/taboo.check.ts",
+        "redesign/checks/browser/taboo.spec.ts"
+      ],
+      "implementationScope": "Native two-team Taboo with original clue deck, covered handoff, scoring and absolute-deadline recovery."
+    },
+    {
+      "id": "G03",
+      "title": "Wordle",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "games/wordle.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Solo random five-letter practice, six guesses, curated offline vocabulary, repeated-letter accounting, physical/on-screen keyboard and accessible symbol feedback; new puzzle reset; local only.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/party-word-games.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/wordle.check.ts",
+        "redesign/checks/browser/wordle.spec.ts"
+      ],
+      "implementationScope": "Native offline Wordle practice with original vocabulary, duplicate-letter feedback and compatible local recovery."
+    },
+    {
+      "id": "G04",
+      "title": "Air Hockey",
+      "category": "Action",
+      "status": "implemented",
+      "sources": [
+        "games/air-hockey.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two-player paddle/puck controls; fixed-step collisions, drag, rebounds and goals; opening puck waits at center and post-goal serve waits on conceding half.",
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/air-hockey.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/hockey.check.ts",
+        "redesign/checks/browser/hockey.spec.ts"
+      ]
+    },
+    {
+      "id": "G05",
+      "title": "8-Ball Pool",
+      "category": "Action",
+      "status": "implemented",
+      "sources": [
+        "games/pool.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two-player rack, aiming, disc collisions, pockets, scratches, assigned groups and house-rule eight-ball win/loss.",
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/pool.check.ts",
+        "redesign/checks/browser/pool.spec.ts"
+      ]
+    },
+    {
+      "id": "G06",
+      "title": "Whack-a-Mole",
+      "category": "Action",
+      "status": "implemented",
+      "sources": [
+        "games/whack-a-mole.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Timed solo target interaction, hit/miss scoring and absolute-deadline resume.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/whack.check.ts",
+        "redesign/checks/browser/whack.spec.ts"
+      ],
+      "implementationScope": "Native timed Whack-a-Mole with score, best score, misses and absolute-deadline recovery."
+    },
+    {
+      "id": "G07",
+      "title": "Snakes & Ladders",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "games/snakes-ladders.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two to four local/room players; fair dice, square-by-square travel, ladders/snakes and legal finish; randomized non-intersecting board including long snake from 99.",
+        "Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/races.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/races.spec.ts"
+      ],
+      "implementationScope": "Native 2–4-player local and room play with baseline rules, checkpoint recovery, host-owned dice and reconnect. Physical-device and cross-network qualification remain separate release gates."
+    },
+    {
+      "id": "G08",
+      "title": "Ludo",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "games/ludo.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two to four local/room players; full 52-cell cross track, legal token choice, capture, home path and victory; matching unnumbered pieces and active-home feedback.",
+        "Preserve catalog player range 2–4; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/races.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/races.spec.ts"
+      ],
+      "implementationScope": "Native 2–4-player local and room play with baseline rules, checkpoint recovery, host-owned dice and reconnect. Physical-device and cross-network qualification remain separate release gates."
+    },
+    {
+      "id": "G09",
+      "title": "Island Charter",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "games/catan.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Three to four local/room players; opening dice ties and snake placement; roads/distance, resource production, robber/discards, bank/harbor/player trades, development cards and ten-point victory.",
+        "Classic/changing nine harbors, illustrated/colorblock terrain and four adjacency options retain persistence.",
+        "Inspect/zoom/pan full island with per-seat viewport; hidden cargo and deck remain private; harbor access derives from its two coastal junctions.",
+        "Preserve catalog player range 3–4; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/catan.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/catan.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/island.spec.ts"
+      ]
+    },
+    {
+      "id": "G10",
+      "title": "Business",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "games/business.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two to six local/room players; Indian-city property board, buying, auctions, rent ladders, even building, mortgages, jail, cards, trades, debt and bankruptcy.",
+        "Inspect any deed; primary decisions precede scrollable board; non-turn auction/trade responses are authorized; preserve private deck and round/revision checks.",
+        "Preserve catalog player range 2–6; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/business.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/business.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/business.spec.ts"
+      ]
+    },
+    {
+      "id": "G11",
+      "title": "Chess",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "games/chess.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Local one/two-player modes and room duel; legal moves, check, castling, en passant, promotion and end conditions represented by current game.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/chess-pieces.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/chess.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/chess.spec.ts"
+      ]
+    },
+    {
+      "id": "G12",
+      "title": "Imposter",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/imposter.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Three to twenty players; 630 original prompts across 21 categories plus approved Telugu movies; Classic/Pair mode.",
+        "Choose fixed/random imposter count bounded by table size, hint/category/fellow-imposter visibility and categories.",
+        "Private reveal; round votes eliminate top candidate, ties spare all; crew wins at zero imposters and imposters at parity.",
+        "Preserve catalog player range 3–20; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/imposter.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/imposter.check.ts",
+        "redesign/checks/browser/imposter.spec.ts"
+      ]
+    },
+    {
+      "id": "G13",
+      "title": "Mafia",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/mafia.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Five to ten players, rooms only; host-held roles, night actions, private information, secret votes, elimination, winning teams and recovery per existing rules.",
+        "Preserve catalog player range 5–10; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/mafia.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/mafia.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/mafia.spec.ts"
+      ]
+    },
+    {
+      "id": "G14",
+      "title": "Dumb Charades",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/dumb-charades.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two to eight players; actor/team turns, timer, categories, scoring and reveal; Telugu movies show cast/synopsis to actor and after turn.",
+        "Preserve catalog player range 2–8; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/charades.check.ts",
+        "redesign/checks/browser/charades.spec.ts"
+      ]
+    },
+    {
+      "id": "G15",
+      "title": "Rock Paper Scissors",
+      "category": "Party",
+      "status": "implemented",
+      "sources": [
+        "games/rps.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "One/two-player local modes and room duel; simultaneous hidden choices, reveal, win/draw scoring and replay.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/rps.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/rps.spec.ts"
+      ]
+    },
+    {
+      "id": "G16",
+      "title": "Blackjack",
+      "category": "Cards",
+      "status": "implemented",
+      "sources": [
+        "games/blackjack.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Solo against dealer; deck, hit, stand, double down, stakes, bust and settlement.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/blackjack.check.ts",
+        "redesign/checks/browser/art-blackjack.spec.ts"
+      ],
+      "implementationScope": "Native solo Blackjack with baseline rules, fictional scoring units and validated checkpoint recovery. Shared audio/theme breadth remains tracked separately under A07."
+    },
+    {
+      "id": "G17",
+      "title": "Crazy Eights",
+      "category": "Cards",
+      "status": "implemented",
+      "sources": [
+        "games/crazy-eights.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two players, private room or covered local handoff; suit/rank matches, wild eight suit, drawing, victory and host-owned deck.",
+        "Preserve catalog player range 2–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/crazy-eights.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/cards.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/cards.spec.ts"
+      ],
+      "implementationScope": "Native local and private room play, baseline-compatible checkpoints, covered handoffs, host-owned deck, seat projections and reload/reconnect. Shared audio/haptics and broader room release gates remain separate."
+    },
+    {
+      "id": "G18",
+      "title": "UNO-inspired",
+      "category": "Cards",
+      "status": "implemented",
+      "sources": [
+        "games/uno.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Two to twenty players, private room or local handoff; matching color/value, wilds, skip/reverse, draw penalties without stacking, one-card callouts/catches and +4 bluff challenges.",
+        "Use two decks above ten players; host-private hands/deck and recipient-specific recovery.",
+        "Preserve catalog player range 2–20; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/uno.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/cards.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/cards.spec.ts"
+      ],
+      "implementationScope": "Native local and private room play, baseline-compatible checkpoints, covered handoffs, host-owned deck, seat projections and reload/reconnect. Shared audio/haptics and broader room release gates remain separate."
+    },
+    {
+      "id": "G19",
+      "title": "Tic-Tac-Toe",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/tictactoe.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "One/two-player local modes and room duel; legal cells, computer option, three-in-row win/draw and reset.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/domain.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "G20",
+      "title": "Connect Four",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/connect-four.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "One/two-player local modes and room duel; gravity drops, computer option, four-in-line wins/draws and full-column rejection.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/puzzles.check.ts",
+        "redesign/checks/browser/puzzles.spec.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "G21",
+      "title": "Minesweeper",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/minesweeper.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Solo board settings, first-click safety, reveal/flag, loss/win and saved board.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/puzzles.check.ts",
+        "redesign/checks/browser/puzzles.spec.ts"
+      ]
+    },
+    {
+      "id": "G22",
+      "title": "Memory Match",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/memory.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "One/two-player matching pairs; concealed cards, delayed mismatch flips, scoring and turn progression.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/puzzles.check.ts",
+        "redesign/checks/browser/puzzles.spec.ts"
+      ]
+    },
+    {
+      "id": "G23",
+      "title": "2048",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/2048.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Keyboard/swipe slides, once-per-move merges, staged movement/merge/spawn, score, 2048 continuation and game over.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/2048.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/puzzles.check.ts",
+        "redesign/checks/browser/puzzles.spec.ts"
+      ]
+    },
+    {
+      "id": "G24",
+      "title": "Simon Says",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "games/simon.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Watch growing color sequence, input phase, correct/failure feedback and timed-session resume.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/puzzles.check.ts",
+        "redesign/checks/browser/puzzles.spec.ts"
+      ]
+    },
+    {
+      "id": "G25",
+      "title": "Hangman",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "games/hangman.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "One/two-player word modes, keyboard/letter entry, repeated-guess handling, mistake limit and win/loss.",
+        "Preserve catalog player range 1–2; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [
+        "test/hangman.test.js"
+      ],
+      "implementationTests": [
+        "redesign/checks/unit/hangman.check.ts",
+        "redesign/checks/browser/hangman.spec.ts"
+      ],
+      "implementationScope": "Native one- and two-player Hangman with original vocabulary, clues, keyboard play and compatible local recovery."
+    },
+    {
+      "id": "G26",
+      "title": "Word Scramble",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "games/word-scramble.js",
+        "js/game-catalog.js",
+        "docs/games.md"
+      ],
+      "acceptance": [
+        "Solo shuffled words, answer checking, hints, progress and timer.",
+        "Preserve catalog player range 1–1; full rules/options and transitions in the cited game are the baseline."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/scramble.check.ts",
+        "redesign/checks/browser/scramble.spec.ts"
+      ],
+      "implementationScope": "Native solo Word Scramble with original vocabulary, hints, round options, automatic advance and compatible local recovery."
+    }
+  ]
+}
