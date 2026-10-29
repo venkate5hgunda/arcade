@@ -51,7 +51,7 @@ The user's approved option 2 and Phase 2 review-PR scope supersede the foundatio
 
 ## Remaining release gates
 
-G01–G08 and G11–G26 are implemented; see [game-port evidence](game-ports.md). A01–A07 have scoped first-game progress; their broader criteria remain planned. The other 2 redesigned games, QR admission, spectators/private roles, broader standings, auto theme/audio/haptics, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md). The original app remains the complete playable collection.
+All 26 native games and all eleven room-supported games are implemented; see [game-port evidence](game-ports.md). A01–A07 retain partial shared-feature scope. QR admission/sharing, auto theme and shared audio/haptics now have evidence below. Spectators, broader standings, remaining game-specific feedback, offline installation/update, versioned production data migration, cross-network/physical-device qualification and full parity release remain in [the backlog](backlog.md).
 
 ## Puzzle-family trace
 
@@ -224,3 +224,14 @@ Traced the original `arcade:ui.theme` value, system color-scheme changes, header
 Traced the original synthesized audio engine, `arcade:ui.soundEnabled` and `arcade:ui.hapticsEnabled`, user-gesture unlock, interrupted-context recovery, iOS playback routing, native-switch limitations, shared controls, game completion and the Pool/Air Hockey collision callbacks. The isolated runtime reuses the original audio engine, adds persistent expandable controls and truthful test guidance, plays common button feedback and win cues in Tic-Tac-Toe, Business, Island Charter, Pool and Air Hockey, and routes collision force to impact sounds without changing physics. Unit tests check audio recovery and compare collision results with and without callbacks; desktop/mobile browser checks cover settings, support messaging, mute and a real win. Initial tests exposed a shared status selector and Escape handling when mobile taps did not focus the control; the selector is scoped and Escape is handled at document level. The mobile focus behavior was a missed input trace. A review caught that generic completion includes losses and draws, so win cues now follow game-specific outcomes rather than every completed session. Game-specific feedback beyond these shared and action-game events remains open under A07.
 
 All 170 desktop/mobile browser checks passed with the shared feedback layer. After restricting win cues to confirmed outcomes, 40 affected browser checks passed, including a real hockey collision and a Blackjack loss on both layouts.
+
+
+### QR admission and sharing
+
+Traced original QR generation/scanner/worker assets and MIT licenses → production asset copying and relative module/worker URLs → invitation/answer UI → protocol-v7 validation → clipboard/native sharing → camera cancellation, failure and unmount cleanup → real WebRTC admission and complete play. The libraries are copied unchanged from the original local vendor assets; QR content never goes to an external service. Camera access starts only after an explicit scan action, and raw links remain available on failure. No protocol or host authority contract changed.
+
+`redesign/checks/browser/room-qr.spec.ts` decodes an actual generated invitation with the bundled decoder, scans both sides of a real two-browser connection, completes Tic-Tac-Toe, checks QR accessibility and mobile overflow, and covers camera denial, pending-start cancellation/late callbacks, oversized QR, cancelled sharing and denied clipboard access. Camera callbacks are injected for deterministic admission checks; physical-camera focus/permission UI and cross-network transport remain release gates. Desktop/mobile captures are generated in the ignored test output.
+
+The documentation trace exposed stale nine-game, protocol-v3 and remaining-two-game summaries. Those missed documentation traces are corrected in the redesign landing page, backlog and current release-gate paragraph. Broader A04 acceptance remains planned until spectator admission is implemented.
+
+Validation: production build/type check and formatting pass; five inventory checks, 71 domain/protocol checks and 34 desktop Chromium/mobile WebKit QR/shared-foundation browser checks pass. Existing bundler size and React Router directive warnings remain.

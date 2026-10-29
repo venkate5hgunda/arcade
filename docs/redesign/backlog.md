@@ -26,7 +26,7 @@ reference; the redesign builds clean, typed equivalents.
 - [x] Local + room Tic-Tac-Toe: 1/2-player, computer (minimax), win/draw,
       reset, legal-cell enforcement (G19).
 
-## Phase 3 — game ports (active)
+## Phase 3 — game ports (complete)
 
 - [x] **Puzzle family (G20–G24):** Connect Four (local/AI/room), Minesweeper,
       Memory Match, 2048 and Simon Says. Typed rules, native React controls,
@@ -55,11 +55,9 @@ ports; this is active work, not a claim that the full redesign is complete.
 
 ## Next
 
-- [ ] **Room breadth (A04–A06).** Add QR admission/scanning, spectator seats, and per-game/player standings and rankings across replays. Private hands, decks, roles and the catalog's room-supported games are implemented.
-- [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent
-      sound/haptics settings, user-gesture audio unlock and recovery,
-      impact-sensitive synthesized effects and reduced-motion support across all
-      surfaces.
+- [x] **QR admission and sharing (A04, partial).** Local QR generation and scanning, native share, selected-text clipboard fallback, camera cleanup and readable errors. See [verification](verification.md#qr-admission-and-sharing).
+- [ ] **Remaining room breadth (A04–A06).** Add spectator seats and per-game/player standings and rankings across replays. Private hands, decks, roles and all eleven room-supported games are implemented.
+- [ ] **Sound, feel and themes (A07).** Auto/light/dark theme, persistent sound/haptics controls, audio unlock/recovery and action-game impact sounds are implemented. Complete game-specific feedback and verify reduced-motion support across all surfaces.
 
 ## Later
 

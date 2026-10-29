@@ -94,7 +94,7 @@
         "test/multiplayer.test.js",
         "test/room-qr.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "Partial: all eleven room-supported games, per-guest invitations, native share, clipboard/manual-copy fallback and local QR generation/scanning. Desktop/mobile browser evidence: redesign/checks/browser/room-qr.spec.ts. Spectator admission remains open; see docs/redesign/backlog.md."
     },
     {
       "id": "A05",

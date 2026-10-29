@@ -2,9 +2,9 @@
 
 A vibrant, illustrated shelf for good games and better company.
 
-**Nine games are implemented, with custom artwork for all 26:** browse all 26 stable catalog entries, play a complete local or private-room Tic-Tac-Toe match, resume a saved board, and reconnect a room after a host reload. The selected **Living Game Shelf** design replaces the foundation explorer as the home screen. The requirements explorer remains at `#/requirements/:id`.
+**All 26 games have native implementations and distinct custom artwork.** Browse the Living Game Shelf, resume saved games, and play eleven supported games in private rooms. The requirements explorer remains at `#/requirements/:id`.
 
-Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-Toe as native React/TypeScript games. Connect Four also supports the private two-browser room. Blackjack, Crazy Eights and UNO-inspired now complete the Cards family, with covered local hands and private rooms for Crazy Eights and 2–20-player UNO. The other 17 games link to their working original Arcade versions. This is a reviewable migration milestone, not the full parity release or a production deployment.
+Game ports are complete; shared room features and release qualification remain in the [backlog](backlog.md). This is a reviewable migration milestone, not a production deployment.
 
 | Document | Purpose |
 | --- | --- |
@@ -14,7 +14,7 @@ Connect Four, Minesweeper, Memory Match, 2048 and Simon Says now join Tic-Tac-To
 | [Verification](verification.md) | Current test evidence and trace findings |
 | [Design QA](design-qa.md) | Reference comparison and responsive checks |
 | [Game ports](game-ports.md) | Family-by-family migration status and current evidence |
-| [Backlog](backlog.md) | Remaining game families and release work |
+| [Backlog](backlog.md) | Remaining shared features and release work |
 | [Artwork](artwork.md) | Illustration and icon provenance |
 | [Art guide](art-guide.md) | Required visual theme and generation brief for every Arcade image |
 | [Parity inventory](parity.json) | Honest implemented and partial scopes |
@@ -40,14 +40,14 @@ npm --prefix redesign run capture
 
 Tests and captures normally start their own production preview. To use a preview you already started on port 5174, set `ARCADE_REUSE_PREVIEW=1`. All generated checks/build files stay in `redesign/node_modules/.cache/`.
 
-## A table for two
+## A private table
 
 1. Open **Room**, enter a name, and create a room.
-2. Send the generated invitation to one guest. They open it, enter their name, and return their answer link.
-3. Paste that answer into the original host tab. When both seats connect, choose Tic-Tac-Toe, Connect Four, Crazy Eights or UNO-inspired and start. Use **Invite another player** before starting to build a larger UNO table (up to 20 players).
+2. Send the generated invitation using **Share link**, **Copy link**, or the expandable **QR code**. The guest opens or scans it, enters a name, and returns their answer link.
+3. Paste or scan the answer in the original host tab, then select a game and start once every player connects. Use **Invite another player** before starting to build a larger table. Game options reflect the connected player count.
 4. After a disconnect or host reload, create a reconnect invitation. The guest joins with the same room name and returns a fresh answer. Reconnect every disconnected seat. The board, private deck/hands and standings survive in the host tab.
 
-Rooms use version 3 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account, camera or microphone is required.
+Rooms use version 7 connection links and real WebRTC, public Google STUN when online, and manual signaling. There is no signaling server or TURN relay. Restrictive networks may prevent connection; use another network. Invitation links contain connection metadata: share them only with the intended player. No account or microphone is required. Camera scanning is optional and requires HTTPS (or localhost) and camera permission. QR generation and scanning run locally; a long link may exceed QR capacity, in which case use copy/share.
 
 Use a separate preview origin: the redesign deliberately preserves the original `arcade:` local-data contracts. It does not register a service worker or migrate production data. Root commands still run the original application.
 

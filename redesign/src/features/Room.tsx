@@ -1,4 +1,5 @@
 import { IslandTable } from '../components/IslandTable.tsx';
+import { RoomQr, RoomScanner } from '../components/RoomQr.tsx';
 import { IslandOptions } from '../components/IslandOptions.tsx';
 import { DEFAULT_BOARD_OPTIONS } from '../lib/catan-core.js';
 import type { BoardOptions } from '../lib/catan-core.js';
@@ -16,7 +17,7 @@ import { GAMES } from '../lib/games.ts';
 import type { RoomGameId } from '../lib/room/protocol.ts';
 import { ConnectBoard } from '../components/ConnectBoard.tsx';
 import { c4Win } from '../lib/puzzles.ts';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Room } from '../lib/room/protocol.ts';
 import { Board } from '../components/Board.tsx';
@@ -48,6 +49,7 @@ export function RoomPage({ room }: { room: Room }) {
     location.search.includes('invite=') ? window.location.href : '',
   );
   const [output, setOutput] = useState('');
+  const outputField = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [raceMoving, setRaceMoving] = useState<number | null>(null);
@@ -118,7 +120,28 @@ export function RoomPage({ room }: { room: Room }) {
       await navigator.clipboard.writeText(output);
       setMessage('Link copied. Send it to the other player.');
     } catch {
-      setMessage('Select and copy the full link below.');
+      outputField.current?.focus();
+      outputField.current?.select();
+      setMessage('Clipboard unavailable. Copy the selected link manually.');
+    }
+  }
+  async function share() {
+    try {
+      await navigator.share({
+        title: 'Arcade game night',
+        text:
+          room.role === 'host'
+            ? 'Open this invitation, join the room, then send your answer link back to me.'
+            : 'Open this answer in the host tab that created the invitation.',
+        url: output,
+      });
+      setMessage(
+        'Link shared. Keep this tab open while the other player connects.',
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError')
+        setMessage('Sharing cancelled; your link is still available.');
+      else await copy();
     }
   }
   return (
@@ -130,9 +153,9 @@ export function RoomPage({ room }: { room: Room }) {
       <h1>Your private table</h1>
       <p className="lede">
         Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-        UNO-inspired, Snakes & Ladders, Ludo, Chess, Business, Mafia or Rock
-        Paper Scissors. UNO welcomes 2–20 players, Mafia 5–10, Business 2–6, and
-        race games 2–4.
+        UNO-inspired, Snakes & Ladders, Ludo, Chess, Business, Island Charter,
+        Mafia or Rock Paper Scissors. UNO welcomes 2–20 players, Mafia 5–10,
+        Business 2–6, and race games 2–4, and Island Charter 3–4.
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -172,6 +195,15 @@ export function RoomPage({ room }: { room: Room }) {
                 placeholder="Paste the complete invitation link"
               />
             </label>
+            <RoomScanner
+              kind="offer"
+              onResult={(url) => {
+                setInput(url);
+                setMessage(
+                  'Invitation scanned. Join the room to create your answer.',
+                );
+              }}
+            />
             <button
               className="quiet"
               disabled={busy || !name.trim() || !input.trim()}
@@ -261,6 +293,7 @@ export function RoomPage({ room }: { room: Room }) {
                         ? 'Invitation to share'
                         : 'Answer to share'}
                       <textarea
+                        ref={outputField}
                         readOnly
                         value={output}
                         onFocus={(e) => e.target.select()}
@@ -271,21 +304,15 @@ export function RoomPage({ room }: { room: Room }) {
                         Copy link
                       </button>
                       {typeof navigator.share === 'function' && (
-                        <button
-                          className="quiet"
-                          onClick={() =>
-                            run(async () => {
-                              await navigator.share({
-                                title: 'Arcade game night',
-                                url: output,
-                              });
-                            })
-                          }
-                        >
+                        <button className="quiet" onClick={() => void share()}>
                           Share link
                         </button>
                       )}
                     </div>
+                    <RoomQr
+                      url={output}
+                      kind={room.role === 'host' ? 'invite' : 'answer'}
+                    />
                   </>
                 )}
                 {room.role === 'host' && connected && output && (
@@ -325,6 +352,13 @@ export function RoomPage({ room }: { room: Room }) {
                       placeholder="Paste the answer your guest sends back"
                     />
                   </label>
+                  <RoomScanner
+                    kind="answer"
+                    onResult={(url) => {
+                      setInput(url);
+                      setMessage('Answer scanned. Accept it in this host tab.');
+                    }}
+                  />
                   <button
                     className="primary"
                     disabled={busy || !input.trim()}
