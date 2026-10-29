@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent } from 'react';
+import { useReducedMotion } from '../lib/motion.ts';
 import { SAFE_TRACK } from '../lib/races.ts';
 import type { LudoState, RaceState, SnakesState } from '../lib/races.ts';
 import {
@@ -112,16 +113,14 @@ function useRaceMotion(
   game: RaceState,
   onMotion?: (actor: number | null) => void,
 ) {
+  const reduced = useReducedMotion();
   const [display, setDisplay] = useState(game),
     [moving, setMoving] = useState(false),
     last = useRef(game);
   useEffect(() => {
     const old = last.current;
     last.current = game;
-    const reduced = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches,
-      steps = reduced ? [] : frames(old, game);
+    const steps = reduced ? [] : frames(old, game);
     if (!steps.length) {
       setDisplay(game);
       setMoving(false);
@@ -144,7 +143,7 @@ function useRaceMotion(
     };
     advance();
     return () => clearTimeout(timer);
-  }, [game]);
+  }, [game, reduced]);
   return { display, moving };
 }
 function SnakesBoard({

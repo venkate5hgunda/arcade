@@ -1352,7 +1352,8 @@ label {
   }
   .game-card:hover,
   .primary:hover,
-  .shelf-game:hover {
+  .shelf-game:hover,
+  .square:not([aria-disabled='true']):hover {
     transform: none;
   }
 }
@@ -3019,6 +3020,12 @@ select:focus-visible {
 .rps-choices button:hover {
   background: #ffdc83;
   transform: translateY(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .simon-pad.active,
+  .rps-choices button:hover {
+    transform: none;
+  }
 }
 .rps-choices button span {
   font-size: clamp(2rem, 7vw, 4.5rem);

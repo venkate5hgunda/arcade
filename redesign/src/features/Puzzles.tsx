@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { KEYS, loadJSON, saveJSON } from '../lib/storage.ts';
 import { names } from '../lib/profile.ts';
+import { useReducedMotion } from '../lib/motion.ts';
 import {
   c4Drop,
   c4AI,
@@ -112,6 +113,7 @@ function ConnectGame() {
   );
 }
 function TileGame() {
+  const reduced = useReducedMotion();
   const run = useRun<TileState>('2048', {}, validTiles, () => ({
     grid: tileSpawn(
       tileSpawn(Array.from({ length: 4 }, () => Array(4).fill(0))),
@@ -136,9 +138,13 @@ function TileGame() {
   );
   useEffect(() => {
     if (!motion) return;
+    if (reduced) {
+      setMotion(null);
+      return;
+    }
     const timer = setTimeout(() => setMotion(null), 175);
     return () => clearTimeout(timer);
-  }, [motion]);
+  }, [motion, reduced]);
   useEffect(() => {
     if (!motion && queued.current) {
       const dir = queued.current;
@@ -171,10 +177,7 @@ function TileGame() {
           (value, index) => value !== 0 && result.grid.flat()[index] === 0,
         ),
     });
-    if (
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-      boardRef.current
-    )
+    if (!reduced && boardRef.current)
       setMotion({
         tiles: result.tiles,
         width: boardRef.current.getBoundingClientRect().width,
@@ -202,7 +205,7 @@ function TileGame() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [s, motion]);
+  }, [s, motion, reduced]);
   return (
     <Frame
       run={run}

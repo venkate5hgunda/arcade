@@ -163,7 +163,7 @@
         "test/haptics.test.js",
         "test/theme.test.js"
       ],
-      "implementationScope": "Partial: nine native games (Puzzle and Cards); private rooms for Tic-Tac-Toe, Connect Four, Crazy Eights and 2\u201320-player UNO-inspired. See docs/redesign/backlog.md for remaining shared acceptance scope."
+      "implementationScope": "Partial: persistent Auto/Light/Dark theme, shared sound/haptics controls, audio unlock/recovery, action-game impacts and reduced-motion CSS across all 26 native game entry/play surfaces. Race and 2048 scripted travel responds to live motion-preference changes; Simon retains sequence timing and outline cues. Game-specific feedback breadth and physical-device qualification remain open. See docs/redesign/verification.md and backlog.md."
     },
     {
       "id": "A08",
