@@ -166,8 +166,8 @@ test('AI draw, keyboard board controls, reload and stale timer disposal', async 
   // A deterministic perfect-play line against the real minimax response.
   for (const index of [1, 6, 5, 8]) {
     const target = page.locator('.square').nth(index);
-    if ((await target.getAttribute('aria-disabled')) === 'false')
-      await target.click();
+    await expect(target).toHaveAttribute('aria-disabled', 'false');
+    await target.click();
     await expect(
       page.getByRole('heading', { name: /Computer is thinking/ }),
     ).toHaveCount(0);

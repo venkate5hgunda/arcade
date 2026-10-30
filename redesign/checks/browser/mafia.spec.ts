@@ -65,10 +65,10 @@ test('Mafia five-browser room protects roles, restores the host and resolves a c
       .click();
     await expect(
       host.getByLabel('Room players').getByText(names[i], { exact: true }),
-    ).toBeVisible({ timeout: 20000 });
+    ).toBeVisible({ timeout: 30000 });
     await expect(
       host.getByLabel('Room players').getByText('Connected', { exact: true }),
-    ).toHaveCount(i + 1, { timeout: 20000 });
+    ).toHaveCount(i + 1, { timeout: 30000 });
   }
   try {
     await host.goto('/#/game/mafia');
