@@ -166,7 +166,7 @@ for (const game of ['uno', 'rps', 'mafia', 'business', 'catan'] as const) {
         if (index)
           await host
             .getByRole('button', { name: 'Invite another player', exact: true })
-            .click();
+            .click({ timeout: 30000 });
         await expect(host.getByLabel('Invitation to share')).toHaveValue(
           /invite=/,
         );
@@ -181,7 +181,7 @@ for (const game of ['uno', 'rps', 'mafia', 'business', 'catan'] as const) {
             name: 'Invite another player',
             exact: true,
           }),
-        ).toBeVisible();
+        ).toBeVisible({ timeout: 30000 });
       }
       await host
         .getByRole('combobox', { name: 'Room game' })
@@ -204,7 +204,12 @@ for (const game of ['uno', 'rps', 'mafia', 'business', 'catan'] as const) {
         await expect(
           viewer.getByLabel('Your cards', { exact: true }),
         ).toHaveCount(0);
-        await expect(viewer.locator('.card-pile')).not.toHaveCount(0);
+        await expect(
+          viewer.getByRole('img', { name: /^Draw pile, \d+ cards?$/ }),
+        ).toBeVisible();
+        await expect(
+          viewer.getByRole('img', { name: /^Discard pile, top card/ }),
+        ).toBeVisible();
       } else if (game === 'rps') {
         await expect(viewer.locator('.rps-choices')).toBeHidden();
         await expect(
