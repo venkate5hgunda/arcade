@@ -247,16 +247,9 @@ function Catalog({ query, category }: { query: string; category: string }) {
           ))}
         </div>
         <p className="catalog-note">
-          The new shelf is taking shape. {implementedGameIds.size} games are
-          ready here; all 26 games are available in{' '}
-          <a
-            href="https://venkate5hgunda.github.io/arcade/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            original Arcade ↗
-          </a>
-          .
+          All {implementedGameIds.size} games are ready. Browse the complete
+          collection, then choose solo, pass-and-play, or a supported private
+          room.
         </p>
       </section>
     </>
@@ -520,7 +513,7 @@ function Shell() {
           ARCADE<span aria-hidden="true">✦</span>
         </Link>
         <p>Good games. Better together.</p>
-        <Link to="/requirements/A01">Redesign progress</Link>
+        <Link to="/requirements/A01">Parity &amp; verification</Link>
       </footer>
     </>
   );

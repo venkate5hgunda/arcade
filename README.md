@@ -2,76 +2,110 @@
 
 # 🕹️ Arcade
 
-**26 games. One installable app. Zero servers.** Action, board, card, party, puzzle and word games — solo, pass-and-play, or in private peer-to-peer rooms.
+**26 beautifully illustrated games in one installable shelf — play solo, pass the device, or open a private peer-to-peer room.**
 
-[![Play now](https://img.shields.io/badge/▶_Play_now-ff3d6b?style=for-the-badge)](https://venkate5hgunda.github.io/arcade/)
-![PWA](https://img.shields.io/badge/PWA-offline_ready-5a0fc8?style=for-the-badge)
-![No build step](https://img.shields.io/badge/build-none-2ea44f?style=for-the-badge)
-![License: MIT](https://img.shields.io/badge/license-MIT-f5a00b?style=for-the-badge)
+[![Play Arcade](https://img.shields.io/badge/▶_PLAY_ARCADE-ef476f?style=for-the-badge)](https://venkate5hgunda.github.io/arcade/)
+[![Deploy](https://github.com/venkate5hgunda/arcade/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/venkate5hgunda/arcade/actions/workflows/pages.yml)
+[![CI](https://github.com/venkate5hgunda/arcade/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/venkate5hgunda/arcade/actions/workflows/ci.yml)
+![Offline-ready PWA](https://img.shields.io/badge/PWA-offline_ready-5a0fc8?style=flat-square)
+![License: MIT](https://img.shields.io/badge/license-MIT-f5a00b?style=flat-square)
 
-<img src="docs/images/home-light.png" alt="Arcade home screen" width="760">
+<a href="https://venkate5hgunda.github.io/arcade/">
+  <img src="docs/images/arcade-live-desktop.jpg" alt="The live Arcade Living Game Shelf with a featured Tic-Tac-Toe table and illustrated game covers" width="920">
+</a>
+
+*The live Living Game Shelf — no account, app store, or game server required.*
 
 </div>
 
-## ✨ Highlights
+## ✨ One shelf, lots of ways to play
 
-- 🎮 **26 games** — Air Hockey, Pool, Chess, Ludo, Business, Island Charter, Mafia, UNO-inspired, 2048 and more. [See the catalog](docs/games.md).
-- 🌐 **Private rooms** — serverless WebRTC multiplayer with hidden hands kept on the host. [How rooms work](docs/rooms.md).
-- 📱 **Installable & offline** — a service worker caches everything; rounds resume where you left off.
-- 🌗 **Bright and accessible** — light/dark themes, synthesized sound, haptics, reduced-motion and WCAG AA contrast.
+| | |
+| --- | --- |
+| 🎨 **26 distinct games**<br>Every title has its own inspected cover, setup, rules, saved state, and playable native interface. | 🤝 **11 private-room games**<br>Serverless WebRTC rooms support private hands, roles, cargo, spectators, reconnects, and standings. |
+| 📱 **Made for every screen**<br>Responsive touch and keyboard controls, light/dark themes, reduced motion, sound, and optional haptics. | 📴 **Installable and offline**<br>The complete production asset graph is cached locally, with safe updates and resumable matches. |
 
 <p align="center">
-  <img src="docs/images/game-business.png" alt="Business board game" width="32%">
-  <img src="docs/images/game-catan.png" alt="Island Charter" width="32%">
-  <img src="docs/images/game-air-hockey.png" alt="Air Hockey" width="32%">
+  <img src="docs/images/arcade-live-mobile.jpg" alt="Arcade's live mobile shelf" width="31%">
+  &nbsp;&nbsp;
+  <img src="docs/images/arcade-live-tictactoe.jpg" alt="A completed live Tic-Tac-Toe match with Player 1 winning" width="63%">
 </p>
 
-## 🚀 Quick start
+The screenshot above follows a real pass-and-play match from setup through a Player 1 win. Prefer a different table? Search or filter the shelf, resume an unfinished match, or create a private room without signing in.
+
+## 🎲 Browse all 26 games
+
+| Category | Games |
+| --- | --- |
+| ⚡ **Action** | Air Hockey · 8-Ball Pool · Whack-a-Mole |
+| ♟️ **Board** | Snakes & Ladders · Ludo · Island Charter · Business · Chess |
+| 🃏 **Cards** | Blackjack · Crazy Eights · UNO-inspired |
+| 🎉 **Party** | Show · Taboo · Imposter · Mafia · Dumb Charades · Rock Paper Scissors |
+| 🧩 **Puzzle** | Tic-Tac-Toe · Connect Four · Minesweeper · Memory Match · 2048 · Simon Says |
+| 🔤 **Word** | Wordle · Hangman · Word Scramble |
+
+<details>
+<summary><strong>Open the full live shelf inventory</strong></summary>
+<br>
+<img src="docs/images/arcade-live-inventory.jpg" alt="The complete live Arcade shelf showing all 26 illustrated game cards" width="920">
+</details>
+
+Player counts, modes, and game-specific notes live in the [complete game catalog](docs/games.md).
+
+## 🌐 Choose your table
+
+| Mode | Best for | How it works |
+| --- | --- | --- |
+| **Solo** | Puzzles, practice, quick rounds | Start immediately; progress and scores stay on your device. |
+| **Pass & play** | Friends around one screen | Arcade announces the turn, hides private information during handoffs, and resumes interrupted rounds. |
+| **Private room** | Separate phones or laptops | Exchange invitation and answer links; gameplay travels directly between peers through WebRTC. |
+| **Spectator** | Watching a room match | Public boards and results stay visible while private hands, roles, ballots, and cargo remain hidden. |
+
+Rooms require no account or signaling server. Some restrictive networks can block direct WebRTC connections; see [how rooms work](docs/rooms.md) for invitations, QR codes, reconnects, privacy, and supported games.
+
+## 🚀 Run it locally
+
+The production app lives in `redesign/` and uses Node 22.12+.
 
 ```bash
-npm start          # python3 dev/serve.py → http://localhost:8000
-npm test           # JavaScript tests
-npm run test:movies  # Python movie-pipeline tests
+npm --prefix redesign ci
+npm --prefix redesign run dev       # http://127.0.0.1:5174
 ```
 
-Use the project server rather than a generic static server; it blocks `.env`, hidden files and development data.
+```bash
+npm --prefix redesign test          # inventory + domain/protocol checks
+npm --prefix redesign run build     # type-check + production build
+npm --prefix redesign run test:browser
+```
+
+The original root application remains as the migration baseline and rollback reference. Its regression suites run with `npm test` and `npm run test:movies`.
 
 ## 📚 Documentation
 
-| Topic | Page |
+| Start here | What it covers |
 | --- | --- |
-| Every game, player counts, Imposter and movie options | [docs/games.md](docs/games.md) |
-| Arcade features: themes, sound, resume, per-game highlights | [docs/features.md](docs/features.md) |
-| Playing on separate devices (invites, answers, reconnects) | [docs/rooms.md](docs/rooms.md) |
-| Running locally, project layout, adding a game | [docs/development.md](docs/development.md) |
-| Architecture and maintenance map | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Design language | [docs/DESIGN_LANGUAGE.md](docs/DESIGN_LANGUAGE.md) |
-| Game rules: [Business](docs/rules/business.md) · [Mafia](docs/rules/mafia.md) | |
-| Scope notes and limitations | [docs/limitations.md](docs/limitations.md) |
-| Changelog | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
-| Telugu movie catalog pipeline | [dev/movies/README.md](dev/movies/README.md) |
-| Icon credits | [docs/credits.md](docs/credits.md) |
+| [Game catalog](docs/games.md) | Every title, player count, category, and special option |
+| [Features](docs/features.md) | Themes, sound, resume behavior, and game highlights |
+| [Private rooms](docs/rooms.md) | Invites, answers, spectators, privacy, and reconnects |
+| [Living Game Shelf](docs/redesign/README.md) | Production architecture, commands, parity, and redesign map |
+| [Release qualification](docs/redesign/release-qualification.md) | Automated evidence and named physical-device/network checks |
+| [Development](docs/development.md) | Original baseline, repository map, and game maintenance |
+| [Architecture](docs/ARCHITECTURE.md) | System ownership and maintenance boundaries |
+| [Design language](docs/DESIGN_LANGUAGE.md) | Visual system, accessibility, and interaction principles |
+| [Rules](docs/rules/) | Detailed rules for Business, Mafia, and other documented editions |
+| [Credits](docs/credits.md) | Artwork, icons, licenses, and attribution |
 
-<p align="center">
-  <img src="docs/images/home-dark.png" alt="Dark theme" width="64%">
-  <img src="docs/images/mobile.png" alt="Mobile layout" width="22%">
-</p>
+## 🗂️ Repository map
 
-## 🗂️ Repository layout
-
-```
-index.html, manifest.json, sw.js   app shell and PWA
-css/, js/, games/, assets/         app code, one module per game
-data/movies/                       public movie prompt data
-dev/                               local server and movie tooling
-test/                              tests
-docs/                              documentation, rules and screenshots
+```text
+redesign/             production React + TypeScript + Vite PWA
+docs/redesign/        migration decisions, parity, QA, and release evidence
+docs/images/          captures from the real app
+games/, js/, css/     original Arcade migration baseline
+data/movies/, dev/    approved movie data and maintainer tooling
+test/                 original baseline regression suites
 ```
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code stay under their own licenses — see [credits](docs/credits.md) and `js/vendor/`.
-
-## 🧭 Living Game Shelf
-
-The public app is the React/TypeScript Living Game Shelf. See the [redesign documentation](docs/redesign/README.md) for local development, architecture, parity evidence and release qualification.
+[MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code retain their own licenses; see [credits](docs/credits.md).
