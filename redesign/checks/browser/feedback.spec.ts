@@ -411,3 +411,33 @@ test('room guests hear their own victory while the losing host hears a failure c
     await context.close();
   }
 });
+
+test('sound control and panel follow the header theme', async ({ page }) => {
+  await page.goto('/');
+  for (const mode of ['light', 'dark']) {
+    const theme = page.getByRole('button', { name: /^Theme:/ });
+    while (
+      !(await theme.getAttribute('aria-label'))?.startsWith(`Theme: ${mode}.`)
+    ) {
+      await theme.click();
+    }
+    await page.getByLabel('Sound & feel', { exact: true }).click();
+    const colors = await page.locator('.feedback-panel').evaluate((panel) => {
+      const header = document.querySelector('.app-header')!;
+      return {
+        panel: getComputedStyle(panel).backgroundColor,
+        header: getComputedStyle(header).backgroundColor,
+        ink: getComputedStyle(panel).color,
+        headerInk: getComputedStyle(header).color,
+      };
+    });
+    expect(colors.panel).toBe(colors.header);
+    expect(colors.ink).toBe(colors.headerInk);
+    await page.getByLabel('Game sounds').uncheck();
+    await expect(
+      page.getByRole('button', { name: 'Test sound' }),
+    ).toBeDisabled();
+    await page.getByLabel('Game sounds').check();
+    await page.keyboard.press('Escape');
+  }
+});

@@ -1378,6 +1378,8 @@ body {
 .header-setting { position: relative; }
 .feedback-panel[hidden] { display: none; }
 .feedback-panel {
+  --feedback-accent: #08785a;
+  --feedback-on: #08785a;
   position: absolute;
   z-index: 70;
   top: calc(100% + 18px);
@@ -1386,12 +1388,16 @@ body {
   padding: 18px;
   border: 2px solid #59deb6;
   border-radius: 18px;
-  background: #1a2940;
-  color: #f4f6ff;
+  background: var(--bg-soft);
+  color: var(--text);
   box-shadow: 0 10px 0 #091526, 0 20px 40px #0009;
 }
-.feedback-panel h2 { margin: 0 0 6px; font-size: 1.15rem; color: #bafae4; }
-.feedback-panel p { margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: #d6e2ee; }
+[data-theme="dark"] .feedback-panel {
+  --feedback-accent: #a4f2db;
+  --feedback-on: #268c6c;
+}
+.feedback-panel h2 { margin: 0 0 6px; font-size: 1.15rem; color: var(--feedback-accent); }
+.feedback-panel p { margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: var(--text-soft); }
 .feedback-option {
   display: flex;
   align-items: center;
@@ -1399,22 +1405,22 @@ body {
   width: 100%;
   margin-top: 8px;
   padding: 12px 14px;
-  border: 1px solid #8498aa;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #233550;
-  color: #fff;
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
   font-weight: 750;
   text-align: left;
 }
-.feedback-option:not(:disabled):hover { border-color: #59deb6; background: #2b4760; }
-.feedback-option:focus-visible { outline: 3px solid #fff3a7; outline-offset: 2px; }
+.feedback-option:not(:disabled):hover { border-color: var(--feedback-accent); background: color-mix(in srgb, var(--feedback-accent) 12%, var(--bg-soft)); }
+.feedback-option:focus-visible { outline: 3px solid var(--feedback-accent); outline-offset: 2px; }
 .feedback-option:disabled { opacity: .65; cursor: not-allowed; }
-.feedback-value { min-width: 76px; padding: 5px 8px; border-radius: 20px; background: #43536c; text-align: center; font-size: .82rem; }
-.feedback-option[aria-pressed="true"] .feedback-value { background: #268c6c; color: #fff; }
+.feedback-value { min-width: 76px; padding: 5px 8px; border-radius: 20px; background: var(--border); color: var(--text); text-align: center; font-size: .82rem; }
+.feedback-option[aria-pressed="true"] .feedback-value { background: var(--feedback-on); color: #fff; }
 .feedback-switch { cursor: pointer; }
-.feedback-switch:has(input:checked) .feedback-value { background: #268c6c; color: #fff; }
-.feedback-switch:has(input:focus-visible) { outline: 3px solid #fff3a7; outline-offset: 2px; }
+.feedback-switch:has(input:checked) .feedback-value { background: var(--feedback-on); color: #fff; }
+.feedback-switch:has(input:focus-visible) { outline: 3px solid var(--feedback-accent); outline-offset: 2px; }
 .feedback-switch:has(input:disabled) { opacity: .65; cursor: not-allowed; }
 .feedback-switch input { accent-color: #59deb6; min-width: 26px; min-height: 26px; cursor: pointer; }
 .feedback-panel .feedback-audio-status { margin: 2px 0 12px; }
@@ -1773,7 +1779,7 @@ body {
 .game-help-btn .ui-glyph, .game-names-btn .ui-glyph { font-size: 1.05rem; }
 .setup-start-btn .ui-glyph { margin-left: auto; }
 .feedback-option-label { display: inline-flex; align-items: center; gap: 9px; }
-.feedback-option-label .ui-glyph { font-size: 1.2rem; color: #a4f2db; }
+.feedback-option-label .ui-glyph { font-size: 1.2rem; color: var(--feedback-accent); }
 .app-header .icon-btn .ui-glyph { font-size: 1.3rem; }
 
 @media (max-width: 600px) {

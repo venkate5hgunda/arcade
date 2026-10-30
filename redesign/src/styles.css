@@ -224,7 +224,8 @@ textarea {
   color: #5c6072;
 }
 .room-link,
-.icon-button {
+.icon-button,
+.feedback-control > summary {
   color: inherit;
   display: inline-flex;
   align-items: center;
@@ -239,7 +240,8 @@ textarea {
   border-radius: 14px;
   font-weight: 800;
 }
-.icon-button {
+.icon-button,
+.feedback-control > summary {
   border-color: #8fe0d8;
   padding: 11px;
   box-shadow: inset 0 -3px 0 #8fe0d855;
@@ -3626,17 +3628,9 @@ select:focus-visible {
   position: relative;
 }
 .feedback-control > summary {
-  display: grid;
-  place-items: center;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 7px;
-  border: 1px solid #77b9bd;
-  border-radius: 14px;
   cursor: pointer;
   list-style: none;
   font-size: 22px;
-  font-weight: 800;
 }
 .feedback-control > summary::-webkit-details-marker {
   display: none;
@@ -3650,8 +3644,8 @@ select:focus-visible {
   padding: 16px;
   border: 1px solid #dfbb82;
   border-radius: 16px;
-  background: #fff8eb;
-  color: #182039;
+  background: var(--header);
+  color: var(--header-ink);
   box-shadow: 0 12px 35px #0004;
 }
 .feedback-panel label {
