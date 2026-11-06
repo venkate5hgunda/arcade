@@ -1077,8 +1077,25 @@ label {
 }
 @media (max-width: 560px) {
   .app-header {
+    position: relative;
     padding: 13px 16px 10px;
     gap: 12px;
+  }
+  .app-header--compact {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    min-height: 0;
+    padding-block: 8px;
+  }
+  :root:has(.app-header--compact) {
+    scroll-padding-top: 72px;
+  }
+  .app-header .feedback-control {
+    position: static;
+  }
+  .app-header .feedback-panel {
+    right: 16px;
   }
   .brand {
     font-size: 24px;
@@ -1121,6 +1138,7 @@ label {
   .search input {
     width: 100%;
     min-height: 44px;
+    font-size: 16px;
   }
   .filters {
     overflow: auto;

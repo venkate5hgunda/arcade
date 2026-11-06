@@ -3,7 +3,7 @@ import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
 import { FeedbackControl } from './components/FeedbackControl.tsx';
 import { feedback } from './lib/feedback.ts';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   HashRouter,
   Link,
@@ -321,7 +321,11 @@ function Shell() {
   });
   const [warning, setWarning] = useState('');
   const location = useLocation();
-  const home = location.pathname === '/';
+  const { pathname } = location;
+  const home = pathname === '/';
+  const previousPath = useRef<string | null>(null);
+  const homeLink = useRef<HTMLAnchorElement>(null);
+  const main = useRef<HTMLElement>(null);
   useEffect(
     () =>
       observeStorage([KEYS.STORAGE_VERSION], () => {
@@ -398,14 +402,20 @@ function Shell() {
     media?.addEventListener('change', changed);
     return () => media?.removeEventListener('change', changed);
   }, [theme]);
-  useEffect(() => {
-    const heading = document.querySelector('main h1');
-    if (heading instanceof HTMLElement) {
-      heading.tabIndex = -1;
-      heading.focus();
+  useLayoutEffect(() => {
+    const previous = previousPath.current;
+    if (previous === pathname) return;
+    previousPath.current = pathname;
+    // Move focus and the viewport independently so mobile browsers only scroll once.
+    if (pathname === '/') {
+      if (previous !== null) homeLink.current?.focus({ preventScroll: true });
+    } else {
+      const heading = main.current?.querySelector('h1');
+      if (heading) heading.tabIndex = -1;
+      (heading ?? main.current)?.focus({ preventScroll: true });
     }
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
   return (
     <>
       <a
@@ -418,8 +428,10 @@ function Shell() {
       >
         Skip to content
       </a>
-      <header className="app-header">
-        <Link className="brand" to="/" aria-label="Arcade home">
+      <header
+        className={home ? 'app-header' : 'app-header app-header--compact'}
+      >
+        <Link ref={homeLink} className="brand" to="/" aria-label="Arcade home">
           <img src="./icons/logo.svg" alt="" />
           ARCADE<span aria-hidden="true">✦</span>
         </Link>
@@ -473,7 +485,7 @@ function Shell() {
           </button>
         </div>
       </header>
-      <main id="main" tabIndex={-1}>
+      <main ref={main} id="main" tabIndex={-1}>
         <Routes>
           <Route
             path="/"

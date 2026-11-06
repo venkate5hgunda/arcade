@@ -64,7 +64,7 @@ export function HockeyGame() {
           ? `${label(0)} ${s.paddles[0].score} : ${s.paddles[1].score} ${label(1)} · First to ${s.target}`
           : 'Two players share one table.'
       }
-      help="Player 1 defends the bottom with the arrow keys; Player 2 defends the top with W, A, S and D. On touch screens, drag a paddle on each half of the table. Strike the resting puck to start. After a goal, the other player serves. First to the selected score wins."
+      help="Focus the table for keyboard play. Player 1 defends the bottom with the arrow keys; Player 2 defends the top with W, A, S and D. On touch screens, drag a paddle on each half of the table. Strike the resting puck to start. After a goal, the other player serves. First to the selected score wins."
       after={
         s?.over && (
           <button className="primary" onClick={run.start}>
@@ -283,7 +283,7 @@ function HockeyArena({
       pointers[i] = e.pointerId;
       positions[i] = p;
       canvas.setPointerCapture(e.pointerId);
-      canvas.focus();
+      canvas.focus({ preventScroll: true });
       e.preventDefault();
     }
     function move(e: PointerEvent) {
@@ -313,11 +313,6 @@ function HockeyArena({
         ].includes(e.key)
       )
         return;
-      if (
-        e.target instanceof HTMLElement &&
-        ['INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName)
-      )
-        return;
       keys.add(e.key);
       e.preventDefault();
     }
@@ -339,7 +334,8 @@ function HockeyArena({
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
-    window.addEventListener('keydown', keydown);
+    canvas.addEventListener('keydown', keydown);
+    canvas.addEventListener('blur', blur);
     window.addEventListener('keyup', keyup);
     window.addEventListener('blur', blur);
     window.addEventListener('resize', size);
@@ -361,7 +357,8 @@ function HockeyArena({
       canvas.removeEventListener('pointermove', move);
       canvas.removeEventListener('pointerup', up);
       canvas.removeEventListener('pointercancel', up);
-      window.removeEventListener('keydown', keydown);
+      canvas.removeEventListener('keydown', keydown);
+      canvas.removeEventListener('blur', blur);
       window.removeEventListener('keyup', keyup);
       window.removeEventListener('blur', blur);
       window.removeEventListener('resize', size);

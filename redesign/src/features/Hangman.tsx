@@ -50,8 +50,10 @@ export function HangmanGame() {
         e.ctrlKey ||
         e.metaKey ||
         e.altKey ||
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        (e.target instanceof Element &&
+          e.target.closest(
+            'header, footer, a, input, textarea, select, summary, [contenteditable]',
+          ))
       )
         return;
       if (/^[a-z]$/i.test(e.key)) guess(e.key.toUpperCase());
