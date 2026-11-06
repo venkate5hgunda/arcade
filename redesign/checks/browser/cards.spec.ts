@@ -198,8 +198,14 @@ test('UNO supports 20 local players, a 216-card deck, complete wins, names and r
   const s = await saved<UnoState>(page, 'uno');
   expect(s.hands).toHaveLength(20);
   expect(s.stock).toHaveLength(75);
-  await expect(page.getByText('Rae', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Reveal my hand' }).click();
+  const reveal = page.getByRole('button', { name: 'Reveal my hand' });
+  await expect(reveal).toBeInViewport({ ratio: 1 });
+  const roster = page.locator('.card-roster');
+  await expect(roster).not.toHaveAttribute('open', '');
+  await roster.getByText('Table seats (20)', { exact: true }).click();
+  await expect(roster.getByText('Rae', { exact: true })).toBeVisible();
+  await roster.getByText('Table seats (20)', { exact: true }).click();
+  await reveal.click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   expect(
     await page.evaluate(

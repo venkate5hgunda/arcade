@@ -1794,8 +1794,57 @@ select:focus-visible {
 }
 @media (max-width: 600px) {
   .blackjack-table {
-    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
     border-width: 5px;
+  }
+  .blackjack-table > section:last-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .blackjack-table .playing-hand {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    min-height: 0;
+    padding-bottom: 8px;
+  }
+  .blackjack-table .playing-card {
+    width: 50px;
+    height: 74px;
+  }
+  .blackjack-table .card-corner {
+    left: 6px;
+    font-size: 16px;
+  }
+  .blackjack-table .card-corner small {
+    font-size: 13px;
+  }
+  .blackjack-table .card-suit {
+    right: 5px;
+    bottom: 3px;
+    font-size: 25px;
+  }
+  .blackjack-table .hand-heading {
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .blackjack-table .hand-heading h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+  .blackjack-table .blackjack-pile {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .blackjack-table .round-marker {
+    margin: 0;
+  }
+  .blackjack-actions {
+    gap: 8px;
+    margin-top: 12px;
   }
   .playing-hand {
     gap: 7px;
@@ -1806,6 +1855,7 @@ select:focus-visible {
   }
   .blackjack-actions > button {
     flex: 1;
+    padding-inline: 8px;
   }
 }
 
@@ -1816,6 +1866,9 @@ select:focus-visible {
   border: 6px solid #aa7349;
   border-radius: 24px;
   color: #fff3df;
+}
+.card-roster {
+  color: inherit;
 }
 .card-seats {
   display: flex;
@@ -2408,22 +2461,43 @@ select:focus-visible {
   }
 }
 
+.compact-play {
+  padding-top: 8px;
+}
+.compact-play .game-heading h1 {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 40px);
+}
+.compact-play .game-heading {
+  min-height: 44px;
+  margin-bottom: 8px;
+}
+.compact-play .puzzle-play .board-panel {
+  padding: 10px;
+}
+.compact-play .turn-banner {
+  min-height: 0;
+  margin-bottom: 8px;
+}
 .wordle-table {
-  padding: 1.25rem;
-  border-radius: 1.4rem;
+  --wordle-tile: clamp(28px, calc((100svh - 410px) / 6), 54px);
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 14px;
   background: linear-gradient(145deg, #315e58, #183e40);
   color: #fff3df;
 }
 .wordle-board {
   display: grid;
-  gap: 0.35rem;
-  max-width: 22rem;
-  margin: 0 auto 1rem;
+  gap: 4px;
+  width: min(100%, calc(5 * var(--wordle-tile) + 16px));
+  margin-inline: auto;
 }
 .wordle-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.35rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
 }
 .wordle-tile {
   aspect-ratio: 1;
@@ -2431,17 +2505,17 @@ select:focus-visible {
   place-items: center;
   position: relative;
   border: 2px solid #a4c8b8;
-  border-radius: 0.55rem;
-  font-size: 1.5rem;
+  border-radius: 0.45rem;
+  font-size: clamp(1rem, calc(var(--wordle-tile) * 0.48), 1.5rem);
   font-weight: 900;
   background: #fef2de;
   color: #191c35;
 }
 .wordle-tile small {
   position: absolute;
-  right: 0.2rem;
-  bottom: 0.1rem;
-  font-size: 0.7rem;
+  right: 2px;
+  bottom: 0;
+  font-size: 0.65rem;
 }
 .wordle-tile.correct,
 .wordle-key.correct {
@@ -2458,50 +2532,44 @@ select:focus-visible {
   background: #d3d6d8;
   color: #232a35;
 }
-.wordle-form {
-  display: flex;
-  justify-content: center;
-  align-items: end;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-.wordle-form label {
-  display: grid;
-  gap: 0.3rem;
-  font-weight: 700;
-}
-.wordle-form input {
-  max-width: 12rem;
-  padding: 0.7rem;
-  border-radius: 0.6rem;
-  border: 2px solid #fff3df;
-  font: inherit;
-  text-transform: uppercase;
-}
 .wordle-keyboard {
-  margin: 1rem auto;
-  max-width: 35rem;
-  text-align: center;
+  display: grid;
+  gap: 4px;
+  width: min(100%, 32rem);
+  margin-inline: auto;
 }
 .wordle-key-row {
   display: flex;
   justify-content: center;
-  gap: 0.25rem;
-  margin: 0.25rem 0;
+  gap: 3px;
 }
 .wordle-key {
-  flex: 1;
+  flex: 1 0 0;
   min-width: 0;
-  padding: 0.7rem 0.1rem;
+  min-height: 44px;
+  padding: 0;
   border: 0;
   border-radius: 0.4rem;
   background: #fff3df;
   color: #191c35;
+  font-size: clamp(12px, 3.6vw, 16px);
   font-weight: 800;
 }
-.wordle-keyboard .quiet {
-  margin-top: 0.5rem;
-  color: #fff3df;
+.wordle-key-row:nth-child(2) {
+  padding-inline: 4%;
+}
+.wordle-action {
+  flex-grow: 1.6;
+  background: #c5e3d9;
+}
+.wordle-submit {
+  flex-grow: 2;
+  background: #ffd474;
+}
+@media (max-width: 360px) {
+  .puzzle-wordle.compact-play {
+    width: calc(100% - 16px);
+  }
 }
 
 .hangman-table {
@@ -2590,7 +2658,7 @@ select:focus-visible {
   font-weight: 800;
 }
 .scramble-table {
-  padding: 1.4rem;
+  padding: clamp(10px, 3vw, 22px);
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #315e58, #183e40);
   color: #fff3df;
@@ -2603,45 +2671,37 @@ select:focus-visible {
   flex-wrap: wrap;
   margin: 1.2rem 0;
 }
-.scramble-letters span {
+.scramble-answer {
   display: grid;
   place-items: center;
-  width: 2.6rem;
-  height: 3rem;
+  min-height: 44px;
+  border: 1px solid #a5e3ac;
+  border-radius: 0.5rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.scramble-letters button {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
   border-radius: 0.5rem;
   background: #fff3df;
   color: #191c35;
   border-bottom: 4px solid #ffd474;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 900;
   transform: rotate(-2deg);
 }
-.scramble-letters span:nth-child(even) {
+.scramble-letters button:nth-child(even) {
   transform: rotate(2deg);
   background: #ffe0a4;
 }
-.scramble-form {
-  display: flex;
-  justify-content: center;
-  gap: 0.6rem;
-  align-items: end;
-  flex-wrap: wrap;
-}
-.scramble-form label {
-  display: grid;
-  gap: 0.3rem;
-  text-align: left;
-  font-weight: 700;
-}
-.scramble-form input {
-  max-width: 12rem;
-  padding: 0.7rem;
-  border-radius: 0.6rem;
-  border: 2px solid #fff3df;
-  font: inherit;
-}
 .scramble-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 0.6rem;
   margin-top: 1rem;

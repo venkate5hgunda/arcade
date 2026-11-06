@@ -378,3 +378,33 @@ interface. The shared room fixture keeps Chromium's actual local ICE addresses,
 without requiring public STUN or headless mDNS. WebKit retains its existing
 fixture. The full spectator recovery scenario has the same total test budget as
 other multi-stage room checks. No production transport or room rules changed.
+
+## Game controls and the first playable viewport — 2026-11-06
+
+Traced the production catalog and game routes through the shared local frame,
+the separate Tic-Tac-Toe and room screens, the two text-entry word games, and
+the existing board, card, gesture, letter, prompt and ballot controls. The
+[game interface guidelines](../DESIGN_LANGUAGE.md#play-inside-the-viewport)
+spell out the rule for every game family, including when large boards or hands
+should scroll and when free-text setup fields are appropriate.
+
+Wordle's editable field and separate submit row were a missed viewport and
+input trace. The board now displays the draft, and its in-game keyboard holds
+both Guess and Delete. Scramble builds an answer by choosing individual
+shuffled tiles, including repeated letters, without opening a text field. Both
+games accept physical letters, Backspace and Enter without taking over
+navigation. Drafts remain local; rules and checkpoint formats are unchanged.
+
+Shared active play puts the surface ahead of the back link and focuses the
+game heading without scrolling on every move. Starting a match after scrolling
+setup returns to the game once. Room matches use a shorter heading without
+moving the viewport on remote updates. Card handoffs expose Reveal before
+piles and seats, large rosters stay expandable, and Blackjack keeps both
+hands and actions close on phones. Oversized race and strategy tables retain
+their inspectable board layouts.
+
+Browser checks cover Wordle at 320 × 568 and 390 × 664, including a scrolled
+start and invalid guesses, and completed Wordle and Scramble games with touch
+controls and physical keyboard input. The Minesweeper full-clear test now
+waits for the previous reveal to commit before inspecting its next cell; its
+old timing could try to click a square the flood reveal had just disabled.

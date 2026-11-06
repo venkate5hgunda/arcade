@@ -18,6 +18,7 @@ import { WordleGame } from './Wordle.tsx';
 import { RacesGame } from './Races.tsx';
 import { CardsGame } from './Cards.tsx';
 import { GameArt } from '../components/GameArt.tsx';
+import { usePlayHeading } from '../components/GameFrame.tsx';
 import { BlackjackGame } from './Blackjack.tsx';
 import { PuzzleGame } from './Puzzles.tsx';
 import { PUZZLE_IDS } from '../lib/puzzles.ts';
@@ -54,6 +55,12 @@ function LocalGame() {
     if (session.state) session.finish();
     return null;
   });
+  const heading = usePlayHeading(!!state);
+  const back = (
+    <Link className="back" to="/">
+      ← Back to the shelf
+    </Link>
+  );
   const [mode, setMode] = useState<Mode>(() => {
     const saved = loadJSON<{ mode?: string } | null>(
       `${KEYS.SETTINGS}:tictactoe`,
@@ -123,12 +130,12 @@ function LocalGame() {
     });
   }
   return (
-    <section className="play-page">
-      <Link className="back" to="/">
-        ← Back to the shelf
-      </Link>
+    <section className={`play-page${state ? ' compact-play' : ''}`}>
+      {!state && back}
       <div className="game-heading">
-        <h1>Tic-Tac-Toe</h1>
+        <h1 ref={heading} tabIndex={-1}>
+          Tic-Tac-Toe
+        </h1>
         {state && (
           <button className="quiet" onClick={() => setConfirm(true)}>
             New match
@@ -266,6 +273,7 @@ function LocalGame() {
           </aside>
         </div>
       )}
+      {state && back}
       {confirm && (
         <div className="modal-backdrop">
           <section

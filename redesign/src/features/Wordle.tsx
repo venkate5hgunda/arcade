@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLetterInput } from '../lib/letter-input.ts';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import {
   evaluateGuess,
@@ -36,8 +37,17 @@ export function WordleGame() {
       if (!keys[guess[i]] || rank[mark] > rank[keys[guess[i]]])
         keys[guess[i]] = mark;
     });
+  function letter(key: string) {
+    setInput((value) => (value + key).slice(0, 5));
+    setMessage('');
+  }
+  function erase() {
+    setInput((value) => value.slice(0, -1));
+    setMessage('');
+  }
+  useLetterInput(!!game && !done && !run.saving, letter, erase, submit);
   function submit() {
-    if (!game || done) return;
+    if (!game || done || run.saving) return;
     if (input.length !== 5) {
       setMessage('Enter five letters.');
       return;
@@ -73,7 +83,7 @@ export function WordleGame() {
           ? won
             ? `Solved in ${game!.guesses.length}! The word is ${game!.answer}.`
             : `The word was ${game!.answer}. Try another!`
-          : message || 'Type or tap five letters, then make your guess.'
+          : message || 'Tap or type five letters, then press Guess or Enter.'
       }
       help="Guess a five-letter word from the offline practice list. A check means the right letter in the right spot; an arrow means the letter belongs elsewhere; a cross means it is absent. You have six guesses."
       after={
@@ -86,38 +96,6 @@ export function WordleGame() {
     >
       {game && (
         <div className="wordle-table">
-          <form
-            className="wordle-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submit();
-            }}
-          >
-            <label>
-              Five letter guess
-              <input
-                aria-label="Five letter guess"
-                value={input}
-                maxLength={5}
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                disabled={done}
-                onChange={(e) => {
-                  setInput(
-                    e.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z]/g, '')
-                      .slice(0, 5),
-                  );
-                  setMessage('');
-                }}
-              />
-            </label>
-            <button className="primary" disabled={done}>
-              Guess
-            </button>
-          </form>
           <div className="wordle-board" role="group" aria-label="Guess board">
             {Array.from({ length: 6 }, (_, row) => {
               const guess = game.guesses[row],
@@ -150,43 +128,48 @@ export function WordleGame() {
               );
             })}
           </div>
-          <div
-            className="wordle-keyboard"
-            role="group"
-            aria-label="Letter keyboard"
-          >
-            {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row) => (
-              <div className="wordle-key-row" key={row}>
-                {[...row].map((letter) => (
-                  <button
-                    type="button"
-                    className={`wordle-key ${keys[letter] || ''}`}
-                    aria-label={`${letter}${keys[letter] ? ': ' + keys[letter] : ''}`}
-                    disabled={done}
-                    key={letter}
-                    onClick={() => {
-                      setInput((v) => (v + letter).slice(0, 5));
-                      setMessage('');
-                    }}
-                  >
-                    {letter}
-                  </button>
-                ))}
-              </div>
-            ))}
-            <button
-              type="button"
-              className="quiet"
-              disabled={done}
-              onClick={() => {
-                setInput((v) => v.slice(0, -1));
-                setMessage('');
-              }}
+          {!done && (
+            <div
+              className="wordle-keyboard"
+              role="group"
+              aria-label="Letter keyboard"
             >
-              Delete letter
-            </button>
-          </div>
-          <p>✓ Correct spot · ↔ Wrong spot · × Not in word</p>
+              {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, index) => (
+                <div className="wordle-key-row" key={row}>
+                  {index === 2 && (
+                    <button
+                      type="button"
+                      className="wordle-key wordle-action wordle-submit"
+                      onClick={submit}
+                    >
+                      Guess
+                    </button>
+                  )}
+                  {[...row].map((key) => (
+                    <button
+                      type="button"
+                      className={`wordle-key ${keys[key] || ''}`}
+                      aria-label={`${key}${keys[key] ? ': ' + keys[key] : ''}`}
+                      key={key}
+                      onClick={() => letter(key)}
+                    >
+                      {key}
+                    </button>
+                  ))}
+                  {index === 2 && (
+                    <button
+                      type="button"
+                      className="wordle-key wordle-action"
+                      aria-label="Delete letter"
+                      onClick={erase}
+                    >
+                      ⌫
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </Frame>
