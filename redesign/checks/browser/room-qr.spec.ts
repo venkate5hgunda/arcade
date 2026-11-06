@@ -1,24 +1,10 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 type CameraTestWindow = Window & {
   finishCameraStart(): void;
   roomQrCallback(value: { data: string }): void;
   roomQrDestroyed: boolean;
-};
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(d: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...d,
-        sdp: d.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_m, p) => p + '127.0.0.1',
-        ),
-      });
-    }
-  };
 };
 const fakeCamera = () => {
   Object.defineProperty(navigator, 'mediaDevices', {
@@ -32,10 +18,10 @@ test('room QR round-trips the actual invitation and scans both sides of a real c
   browser,
 }, testInfo) => {
   test.setTimeout(90000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   await host.context().addInitScript(fakeCamera);
   const context = await browser.newContext();
-  await context.addInitScript(localIce);
+  await prepareLocalRoom(context);
   await context.addInitScript(fakeCamera);
   const guest = await context.newPage();
   try {
@@ -220,7 +206,7 @@ test('cancelling a pending camera start releases the scanner and ignores late re
 test('failed native sharing and clipboard access select the raw link for manual copying', async ({
   page,
 }) => {
-  await page.addInitScript(localIce);
+  await prepareLocalRoom(page.context());
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'share', {
       configurable: true,
@@ -276,7 +262,7 @@ test('camera denial provides a paste-link fallback', async ({ page }) => {
 test('oversized QR output leaves the raw invitation available', async ({
   page,
 }) => {
-  await page.addInitScript(localIce);
+  await prepareLocalRoom(page.context());
   await page.route('**/vendor/qrcode.mjs', (route) =>
     route.fulfill({
       status: 200,
@@ -298,7 +284,7 @@ test('oversized QR output leaves the raw invitation available', async ({
 test('cancelled native sharing keeps the invitation available', async ({
   page,
 }) => {
-  await page.addInitScript(localIce);
+  await prepareLocalRoom(page.context());
   await page.addInitScript(() =>
     Object.defineProperty(navigator, 'share', {
       configurable: true,

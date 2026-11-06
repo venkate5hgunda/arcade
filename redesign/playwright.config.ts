@@ -12,7 +12,16 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'desktop',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Preserve the actual UDP bind address in local room ICE candidates.
+        launchOptions: {
+          args: ['--disable-features=WebRtcHideLocalIpsWithMdns'],
+        },
+      },
+    },
     { name: 'mobile', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {

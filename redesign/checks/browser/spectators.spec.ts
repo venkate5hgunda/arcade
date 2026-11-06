@@ -1,21 +1,7 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(description: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...description,
-        sdp: description.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_match, prefix) => prefix + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 async function admit(host: Page, guest: Page, name: string, invite: string) {
   await guest.goto(invite);
   await guest.getByLabel('Your room name').fill(name);
@@ -34,12 +20,13 @@ test('a spectator watches a full win, recovers with the host, and never blocks t
   page: host,
   browser,
 }, testInfo) => {
+  test.setTimeout(90_000);
   const contexts = await Promise.all([
     browser.newContext(),
     browser.newContext(),
   ]);
-  await host.context().addInitScript(localIce);
-  for (const context of contexts) await context.addInitScript(localIce);
+  await prepareLocalRoom(host.context());
+  for (const context of contexts) await prepareLocalRoom(context);
   const [guest, viewer] = await Promise.all(contexts.map((c) => c.newPage()));
   try {
     await host.goto('/#/room');
@@ -146,13 +133,13 @@ for (const game of ['uno', 'rps', 'mafia', 'business', 'catan'] as const) {
     browser,
   }) => {
     test.setTimeout(90000);
-    await host.context().addInitScript(localIce);
+    await prepareLocalRoom(host.context());
     const count = game === 'mafia' ? 4 : game === 'catan' ? 2 : 1;
     const contexts = await Promise.all(
       Array.from({ length: count + 1 }, () => browser.newContext()),
     );
     try {
-      for (const context of contexts) await context.addInitScript(localIce);
+      for (const context of contexts) await prepareLocalRoom(context);
       const players = await Promise.all(contexts.map((c) => c.newPage()));
       const viewer = players.pop()!;
       const errors: string[] = [];

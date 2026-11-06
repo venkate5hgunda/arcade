@@ -293,7 +293,7 @@ function PoolTable({
         pull: Math.hypot(point.x - w.balls[0].x, point.y - w.balls[0].y) < 45,
       };
       canvas.setPointerCapture(e.pointerId);
-      canvas.focus();
+      canvas.focus({ preventScroll: true });
       move(e);
       e.preventDefault();
     }
@@ -318,17 +318,7 @@ function PoolTable({
       drag = null;
     }
     function keydown(e: KeyboardEvent) {
-      if (
-        e.altKey ||
-        e.ctrlKey ||
-        e.metaKey ||
-        (document.activeElement instanceof HTMLElement &&
-          ['INPUT', 'BUTTON', 'SELECT'].includes(
-            document.activeElement.tagName,
-          )) ||
-        w.rolling ||
-        w.winner !== null
-      )
+      if (e.altKey || e.ctrlKey || e.metaKey || w.rolling || w.winner !== null)
         return;
       if (e.key === 'ArrowLeft') w.state.aim -= 0.045;
       else if (e.key === 'ArrowRight') w.state.aim += 0.045;
@@ -345,7 +335,7 @@ function PoolTable({
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', cancel);
-    window.addEventListener('keydown', keydown);
+    canvas.addEventListener('keydown', keydown);
     window.addEventListener('resize', size);
     size();
     raf = requestAnimationFrame(frame);
@@ -356,7 +346,7 @@ function PoolTable({
       canvas.removeEventListener('pointermove', move);
       canvas.removeEventListener('pointerup', up);
       canvas.removeEventListener('pointercancel', cancel);
-      window.removeEventListener('keydown', keydown);
+      canvas.removeEventListener('keydown', keydown);
       window.removeEventListener('resize', size);
     };
   }, []);
@@ -395,8 +385,8 @@ function PoolTable({
         </button>
       </div>
       <p>
-        Drag back from the white cue ball to shoot, or use the arrow keys and
-        Space.
+        Drag back from the white cue ball to shoot, or focus the table and use
+        the arrow keys and Space.
       </p>
     </>
   );

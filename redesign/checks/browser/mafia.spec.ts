@@ -1,33 +1,19 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(d: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...d,
-        sdp: d.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_m, p) => p + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 test('Mafia five-browser room protects roles, restores the host and resolves a complete game', async ({
   page: host,
   browser,
 }) => {
   test.setTimeout(180000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const contexts = await Promise.all(
     Array.from({ length: 4 }, () => browser.newContext()),
   );
   const guests: Page[] = [];
   for (const context of contexts) {
-    await context.addInitScript(localIce);
+    await prepareLocalRoom(context);
     guests.push(await context.newPage());
   }
   const players = [host, ...guests],

@@ -25,7 +25,13 @@ Verified 2026-10-26 for the Living Game Shelf / first-game milestone. This super
 
 `redesign/checks/browser/foundation.spec.ts` exercises the **built application** in Chromium and mobile WebKit: all 26 game routes and 34 requirement routes, browse/filter/search/selection, original-game links, named local play, O victory, resume/reload, AI/keyboard/reset, expired/invalid data, quota denial, responsive layouts, persisted theme choice and automated accessibility. It also exchanges actual invitation/answer URLs between two separate browser contexts, plays a room match, rematches, reloads the host, reconnects the same guest and verifies the retained board.
 
-The native room test uses loopback candidate addresses and disables public STUN in its **test fixture only**. This runner cannot route headless mDNS/LAN candidates: a minimal native WebRTC pair stalled identically, with ICE requests and no responses. Loopback connects real native DTLS/SCTP data channels; application signaling, validation and UI remain the production pipeline. This is evidence of local real-browser transport, not cross-network qualification or TURN coverage. Production continues to gather ordinary candidates and uses Google STUN when online.
+Native room checks disable public STUN in their test fixture only. The desktop
+Chromium project disables mDNS masking so candidates keep their real local
+socket addresses; mobile WebKit uses its loopback fixture. These checks still
+use native SDP negotiation and encrypted data channels through the production
+signaling, validation and UI. They qualify same-machine browser transport, not
+cross-network or TURN coverage. Production still gathers ordinary candidates
+and uses Google STUN when online.
 
 ## Commands and environment
 
@@ -313,3 +319,62 @@ The first release-PR Linux browser run exposed three missed platform/load traces
 The first production capture exposed a stale foundation-era shelf note that still pointed all 26 games back to the now-replaced original deployment. That was a missed rollout-copy trace: every card and route was native, but the catalog footer had not followed the production decision. The live shelf now describes the complete catalog and supported play modes accurately. The repository landing page uses new desktop, mobile, full-inventory and completed-match captures from the deployed Living Game Shelf; its commands, build badge, repository map, game counts and documentation links now describe the production React/Vite application rather than the retained migration baseline.
 
 The README release run also exposed two missed browser-test readiness traces. The Tic-Tac-Toe AI fixture could silently skip its final move while persisted state was still settling, and the UNO spectator check depended on the `.card-pile` implementation class instead of the pile's accessible contract. The checks now wait for the intended square to become actionable and verify the public draw and discard pile images by role and label. Loaded room checks allow the same 30-second connection window already used by adjacent multi-browser suites. These are test corrections; the shipped game behavior is unchanged.
+
+## Mobile navigation and game focus
+
+Route changes reset the viewport once and focus the destination heading, or the
+Arcade home link on return to the shelf. Search and category updates keep the
+current focus. On phones, the game and room header stays reachable while the page
+scrolls. Board shortcuts leave header and navigation controls alone; local card
+handoffs retain their keyboard focus and room updates respect focus in other
+controls. The former Pool window listener was a missed input trace: it consumed
+Enter on the exit link as a shot. The navigation browser checks exercise touch
+play, scrolling, exiting, searching and keyboard exit in the production build.
+
+The mobile Back/Forward check exposed another missed trace: WebKit can restore a
+same-document history entry's previous scroll position after Arcade resets it.
+The shell owns scroll restoration while mounted, so browser history and app
+links now land at the top with the same focus behavior and retain saved games.
+
+## Sound settings and shared header
+
+The labeled speaker shows whether game sounds are muted. The panel has large
+sound and vibration switch rows and a separate test chime. Unsupported vibration
+is shown as unavailable, since the old iOS switch could only vibrate the switch
+itself. The existing sound and haptics preferences still use the same stored
+keys. Sound test feedback follows audio unlock without claiming that the user
+heard the chime.
+
+Search and categories live with the catalog so the sticky phone header stays one
+row on every route. The 320-pixel WebKit check covers a missed narrow-width trace:
+the old combination of controls could extend the document horizontally and clip
+the sound panel. The touch check taps the visible speaker without browser
+automation scrolling first, then verifies mute, dismissal, focus and scroll.
+Visual inspection caught a missed theme trace: the disclosure inherited body
+ink in the dark header. Both the trigger and the open panel now use header ink. The two-tab preference
+check now uses the new disclosure and switch names; its old locator was a missed
+test consumer of the sound label.
+
+## Shelf and match setup hierarchy
+
+The shelf cards keep their distinct art, category, player count and description.
+Each card is one link, with an arrow replacing duplicate play text and readiness
+badges. Local setups share the same visible Start action and place secondary
+options behind their existing disclosures. Traced setup labels through the
+shared Frame and Tic-Tac-Toe, including custom option fields, name inputs, room
+links, saved settings, restart and resume. Game rules and saved data are unchanged.
+
+
+## Linux CI follow-up for mobile UX
+
+Linux WebKit exposed a missed font-metrics trace: a wider fallback font made the
+320-pixel header overflow by seven pixels. The narrow breakpoint now leaves more
+room for the wordmark and controls while retaining the Sound label, mute icon and
+44-pixel control height. The original no-overflow and direct-touch check remains.
+
+Chromium room traces showed seats going offline after the test fixture replaced
+every advertised address with loopback, even for sockets bound to another
+interface. The shared room fixture keeps Chromium's actual local ICE addresses,
+without requiring public STUN or headless mDNS. WebKit retains its existing
+fixture. The full spectator recovery scenario has the same total test budget as
+other multi-stage room checks. No production transport or room rules changed.

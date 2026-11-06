@@ -186,7 +186,13 @@ function TileGame() {
     if (!s) return;
     const handler = (event: KeyboardEvent) => {
       if (
-        (event.target as HTMLElement).closest('input,select,textarea') ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        (event.target instanceof Element &&
+          event.target.closest(
+            'header, footer, a, input, select, textarea, summary',
+          )) ||
         document.querySelector('[role="alertdialog"]')
       )
         return;

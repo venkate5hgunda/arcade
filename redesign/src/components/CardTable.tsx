@@ -45,6 +45,7 @@ export function CardTable({
   onAction: (action: unknown) => void;
 }) {
   const [pending, setPending] = useState<string | null>(null);
+  const table = useRef<HTMLDivElement>(null);
   const handHeading = useRef<HTMLHeadingElement>(null),
     coverHeading = useRef<HTMLHeadingElement>(null),
     resultHeading = useRef<HTMLHeadingElement>(null),
@@ -52,26 +53,47 @@ export function CardTable({
     revealButton = useRef<HTMLButtonElement>(null);
   const wasCovered = useRef(covered);
   const previousUno = useRef(view.unoPending);
+  function canMoveFocus() {
+    const active = document.activeElement;
+    return (
+      !!reveal ||
+      !active ||
+      active === document.body ||
+      active?.matches('main h1:focus') ||
+      !!table.current?.contains(active)
+    );
+  }
   useEffect(() => setPending(null), [view.gameId, view.turn, covered]);
   const ownTurn = view.current === view.seat,
     over = view.phase === 'over';
   const canAct = view.seat !== -1 && !blocked && !over && !covered;
   const choose = view.phase === 'choose' || pending !== null;
   useEffect(() => {
-    if (over) resultHeading.current?.focus();
-    else if (covered) coverHeading.current?.focus();
-    else if (wasCovered.current) handHeading.current?.focus();
+    const target = over
+      ? resultHeading.current
+      : covered
+        ? coverHeading.current
+        : wasCovered.current
+          ? handHeading.current
+          : null;
     wasCovered.current = covered;
+    // Room updates can arrive while someone is using the header or room tools.
+    if (target && canMoveFocus()) target.focus({ preventScroll: true });
   }, [covered, over]);
   useEffect(() => {
-    if (choose && !covered && !blocked)
+    if (choose && !covered && !blocked && canMoveFocus())
       chooser.current
         ?.querySelector<HTMLButtonElement>('button:not(:disabled)')
         ?.focus();
   }, [choose, covered, blocked]);
   useEffect(() => {
-    if (covered && previousUno.current !== null && view.unoPending === null)
-      revealButton.current?.focus();
+    if (
+      covered &&
+      previousUno.current !== null &&
+      view.unoPending === null &&
+      canMoveFocus()
+    )
+      revealButton.current?.focus({ preventScroll: true });
     previousUno.current = view.unoPending;
   }, [covered, view.unoPending]);
   const label = (seat: number) => names[seat] || `Player ${seat + 1}`;
@@ -82,7 +104,7 @@ export function CardTable({
       onAction({ type: 'play', id: view.gameId === 'uno' ? Number(id) : id });
   }
   return (
-    <div className={`private-card-table ${view.gameId}`}>
+    <div ref={table} className={`private-card-table ${view.gameId}`}>
       <div className="card-seats" aria-label="Table seats">
         {view.counts.map((count, index) => (
           <div

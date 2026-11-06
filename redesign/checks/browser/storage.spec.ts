@@ -127,14 +127,16 @@ test('theme and sound preferences follow other tabs without a write loop', async
       exact: true,
     }),
   ).toBeVisible();
-  await page.getByLabel('Sound & feel').click();
-  await other.getByLabel('Sound & feel').click();
-  await page.getByLabel('Game sounds', { exact: true }).uncheck();
+  await page.getByLabel('Sound settings', { exact: true }).click();
+  await other.getByLabel('Sound settings', { exact: true }).click();
+  await page.getByRole('switch', { name: 'Game sounds' }).uncheck();
   await expect(
-    other.getByLabel('Game sounds', { exact: true }),
+    other.getByRole('switch', { name: 'Game sounds' }),
   ).not.toBeChecked();
   await page.evaluate(() => localStorage.removeItem('arcade:ui.soundEnabled'));
-  await expect(other.getByLabel('Game sounds', { exact: true })).toBeChecked();
+  await expect(
+    other.getByRole('switch', { name: 'Game sounds' }),
+  ).toBeChecked();
 });
 
 test('separate game tabs preserve each other and the open shelf refreshes recent/resume state', async ({

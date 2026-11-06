@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import { newHockey } from '../../src/lib/hockey.ts';
@@ -91,30 +92,30 @@ test('sound and haptics controls persist and test a gesture-unlocked chime', asy
 }) => {
   await page.addInitScript(fakeFeedback);
   await page.goto('/');
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   await expect(page.getByLabel('Game sounds')).toBeChecked();
-  await expect(page.getByLabel('Haptics')).toBeChecked();
+  await expect(page.getByLabel('Vibration')).toBeChecked();
   const before = await page.evaluate(
     () => (window as unknown as { audioStarts: number }).audioStarts,
   );
   await page.getByRole('button', { name: 'Test sound' }).click();
   await expect(
     page.locator('.feedback-panel').getByRole('status'),
-  ).toContainText('If you did not hear the chime');
+  ).toContainText('Didn’t hear the chime');
   expect(
     await page.evaluate(
       () => (window as unknown as { audioStarts: number }).audioStarts,
     ),
   ).toBeGreaterThan(before);
   await page.getByLabel('Game sounds').uncheck();
-  await page.getByLabel('Haptics').uncheck();
+  await page.getByLabel('Vibration').uncheck();
   await expect(page.getByRole('button', { name: 'Test sound' })).toBeDisabled();
   await page.reload();
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   await expect(page.getByLabel('Game sounds')).not.toBeChecked();
-  await expect(page.getByLabel('Haptics')).not.toBeChecked();
+  await expect(page.getByLabel('Vibration')).not.toBeChecked();
   await page.getByLabel('Game sounds').check();
-  await page.getByLabel('Haptics').check();
+  await page.getByLabel('Vibration').check();
   expect(
     await page.evaluate(
       () => (window as unknown as { vibrations: number }).vibrations,
@@ -127,7 +128,7 @@ test('sound and haptics controls persist and test a gesture-unlocked chime', asy
 test('a real hockey collision produces an impact sound', async ({ page }) => {
   await page.addInitScript(fakeFeedback);
   await page.goto('/');
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   await page.getByRole('button', { name: 'Test sound' }).click();
   await page.keyboard.press('Escape');
   const state = newHockey(5);
@@ -161,16 +162,10 @@ test('unsupported haptics are explained without claiming game vibration', async 
     });
   });
   await page.goto('/');
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   const info = page.locator('.feedback-panel');
-  if (/iPhone|iPad|iPod/.test(await page.evaluate(() => navigator.userAgent))) {
-    await expect(info).toContainText(
-      'game vibrations are unavailable in iOS browsers',
-    );
-  } else {
-    await expect(page.getByLabel('Haptics')).toBeDisabled();
-    await expect(info).toContainText('This browser has no haptics API');
-  }
+  await expect(page.getByRole('switch', { name: 'Vibration' })).toBeDisabled();
+  await expect(info).toContainText('Unavailable on this device');
 });
 
 test('gameplay emits a distinct win chime and respects mute', async ({
@@ -200,9 +195,9 @@ test('gameplay emits a distinct win chime and respects mute', async ({
       () => (window as unknown as { audioStarts: number }).audioStarts,
     )) - before,
   ).toBeGreaterThanOrEqual(3);
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   await page.getByLabel('Game sounds').uncheck();
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   const muted = await page.evaluate(
     () => (window as unknown as { audioStarts: number }).audioStarts,
   );
@@ -280,9 +275,9 @@ test('Simon plays distinct sequence notes and mute silences both playback and co
   expect(
     await page.evaluate(() => (window as unknown as { tones: number[] }).tones),
   ).toContain(note);
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   await page.getByLabel('Game sounds').uncheck();
-  await page.getByLabel('Sound & feel').click();
+  await page.getByLabel('Sound settings').click();
   const muted = await page.evaluate(
     () => (window as unknown as { audioStarts: number }).audioStarts,
   );
@@ -341,25 +336,10 @@ test('room guests hear their own victory while the losing host hears a failure c
   test.setTimeout(60000);
   const context = await browser.newContext();
   const guest = await context.newPage();
-  const localIce = () => {
-    Object.defineProperty(navigator, 'onLine', { get: () => false });
-    const Native = window.RTCPeerConnection;
-    window.RTCPeerConnection = class extends Native {
-      setRemoteDescription(description: RTCSessionDescriptionInit) {
-        return super.setRemoteDescription({
-          ...description,
-          sdp: description.sdp?.replace(
-            /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-            (_match, prefix) => prefix + '127.0.0.1',
-          ),
-        });
-      }
-    };
-  };
   try {
     for (const page of [host, guest]) {
       await page.addInitScript(fakeFeedback);
-      await page.addInitScript(localIce);
+      await prepareLocalRoom(page.context());
     }
     await host.goto('/#/room');
     await host.getByLabel('Your room name').fill('Mira');
@@ -421,7 +401,7 @@ test('sound control and panel follow the header theme', async ({ page }) => {
     ) {
       await theme.click();
     }
-    await page.getByLabel('Sound & feel', { exact: true }).click();
+    await page.getByLabel('Sound settings', { exact: true }).click();
     const colors = await page.locator('.feedback-panel').evaluate((panel) => {
       const header = document.querySelector('.app-header')!;
       return {
@@ -429,10 +409,12 @@ test('sound control and panel follow the header theme', async ({ page }) => {
         header: getComputedStyle(header).backgroundColor,
         ink: getComputedStyle(panel).color,
         headerInk: getComputedStyle(header).color,
+        triggerInk: getComputedStyle(panel.previousElementSibling!).color,
       };
     });
     expect(colors.panel).toBe(colors.header);
     expect(colors.ink).toBe(colors.headerInk);
+    expect(colors.triggerInk).toBe(colors.headerInk);
     await page.getByLabel('Game sounds').uncheck();
     await expect(
       page.getByRole('button', { name: 'Test sound' }),
@@ -440,4 +422,49 @@ test('sound control and panel follow the header theme', async ({ page }) => {
     await page.getByLabel('Game sounds').check();
     await page.keyboard.press('Escape');
   }
+});
+
+test('sound settings fit a narrow phone and close without jumping the game', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'Phone viewport and touch input.');
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(fakeFeedback);
+  await page.goto('/#/game/tictactoe');
+  await page.getByRole('button', { name: 'Start playing' }).tap();
+  await expect(
+    page.getByRole('group', { name: 'Tic-Tac-Toe board' }),
+  ).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 180));
+  const before = await page.evaluate(() => scrollY);
+  expect(before).toBeGreaterThan(0);
+
+  const trigger = page.getByLabel('Sound settings', { exact: true });
+  await expect(trigger).toBeInViewport();
+  const triggerBounds = (await trigger.boundingBox())!;
+  // A locator tap scrolls through Playwright's actionability checks first.
+  await page.touchscreen.tap(
+    triggerBounds.x + triggerBounds.width / 2,
+    triggerBounds.y + triggerBounds.height / 2,
+  );
+  const panel = page.locator('.feedback-panel');
+  const bounds = await panel.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    320,
+  );
+  await expect(
+    panel.getByRole('switch', { name: 'Game sounds' }),
+  ).toBeChecked();
+  await panel.getByText('Game sounds', { exact: true }).tap();
+  await expect(
+    panel.getByRole('switch', { name: 'Game sounds' }),
+  ).not.toBeChecked();
+  await expect(trigger).toHaveAccessibleDescription('Game sounds off');
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
 });

@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import {
   newCatan,
@@ -216,34 +217,19 @@ test('Island resolves a seven through private discard and raider movement', asyn
   await expect(page.getByRole('button', { name: 'End turn →' })).toBeVisible();
 });
 
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(d: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...d,
-        sdp: d.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_m, p) => p + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 test('three Island navigators connect, roll and recover after the host reloads', async ({
   page: host,
   browser,
 }) => {
   test.setTimeout(90000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const contexts = await Promise.all([
     browser.newContext(),
     browser.newContext(),
   ]);
   const guests: Page[] = [];
   for (const c of contexts) {
-    await c.addInitScript(localIce);
+    await prepareLocalRoom(c);
     guests.push(await c.newPage());
   }
   async function connect(i: number, reconnect = false) {

@@ -3,7 +3,7 @@ import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
 import { FeedbackControl } from './components/FeedbackControl.tsx';
 import { feedback } from './lib/feedback.ts';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   HashRouter,
   Link,
@@ -87,14 +87,9 @@ function Catalog({ query, category }: { query: string; category: string }) {
         <section className="showcase" aria-label="Featured game">
           <div className="showcase-scene">
             <GameArt id={game.id} className="hero-image" eager />
-            <div className="scene-caption">
-              GOOD GAMES BRING PEOPLE TOGETHER
-            </div>
           </div>
           <div className="showcase-copy">
-            <p className="eyebrow">
-              {game.category} <span> / </span> Your next good time
-            </p>
+            <p className="eyebrow">{game.category}</p>
             <h1>{game.name}</h1>
             <p className="lede">{game.description}</p>
             <div className="game-facts">
@@ -155,11 +150,11 @@ function Catalog({ query, category }: { query: string; category: string }) {
               {game.name}
               <Icon name="arrow-right" />
             </Link>
-            <p className="availability">
-              {isImplemented(game.id)
-                ? 'No accounts. No downloads. Just play.'
-                : 'The complete game is playable in original Arcade.'}
-            </p>
+            {!isImplemented(game.id) && (
+              <p className="availability">
+                The complete game is playable in original Arcade.
+              </p>
+            )}
           </div>
           <div className="shelf" aria-label="Choose a game">
             {[...visible]
@@ -197,11 +192,8 @@ function Catalog({ query, category }: { query: string; category: string }) {
       <section className="collection">
         <div className="section-head">
           <div>
-            <p className="eyebrow">A little more play in your day</p>
             <h2>
-              {resumable.length
-                ? 'Pick up where you left off'
-                : 'Your next favorite is here'}
+              {resumable.length ? 'Pick up where you left off' : 'Browse games'}
             </h2>
           </div>
           <p className="count" role="status">
@@ -222,12 +214,6 @@ function Catalog({ query, category }: { query: string; category: string }) {
               </Link>
             ))}
           </div>
-        )}
-        {!resumable.length && !recent.length && (
-          <p className="shelf-note">
-            Pull up a chair. Start with Tic-Tac-Toe, or explore the full
-            collection.
-          </p>
         )}
         {recent.length > 0 && (
           <details className="recent">
@@ -267,18 +253,12 @@ function GameCard({ game, index }: { game: Game; index: number }) {
         <span className="card-category">{game.category}</span>
       </div>
       <div className="card-copy">
-        <div className="card-meta">
-          <small>{playerLabel(game)}</small>
-          {isImplemented(game.id) && (
-            <span className="ready">Ready to play</span>
-          )}
-        </div>
-        <h3>{game.name}</h3>
-        <p>{game.tagline}</p>
-        <span className="card-action">
-          {isImplemented(game.id) ? 'Let’s play' : 'Explore game'}{' '}
+        <div className="card-title">
+          <h3>{game.name}</h3>
           <Icon name="arrow-right" />
-        </span>
+        </div>
+        <small className="card-meta">{playerLabel(game)}</small>
+        <p>{game.tagline}</p>
       </div>
     </Link>
   );
@@ -321,7 +301,11 @@ function Shell() {
   });
   const [warning, setWarning] = useState('');
   const location = useLocation();
-  const home = location.pathname === '/';
+  const { pathname } = location;
+  const home = pathname === '/';
+  const previousPath = useRef<string | null>(null);
+  const homeLink = useRef<HTMLAnchorElement>(null);
+  const main = useRef<HTMLElement>(null);
   useEffect(
     () =>
       observeStorage([KEYS.STORAGE_VERSION], () => {
@@ -398,14 +382,29 @@ function Shell() {
     media?.addEventListener('change', changed);
     return () => media?.removeEventListener('change', changed);
   }, [theme]);
-  useEffect(() => {
-    const heading = document.querySelector('main h1');
-    if (heading instanceof HTMLElement) {
-      heading.tabIndex = -1;
-      heading.focus();
+  useLayoutEffect(() => {
+    // Hash routes share a document. Native history restoration can otherwise
+    // override the route's scroll reset after Back or Forward.
+    const restoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      window.history.scrollRestoration = restoration;
+    };
+  }, []);
+  useLayoutEffect(() => {
+    const previous = previousPath.current;
+    if (previous === pathname) return;
+    previousPath.current = pathname;
+    // Move focus and the viewport independently so mobile browsers only scroll once.
+    if (pathname === '/') {
+      if (previous !== null) homeLink.current?.focus({ preventScroll: true });
+    } else {
+      const heading = main.current?.querySelector('h1');
+      if (heading) heading.tabIndex = -1;
+      (heading ?? main.current)?.focus({ preventScroll: true });
     }
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
   return (
     <>
       <a
@@ -419,42 +418,15 @@ function Shell() {
         Skip to content
       </a>
       <header className="app-header">
-        <Link className="brand" to="/" aria-label="Arcade home">
+        <Link ref={homeLink} className="brand" to="/" aria-label="Arcade home">
           <img src="./icons/logo.svg" alt="" />
           ARCADE<span aria-hidden="true">✦</span>
         </Link>
-        {home && (
-          <nav className="filters" aria-label="Game categories">
-            {CATEGORIES.map((value) => (
-              <button
-                className="filter"
-                key={value}
-                aria-pressed={category === value}
-                onClick={() => setCategory(value)}
-              >
-                <Icon name={categoryIcons[value]} />
-                {value}
-              </button>
-            ))}
-          </nav>
-        )}
         <div className="header-tools">
-          {home && (
-            <label className="search">
-              <span className="sr-only">Search games</span>
-              <input
-                type="search"
-                placeholder="Search 26 games…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-          )}
           <Link className="room-link" to="/room">
             <Icon name="users" />
             Room
           </Link>
-          <FeedbackControl />
           <button
             className="icon-button"
             aria-label={`Theme: ${theme}. Select ${theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'}`}
@@ -471,9 +443,36 @@ function Shell() {
           >
             <Icon name={theme === 'light' ? 'moon' : 'sun'} />
           </button>
+          <FeedbackControl />
         </div>
       </header>
-      <main id="main" tabIndex={-1}>
+      <main ref={main} id="main" tabIndex={-1}>
+        {home && (
+          <div className="browse-tools">
+            <label className="search">
+              <span className="sr-only">Search games</span>
+              <input
+                type="search"
+                placeholder="Search games"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+            <nav className="filters" aria-label="Game categories">
+              {CATEGORIES.map((value) => (
+                <button
+                  className="filter"
+                  key={value}
+                  aria-pressed={category === value}
+                  onClick={() => setCategory(value)}
+                >
+                  <Icon name={categoryIcons[value]} />
+                  {value}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
         <Routes>
           <Route
             path="/"

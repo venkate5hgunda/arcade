@@ -8,10 +8,6 @@ export const feedback = {
   audio,
   hasVibration: () =>
     typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function',
-  hasNativeSwitch: () =>
-    typeof navigator !== 'undefined' &&
-    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)),
   get hapticsEnabled() {
     return hapticsEnabled;
   },
