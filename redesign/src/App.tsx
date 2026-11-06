@@ -383,6 +383,15 @@ function Shell() {
     return () => media?.removeEventListener('change', changed);
   }, [theme]);
   useLayoutEffect(() => {
+    // Hash routes share a document. Native history restoration can otherwise
+    // override the route's scroll reset after Back or Forward.
+    const restoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      window.history.scrollRestoration = restoration;
+    };
+  }, []);
+  useLayoutEffect(() => {
     const previous = previousPath.current;
     if (previous === pathname) return;
     previousPath.current = pathname;

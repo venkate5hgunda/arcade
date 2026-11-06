@@ -325,6 +325,11 @@ controls. The former Pool window listener was a missed input trace: it consumed
 Enter on the exit link as a shot. The navigation browser checks exercise touch
 play, scrolling, exiting, searching and keyboard exit in the production build.
 
+The mobile Back/Forward check exposed another missed trace: WebKit can restore a
+same-document history entry's previous scroll position after Arcade resets it.
+The shell owns scroll restoration while mounted, so browser history and app
+links now land at the top with the same focus behavior and retain saved games.
+
 ## Sound settings and shared header
 
 The labeled speaker shows whether game sounds are muted. The panel has large

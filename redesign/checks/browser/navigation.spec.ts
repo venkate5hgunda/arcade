@@ -48,3 +48,26 @@ test('Pool shortcuts leave keyboard navigation available outside the table', asy
   await expect(page.getByRole('link', { name: 'Arcade home' })).toBeFocused();
   await expect(page).toHaveURL(/#\/$/);
 });
+
+test('mobile browser Back and Forward restore the intended route position', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'Exercises history restoration in mobile WebKit.');
+  await page.goto('/');
+  const pool = page.locator('.game-card').filter({ hasText: '8-Ball Pool' });
+  await pool.tap();
+  await page.getByRole('button', { name: 'Start playing' }).tap();
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+
+  await page.goBack();
+  const home = page.getByRole('link', { name: 'Arcade home' });
+  await expect(home).toBeFocused();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+
+  await page.goForward();
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+});
