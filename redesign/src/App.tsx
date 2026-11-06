@@ -87,14 +87,9 @@ function Catalog({ query, category }: { query: string; category: string }) {
         <section className="showcase" aria-label="Featured game">
           <div className="showcase-scene">
             <GameArt id={game.id} className="hero-image" eager />
-            <div className="scene-caption">
-              GOOD GAMES BRING PEOPLE TOGETHER
-            </div>
           </div>
           <div className="showcase-copy">
-            <p className="eyebrow">
-              {game.category} <span> / </span> Your next good time
-            </p>
+            <p className="eyebrow">{game.category}</p>
             <h1>{game.name}</h1>
             <p className="lede">{game.description}</p>
             <div className="game-facts">
@@ -155,11 +150,11 @@ function Catalog({ query, category }: { query: string; category: string }) {
               {game.name}
               <Icon name="arrow-right" />
             </Link>
-            <p className="availability">
-              {isImplemented(game.id)
-                ? 'No accounts. No downloads. Just play.'
-                : 'The complete game is playable in original Arcade.'}
-            </p>
+            {!isImplemented(game.id) && (
+              <p className="availability">
+                The complete game is playable in original Arcade.
+              </p>
+            )}
           </div>
           <div className="shelf" aria-label="Choose a game">
             {[...visible]
@@ -197,11 +192,8 @@ function Catalog({ query, category }: { query: string; category: string }) {
       <section className="collection">
         <div className="section-head">
           <div>
-            <p className="eyebrow">A little more play in your day</p>
             <h2>
-              {resumable.length
-                ? 'Pick up where you left off'
-                : 'Your next favorite is here'}
+              {resumable.length ? 'Pick up where you left off' : 'Browse games'}
             </h2>
           </div>
           <p className="count" role="status">
@@ -222,12 +214,6 @@ function Catalog({ query, category }: { query: string; category: string }) {
               </Link>
             ))}
           </div>
-        )}
-        {!resumable.length && !recent.length && (
-          <p className="shelf-note">
-            Pull up a chair. Start with Tic-Tac-Toe, or explore the full
-            collection.
-          </p>
         )}
         {recent.length > 0 && (
           <details className="recent">
@@ -267,18 +253,12 @@ function GameCard({ game, index }: { game: Game; index: number }) {
         <span className="card-category">{game.category}</span>
       </div>
       <div className="card-copy">
-        <div className="card-meta">
-          <small>{playerLabel(game)}</small>
-          {isImplemented(game.id) && (
-            <span className="ready">Ready to play</span>
-          )}
-        </div>
-        <h3>{game.name}</h3>
-        <p>{game.tagline}</p>
-        <span className="card-action">
-          {isImplemented(game.id) ? 'Let’s play' : 'Explore game'}{' '}
+        <div className="card-title">
+          <h3>{game.name}</h3>
           <Icon name="arrow-right" />
-        </span>
+        </div>
+        <small className="card-meta">{playerLabel(game)}</small>
+        <p>{game.tagline}</p>
       </div>
     </Link>
   );

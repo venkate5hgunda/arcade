@@ -423,10 +423,12 @@ test('sound control and panel follow the header theme', async ({ page }) => {
         header: getComputedStyle(header).backgroundColor,
         ink: getComputedStyle(panel).color,
         headerInk: getComputedStyle(header).color,
+        triggerInk: getComputedStyle(panel.previousElementSibling!).color,
       };
     });
     expect(colors.panel).toBe(colors.header);
     expect(colors.ink).toBe(colors.headerInk);
+    expect(colors.triggerInk).toBe(colors.headerInk);
     await page.getByLabel('Game sounds').uncheck();
     await expect(
       page.getByRole('button', { name: 'Test sound' }),

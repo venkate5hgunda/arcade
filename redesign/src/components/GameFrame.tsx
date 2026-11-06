@@ -114,18 +114,24 @@ export function Frame<T extends object>({
   optionsExtra?: ReactNode;
 }) {
   const game = GAMES.find((g) => g.id === run.id)!;
+  const selection =
+    setupSummary ||
+    fields
+      .map(
+        (field) =>
+          field.options.find(
+            ([value]) => value === run.settings[field.key],
+          )?.[1],
+      )
+      .filter(Boolean)
+      .join(' · ');
   return (
     <section className={`play-page puzzle-page puzzle-${run.id}`}>
       <Link className="back" to="/">
         ← Back to the shelf
       </Link>
       <div className="game-heading">
-        <div>
-          <p className="eyebrow">
-            {game.category} · Make a little time to play
-          </p>
-          <h1>{game.name}</h1>
-        </div>
+        <h1>{game.name}</h1>
         {run.state && (
           <button className="quiet" onClick={run.reset}>
             New match
@@ -136,21 +142,8 @@ export function Frame<T extends object>({
         <div className="puzzle-setup">
           <p className="lede">{summary}</p>
           <div className="setup-card">
-            <h2>Ready when you are</h2>
-            <p>
-              {setupSummary ||
-                fields
-                  .map(
-                    (field) =>
-                      field.options.find(
-                        ([value]) => value === run.settings[field.key],
-                      )?.[1],
-                  )
-                  .filter(Boolean)
-                  .join(' · ') ||
-                'Your next challenge starts here.'}
-            </p>
-            <button className="primary" onClick={run.start}>
+            {selection && <p className="setup-selection">{selection}</p>}
+            <button className="primary setup-start" onClick={run.start}>
               Start playing →
             </button>
             {fields.length > 0 && (

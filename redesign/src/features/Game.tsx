@@ -128,10 +128,7 @@ function LocalGame() {
         ← Back to the shelf
       </Link>
       <div className="game-heading">
-        <div>
-          <p className="eyebrow">A little friendly competition</p>
-          <h1>Tic-Tac-Toe</h1>
-        </div>
+        <h1>Tic-Tac-Toe</h1>
         {state && (
           <button className="quiet" onClick={() => setConfirm(true)}>
             New match
@@ -143,19 +140,14 @@ function LocalGame() {
           <div>
             <p className="lede">Small board. Big rivalry. Make your mark.</p>
             <div className="setup-card">
-              <div className="setup-summary">
-                <div>
-                  <h2>Ready when you are</h2>
-                  <p>
-                    {mode === 'ai'
-                      ? 'You vs. the computer · X goes first'
-                      : 'Two friends, one screen · X goes first'}
-                  </p>
-                </div>
-                <button className="primary" onClick={start}>
-                  Start playing <span aria-hidden="true">→</span>
-                </button>
-              </div>
+              <p className="setup-selection">
+                {mode === 'ai'
+                  ? 'You vs. the computer · X goes first'
+                  : 'Two friends, one screen · X goes first'}
+              </p>
+              <button className="primary setup-start" onClick={start}>
+                Start playing <span aria-hidden="true">→</span>
+              </button>
               <details>
                 <summary>Match options & player names</summary>
                 <fieldset>

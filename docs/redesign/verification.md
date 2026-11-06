@@ -339,3 +339,16 @@ row on every route. The 320-pixel WebKit check covers a missed narrow-width trac
 the old combination of controls could extend the document horizontally and clip
 the sound panel. The touch check taps the visible speaker without browser
 automation scrolling first, then verifies mute, dismissal, focus and scroll.
+Visual inspection caught a missed theme trace: the disclosure inherited body
+ink in the dark header. Both the trigger and the open panel now use header ink. The two-tab preference
+check now uses the new disclosure and switch names; its old locator was a missed
+test consumer of the sound label.
+
+## Shelf and match setup hierarchy
+
+The shelf cards keep their distinct art, category, player count and description.
+Each card is one link, with an arrow replacing duplicate play text and readiness
+badges. Local setups share the same visible Start action and place secondary
+options behind their existing disclosures. Traced setup labels through the
+shared Frame and Tic-Tac-Toe, including custom option fields, name inputs, room
+links, saved settings, restart and resume. Game rules and saved data are unchanged.
