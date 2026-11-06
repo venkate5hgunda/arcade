@@ -85,7 +85,7 @@ export class ArcadeAudio {
       return this.context.state === 'running';
     } catch (error) {
       console.warn(
-        'Arcade audio could not start; try tapping Sound & feel again:',
+        'Arcade audio could not start; try Test sound again:',
         error,
       );
       return false;

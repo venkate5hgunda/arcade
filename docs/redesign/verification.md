@@ -324,3 +324,18 @@ handoffs retain their keyboard focus and room updates respect focus in other
 controls. The former Pool window listener was a missed input trace: it consumed
 Enter on the exit link as a shot. The navigation browser checks exercise touch
 play, scrolling, exiting, searching and keyboard exit in the production build.
+
+## Sound settings and shared header
+
+The labeled speaker shows whether game sounds are muted. The panel has large
+sound and vibration switch rows and a separate test chime. Unsupported vibration
+is shown as unavailable, since the old iOS switch could only vibrate the switch
+itself. The existing sound and haptics preferences still use the same stored
+keys. Sound test feedback follows audio unlock without claiming that the user
+heard the chime.
+
+Search and categories live with the catalog so the sticky phone header stays one
+row on every route. The 320-pixel WebKit check covers a missed narrow-width trace:
+the old combination of controls could extend the document horizontally and clip
+the sound panel. The touch check taps the visible speaker without browser
+automation scrolling first, then verifies mute, dismissal, focus and scroll.

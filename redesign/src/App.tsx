@@ -428,45 +428,16 @@ function Shell() {
       >
         Skip to content
       </a>
-      <header
-        className={home ? 'app-header' : 'app-header app-header--compact'}
-      >
+      <header className="app-header">
         <Link ref={homeLink} className="brand" to="/" aria-label="Arcade home">
           <img src="./icons/logo.svg" alt="" />
           ARCADE<span aria-hidden="true">✦</span>
         </Link>
-        {home && (
-          <nav className="filters" aria-label="Game categories">
-            {CATEGORIES.map((value) => (
-              <button
-                className="filter"
-                key={value}
-                aria-pressed={category === value}
-                onClick={() => setCategory(value)}
-              >
-                <Icon name={categoryIcons[value]} />
-                {value}
-              </button>
-            ))}
-          </nav>
-        )}
         <div className="header-tools">
-          {home && (
-            <label className="search">
-              <span className="sr-only">Search games</span>
-              <input
-                type="search"
-                placeholder="Search 26 games…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-          )}
           <Link className="room-link" to="/room">
             <Icon name="users" />
             Room
           </Link>
-          <FeedbackControl />
           <button
             className="icon-button"
             aria-label={`Theme: ${theme}. Select ${theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'}`}
@@ -483,9 +454,36 @@ function Shell() {
           >
             <Icon name={theme === 'light' ? 'moon' : 'sun'} />
           </button>
+          <FeedbackControl />
         </div>
       </header>
       <main ref={main} id="main" tabIndex={-1}>
+        {home && (
+          <div className="browse-tools">
+            <label className="search">
+              <span className="sr-only">Search games</span>
+              <input
+                type="search"
+                placeholder="Search games"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+            <nav className="filters" aria-label="Game categories">
+              {CATEGORIES.map((value) => (
+                <button
+                  className="filter"
+                  key={value}
+                  aria-pressed={category === value}
+                  onClick={() => setCategory(value)}
+                >
+                  <Icon name={categoryIcons[value]} />
+                  {value}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
         <Routes>
           <Route
             path="/"
