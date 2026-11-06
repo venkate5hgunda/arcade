@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -119,28 +120,12 @@ test('Ludo completes a restored four-player match and starts a four-player remat
   await expect(page.locator('.race-player')).toHaveCount(4);
 });
 
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(description: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...description,
-        sdp: description.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_match, prefix) => prefix + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
-
 test('three players join a real race room, take turns, and recover the host', async ({
   page: host,
   browser,
 }) => {
   test.setTimeout(120000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const contexts = await Promise.all([
     browser.newContext(),
     browser.newContext(),
@@ -148,7 +133,7 @@ test('three players join a real race room, take turns, and recover the host', as
   try {
     const guests: Page[] = [];
     for (const context of contexts) {
-      await context.addInitScript(localIce);
+      await prepareLocalRoom(context);
       guests.push(await context.newPage());
     }
     await host.goto('/#/room');

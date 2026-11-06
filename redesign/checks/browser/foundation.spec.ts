@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import { GAMES } from '../../src/lib/games.ts';
 import baseline from '../../../docs/redesign/parity.json' with { type: 'json' };
@@ -331,26 +332,8 @@ for (const roomGame of ['tictactoe', 'connect-four'] as const) {
   }) => {
     test.setTimeout(90_000);
     const guestContext = await browser.newContext();
-    // Real data channels over loopback: headless mDNS/LAN routing is unavailable
-    // on this runner. Only candidate addresses are normalized; SDP negotiation,
-    // DTLS/SCTP, admission, wire messages and both UIs remain the production path.
-    const localIce = () => {
-      Object.defineProperty(navigator, 'onLine', { get: () => false });
-      const Native = window.RTCPeerConnection;
-      window.RTCPeerConnection = class extends Native {
-        setRemoteDescription(description: RTCSessionDescriptionInit) {
-          return super.setRemoteDescription({
-            ...description,
-            sdp: description.sdp?.replace(
-              /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-              (_match, prefix) => prefix + '127.0.0.1',
-            ),
-          });
-        }
-      };
-    };
-    await host.context().addInitScript(localIce);
-    await guestContext.addInitScript(localIce);
+    await prepareLocalRoom(host.context());
+    await prepareLocalRoom(guestContext);
     const guest = await guestContext.newPage();
     const errors: string[] = [];
     host.on('pageerror', (e) => errors.push(e.message));

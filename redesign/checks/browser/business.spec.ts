@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { createBusiness, actBusiness } from '../../src/lib/business-core.js';
@@ -56,21 +57,6 @@ test('Business handoffs, trading, board inspection and a completed game work acr
   await expect(page.getByText('Pass the device to Player 1.')).toBeVisible();
 });
 
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(d: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...d,
-        sdp: d.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_m, p) => p + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 test('Business ignores malformed saved setup rather than failing to start', async ({
   page,
 }) => {
@@ -95,9 +81,9 @@ test('Business room connects two browsers, trades and restores the host without 
   browser,
 }) => {
   test.setTimeout(90000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const context = await browser.newContext();
-  await context.addInitScript(localIce);
+  await prepareLocalRoom(context);
   const guest = await context.newPage();
   try {
     await host.goto('/#/game/business');

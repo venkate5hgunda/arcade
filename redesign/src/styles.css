@@ -1307,10 +1307,11 @@ label {
 }
 @media (max-width: 360px) {
   .app-header {
-    column-gap: 8px;
+    padding-inline: 8px;
+    column-gap: 6px;
   }
   .app-header .brand {
-    font-size: 19px;
+    font-size: 17px;
     gap: 4px;
   }
   .app-header .brand > span {
@@ -1324,14 +1325,18 @@ label {
     padding-inline: 6px;
   }
   .brand > img {
-    width: 27px;
-    height: 27px;
+    width: 24px;
+    height: 24px;
   }
   .brand > span {
     font-size: 18px;
   }
   .room-link {
-    padding: 8px;
+    padding-inline: 6px;
+  }
+  .feedback-control > summary .icon {
+    width: 16px;
+    height: 16px;
   }
   .game-heading h1 {
     font-size: 27px;

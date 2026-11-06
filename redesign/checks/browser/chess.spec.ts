@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -92,29 +93,14 @@ test('Chess promotion survives reload and AI plays either side', async ({
   );
   expect(state.lastMove).not.toBeNull();
 });
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(d: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...d,
-        sdp: d.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_m, p) => p + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 test('Chess real room preserves a game after host reload and completes with the correct winner', async ({
   page: host,
   browser,
 }) => {
   test.setTimeout(120000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const context = await browser.newContext();
-  await context.addInitScript(localIce);
+  await prepareLocalRoom(context);
   const guest = await context.newPage();
   async function connect(reconnect = false) {
     if (reconnect)

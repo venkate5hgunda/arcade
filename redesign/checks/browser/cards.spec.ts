@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page, BrowserContext } from '@playwright/test';
@@ -219,21 +220,6 @@ test('UNO supports 20 local players, a 216-card deck, complete wins, names and r
     page.getByRole('button', { name: 'Reveal my hand' }),
   ).toBeVisible();
 });
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(description: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...description,
-        sdp: description.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_match, prefix) => prefix + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 async function join(host: Page, guest: Page, name: string, first = false) {
   if (!first)
     await host
@@ -259,13 +245,13 @@ for (const gameId of ['crazy-eights', 'uno'] as const) {
   }) => {
     test.setTimeout(120000);
     const contexts: BrowserContext[] = [];
-    await host.context().addInitScript(localIce);
+    await prepareLocalRoom(host.context());
     try {
       const guests: Page[] = [];
       for (let i = 0; i < (gameId === 'uno' ? 2 : 1); i++) {
         const context = await browser.newContext();
         contexts.push(context);
-        await context.addInitScript(localIce);
+        await prepareLocalRoom(context);
         guests.push(await context.newPage());
       }
       await host.goto('/#/room');

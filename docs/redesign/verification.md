@@ -25,7 +25,13 @@ Verified 2026-10-26 for the Living Game Shelf / first-game milestone. This super
 
 `redesign/checks/browser/foundation.spec.ts` exercises the **built application** in Chromium and mobile WebKit: all 26 game routes and 34 requirement routes, browse/filter/search/selection, original-game links, named local play, O victory, resume/reload, AI/keyboard/reset, expired/invalid data, quota denial, responsive layouts, persisted theme choice and automated accessibility. It also exchanges actual invitation/answer URLs between two separate browser contexts, plays a room match, rematches, reloads the host, reconnects the same guest and verifies the retained board.
 
-The native room test uses loopback candidate addresses and disables public STUN in its **test fixture only**. This runner cannot route headless mDNS/LAN candidates: a minimal native WebRTC pair stalled identically, with ICE requests and no responses. Loopback connects real native DTLS/SCTP data channels; application signaling, validation and UI remain the production pipeline. This is evidence of local real-browser transport, not cross-network qualification or TURN coverage. Production continues to gather ordinary candidates and uses Google STUN when online.
+Native room checks disable public STUN in their test fixture only. The desktop
+Chromium project disables mDNS masking so candidates keep their real local
+socket addresses; mobile WebKit uses its loopback fixture. These checks still
+use native SDP negotiation and encrypted data channels through the production
+signaling, validation and UI. They qualify same-machine browser transport, not
+cross-network or TURN coverage. Production still gathers ordinary candidates
+and uses Google STUN when online.
 
 ## Commands and environment
 
@@ -357,3 +363,18 @@ badges. Local setups share the same visible Start action and place secondary
 options behind their existing disclosures. Traced setup labels through the
 shared Frame and Tic-Tac-Toe, including custom option fields, name inputs, room
 links, saved settings, restart and resume. Game rules and saved data are unchanged.
+
+
+## Linux CI follow-up for mobile UX
+
+Linux WebKit exposed a missed font-metrics trace: a wider fallback font made the
+320-pixel header overflow by seven pixels. The narrow breakpoint now leaves more
+room for the wordmark and controls while retaining the Sound label, mute icon and
+44-pixel control height. The original no-overflow and direct-touch check remains.
+
+Chromium room traces showed seats going offline after the test fixture replaced
+every advertised address with loopback, even for sockets bound to another
+interface. The shared room fixture keeps Chromium's actual local ICE addresses,
+without requiring public STUN or headless mDNS. WebKit retains its existing
+fixture. The full spectator recovery scenario has the same total test budget as
+other multi-stage room checks. No production transport or room rules changed.

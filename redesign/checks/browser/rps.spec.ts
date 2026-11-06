@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -126,29 +127,14 @@ test('RPS computer and saved setup options stay playable', async ({ page }) => {
   await expect(page.getByRole('img', { name: /Computer:/ })).toBeVisible();
   await expect(page.getByText('Round 1 · First to 5')).toBeVisible();
 });
-const localIce = () => {
-  Object.defineProperty(navigator, 'onLine', { get: () => false });
-  const Native = window.RTCPeerConnection;
-  window.RTCPeerConnection = class extends Native {
-    setRemoteDescription(description: RTCSessionDescriptionInit) {
-      return super.setRemoteDescription({
-        ...description,
-        sdp: description.sdp?.replace(
-          /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-          (_match, prefix) => prefix + '127.0.0.1',
-        ),
-      });
-    }
-  };
-};
 test('RPS private room completes, replays and recovers a locked throw after host reload', async ({
   page: host,
   browser,
 }) => {
   test.setTimeout(120000);
-  await host.context().addInitScript(localIce);
+  await prepareLocalRoom(host.context());
   const context = await browser.newContext();
-  await context.addInitScript(localIce);
+  await prepareLocalRoom(context);
   const guest = await context.newPage();
   async function connect(reconnect = false) {
     if (reconnect)

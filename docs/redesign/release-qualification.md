@@ -10,7 +10,7 @@ verified `redesign/` build artifact.
 
 Use the latest dated section of [verification](verification.md), not the older
 first-game table, for current suite results. Run the built app's desktop
-Chromium/mobile WebKit suite with native WebRTC loopback fixtures, plus the
+Chromium/mobile WebKit suite with local native WebRTC fixtures, plus the
 independent real-worker offline/update fixtures. The original JavaScript and
 Python suites remain required. Test emulation does not qualify physical devices.
 

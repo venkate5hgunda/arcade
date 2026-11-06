@@ -1,3 +1,4 @@
+import { prepareLocalRoom } from './room-helpers.ts';
 import { settleStorage } from './storage-helpers.ts';
 import { test, expect } from '@playwright/test';
 import { newHockey } from '../../src/lib/hockey.ts';
@@ -335,25 +336,10 @@ test('room guests hear their own victory while the losing host hears a failure c
   test.setTimeout(60000);
   const context = await browser.newContext();
   const guest = await context.newPage();
-  const localIce = () => {
-    Object.defineProperty(navigator, 'onLine', { get: () => false });
-    const Native = window.RTCPeerConnection;
-    window.RTCPeerConnection = class extends Native {
-      setRemoteDescription(description: RTCSessionDescriptionInit) {
-        return super.setRemoteDescription({
-          ...description,
-          sdp: description.sdp?.replace(
-            /^(a=candidate:\S+ \d+ \S+ \d+ )\S+/gm,
-            (_match, prefix) => prefix + '127.0.0.1',
-          ),
-        });
-      }
-    };
-  };
   try {
     for (const page of [host, guest]) {
       await page.addInitScript(fakeFeedback);
-      await page.addInitScript(localIce);
+      await prepareLocalRoom(page.context());
     }
     await host.goto('/#/room');
     await host.getByLabel('Your room name').fill('Mira');
