@@ -1,6 +1,17 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { newScramble } from '../../src/lib/scramble.ts';
+async function tapTiles(page: Page, word: string) {
+  const tiles = page.getByRole('group', { name: 'Shuffled letters' });
+  for (const letter of word)
+    await tiles
+      .getByRole('button', { name: letter, exact: true })
+      .and(tiles.locator(':enabled'))
+      .first()
+      .click();
+}
+
 test('Word Scramble restores hints and progress, solves, skips and completes a round', async ({
   page,
 }) => {
@@ -38,10 +49,12 @@ test('Word Scramble restores hints and progress, solves, skips and completes a r
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.getByLabel('Your answer').fill('wrong');
+  await tapTiles(page, 'CAARDE');
   await page.getByRole('button', { name: 'Guess', exact: true }).click();
   await expect(page.getByText('Not quite — try again.')).toBeVisible();
-  await page.getByLabel('Your answer').fill('arcade');
+  for (let i = 0; i < 6; i++)
+    await page.getByRole('button', { name: 'Delete letter' }).click();
+  await tapTiles(page, 'ARCADE');
   await page.getByRole('button', { name: 'Guess', exact: true }).click();
   await expect(page.getByText('Correct!')).toBeVisible();
   await expect(
@@ -90,9 +103,43 @@ test('a restored solved word advances once and a new match clears pending input'
   await expect(
     page.getByRole('heading', { name: 'Word 2 of 5' }),
   ).toBeVisible();
-  await page.getByLabel('Your answer').fill('partial');
+  await tapTiles(page, 'PUZ');
+  await expect(page.getByLabel('Your answer')).toHaveText('PUZ');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'New match' }).click();
   await page.getByRole('button', { name: 'Start playing' }).click();
-  await expect(page.getByLabel('Your answer')).toHaveValue('');
+  await expect(page.getByLabel('Your answer')).toHaveText(
+    'Tap the letters below',
+  );
+});
+
+test('Scramble accepts physical typing and consumes each repeated tile once', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Exercises desktop hardware keys.');
+  const state = {
+    ...newScramble('5'),
+    word: 'ARCADE',
+    letters: ['C', 'A', 'A', 'R', 'D', 'E'],
+    pool: ['PUZZLE'],
+  };
+  await page.addInitScript((state) => {
+    localStorage.setItem(
+      'arcade:game.sessions',
+      JSON.stringify({
+        'word-scramble': { state, savedAt: Date.now() },
+      }),
+    );
+  }, state);
+  await page.goto('/#/game/word-scramble');
+  await expect(page.getByLabel('Your answer')).toBeVisible();
+  await expect(page.locator('main input, main textarea')).toHaveCount(0);
+  await page.keyboard.type('ARCAAD');
+  await expect(page.getByLabel('Your answer')).toHaveText('ARCAD');
+  await page.keyboard.type('C');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type('DE');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Correct!', { exact: true })).toBeVisible();
 });

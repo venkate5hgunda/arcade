@@ -167,25 +167,30 @@ export function RoomPage({ room }: { room: Room }) {
       else await copy();
     }
   }
+  const back = (
+    <Link className="back" to="/">
+      ← Back to the shelf
+    </Link>
+  );
   return (
-    <section className="play-page room-page">
-      <Link className="back" to="/">
-        ← Back to the shelf
-      </Link>
-      <p className="eyebrow">Different screens. Same game night.</p>
-      <h1>Your private table</h1>
-      <p className="lede">
-        {inMatch ? (
-          `${s?.members.length ?? 0} players · ${s?.spectators?.length ?? 0} spectators · One shared table.`
-        ) : (
-          <>
+    <section className={`play-page room-page${inMatch ? ' compact-play' : ''}`}>
+      {!inMatch && back}
+      {inMatch ? (
+        <div className="game-heading">
+          <h1>Your private table</h1>
+        </div>
+      ) : (
+        <>
+          <p className="eyebrow">Different screens. Same game night.</p>
+          <h1>Your private table</h1>
+          <p className="lede">
             Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
             UNO-inspired, Snakes &amp; Ladders, Ludo, Chess, Business, Island
             Charter, Mafia or Rock Paper Scissors. UNO welcomes 2–20 players,
-            Mafia 5–10, Business 2–6, race games 2–4, and Island Charter 3–4.
-          </>
-        )}
-      </p>
+            Mafia 5–10, race games 2–4, and Island Charter 3–4.
+          </p>
+        </>
+      )}
       {!room.role ? (
         <div className="room-columns">
           <section className="setup-card">
@@ -1095,6 +1100,7 @@ export function RoomPage({ room }: { room: Room }) {
           </details>
         </>
       )}
+      {inMatch && back}
       {busy && (
         <p role="status">Preparing your connection link… Keep this tab open.</p>
       )}

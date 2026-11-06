@@ -159,6 +159,11 @@ test('Minesweeper flag mode, safe opening, full clear and mine loss follow real 
     .press('f');
   s = await checkpoint<MineState>(page, 'minesweeper');
   for (let i = 0; i < s.board.length; i++) {
+    // Wait for the previous reveal to commit before inspecting the next cell.
+    await expect(page.locator('.board-panel')).toHaveAttribute(
+      'aria-busy',
+      'false',
+    );
     const cell = page.locator('.mine-cell').nth(i);
     if (await cell.isDisabled()) break;
     // Flood reveal can clear other safe cells and finish before this list ends.

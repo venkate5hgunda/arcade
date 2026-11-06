@@ -103,24 +103,57 @@ export function CardTable({
     else
       onAction({ type: 'play', id: view.gameId === 'uno' ? Number(id) : id });
   }
+  const seats = (
+    <div className="card-seats" aria-label="Table seats">
+      {view.counts.map((count, index) => (
+        <div
+          key={index}
+          className={index === view.current ? 'active-seat' : ''}
+        >
+          <b>
+            {label(index)}
+            {index === view.seat ? ' (you)' : ''}
+          </b>
+          <span>
+            {count} cards{index === view.current ? ' · Playing' : ''}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
   return (
     <div ref={table} className={`private-card-table ${view.gameId}`}>
-      <div className="card-seats" aria-label="Table seats">
-        {view.counts.map((count, index) => (
-          <div
-            key={index}
-            className={index === view.current ? 'active-seat' : ''}
-          >
-            <b>
-              {label(index)}
-              {index === view.seat ? ' (you)' : ''}
-            </b>
-            <span>
-              {count} cards{index === view.current ? ' · Playing' : ''}
-            </span>
-          </div>
-        ))}
-      </div>
+      {covered && !over && (
+        <div className="hand-cover">
+          <span aria-hidden="true">✦</span>
+          <h3 ref={coverHeading} tabIndex={-1}>
+            Pass to {label(view.current)}
+          </h3>
+          <p>Everyone else, look away. Reveal your hand when you’re ready.</p>
+          {view.gameId === 'uno' && view.unoPending !== null && onLateUno && (
+            <>
+              <p>
+                {label(view.unoPending)} has one card left. Call UNO before
+                handing over, or the next player can catch it.
+              </p>
+              <button className="quiet" onClick={onLateUno}>
+                I’m {label(view.unoPending)} · call UNO
+              </button>
+            </>
+          )}
+          <button ref={revealButton} className="primary" onClick={reveal}>
+            Reveal my hand
+          </button>
+        </div>
+      )}
+      {view.counts.length > 4 ? (
+        <details className="card-roster">
+          <summary>Table seats ({view.counts.length})</summary>
+          {seats}
+        </details>
+      ) : (
+        seats
+      )}
       <div className="card-table-center">
         <div className="table-piles">
           <CardPile count={view.stockCount} label="Draw pile" />
@@ -170,29 +203,7 @@ export function CardTable({
             </p>
           )}
         </div>
-      ) : covered ? (
-        <div className="hand-cover">
-          <span aria-hidden="true">✦</span>
-          <h3 ref={coverHeading} tabIndex={-1}>
-            Pass to {label(view.current)}
-          </h3>
-          <p>Everyone else, look away. Reveal your hand when you’re ready.</p>
-          {view.gameId === 'uno' && view.unoPending !== null && onLateUno && (
-            <>
-              <p>
-                {label(view.unoPending)} has one card left. Call UNO before
-                handing over, or the next player can catch it.
-              </p>
-              <button className="quiet" onClick={onLateUno}>
-                I’m {label(view.unoPending)} · call UNO
-              </button>
-            </>
-          )}
-          <button ref={revealButton} className="primary" onClick={reveal}>
-            Reveal my hand
-          </button>
-        </div>
-      ) : (
+      ) : !covered ? (
         <>
           {choose && (
             <div
@@ -343,7 +354,7 @@ export function CardTable({
                   : `Waiting for ${label(view.current)} to play.`}
           </p>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

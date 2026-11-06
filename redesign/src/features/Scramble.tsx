@@ -1,5 +1,6 @@
 import { playCue } from '../lib/feedback.ts';
 import { useEffect, useState } from 'react';
+import { useLetterInput } from '../lib/letter-input.ts';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { newScramble, nextScramble, validScramble } from '../lib/scramble.ts';
 import type { ScrambleState } from '../lib/scramble.ts';
@@ -11,7 +12,7 @@ export function ScrambleGame() {
     (s) => newScramble(['5', '8', '12'].includes(s.rounds) ? s.rounds : '8'),
     (s) => s.round > Number(s.rounds),
   );
-  const [input, setInput] = useState(''),
+  const [picked, setPicked] = useState<number[]>([]),
     [feedback, setFeedback] = useState('');
   const game = run.state,
     done = !!game && game.round > Number(game.rounds);
@@ -20,7 +21,7 @@ export function ScrambleGame() {
   }, []);
   useEffect(() => {
     if (!game) {
-      setInput('');
+      setPicked([]);
       setFeedback('');
     }
   }, [game]);
@@ -28,7 +29,7 @@ export function ScrambleGame() {
     if (!game || done) return;
     const next = nextScramble(game);
     run.commit(next, next.round > Number(next.rounds));
-    setInput('');
+    setPicked([]);
     setFeedback('');
   }
   useEffect(() => {
@@ -36,9 +37,29 @@ export function ScrambleGame() {
     const timer = setTimeout(advance, 900);
     return () => clearTimeout(timer);
   }, [game]);
+  const answer = picked.map((index) => game?.letters[index]).join('');
+  function letter(key: string) {
+    setPicked((current) => {
+      const index = game?.letters.findIndex(
+        (tile, i) => tile === key && !current.includes(i),
+      );
+      return index === undefined || index < 0 ? current : [...current, index];
+    });
+    setFeedback('');
+  }
+  function erase() {
+    setPicked((current) => current.slice(0, -1));
+    setFeedback('');
+  }
+  useLetterInput(
+    !!game && !done && !game.solved && !run.saving,
+    letter,
+    erase,
+    guess,
+  );
   function guess() {
-    if (!game || done || game.solved) return;
-    if (input.trim().toUpperCase() !== game.word) {
+    if (!game || done || game.solved || run.saving) return;
+    if (answer !== game.word) {
       playCue({ sound: 'buzz', haptic: 'failure' });
       setFeedback('Not quite — try again.');
       return;
@@ -47,7 +68,7 @@ export function ScrambleGame() {
     setFeedback('Correct!');
   }
   function again() {
-    setInput('');
+    setPicked([]);
     setFeedback('');
     run.start();
   }
@@ -73,9 +94,9 @@ export function ScrambleGame() {
           : feedback ||
             (game?.hinted
               ? `Starts with ${game.word[0]}.`
-              : 'Arrange the letters into a word.')
+              : 'Tap or type the tiles to build a word.')
       }
-      help="Type the word made from the shuffled letters. Ask for a hint to see its first letter, or skip to the next word. Solve as many as you can in 5, 8 or 12 rounds."
+      help="Tap the shuffled tiles or type their letters to build the word. Use Delete or Backspace to undo, and Guess or Enter to submit. Ask for a hint to see its first letter, or skip to the next word. Solve as many as you can in 5, 8 or 12 rounds."
       after={
         done && (
           <button className="primary" onClick={again}>
@@ -89,41 +110,46 @@ export function ScrambleGame() {
           <p>
             {game.word.length} letters · {game.correctCount} solved
           </p>
+          <output className="scramble-answer" aria-label="Your answer">
+            {answer || 'Tap the letters below'}
+          </output>
           <div
             className="scramble-letters"
             role="group"
-            aria-label={`Shuffled letters: ${game.letters.join(' ')}`}
+            aria-label="Shuffled letters"
           >
             {game.letters.map((ch, i) => (
-              <span aria-hidden="true" key={i}>
-                {ch}
-              </span>
-            ))}
-          </div>
-          <form
-            className="scramble-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              guess();
-            }}
-          >
-            <label>
-              Your answer
-              <input
-                value={input}
-                autoComplete="off"
-                autoCapitalize="characters"
-                disabled={game.solved}
-                onChange={(e) => {
-                  setInput(e.target.value);
+              <button
+                type="button"
+                key={i}
+                disabled={game.solved || picked.includes(i)}
+                onClick={() => {
+                  setPicked((current) =>
+                    current.includes(i) ? current : [...current, i],
+                  );
                   setFeedback('');
                 }}
-              />
-            </label>
-            <button className="primary" disabled={game.solved}>
+              >
+                {ch}
+              </button>
+            ))}
+          </div>
+          <div className="scramble-actions">
+            <button
+              className="quiet"
+              disabled={game.solved || !picked.length}
+              onClick={erase}
+            >
+              Delete letter
+            </button>
+            <button
+              className="primary"
+              disabled={game.solved || picked.length !== game.letters.length}
+              onClick={guess}
+            >
               Guess
             </button>
-          </form>
+          </div>
           <div className="scramble-actions">
             <button
               className="quiet"

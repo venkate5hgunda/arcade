@@ -1,5 +1,5 @@
 import { GameArt } from './GameArt.tsx';
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { localCue } from '../lib/game-feedback.ts';
 import { playCue } from '../lib/feedback.ts';
 import type { ReactNode } from 'react';
@@ -88,6 +88,22 @@ export function useRun<T extends object>(
 type Run<T extends object> = Omit<ReturnType<typeof useRun<T>>, 'start'> & {
   start(): void | Promise<void>;
 };
+export function usePlayHeading(playing: boolean) {
+  const wasPlaying = useRef(playing);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    const justStarted = playing && !wasPlaying.current;
+    wasPlaying.current = playing;
+    if (justStarted && !document.activeElement?.closest('header, footer')) {
+      // Start can be tapped after scrolling through setup. Reposition once,
+      // without opening the keyboard or scrolling on subsequent game actions.
+      heading.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [playing]);
+  return heading;
+}
+
 export function Frame<T extends object>({
   run,
   fields,
@@ -125,13 +141,22 @@ export function Frame<T extends object>({
       )
       .filter(Boolean)
       .join(' · ');
+  const playing = !!run.state;
+  const heading = usePlayHeading(playing);
+  const back = (
+    <Link className="back" to="/">
+      ← Back to the shelf
+    </Link>
+  );
   return (
-    <section className={`play-page puzzle-page puzzle-${run.id}`}>
-      <Link className="back" to="/">
-        ← Back to the shelf
-      </Link>
+    <section
+      className={`play-page puzzle-page puzzle-${run.id}${playing ? ' compact-play' : ''}`}
+    >
+      {!playing && back}
       <div className="game-heading">
-        <h1>{game.name}</h1>
+        <h1 ref={heading} tabIndex={-1}>
+          {game.name}
+        </h1>
         {run.state && (
           <button className="quiet" onClick={run.reset}>
             New match
@@ -202,6 +227,7 @@ export function Frame<T extends object>({
           </details>
         </div>
       )}
+      {playing && back}
     </section>
   );
 }

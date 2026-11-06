@@ -51,7 +51,7 @@ Evidence: `redesign/checks/unit/races.check.ts` compares seeded boards and legal
 
 ## Wordle acceptance and evidence
 
-Wordle retains the original offline vocabulary, repeated-letter scoring, six guesses and local checkpoints. Players can type or use the on-screen keyboard; symbols accompany color feedback. Complete wins, losses, invalid guesses, reload, replay and accessibility are covered in `redesign/checks/browser/wordle.spec.ts`, with original vocabulary and scoring comparisons in `redesign/checks/unit/wordle.check.ts`.
+Wordle retains the original offline vocabulary, repeated-letter scoring, six guesses and local checkpoints. Players use the on-screen keyboard with Guess and Delete or type with a physical keyboard. There is no editable guess field, and symbols accompany color feedback. Complete wins, losses, invalid guesses, reload, replay and accessibility are covered in `redesign/checks/browser/wordle.spec.ts`, with original vocabulary and scoring comparisons in `redesign/checks/unit/wordle.check.ts`.
 
 ## Hangman acceptance and evidence
 
@@ -59,7 +59,7 @@ Hangman retains the original 85-word pool, category clues, six misses, alternati
 
 ## Word Scramble acceptance and evidence
 
-Word Scramble preserves the original word pool, 5/8/12-round options, hints, skips, scoring, saved rounds and delayed advance after a correct answer. Desktop/mobile complete-round and recovery checks are in `redesign/checks/browser/scramble.spec.ts`; checkpoint, pool and completion checks are in `redesign/checks/unit/scramble.check.ts`.
+Word Scramble preserves the original word pool, 5/8/12-round options, hints, skips, scoring, saved rounds and delayed advance after a correct answer. Players build answers with the shuffled tiles or physical keys; each tile can be used once, and Delete returns it. Desktop/mobile complete-round and recovery checks are in `redesign/checks/browser/scramble.spec.ts`; checkpoint, pool and completion checks are in `redesign/checks/unit/scramble.check.ts`.
 
 ## Whack-a-Mole acceptance and evidence
 

@@ -16,6 +16,7 @@ Game ports and shared room features are complete. The production rollout was aut
 | [Verification](verification.md) | Current test evidence and trace findings |
 | [Saved games and tabs](storage.md) | Migration, private export and competing-tab behavior |
 | [Offline and install](pwa.md) | Asset graph, installation, update and scope behavior |
+| [Game interface guidelines](../DESIGN_LANGUAGE.md) | In-game controls, physical keys and the first playable viewport |
 | [Design QA](design-qa.md) | Reference comparison and responsive checks |
 | [Game ports](game-ports.md) | Family-by-family migration status and current evidence |
 | [Backlog](backlog.md) | Remaining shared features and release work |
