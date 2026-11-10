@@ -389,3 +389,25 @@ footer {
 :root[data-theme='dark'] .card-title .icon {
   filter: brightness(0) invert(1);
 }
+@media (max-width: 360px) {
+  .app-header {
+    padding-inline: 8px;
+    gap: 6px;
+  }
+  .app-header .brand {
+    font-size: 17px;
+    gap: 4px;
+  }
+  .app-header .brand > img {
+    width: 24px;
+    height: 24px;
+  }
+  .app-header .header-tools {
+    gap: 4px;
+  }
+  .app-header .room-link,
+  .app-header .icon-button,
+  .app-header .feedback-control > summary {
+    padding-inline: 8px;
+  }
+}
