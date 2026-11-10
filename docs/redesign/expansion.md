@@ -43,3 +43,17 @@ The six cooperative additions support 2–20 room players; Quoridor requires exa
 Protocol v11 rejects older invitation links with reload guidance and restores valid v1–v10 host backups using fresh invitations. The original 26-game source inventory remains frozen; requirements G27–G34 describe the additions. All new covers are distinct inspected local assets in the [artwork manifest](artwork-manifest.json).
 
 Automated evidence includes complete seeded rule runs, unique Sudoku solutions, Quoridor path/geometry checks, all-game spectator/20-seat tests, and actual desktop Chromium/mobile WebKit room synchronization with host reload. Browser tests also exercise narrow 320px layouts, original game aliases, accessibility and the complete offline asset graph. Physical-device installation, camera/audio/haptic behavior and separate-network connectivity retain the existing [release limitations](release-qualification.md).
+
+## Captured game states
+
+Captured from the production build in desktop Chromium and mobile WebKit. These show restored progress or a completed game after the rule and recovery checks.
+
+| Game | Desktop | Mobile |
+| --- | --- | --- |
+| Strands | [Capture](../images/arcade-strands-desktop.png) | [Capture](../images/arcade-strands-mobile.png) |
+| Spelling Bee | [Capture](../images/arcade-spelling-bee-desktop.png) | [Capture](../images/arcade-spelling-bee-mobile.png) |
+| Letter Boxed | [Capture](../images/arcade-letter-boxed-desktop.png) | [Capture](../images/arcade-letter-boxed-mobile.png) |
+| Mini Crossword | [Capture](../images/arcade-mini-crossword-desktop.png) | [Capture](../images/arcade-mini-crossword-mobile.png) |
+| Tiles | [Capture](../images/arcade-tiles-desktop.png) | [Capture](../images/arcade-tiles-mobile.png) |
+| Sudoku | [Capture](../images/arcade-sudoku-desktop.png) | [Capture](../images/arcade-sudoku-mobile.png) |
+| Quoridor | [Capture](../images/arcade-quoridor-desktop.png) | [Capture](../images/arcade-quoridor-mobile.png) |

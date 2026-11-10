@@ -89,7 +89,9 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
       }
       status={
         done
-          ? 'A completed puzzle. Nicely done.'
+          ? id === 'quoridor'
+            ? 'The match is complete. Play again for a rematch.'
+            : 'A completed puzzle. Nicely done.'
           : 'Play at your pace. Your progress is saved on this device.'
       }
       setupExtra={
