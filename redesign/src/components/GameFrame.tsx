@@ -128,7 +128,7 @@ export function Frame<T extends object>({
   return (
     <section className={`play-page puzzle-page puzzle-${run.id}`}>
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <div className="game-heading">
         <h1>{game.name}</h1>

@@ -1,19 +1,32 @@
+/* Original Arcade palette, shared by the catalog, rooms and every game. */
 :root {
-  color-scheme: dark;
-  --paper: #fcf4e5;
-  --surface: #fffaf1;
-  --ink: #182039;
-  --muted: #5c6072;
-  --accent: #bc254e;
-  --coral: #ff456b;
-  --teal: #8fe0d8;
-  --navy: #14182f;
-  --line: #ded4c3;
-  --header: #191c35;
-  --header-ink: #fff8e9;
-}
-:root[data-theme='light'] {
   color-scheme: light;
-  --header: #fff8eb;
-  --header-ink: #192039;
+  --paper: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1a1d23;
+  --muted: #5b6170;
+  --accent: #b82f19;
+  --coral: #ff5a3c;
+  --teal: #8fe0d8;
+  --navy: #141821;
+  --line: #e4e7ec;
+  --header: #ffffff;
+  --header-ink: #1a1d23;
+  --selected: #ffe8e2;
+  --success: #087366;
+  --shadow: 0 2px 8px #10182808;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #0b0d12;
+  --surface: #141821;
+  --ink: #eef1f6;
+  --muted: #a5aebd;
+  --accent: #ff927e;
+  --line: #303846;
+  --header: #141821;
+  --header-ink: #eef1f6;
+  --selected: #48271f;
+  --success: #80d9c8;
+  --shadow: 0 2px 8px #0002;
 }

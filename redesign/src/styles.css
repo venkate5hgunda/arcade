@@ -250,7 +250,7 @@ textarea {
 }
 .showcase {
   background: var(--navy);
-  color: #fff8e9;
+  color: #eef1f6;
   display: grid;
   grid-template-columns: 60% 40%;
   position: relative;
@@ -360,14 +360,14 @@ textarea {
 .primary:hover {
   background: #ff6c88;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px #ff456b33;
+  box-shadow: 0 6px 18px #ff5a3c33;
 }
 .hero-play {
   width: 100%;
   justify-content: space-between;
   border: 2px solid #ff8e9e;
   border-radius: 24px;
-  box-shadow: 0 4px 25px #ff456b55;
+  box-shadow: 0 4px 25px #ff5a3c55;
   font-size: 20px;
   padding: 18px 24px;
 }
@@ -395,8 +395,8 @@ textarea {
   overflow: hidden;
   border: 3px solid transparent;
   border-radius: 15px;
-  color: #14182f;
-  background: #fff3df;
+  color: #0b0d12;
+  background: #f6f7f9;
   min-width: 0;
   scroll-snap-align: start;
   transition: transform 0.18s;
@@ -428,7 +428,7 @@ textarea {
   width: 12px;
   height: 12px;
   background: #8fe0d8;
-  border: 2px solid #14182f;
+  border: 2px solid #0b0d12;
   border-radius: 50%;
 }
 .collection {
@@ -672,8 +672,8 @@ label {
   font-weight: 750;
 }
 .segmented button[aria-pressed='true'] {
-  background: #182039;
-  border-color: #182039;
+  background: #1a1d23;
+  border-color: #1a1d23;
   color: white;
 }
 .help-card {
@@ -715,8 +715,8 @@ label {
 .board-panel {
   border-radius: 27px;
   padding: 28px;
-  background: #191f38;
-  color: #fff8e9;
+  background: #141821;
+  color: #eef1f6;
 }
 .turn-banner {
   display: flex;
@@ -732,7 +732,7 @@ label {
 }
 .turn-banner p {
   font-size: 13px;
-  color: #c9c6da;
+  color: #b2bac8;
   margin: 0;
 }
 .turn-token {
@@ -757,7 +757,7 @@ label {
   border: 1px solid #58617e;
   border-bottom-width: 5px;
   border-radius: 16px;
-  background: #2b3453;
+  background: #232936;
   aspect-ratio: 1;
   padding: 0;
   font-family: inherit;
@@ -862,7 +862,7 @@ label {
   display: grid;
   grid-template-columns: 38px 1fr;
   align-items: center;
-  background: #191f38;
+  background: #141821;
   color: white;
   border-radius: 14px;
   padding: 16px 24px;
@@ -873,7 +873,7 @@ label {
   font-size: 28px;
 }
 .room-roster span {
-  color: #c9c6da;
+  color: #b2bac8;
   font-size: 12px;
 }
 .room-match {
@@ -882,7 +882,7 @@ label {
 }
 .room-match .count,
 .room-card-match .count {
-  color: #c9c6da;
+  color: #b2bac8;
   margin-top: 15px;
 }
 .actions {
@@ -1442,7 +1442,7 @@ select:focus-visible {
   place-items: center;
   border-radius: 12px;
   background: #35405e;
-  color: #fff8eb;
+  color: #eef1f6;
   font-size: clamp(20px, 5vw, 42px);
   font-weight: 850;
   border-bottom: 5px solid #0003;
@@ -1490,7 +1490,7 @@ select:focus-visible {
   margin-top: 20px;
 }
 .direction-controls .quiet {
-  color: #fff8eb;
+  color: #eef1f6;
   min-width: 52px;
   font-size: 22px;
 }
@@ -1511,7 +1511,7 @@ select:focus-visible {
   width: 36px;
   height: 36px;
   background: #3f4e73;
-  color: #fff8eb;
+  color: #eef1f6;
   border: 1px solid #8492b1;
   border-bottom-width: 3px;
   border-radius: 5px;
@@ -1529,7 +1529,7 @@ select:focus-visible {
   color: #192039;
 }
 .flag-toggle {
-  color: #fff8eb;
+  color: #eef1f6;
 }
 .flag-toggle[aria-pressed='true'] {
   background: #8fe0d8;
@@ -1547,7 +1547,7 @@ select:focus-visible {
   border-bottom: 5px solid #172644;
   border-radius: 12px;
   background: #39528d;
-  color: #fff8eb;
+  color: #eef1f6;
   font-size: clamp(23px, 4vw, 42px);
   font-weight: 800;
   transition:
@@ -1604,7 +1604,7 @@ select:focus-visible {
 .simon-pad.active {
   filter: brightness(1.4);
   transform: scale(0.96);
-  outline: 5px solid #fff8eb;
+  outline: 5px solid #eef1f6;
   outline-offset: -10px;
 }
 .simon-pad small {
@@ -1685,7 +1685,7 @@ select:focus-visible {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #c9c6da;
+  color: #b2bac8;
   font-weight: 800;
 }
 .connect-slot.token-1 span,
@@ -1711,10 +1711,10 @@ select:focus-visible {
   border: 8px solid #9b613c;
   border-radius: 28px;
   padding: 24px;
-  color: #fff3df;
+  color: #f6f7f9;
   box-shadow:
     inset 0 0 0 2px #ffd47488,
-    0 12px 25px #14182f30;
+    0 12px 25px #0b0d1230;
 }
 .hand-heading {
   display: flex;
@@ -1739,8 +1739,8 @@ select:focus-visible {
   width: 78px;
   height: 112px;
   border-radius: 10px;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   box-shadow:
     0 4px 0 #ded0b7,
     0 7px 13px #0003;
@@ -1770,7 +1770,7 @@ select:focus-visible {
 }
 .card-back {
   background: repeating-linear-gradient(45deg, #252b50 0 8px, #353d67 8px 10px);
-  border: 4px solid #fff3df;
+  border: 4px solid #f6f7f9;
   display: grid;
   place-items: center;
   color: #ffd474;
@@ -1780,7 +1780,7 @@ select:focus-visible {
   font-size: 12px;
   text-align: center;
   padding: 8px;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .blackjack-actions {
   display: flex;
@@ -1815,7 +1815,7 @@ select:focus-visible {
   background: radial-gradient(ellipse at top, #24695e, #123f43);
   border: 6px solid #aa7349;
   border-radius: 24px;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .card-seats {
   display: flex;
@@ -1833,8 +1833,8 @@ select:focus-visible {
 }
 .card-seats > .active-seat {
   border-color: #ffd474;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   box-shadow: 0 0 0 2px #ffd474;
 }
 .card-table-center {
@@ -1844,7 +1844,7 @@ select:focus-visible {
   gap: 24px;
   padding: 16px;
   margin-bottom: 20px;
-  border-block: 1px solid #fff3df44;
+  border-block: 1px solid #f6f7f944;
 }
 .card-table-center .eyebrow {
   color: #ffb6c5;
@@ -1864,13 +1864,13 @@ select:focus-visible {
   width: 80px;
   height: 116px;
   border-radius: 12px;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   box-shadow:
     0 4px 0 #d1bda3,
     0 8px 12px #0003;
   overflow: hidden;
-  border: 3px solid #fff3df;
+  border: 3px solid #f6f7f9;
 }
 .table-card-face > strong {
   display: grid;
@@ -1878,8 +1878,8 @@ select:focus-visible {
   width: 90%;
   min-height: 65px;
   border-radius: 50%;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   font-size: 32px;
   transform: rotate(-12deg);
 }
@@ -1899,19 +1899,19 @@ select:focus-visible {
 }
 .tone-red {
   background: #c32e4c;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .tone-yellow {
   background: #ffd474;
-  color: #191c35;
+  color: #141821;
 }
 .tone-green {
   background: #147050;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .tone-blue {
   background: #2459a2;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .tone-wild {
   background: conic-gradient(
@@ -1920,15 +1920,15 @@ select:focus-visible {
     #147050 50% 75%,
     #2459a2 75%
   );
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .tone-wild > small {
-  background: #191c35;
+  background: #141821;
   padding: 1px 6px;
   border-radius: 4px;
 }
 .crazy-eights .tone-red {
-  background: #fff3df;
+  background: #f6f7f9;
   color: #bd2441;
 }
 .crazy-eights .tone-red > strong {
@@ -1975,9 +1975,9 @@ select:focus-visible {
 .private-card-actions .quiet,
 .suit-chooser .quiet,
 .challenge-banner .quiet {
-  color: #fff3df;
-  border-color: #fff3df99;
-  background: #191c35;
+  color: #f6f7f9;
+  border-color: #f6f7f999;
+  background: #141821;
 }
 .card-next-action {
   font-size: 13px;
@@ -2093,7 +2093,7 @@ select:focus-visible {
   margin: 20px auto;
 }
 .room-race-match .count {
-  color: #c9c6da;
+  color: #b2bac8;
   margin-top: 15px;
 }
 .race-table {
@@ -2101,7 +2101,7 @@ select:focus-visible {
   border-radius: 22px;
   padding: 18px;
   background: radial-gradient(ellipse at top, #28695f, #123e43);
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .race-players {
   display: grid;
@@ -2118,8 +2118,8 @@ select:focus-visible {
   min-width: 0;
 }
 .race-player.active {
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   border-color: #ffd474;
   box-shadow: 0 0 0 2px #ffd474;
 }
@@ -2137,7 +2137,7 @@ select:focus-visible {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 3px solid #fff3df;
+  border: 3px solid #f6f7f9;
   box-shadow:
     inset 0 4px 5px #fff8,
     0 3px 0 #0005,
@@ -2163,7 +2163,7 @@ select:focus-visible {
 }
 .token-gold {
   background: #ffd474;
-  color: #191c35;
+  color: #141821;
 }
 .race-controls {
   display: flex;
@@ -2187,8 +2187,8 @@ select:focus-visible {
   width: 54px;
   height: 54px;
   border-radius: 12px;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   font-size: 40px;
   line-height: 1;
   box-shadow:
@@ -2210,11 +2210,11 @@ select:focus-visible {
   overflow: auto;
   border-radius: 14px;
   border: 3px solid #ffd474;
-  background: #191c35;
+  background: #141821;
   overscroll-behavior: contain;
 }
 .race-scroll:focus-visible {
-  outline: 3px solid #fff3df;
+  outline: 3px solid #f6f7f9;
   outline-offset: 4px;
 }
 .snakes-board {
@@ -2248,7 +2248,7 @@ select:focus-visible {
   background: #f3c88f;
 }
 .snakes-grid button:focus-visible {
-  outline: 4px solid #ff456b;
+  outline: 4px solid #ff5a3c;
   outline-offset: -4px;
   z-index: 4;
 }
@@ -2294,7 +2294,7 @@ select:focus-visible {
   font-size: 18px;
 }
 .ludo-cell.track {
-  background: #fff3df;
+  background: #f6f7f9;
   color: #1b3143;
 }
 .ludo-cell.safe {
@@ -2331,7 +2331,7 @@ select:focus-visible {
   margin: 8%;
   border: 5px solid #ffffffaa;
   border-radius: 20px;
-  background: #fff3df55;
+  background: #f6f7f955;
   color: #172639;
   padding: 8px;
   font-weight: 900;
@@ -2361,7 +2361,7 @@ select:focus-visible {
   animation: race-highlight 1s ease-in-out infinite alternate;
 }
 .ludo-token:focus-visible {
-  outline: 4px solid #191c35;
+  outline: 4px solid #141821;
   outline-offset: 3px;
   z-index: 5;
 }
@@ -2379,9 +2379,9 @@ select:focus-visible {
   margin: 0 0 18px;
 }
 .token-choice-list .quiet {
-  color: #fff3df;
-  background: #191c35;
-  border-color: #fff3df99;
+  color: #f6f7f9;
+  background: #141821;
+  border-color: #f6f7f999;
 }
 @media (max-width: 600px) {
   .race-table {
@@ -2412,7 +2412,7 @@ select:focus-visible {
   padding: 1.25rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #315e58, #183e40);
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .wordle-board {
   display: grid;
@@ -2435,7 +2435,7 @@ select:focus-visible {
   font-size: 1.5rem;
   font-weight: 900;
   background: #fef2de;
-  color: #191c35;
+  color: #141821;
 }
 .wordle-tile small {
   position: absolute;
@@ -2474,7 +2474,7 @@ select:focus-visible {
   max-width: 12rem;
   padding: 0.7rem;
   border-radius: 0.6rem;
-  border: 2px solid #fff3df;
+  border: 2px solid #f6f7f9;
   font: inherit;
   text-transform: uppercase;
 }
@@ -2495,20 +2495,20 @@ select:focus-visible {
   padding: 0.7rem 0.1rem;
   border: 0;
   border-radius: 0.4rem;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   font-weight: 800;
 }
 .wordle-keyboard .quiet {
   margin-top: 0.5rem;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 
 .hangman-table {
   padding: 1.4rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #3c6b59, #24463c);
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .hangman-progress {
   display: flex;
@@ -2544,8 +2544,8 @@ select:focus-visible {
   height: 2.7rem;
   border-radius: 0.4rem;
   border-bottom: 4px solid #ffd474;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   font-weight: 900;
   font-size: 1.3rem;
 }
@@ -2564,8 +2564,8 @@ select:focus-visible {
   min-height: 2.7rem;
   border: 0;
   border-radius: 0.45rem;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   font-weight: 900;
 }
 .hangman-keys .found {
@@ -2585,7 +2585,7 @@ select:focus-visible {
   border-radius: 0.6rem;
 }
 .hangman-clue summary {
-  color: #fff3df;
+  color: #f6f7f9;
   cursor: pointer;
   font-weight: 800;
 }
@@ -2593,7 +2593,7 @@ select:focus-visible {
   padding: 1.4rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #315e58, #183e40);
-  color: #fff3df;
+  color: #f6f7f9;
   text-align: center;
 }
 .scramble-letters {
@@ -2609,8 +2609,8 @@ select:focus-visible {
   width: 2.6rem;
   height: 3rem;
   border-radius: 0.5rem;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   border-bottom: 4px solid #ffd474;
   font-size: 1.5rem;
   font-weight: 900;
@@ -2637,7 +2637,7 @@ select:focus-visible {
   max-width: 12rem;
   padding: 0.7rem;
   border-radius: 0.6rem;
-  border: 2px solid #fff3df;
+  border: 2px solid #f6f7f9;
   font: inherit;
 }
 .scramble-actions {
@@ -2647,14 +2647,14 @@ select:focus-visible {
   margin-top: 1rem;
 }
 .scramble-actions .quiet {
-  color: #fff3df;
+  color: #f6f7f9;
   border-color: #a5e3ac;
 }
 .whack-table {
   padding: 1.3rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #5c9b6d, #2a654e);
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .whack-status {
   display: flex;
@@ -2754,7 +2754,7 @@ select:focus-visible {
   padding: 1.3rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #315e58, #183e40);
-  color: #fff3df;
+  color: #f6f7f9;
   text-align: center;
 }
 .taboo-score {
@@ -2774,8 +2774,8 @@ select:focus-visible {
   color: #ffd474;
 }
 .taboo-card {
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   border: 4px solid #ffd474;
   border-radius: 1rem;
   max-width: 22rem;
@@ -2809,7 +2809,7 @@ select:focus-visible {
 }
 .taboo-actions .quiet,
 .taboo-hide {
-  color: #fff3df;
+  color: #f6f7f9;
   border-color: #a5e3ac;
 }
 .taboo-hide {
@@ -2819,7 +2819,7 @@ select:focus-visible {
   padding: 1.3rem;
   border-radius: 1.4rem;
   background: linear-gradient(145deg, #315e58, #183e40);
-  color: #fff3df;
+  color: #f6f7f9;
   text-align: center;
 }
 .show-scores {
@@ -2854,8 +2854,8 @@ select:focus-visible {
   aspect-ratio: 1;
   border-radius: 50%;
   border: 5px solid #ffd474;
-  background: #fff3df;
-  color: #191c35;
+  background: #f6f7f9;
+  color: #141821;
   box-shadow: 0 0.25rem 0 #ae8257;
   cursor: pointer;
 }
@@ -2877,7 +2877,7 @@ select:focus-visible {
   border: 3px solid #ffd474;
   border-radius: 1rem;
   background: #ff6d84;
-  color: #191c35;
+  color: #141821;
   font-weight: 900;
   touch-action: manipulation;
 }
@@ -2927,7 +2927,7 @@ select:focus-visible {
   border-radius: 10px;
   display: grid;
   place-items: center;
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .table-piles {
   display: flex;
@@ -3417,7 +3417,7 @@ select:focus-visible {
   border: 3px solid;
   border-radius: 1rem;
   background: #28304c;
-  color: #fff8e9;
+  color: #eef1f6;
 }
 .business-scroll {
   overflow: auto;
@@ -3451,7 +3451,7 @@ select:focus-visible {
   line-height: 1.1;
 }
 .business-space[aria-pressed='true'] {
-  outline: 3px solid #ff456b;
+  outline: 3px solid #ff5a3c;
   z-index: 1;
 }
 .business-space svg {
@@ -3576,7 +3576,7 @@ select:focus-visible {
   height: auto;
 }
 .island-chart [role='button']:focus-visible {
-  outline: 3px solid #ff456b;
+  outline: 3px solid #ff5a3c;
 }
 .feedback-control {
   position: relative;
@@ -3688,7 +3688,7 @@ select:focus-visible {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: 16px;
-  background: #191c35;
+  background: #141821;
   margin-top: 0.6rem;
 }
 .room-scanner p {
@@ -3717,7 +3717,7 @@ select:focus-visible {
   border-radius: 20px;
   color: var(--ink);
   background: var(--paper);
-  box-shadow: 0 8px 28px #191c3533;
+  box-shadow: 0 8px 28px #14182133;
 }
 .pwa-notice p {
   margin: 0 0 0.7rem;
@@ -3733,7 +3733,7 @@ select:focus-visible {
 }
 .connections-table .count,
 .connections-edition {
-  color: #c9c6da;
+  color: #b2bac8;
   font-size: 0.9rem;
 }
 .connections-grid {
@@ -3749,7 +3749,7 @@ select:focus-visible {
   border: 2px solid var(--line);
   border-radius: 0.8rem;
   background: #eee6d7;
-  color: #182039;
+  color: #1a1d23;
   box-shadow: 0 3px 0 #d3c7b4;
   font-size: clamp(0.7rem, 2.2vw, 0.95rem);
   font-weight: 800;
@@ -3773,7 +3773,7 @@ select:focus-visible {
   padding: 1rem 0.7rem;
   border-radius: 0.8rem;
   text-align: center;
-  color: #182039;
+  color: #1a1d23;
 }
 .connections-group h3 {
   margin: 0 0 0.35rem;
@@ -3823,7 +3823,7 @@ select:focus-visible {
   margin: auto;
 }
 .challenge-edition {
-  color: #c9c6da;
+  color: #b2bac8;
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -3846,7 +3846,7 @@ select:focus-visible {
 .strands-theme {
   padding: 0.8rem;
   background: #8fe0d8;
-  color: #182039;
+  color: #1a1d23;
   text-align: center;
   border-radius: 0.7rem;
 }
@@ -3862,14 +3862,14 @@ select:focus-visible {
   aspect-ratio: 1;
   border-radius: 50%;
   border: 2px solid #bdb8ab;
-  background: #fff3df;
-  color: #182039;
+  background: #f6f7f9;
+  color: #1a1d23;
   font-size: clamp(1rem, 4vw, 1.5rem);
   font-weight: 800;
 }
 .strands-grid button[aria-pressed='true'] {
   background: #ffb5c6;
-  border-color: #ff456b;
+  border-color: #ff5a3c;
 }
 .strands-grid button.found {
   background: #8fe0d8;
@@ -3892,7 +3892,7 @@ select:focus-visible {
 }
 .strands-found li {
   background: #8fe0d8;
-  color: #182039;
+  color: #1a1d23;
   border-radius: 1rem;
   padding: 0.3rem 0.7rem;
   font-weight: 700;
@@ -3918,8 +3918,8 @@ select:focus-visible {
   height: 80px;
   border: 0;
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
-  background: #fff3df;
-  color: #182039;
+  background: #f6f7f9;
+  color: #1a1d23;
   font-size: 1.8rem;
   font-weight: 900;
   transform: translate(-50%, -50%);
@@ -3962,7 +3962,7 @@ select:focus-visible {
   margin: 1rem 0;
 }
 .challenge-form label {
-  color: #fff3df;
+  color: #f6f7f9;
 }
 .challenge-form input {
   display: block;
@@ -3981,7 +3981,7 @@ select:focus-visible {
   accent-color: #ffd474;
 }
 .challenge-table .help-card p {
-  color: #c9c6da;
+  color: #b2bac8;
 }
 
 .letter-square {
@@ -4026,8 +4026,8 @@ select:focus-visible {
   padding: 0;
   border: 2px solid #ccb7e6;
   border-radius: 50%;
-  background: #fff3df;
-  color: #182039;
+  background: #f6f7f9;
+  color: #1a1d23;
   font-size: 1.2rem;
   font-weight: 800;
 }
@@ -4059,15 +4059,15 @@ select:focus-visible {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   max-width: 360px;
-  border: 3px solid #14182f;
+  border: 3px solid #0b0d12;
   margin: 1rem auto;
 }
 .mini-cell {
   position: relative;
   aspect-ratio: 1;
   border: 1px solid #5c6072;
-  background: #fff3df;
-  color: #182039;
+  background: #f6f7f9;
+  color: #1a1d23;
 }
 .mini-cell input {
   width: 100%;
@@ -4076,7 +4076,7 @@ select:focus-visible {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #182039;
+  color: #1a1d23;
   text-align: center;
   font-size: clamp(1.25rem, 5vw, 2rem);
   font-weight: 800;
@@ -4117,7 +4117,7 @@ select:focus-visible {
   padding: 0.5rem;
   text-align: left;
   background: transparent;
-  color: #fff3df;
+  color: #f6f7f9;
   font-size: 0.9rem;
 }
 .mini-clue:focus-visible {
@@ -4138,7 +4138,7 @@ select:focus-visible {
 .pattern-tile {
   min-width: 0;
   padding: 0.25rem;
-  background: #fff3df;
+  background: #f6f7f9;
   border: 3px solid #bdb8ab;
   border-radius: 0.8rem;
   aspect-ratio: 1;
@@ -4149,7 +4149,7 @@ select:focus-visible {
   display: block;
 }
 .pattern-tile.selected {
-  border-color: #ff456b;
+  border-color: #ff5a3c;
   box-shadow: 0 0 0 3px #ffb5c6;
 }
 .pattern-tile:disabled {
@@ -4162,7 +4162,7 @@ select:focus-visible {
   width: 100%;
   max-width: 430px;
   margin: 1rem auto;
-  border: 3px solid #fff3df;
+  border: 3px solid #f6f7f9;
 }
 .sudoku-grid button {
   min-width: 0;
@@ -4171,12 +4171,12 @@ select:focus-visible {
   padding: 0;
   border: 1px solid #b9b4a9;
   border-radius: 0;
-  background: #fff3df;
+  background: #f6f7f9;
   color: #223a79;
   font-size: clamp(1rem, 4vw, 1.7rem);
 }
 .sudoku-grid button.given {
-  color: #182039;
+  color: #1a1d23;
   font-weight: 900;
 }
 .sudoku-grid button.selected {
@@ -4187,10 +4187,10 @@ select:focus-visible {
   color: #68162d;
 }
 .sudoku-grid button.box-right {
-  border-right: 3px solid #182039;
+  border-right: 3px solid #1a1d23;
 }
 .sudoku-grid button.box-bottom {
-  border-bottom: 3px solid #182039;
+  border-bottom: 3px solid #1a1d23;
 }
 .sudoku-notes {
   display: grid;
@@ -4250,7 +4250,7 @@ select:focus-visible {
   border: 0;
   border-radius: 3px;
   background: #f1dfbf;
-  color: #182039;
+  color: #1a1d23;
   display: grid;
   place-items: center;
 }
@@ -4270,7 +4270,7 @@ select:focus-visible {
   width: 74%;
   height: 80%;
   border-radius: 50% 50% 35% 35%;
-  color: #182039;
+  color: #1a1d23;
   font-weight: 900;
   font-size: clamp(0.7rem, 3vw, 1.1rem);
   box-shadow: inset 0 -4px #0003;
@@ -4284,7 +4284,7 @@ select:focus-visible {
 .quoridor-wall {
   position: absolute;
   z-index: 2;
-  background: #ff456b;
+  background: #ff5a3c;
   border-radius: 2px;
   pointer-events: none;
   box-shadow: 0 0 0 1px #10162b;
@@ -4294,11 +4294,11 @@ select:focus-visible {
 }
 .quoridor-wall.preview {
   background: #ffd474;
-  box-shadow: 0 0 0 2px #fff3df;
+  box-shadow: 0 0 0 2px #f6f7f9;
 }
 .quoridor-modes button[aria-pressed='true'] {
-  background: #fff3df;
-  color: #182039;
+  background: #f6f7f9;
+  color: #1a1d23;
 }
 .sudoku-grid button:disabled {
   opacity: 1;

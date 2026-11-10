@@ -196,7 +196,7 @@ export function RoomPage({ room }: { room: Room }) {
   return (
     <section className="play-page room-page">
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>

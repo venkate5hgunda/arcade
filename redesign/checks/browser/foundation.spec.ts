@@ -28,19 +28,14 @@ test('complete shelf, categories, search and native game handoff', async ({
   );
   await expect(page.getByText('The new shelf is taking shape.')).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Tic-Tac-Toe',
+    'Pick a game. Press play.',
   );
   await page.getByRole('button', { name: 'Action', exact: true }).click();
   await expect(page.locator('.game-card')).toHaveCount(3);
   await page.getByRole('button', { name: 'Board', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Island Charter', exact: true })
-    .click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Island Charter',
-  );
-  await page
-    .getByRole('link', { name: 'Play Island Charter', exact: true })
+    .locator('.game-card')
+    .filter({ hasText: 'Island Charter' })
     .click();
   await expect(
     page.getByRole('button', { name: 'Start playing →' }),
@@ -94,9 +89,9 @@ test('local match saves names, resumes from home, announces O win once and remat
     });
   await cell(1, 1).click();
   await cell(2, 1).click();
-  await page.getByRole('link', { name: 'Back to the shelf' }).click();
+  await page.getByRole('link', { name: 'All games' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Tic-Tac-Toe',
+    'Pick a game. Press play.',
   );
   await page.locator('.continue-card').click();
   await expect(
@@ -180,9 +175,9 @@ test('AI draw, keyboard board controls, reload and stale timer disposal', async 
   await page.clock.pauseAt(new Date('2026-01-01T11:00:00Z'));
   await page.getByRole('button', { name: 'Play again' }).click();
   await first.click();
-  await page.getByRole('link', { name: 'Back to the shelf' }).click();
+  await page.getByRole('link', { name: 'All games' }).click();
   await expect(
-    page.getByRole('region', { name: 'Featured game' }),
+    page.getByRole('heading', { name: 'Pick a game. Press play.' }),
   ).toBeVisible();
   const before = await page.evaluate(() =>
     localStorage.getItem('arcade:game.sessions'),
@@ -256,12 +251,7 @@ test('responsive shelf and play screens have no overflow, external assets or ser
   });
   await page.goto('/');
   if (isMobile) {
-    const play = await page
-      .getByRole('link', { name: 'Play Tic-Tac-Toe', exact: true })
-      .boundingBox();
-    expect(play!.y + play!.height).toBeLessThanOrEqual(
-      await page.evaluate(() => innerHeight),
-    );
+    await expect(page.locator('.game-card').first()).toBeInViewport();
   }
   for (const path of ['/', '/#/game/tictactoe', '/#/room']) {
     await page.goto(path);

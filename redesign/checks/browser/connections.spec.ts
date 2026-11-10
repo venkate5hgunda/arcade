@@ -120,18 +120,14 @@ test('Connections shelf cover loads, room link selects co-op, and narrow screens
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Connections', exact: true }).click();
-  await expect(page.locator('.game-facts')).toContainText(
-    '2–20 players · Cooperative',
+  const card = page.locator('.game-card').filter({ hasText: 'Connections' });
+  const art = card.locator('img.game-artwork');
+  await art.scrollIntoViewIfNeeded();
+  await art.evaluate((img: HTMLImageElement) => img.decode());
+  expect(await art.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(
+    1344,
   );
-  await page
-    .getByRole('link', { name: 'Play Connections', exact: true })
-    .click();
-  const art = page.locator('.puzzle-setup-art');
-  await expect(art).toBeVisible();
-  expect(
-    await art.evaluate((img) => (img as HTMLImageElement).naturalWidth),
-  ).toBe(1344);
+  await card.click();
   await page
     .getByRole('link', { name: 'Solve together in a private room' })
     .click();

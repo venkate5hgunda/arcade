@@ -1,4 +1,3 @@
-import { isChallenge } from './lib/challenges.ts';
 import { migrateStorage } from './lib/migration.ts';
 import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
@@ -27,7 +26,7 @@ import {
   deleteGameSession,
   createGameSession,
 } from './lib/session.ts';
-import { validCheckpoint, roomGameIds } from './lib/checkpoints.ts';
+import { validCheckpoint } from './lib/checkpoints.ts';
 import { recentGames } from './lib/profile.ts';
 import {
   KEYS,
@@ -55,7 +54,6 @@ function Icon({ name }: { name: string }) {
   return <img className="icon" src={`./icons/${name}.svg`} alt="" />;
 }
 function Catalog({ query, category }: { query: string; category: string }) {
-  const [selected, setSelected] = useState('tictactoe');
   const [recent, setRecent] = useState(recentGames);
   const readResumable = () =>
     unfinishedGames().filter((id) => {
@@ -81,120 +79,15 @@ function Catalog({ query, category }: { query: string; category: string }) {
         .toLowerCase()
         .includes(query.toLowerCase().trim()),
   );
-  const game = visible.find((g) => g.id === selected) ?? visible[0];
   return (
     <>
-      {game ? (
-        <section className="showcase" aria-label="Featured game">
-          <div className="showcase-scene">
-            <GameArt id={game.id} className="hero-image" eager />
-          </div>
-          <div className="showcase-copy">
-            <p className="eyebrow">{game.category}</p>
-            <h1>{game.name}</h1>
-            <p className="lede">{game.description}</p>
-            <div className="game-facts">
-              <span>
-                <Icon name="users" />
-                <span>
-                  <b>{playerLabel(game)}</b>
-                  <small>
-                    {isImplemented(game.id)
-                      ? game.id === 'quoridor'
-                        ? 'Pass & play'
-                        : game.id === 'connections' || isChallenge(game.id)
-                          ? 'Solo or solve together'
-                          : game.id === 'mafia'
-                            ? 'Private room'
-                            : game.players.type === 'single'
-                              ? 'Solo challenge'
-                              : [
-                                    'crazy-eights',
-                                    'uno',
-                                    'snakes-ladders',
-                                    'ludo',
-                                    'catan',
-                                    'business',
-                                  ].includes(game.id)
-                                ? 'Pass & play'
-                                : 'Solo or pass & play'
-                      : 'Original Arcade'}
-                  </small>
-                </span>
-              </span>
-              {roomGameIds.has(game.id) && (
-                <span>
-                  <Icon name="confetti" />
-                  <span>
-                    <b>Private room</b>
-                    <small>
-                      {game.id === 'quoridor'
-                        ? '2 players · Head-to-head'
-                        : game.id === 'connections' || isChallenge(game.id)
-                          ? '2–20 players · Cooperative'
-                          : game.id === 'catan'
-                            ? '3–4 players, private cargo'
-                            : game.id === 'business'
-                              ? '2–6 players, private decks'
-                              : game.id === 'mafia'
-                                ? '5–10 players, private roles'
-                                : game.id === 'uno'
-                                  ? '2–20 players, private hands'
-                                  : ['snakes-ladders', 'ludo'].includes(game.id)
-                                    ? '2–4 players, 2–4 screens'
-                                    : game.id === 'crazy-eights'
-                                      ? '2 players, private hands'
-                                      : '2 players, 2 screens'}
-                    </small>
-                  </span>
-                </span>
-              )}
-            </div>
-            <Link className="primary hero-play" to={`/game/${game.id}`}>
-              {resumable.includes(game.id)
-                ? 'Continue'
-                : isImplemented(game.id)
-                  ? 'Play'
-                  : 'Explore'}{' '}
-              {game.name}
-              <Icon name="arrow-right" />
-            </Link>
-            {!isImplemented(game.id) && (
-              <p className="availability">
-                The complete game is playable in original Arcade.
-              </p>
-            )}
-          </div>
-          <div className="shelf" aria-label="Choose a game">
-            {[...visible]
-              .sort(
-                (a, b) =>
-                  Number(isImplemented(b.id)) - Number(isImplemented(a.id)),
-              )
-              .map((g, index) => (
-                <button
-                  key={g.id}
-                  className={`shelf-game ${g.id === game.id ? 'selected' : ''}`}
-                  aria-pressed={g.id === game.id}
-                  onClick={() => setSelected(g.id)}
-                >
-                  <GameArt
-                    id={g.id}
-                    className="shelf-image"
-                    decorative
-                    eager={index < 8}
-                  />
-                  <span className="shelf-label">{g.name}</span>
-                  {resumable.includes(g.id) && (
-                    <span className="saved-dot" aria-label="Saved game" />
-                  )}
-                </button>
-              ))}
-          </div>
-        </section>
-      ) : (
+      <section className="catalog-intro">
+        <h1>Pick a game. Press play.</h1>
+        <p>Solo challenges, friendly rivalries, and games for everyone.</p>
+      </section>
+      {visible.length === 0 && (
         <section className="empty">
-          <h1>No games found</h1>
+          <h2>No games found</h2>
           <p>Try a different search or choose another category.</p>
         </section>
       )}
@@ -207,7 +100,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
           </div>
           <p className="count" role="status">
             {visible.length} games{' '}
-            {category === 'All' ? 'on the shelf' : `in ${category}`}
+            {category === 'All' ? 'to play' : `in ${category}`}
           </p>
         </div>
         {resumable.length > 0 && (
@@ -258,7 +151,7 @@ function GameCard({ game, index }: { game: Game; index: number }) {
       style={{ '--card-index': index } as CSSProperties}
     >
       <div className="card-image">
-        <GameArt id={game.id} decorative />
+        <GameArt id={game.id} decorative eager={index < 8} />
         <span className="card-category">{game.category}</span>
       </div>
       <div className="card-copy">
@@ -277,7 +170,7 @@ function RequirementRoute() {
   const entry = requirements.find((r) => r.id === id);
   return (
     <section className="detail">
-      <Link to="/">← Back to the shelf</Link>
+      <Link to="/">← All games</Link>
       <h1>{entry?.title ?? 'Feature not found'}</h1>
       {entry && (
         <>
@@ -379,7 +272,7 @@ function Shell() {
       const color = document.querySelector<HTMLMetaElement>(
         'meta[name="theme-color"]',
       );
-      if (color) color.content = active === 'dark' ? '#191c35' : '#fff8eb';
+      if (color) color.content = active === 'dark' ? '#141821' : '#ffffff';
       window.dispatchEvent(
         new CustomEvent('arcade:themechange', { detail: active }),
       );
@@ -497,7 +390,7 @@ function Shell() {
               <section className="detail">
                 <h1>Let’s get you back to play.</h1>
                 <Link className="primary" to="/">
-                  Back to the shelf
+                  All games
                 </Link>
               </section>
             }

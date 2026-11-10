@@ -251,7 +251,7 @@ test('all puzzle setups and boards meet accessibility, scroll within the page an
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.getByRole('link', { name: 'Back to the shelf' }).click();
+    await page.getByRole('link', { name: 'All games' }).click();
     await expect(
       page.locator(`.continue-card[href="#/game/${id}"]`),
     ).toBeVisible();

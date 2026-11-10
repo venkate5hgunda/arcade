@@ -13,7 +13,7 @@ test('theme follows the device in auto mode and preserves explicit choices', asy
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
     'content',
-    '#fff8eb',
+    '#ffffff',
   );
   await page.getByRole('button', { name: 'Theme: auto. Select light' }).click();
   await page.getByRole('button', { name: 'Theme: light. Select dark' }).click();
