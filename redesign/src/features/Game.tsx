@@ -128,7 +128,7 @@ function LocalGame() {
   return (
     <section className="play-page">
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <div className="game-heading">
         <h1>Tic-Tac-Toe</h1>
@@ -341,7 +341,7 @@ export function GameRoute() {
   if (!game)
     return (
       <section className="detail">
-        <Link to="/">← Back to the shelf</Link>
+        <Link to="/">← All games</Link>
         <h1>Game not found</h1>
         <p>Choose one of the games on the shelf.</p>
       </section>
@@ -374,7 +374,7 @@ export function GameRoute() {
   return (
     <section className="detail">
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <GameArt id={game.id} className="detail-art" eager />
       <p className="eyebrow">{game.category} · Joining the new shelf soon</p>

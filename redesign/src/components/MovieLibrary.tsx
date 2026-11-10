@@ -40,7 +40,7 @@ export function MovieLoader({
   return (
     <section className="play-page">
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <h1>{title}</h1>
       <div className="setup-card" role="status">

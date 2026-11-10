@@ -4,7 +4,7 @@ export function MafiaGame() {
   return (
     <section className="play-page">
       <Link className="back" to="/">
-        ← Back to the shelf
+        ← All games
       </Link>
       <div className="game-heading">
         <div>

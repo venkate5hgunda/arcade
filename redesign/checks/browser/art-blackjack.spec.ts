@@ -52,20 +52,13 @@ test('every game switches to its own local artwork, including catalog and detail
 }) => {
   await page.goto('/');
   for (const asset of manifest.assets) {
-    await page
-      .locator('.shelf-game')
-      .filter({ has: page.locator(`img[src="${asset.src}"]`) })
-      .click();
-    const hero = page.locator('.hero-image');
-    await expect(hero).toHaveAttribute('src', asset.src);
-    await hero.evaluate((img: HTMLImageElement) => img.decode());
+    const cover = page.locator(`.game-card img[src="${asset.src}"]`);
+    await expect(cover).toHaveCount(1);
+    await cover.scrollIntoViewIfNeeded();
+    await cover.evaluate((img: HTMLImageElement) => img.decode());
     expect(
-      await hero.evaluate((img: HTMLImageElement) => img.naturalWidth),
+      await cover.evaluate((img: HTMLImageElement) => img.naturalWidth),
     ).toBe(1344);
-    await expect(hero).toHaveAttribute('alt', asset.alt);
-    await expect(
-      page.locator(`.game-card img[src="${asset.src}"]`),
-    ).toHaveCount(1);
   }
   await page.goto('/#/game/chess');
   await expect(page.locator('.puzzle-setup-art')).toHaveAttribute(

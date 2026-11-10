@@ -1,0 +1,376 @@
+/* Compact, direct navigation inspired by the original Arcade. Game-specific
+   colors remain semantic: suits, player seats, terrain, and puzzle clues. */
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+h1,
+h2,
+h3 {
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-top: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 10px max(16px, calc((100% - 1168px) / 2));
+}
+.brand {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.brand > img {
+  width: 32px;
+  height: 32px;
+}
+.brand > span {
+  display: none;
+}
+.room-link,
+.icon-button,
+.feedback-control > summary {
+  border: 1px solid var(--line);
+  box-shadow: none;
+  background: var(--paper);
+  min-height: 44px;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-weight: 650;
+}
+.browse-tools {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px 16px 0;
+  border: 0;
+  background: transparent;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.browse-tools .search {
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+.browse-tools .search input {
+  width: 100%;
+  border-color: var(--line);
+  background: var(--surface);
+  border-radius: 12px;
+  font-size: 14px;
+}
+.search input::placeholder {
+  color: var(--muted);
+}
+.filters {
+  padding: 0 0 4px;
+  flex: 1 1 520px;
+}
+.filter {
+  border-radius: 10px;
+  color: var(--muted);
+}
+.filter[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--accent);
+}
+.catalog-intro {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 16px 4px;
+}
+.catalog-intro h1 {
+  font-size: clamp(27px, 4vw, 36px);
+  margin-bottom: 8px;
+}
+.catalog-intro p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 15px;
+}
+.collection {
+  max-width: 1200px;
+  padding: 24px 16px 40px;
+}
+.section-head {
+  margin-bottom: 16px;
+}
+.section-head h2 {
+  font-size: 20px;
+}
+.collection-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.game-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.game-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+.card-image {
+  height: 130px;
+}
+.card-copy {
+  padding: 14px;
+}
+.card-copy h3 {
+  font-size: 18px;
+}
+.card-copy p {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.card-meta {
+  color: var(--muted);
+  font-size: 11px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ready {
+  color: var(--success);
+}
+.card-action {
+  color: var(--accent);
+}
+.continue-row {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.continue-card {
+  min-width: 0;
+  flex: 1 1 250px;
+  border: 1px solid var(--line);
+}
+.play-page,
+.detail {
+  max-width: 1100px;
+  padding-top: 20px;
+}
+.back {
+  margin-bottom: 16px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.game-heading h1,
+.room-page h1 {
+  font-size: clamp(27px, 4vw, 38px);
+  margin-bottom: 16px;
+}
+.game-heading .eyebrow {
+  display: none;
+}
+.lede {
+  font-size: 16px;
+}
+.setup-layout {
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+}
+.setup-art {
+  height: 240px;
+  border-radius: 16px;
+}
+.setup-card {
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.setup-card h2,
+.setup-summary h2 {
+  font-size: 21px;
+}
+.puzzle-setup-art {
+  max-height: 180px;
+  border-radius: 16px;
+}
+.setup-card details {
+  margin-top: 12px;
+}
+.primary {
+  min-height: 46px;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 15px;
+  color: #27120d;
+  gap: 12px;
+  font-weight: 750;
+  box-shadow: none;
+}
+.primary:hover {
+  background: #ff775e;
+  box-shadow: none;
+  transform: none;
+}
+.quiet,
+.segmented button {
+  border-color: var(--line);
+  border-radius: 10px;
+}
+.segmented button[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+input,
+textarea,
+select {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 10px;
+}
+.room-callout,
+.room-status,
+.release-gate {
+  color: var(--accent);
+}
+.board-panel {
+  border-radius: 16px;
+  border: 1px solid #303846;
+  padding: 20px;
+}
+.match-layout {
+  gap: 24px;
+}
+.turn-banner {
+  margin-bottom: 18px;
+}
+.square {
+  border-radius: 10px;
+  border-bottom-width: 2px;
+}
+.board-panel .quiet {
+  border-color: #637086;
+}
+.board-panel .primary {
+  color: #27120d;
+}
+.board-panel details {
+  color: inherit;
+}
+.room-roster > div {
+  border-radius: 12px;
+  border: 1px solid #303846;
+}
+.feedback-panel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+}
+.feedback-panel p {
+  color: var(--muted);
+}
+footer {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px 16px;
+  gap: 16px;
+}
+.empty {
+  min-height: 0;
+  padding: 24px 16px 0;
+  width: min(1200px, 100%);
+}
+:root[data-theme='dark'] .filters .icon,
+:root[data-theme='dark'] .card-action .icon {
+  filter: brightness(0) invert(1);
+}
+:root[data-theme='dark'] .filter[aria-pressed='true'] .icon {
+  filter: none;
+}
+:focus-visible {
+  outline-color: var(--accent);
+}
+@media (max-width: 900px) {
+  .collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .app-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .app-header .brand {
+    font-size: 20px;
+  }
+  .header-tools {
+    gap: 6px;
+  }
+  .browse-tools {
+    padding: 16px 12px 0;
+    gap: 10px;
+  }
+  .browse-tools .search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .filters {
+    flex-basis: 100%;
+  }
+  .catalog-intro {
+    padding: 20px 12px 0;
+  }
+  .collection {
+    padding: 20px 12px 32px;
+  }
+  .collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .card-image {
+    height: 100px;
+  }
+  .card-copy {
+    padding: 12px;
+  }
+  .card-copy h3 {
+    font-size: 16px;
+  }
+  .card-meta .ready {
+    display: none;
+  }
+  .card-copy p {
+    display: none;
+  }
+  .play-page,
+  .detail {
+    width: calc(100% - 24px);
+    padding-top: 12px;
+  }
+  .setup-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .setup-art,
+  .puzzle-setup-art {
+    display: none;
+  }
+  .board-panel {
+    padding: 16px 12px;
+  }
+  .game-heading {
+    align-items: start;
+  }
+  .game-heading .quiet {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .primary {
+    transition: none;
+  }
+}

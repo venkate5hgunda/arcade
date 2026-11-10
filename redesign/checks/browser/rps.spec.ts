@@ -102,7 +102,7 @@ test('RPS restores an expired countdown once, preserves target and cancels timer
   await page.getByRole('button', { name: 'Paper', exact: true }).click();
   await page.getByRole('button', { name: "I'm ready", exact: true }).click();
   await page.getByRole('button', { name: 'Rock', exact: true }).click();
-  await page.getByRole('link', { name: 'Back to the shelf' }).click();
+  await page.getByRole('link', { name: 'All games' }).click();
   await expect(
     page.getByRole('heading', { name: 'Pick up where you left off' }),
   ).toBeVisible();

@@ -37,7 +37,7 @@ test('Air Hockey starts at rest, responds to arrow keys and resumes the real puc
   await expect(
     page.getByRole('heading', { name: 'Puck in play!' }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Back to the shelf' }).click();
+  await page.getByRole('link', { name: 'All games' }).click();
   await expect(
     page.getByRole('heading', { name: 'Pick up where you left off' }),
   ).toBeVisible();

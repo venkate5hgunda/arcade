@@ -20,14 +20,14 @@ test('the mobile top bar stays reachable during play and after leaving', async (
   await home.tap();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Tic-Tac-Toe',
+    'Pick a game. Press play.',
   );
   await expect(home).toBeFocused();
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await page.getByRole('searchbox', { name: 'Search games' }).tap();
   await page.getByRole('searchbox', { name: 'Search games' }).fill('Pool');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    '8-Ball Pool',
+    'Pick a game. Press play.',
   );
   await expect(
     page.getByRole('searchbox', { name: 'Search games' }),
@@ -41,7 +41,7 @@ test('Pool shortcuts leave keyboard navigation available outside the table', asy
   await page.getByRole('button', { name: 'Start playing' }).click();
   await expect(page.locator('canvas')).toBeVisible();
 
-  const exit = page.getByRole('link', { name: 'Back to the shelf' });
+  const exit = page.getByRole('link', { name: 'All games' });
   await exit.focus();
   await page.keyboard.press('Enter');
 
