@@ -1,3 +1,4 @@
+import { challengeMax } from '../lib/challenges.ts';
 import { ChallengeTable } from '../components/ChallengeTable.tsx';
 import {
   CHALLENGE_IDS,
@@ -107,10 +108,11 @@ export function RoomPage({ room }: { room: Room }) {
   const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
-    ((s.members.length > 4 &&
-      !['uno', 'mafia', 'business', 'connections', ...CHALLENGE_IDS].includes(
-        gameId,
-      )) ||
+    ((isChallenge(gameId) && s.members.length > challengeMax(gameId)) ||
+      (s.members.length > 4 &&
+        !['uno', 'mafia', 'business', 'connections', ...CHALLENGE_IDS].includes(
+          gameId,
+        )) ||
       (s.members.length > 6 && gameId === 'business') ||
       (s.members.length > 2 &&
         ![
@@ -601,8 +603,17 @@ export function RoomPage({ room }: { room: Room }) {
                       </option>
                       <option value="connections">Connections · Co-op</option>
                       {CHALLENGE_IDS.map((id) => (
-                        <option key={id} value={id}>
-                          {gameName(id)} · Co-op
+                        <option
+                          key={id}
+                          value={id}
+                          disabled={(s?.members.length ?? 0) > challengeMax(id)}
+                        >
+                          {gameName(id)} ·{' '}
+                          {id === 'quoridor'
+                            ? 'Head-to-head'
+                            : id === 'tiles'
+                              ? 'Turn-based co-op'
+                              : 'Co-op'}
                         </option>
                       ))}
                       <option value="uno">UNO-inspired</option>
@@ -849,10 +860,14 @@ export function RoomPage({ room }: { room: Room }) {
                 <div>
                   <h2>
                     {challengeDone(challenge.game)
-                      ? 'Puzzle complete!'
+                      ? challenge.game.gameId === 'quoridor'
+                        ? `${s.members[challenge.game.winner!].name} wins!`
+                        : 'Puzzle complete!'
                       : !connected
                         ? 'Puzzle paused'
-                        : 'Solve it together'}
+                        : challengeTurn(challenge.game) !== null
+                          ? `${s.members[challengeTurn(challenge.game)!].name}’s turn`
+                          : 'Solve it together'}
                   </h2>
                   <p>
                     {spectating
@@ -880,7 +895,9 @@ export function RoomPage({ room }: { room: Room }) {
                   disabled={!connected}
                   onClick={() => room.start()}
                 >
-                  New practice puzzle
+                  {challenge.gameId === 'quoridor'
+                    ? 'Play again'
+                    : 'New practice puzzle'}
                 </button>
               )}
               <details className="help-card">

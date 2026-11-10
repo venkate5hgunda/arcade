@@ -7,6 +7,7 @@ import { LetterTable } from './LetterTable.tsx';
 import { MiniTable } from './MiniTable.tsx';
 import { TilesTable } from './TilesTable.tsx';
 import { SudokuTable } from './SudokuTable.tsx';
+import { QuoridorTable } from './QuoridorTable.tsx';
 export function ChallengeTable({
   state,
   blocked = false,
@@ -44,6 +45,9 @@ export function ChallengeTable({
       )}
       {state.gameId === 'sudoku' && (
         <SudokuTable state={state} blocked={blocked} action={action} />
+      )}
+      {state.gameId === 'quoridor' && (
+        <QuoridorTable state={state} blocked={blocked} action={action} />
       )}
       <p className="challenge-message" role="status">
         {message}

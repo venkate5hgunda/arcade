@@ -1,15 +1,15 @@
 # Game migration status
 
-**All 27 current games have native implementations.** Shared room breadth, sound and themes have implementation evidence; offline support and release qualification remain in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**All 34 current games have native implementations.** The original 26-game migration baseline remains frozen. The sections below preserve historical milestone evidence; [the new game additions](expansion.md) cover requirements G27–G34, and [release qualification](release-qualification.md) records physical-device/network limits.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
-| Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says | None |
+| Puzzle | Tic-Tac-Toe, Connect Four, Minesweeper, Memory Match, 2048, Simon Says, Tiles, Sudoku | None |
 | Cards | Blackjack, Crazy Eights, UNO-inspired | None |
-| Board | Snakes & Ladders, Ludo, Chess, Business, Island Charter | None |
+| Board | Snakes & Ladders, Ludo, Chess, Business, Island Charter, Quoridor | None |
 | Action | Whack-a-Mole, Air Hockey, 8-Ball Pool | None |
 | Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter, Mafia | None |
-| Word | Connections, Wordle, Hangman, Word Scramble | None |
+| Word | Connections, Strands, Spelling Bee, Letter Boxed, Mini Crossword, Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
 

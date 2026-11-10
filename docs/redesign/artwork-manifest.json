@@ -498,6 +498,20 @@
       "sha256": "82c4ef7c7a05464b59645e155ac2a214118661e1a20b91c0e8d5acfc3242b7ac",
       "provider": "Adobe Firefly",
       "revision": 1
+    },
+    {
+      "id": "quoridor",
+      "alt": "Coral and teal pawns beside upright wooden fences and spare wall pieces on a grooved wooden board.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. Close crop of a grooved wooden Quoridor strategy board, one rounded coral pawn and one teal pawn facing each other, and short upright wooden fences spanning two adjacent square spaces. A few spare fence pieces stacked beside the board. Navy felt underneath, cream wood, warm gold table light and subtle teal rim light. Tactile resin pawns and painted wood, cozy crafted game-night atmosphere. Wide landscape, central 60% subject, full bleed. Show only a partial board continuing out of frame, not a complete board. No letters, numbers, title, UI, logo or watermark. Exactly two pawns, with fences in grooves between square cells.",
+      "requestId": "70e702da-32f9-4bfb-ae49-c8f7ae7ba74a",
+      "inspection": "Inspected exactly two distinct coral/teal pawns, grooved wooden board, upright fences and spare walls. Deliberate partial-board view avoids incorrect full-grid counts. Warm wood, navy felt and teal rim light match the shelf; no text or unrelated props.",
+      "src": "./art/games/quoridor.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 101398,
+      "sha256": "6a03b271f27de78866c4d7016fbd81fd942e316dcfb0535d633c166116b296b3",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

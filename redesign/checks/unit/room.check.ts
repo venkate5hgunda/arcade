@@ -1519,3 +1519,208 @@ test('Sudoku rooms preserve difficulty, reject stale note overwrites and record 
   host.leave();
   guest.leave();
 });
+
+test('Quoridor rooms enforce pawn seats, limit the table to two and award the correct racer once', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory),
+    third = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  await connect(host, third);
+  assert.throws(() => host.start('quoridor'));
+  host.setSpectating(third.peerId, true);
+  host.start('quoridor');
+  await flush();
+  guest.challengeAction({ type: 'move', cell: 13 });
+  await flush();
+  assert.equal(host.snapshot!.challengeMatch!.revision, 0);
+  for (const [player, cell] of [
+    [host, 13],
+    [guest, 67],
+    [host, 22],
+    [guest, 58],
+    [host, 31],
+    [guest, 49],
+    [host, 40],
+    [guest, 31],
+    [host, 49],
+    [guest, 22],
+    [host, 58],
+    [guest, 13],
+    [host, 67],
+    [guest, 4],
+  ] as const) {
+    player.challengeAction({ type: 'move', cell });
+    await flush();
+  }
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [0, 1]);
+  guest.challengeAction({ type: 'move', cell: 5 });
+  await flush();
+  assert.deepEqual(host.snapshot!.wins, [0, 1]);
+  host.leave();
+  guest.leave();
+  third.leave();
+});
+
+test('v10 Connections backups migrate to v11, reject old invitations and keep the saved puzzle', async () => {
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('connections');
+  await flush();
+  host.connectionsAction([0, 1, 2, 3]);
+  await flush();
+  const saved = JSON.parse(cache.get('arcade:redesign:room:v11')!);
+  delete saved.snapshot.challengeMatch;
+  const game = saved.snapshot.connectionsMatch;
+  host.leave();
+  guest.leave();
+  cache.set('arcade:redesign:room:v10', JSON.stringify(saved));
+  const restored = new Room(factory);
+  restored.restore();
+  assert.deepEqual(restored.snapshot!.connectionsMatch, game);
+  const invite = await restored.createInvite();
+  assert.equal(readSignal(invite, 'offer').version, 11);
+  const url = new URL(invite),
+    params = new URLSearchParams(url.hash.split('?')[1]),
+    signal = JSON.parse(atob(params.get('invite')!));
+  signal.version = 10;
+  url.hash = `/room?invite=${encodeURIComponent(btoa(JSON.stringify(signal)))}`;
+  assert.throws(() => readSignal(url.href, 'offer'), /incompatible/);
+  restored.leave();
+  assert.equal(cache.has('arcade:redesign:room:v10'), false);
+});
+
+async function firstChallengeAction(
+  state: import('../../src/lib/challenges.ts').ChallengeState,
+): Promise<unknown> {
+  switch (state.gameId) {
+    case 'strands': {
+      const { strandsPuzzle } = await import('../../src/lib/strands.ts');
+      const word = strandsPuzzle(state.seed).paths.find(
+        (_, i) => !state.found.some((f) => f.word === i),
+      )!;
+      return { type: 'word', path: word };
+    }
+    case 'spelling-bee': {
+      const { beePuzzle } = await import('../../src/lib/bee.ts');
+      return {
+        type: 'word',
+        word: beePuzzle(state.seed).words.find(
+          (w) => !state.words.includes(w),
+        )!,
+      };
+    }
+    case 'letter-boxed': {
+      const { letterPuzzle } = await import('../../src/lib/letter-boxed.ts');
+      return {
+        type: 'word',
+        word: letterPuzzle(state.seed).solution[state.words.length],
+      };
+    }
+    case 'mini-crossword': {
+      const { miniPuzzle } = await import('../../src/lib/mini.ts');
+      const cell = state.entries.findIndex((v) => !v);
+      return {
+        type: 'entry',
+        cell,
+        value: miniPuzzle(state.seed).answer[cell],
+      };
+    }
+    case 'tiles': {
+      const { tilesProgress } = await import('../../src/lib/tiles.ts');
+      const board = tilesProgress(state).board;
+      for (let a = 0; a < 12; a++)
+        for (let b = a + 1; b < 12; b++)
+          if (board[a].some((n, i) => n >= 0 && n === board[b][i]))
+            return { type: 'match', tiles: [a, b] };
+      throw Error('No legal tile pair');
+    }
+    case 'sudoku': {
+      const { sudokuPuzzle } = await import('../../src/lib/sudoku.ts');
+      const cell = state.values.findIndex((n) => !n);
+      return {
+        type: 'entry',
+        cell,
+        value: sudokuPuzzle(state.seed, state.difficulty).solution[cell],
+      };
+    }
+    case 'quoridor': {
+      const { quoridorMoves } = await import('../../src/lib/quoridor.ts');
+      return { type: 'move', cell: quoridorMoves(state)[0] };
+    }
+  }
+}
+
+test('every added room game gives spectators read-only state and ignores spectator disconnects', async () => {
+  const { CHALLENGE_IDS } = await import('../../src/lib/challenges.ts');
+  for (const id of CHALLENGE_IDS) {
+    cache.clear();
+    const host = new Room(factory),
+      guest = new Room(factory),
+      watcher = new Room(factory);
+    host.createHost('Mira');
+    await connect(host, guest);
+    const invite = await host.createInvite(undefined, true);
+    await host.acceptAnswer(await watcher.joinInvite(invite, 'Watcher'));
+    await flush();
+    host.start(id);
+    await flush();
+    const action = await firstChallengeAction(
+      host.snapshot!.challengeMatch!.game,
+    );
+    watcher.challengeAction(action);
+    await flush();
+    assert.equal(host.snapshot!.challengeMatch!.revision, 0, id);
+    host.challengeAction(action);
+    await flush();
+    assert.equal(host.snapshot!.challengeMatch!.revision, 1, id);
+    assert.deepEqual(
+      watcher.snapshot!.challengeMatch,
+      host.snapshot!.challengeMatch,
+    );
+    watcher.leave();
+    await flush();
+    assert.ok(host.snapshot!.members.every((m) => m.connected));
+    guest.challengeAction(
+      await firstChallengeAction(host.snapshot!.challengeMatch!.game),
+    );
+    await flush();
+    assert.equal(host.snapshot!.challengeMatch!.revision, 2, id);
+    assert.ok(validSnapshot(host.snapshot));
+    host.leave();
+    guest.leave();
+  }
+});
+
+test('all six cooperative additions accept twenty connected players with authoritative initial actions', async () => {
+  const { CHALLENGE_IDS } = await import('../../src/lib/challenges.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guests = Array.from({ length: 19 }, () => new Room(factory));
+  host.createHost('Mira');
+  for (const guest of guests) await connect(host, guest);
+  for (const id of CHALLENGE_IDS.filter((id) => id !== 'quoridor')) {
+    host.start(id);
+    await flush();
+    host.challengeAction(
+      await firstChallengeAction(host.snapshot!.challengeMatch!.game),
+    );
+    await flush();
+    assert.equal(host.snapshot!.challengeMatch!.revision, 1, id);
+    assert.ok(validSnapshot(host.snapshot), id);
+    for (const guest of guests)
+      assert.deepEqual(
+        guest.snapshot!.challengeMatch,
+        host.snapshot!.challengeMatch,
+      );
+    host.returnLobby();
+    await flush();
+  }
+  host.leave();
+  for (const guest of guests) guest.leave();
+});

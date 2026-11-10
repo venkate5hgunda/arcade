@@ -211,3 +211,87 @@ test('Sudoku generates unique solutions at each tier, protects givens and saves 
     }
   assert.equal(sudokuSolutions(Array(81).fill(1)), 0);
 });
+
+test('Quoridor validates movement, straight jumps, blocked-jump sidesteps and a finished race', async () => {
+  const { newQuoridor, quoridorMoves, actQuoridor, validQuoridor } =
+    await import('../../src/lib/quoridor.ts');
+  const start = newQuoridor();
+  assert.deepEqual(new Set(quoridorMoves(start)), new Set([3, 5, 13]));
+  assert.equal(actQuoridor(start, { type: 'move', cell: 22 }).state, start);
+  const facing = { ...start, pawns: [4, 13] as [number, number] };
+  assert.ok(quoridorMoves(facing).includes(22));
+  assert.ok(!quoridorMoves(facing).includes(12));
+  const blocked = {
+    ...facing,
+    walls: [{ row: 1, col: 4, orientation: 'h' as const, owner: 0 as const }],
+  };
+  assert.ok(quoridorMoves(blocked).includes(12));
+  assert.ok(quoridorMoves(blocked).includes(14));
+  assert.ok(!quoridorMoves(blocked).includes(22));
+  const finish = { ...start, pawns: [67, 72] as [number, number] };
+  const won = actQuoridor(finish, { type: 'move', cell: 76 }).state;
+  assert.equal(won.winner, 0);
+  assert.ok(validQuoridor(won, true));
+  assert.equal(validQuoridor(won), false);
+  assert.equal(actQuoridor(won, { type: 'move', cell: 75 }).state, won);
+  assert.deepEqual(start.pawns, [4, 76]);
+});
+test('Quoridor rejects crossing/overlapping walls and complete blocks with BFS for both goals', async () => {
+  const {
+    newQuoridor,
+    actQuoridor,
+    quoridorWallError,
+    validQuoridor,
+    quoridorPath,
+  } = await import('../../src/lib/quoridor.ts');
+  let s = newQuoridor();
+  s = actQuoridor(s, { type: 'wall', row: 3, col: 3, orientation: 'h' }).state;
+  assert.ok(quoridorWallError(s, { row: 3, col: 3, orientation: 'v' }));
+  assert.ok(quoridorWallError(s, { row: 3, col: 4, orientation: 'h' }));
+  assert.ok(validQuoridor(s));
+  const partial = {
+    ...newQuoridor(),
+    walls: [0, 2, 4, 6].map((col) => ({
+      row: 0,
+      col,
+      orientation: 'h' as const,
+      owner: 0 as const,
+    })),
+  };
+  assert.ok(quoridorPath(4, 8, partial.walls));
+  assert.match(
+    quoridorWallError(partial, { row: 0, col: 7, orientation: 'v' })!,
+    /route/,
+  );
+  assert.equal(
+    actQuoridor(partial, { type: 'wall', row: 0, col: 7, orientation: 'v' })
+      .state,
+    partial,
+  );
+  const closed = {
+    ...partial,
+    walls: [
+      ...partial.walls,
+      { row: 0, col: 7, orientation: 'v' as const, owner: 1 as const },
+    ],
+  };
+  assert.equal(validQuoridor(closed), false);
+  const spent = {
+    ...newQuoridor(),
+    walls: [
+      ...Array.from({ length: 8 }, (_, row) => ({
+        row,
+        col: 0,
+        orientation: 'h' as const,
+        owner: 0 as const,
+      })),
+      { row: 0, col: 3, orientation: 'h' as const, owner: 0 as const },
+      { row: 1, col: 3, orientation: 'h' as const, owner: 0 as const },
+    ],
+  };
+  assert.ok(validQuoridor(spent));
+  assert.match(
+    quoridorWallError(spent, { row: 7, col: 7, orientation: 'v' })!,
+    /no walls/,
+  );
+});

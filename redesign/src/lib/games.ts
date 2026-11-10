@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'quoridor',
+    name: 'Quoridor',
+    tagline: 'A short path, a clever wall',
+    players: {
+      min: 2,
+      max: 2,
+      type: 'local-multiplayer',
+    },
+    category: 'Board',
+    color: '#f15c7d',
+    icon: 'tabler:puzzle',
+    description:
+      'Race across a nine-by-nine board, move your pawn or place a wall, and keep a path open for both players. Play locally or head-to-head in a private room.',
+  },
+  {
     id: 'sudoku',
     name: 'Sudoku',
     tagline: 'Nine digits, one satisfying solution',

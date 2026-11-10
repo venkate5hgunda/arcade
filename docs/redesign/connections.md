@@ -40,8 +40,8 @@ reconnect invitations. Team wins/losses are recorded once for all players and
 never credited to spectators. The host starts practice rounds or changes games
 through the existing lobby.
 
-Protocol v10 rejects older connection links with reload guidance. Valid v1–v9
-host backups still recover through new v10 invitations. The original JavaScript
+The current room protocol v11 rejects older connection links with reload guidance. Valid v1–v10
+host backups still recover through new v11 invitations. The original JavaScript
 app remains the frozen migration baseline; Connections extends the production
 registry and has its own G27 requirement.
 

@@ -6,6 +6,7 @@ import {
   actChallenge,
   challengeDone,
   challengeHelp,
+  challengeTurn,
   newChallenge,
   validChallenge,
 } from '../lib/challenges.ts';
@@ -29,46 +30,63 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
   return (
     <Frame
       run={run}
-      fields={[
-        {
-          key: 'mode',
-          label: 'Puzzle',
-          options: [
-            ['daily', 'Daily puzzle'],
-            ['practice', 'Practice puzzle'],
-          ],
-        },
-        ...(id === 'tiles'
-          ? [
+      fields={
+        id === 'quoridor'
+          ? []
+          : [
               {
-                key: 'players',
-                label: 'Players on this device',
+                key: 'mode',
+                label: 'Puzzle',
                 options: [
-                  ['1', 'Solo'],
-                  ['2', '2 players'],
-                  ['3', '3 players'],
-                  ['4', '4 players'],
-                ] as [string, string][],
+                  ['daily', 'Daily puzzle'],
+                  ['practice', 'Practice puzzle'],
+                ],
               },
+              ...(id === 'tiles'
+                ? [
+                    {
+                      key: 'players',
+                      label: 'Players on this device',
+                      options: [
+                        ['1', 'Solo'],
+                        ['2', '2 players'],
+                        ['3', '3 players'],
+                        ['4', '4 players'],
+                      ] as [string, string][],
+                    },
+                  ]
+                : []),
+              ...(id === 'sudoku'
+                ? [
+                    {
+                      key: 'difficulty',
+                      label: 'Difficulty',
+                      options: [
+                        ['easy', 'Easy'],
+                        ['medium', 'Medium'],
+                        ['hard', 'Hard'],
+                      ] as [string, string][],
+                    },
+                  ]
+                : []),
             ]
-          : []),
-        ...(id === 'sudoku'
-          ? [
-              {
-                key: 'difficulty',
-                label: 'Difficulty',
-                options: [
-                  ['easy', 'Easy'],
-                  ['medium', 'Medium'],
-                  ['hard', 'Hard'],
-                ] as [string, string][],
-              },
-            ]
-          : []),
-      ]}
+      }
       summary={getGame(id)!.description}
       help={challengeHelp[id]}
-      title={done ? 'Puzzle complete!' : getGame(id)!.name}
+      title={
+        state?.gameId === 'quoridor'
+          ? state.winner !== null
+            ? `Player ${state.winner + 1} wins!`
+            : `Player ${state.current + 1}’s turn`
+          : done
+            ? 'Puzzle complete!'
+            : getGame(id)!.name
+      }
+      setupSummary={
+        id === 'quoridor'
+          ? 'Two players · One screen · Ten walls each'
+          : undefined
+      }
       status={
         done
           ? 'A completed puzzle. Nicely done.'
@@ -98,7 +116,7 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
               )
             }
           >
-            New practice puzzle
+            {id === 'quoridor' ? 'Play again' : 'New practice puzzle'}
           </button>
         )
       }

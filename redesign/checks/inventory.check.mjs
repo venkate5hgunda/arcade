@@ -69,6 +69,7 @@ test('all local documentation links resolve', () => {
     'design-qa.md',
     'game-ports.md',
     'connections.md',
+    'expansion.md',
   ]) {
     const path = resolve(root, 'docs/redesign', name);
     const body = readFileSync(path, 'utf8');

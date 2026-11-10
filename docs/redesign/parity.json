@@ -974,6 +974,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G34",
+      "title": "Quoridor",
+      "category": "Board",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/quoridor.ts",
+        "redesign/src/components/QuoridorTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Race across a nine-by-nine board, move your pawn or place a wall, and keep a path open for both players. Play locally or head-to-head in a private room.",
+        "Two players start at opposite edges with ten walls each. On your turn, move one square orthogonally or place a wall spanning two adjacent spaces. Jump an adjacent opponent if the square behind is open. If the straight jump is blocked by a wall or board edge, sidestep diagonally around that opponent. Walls cannot overlap, cross, or completely block either player\u2019s route. Reach any square on the opposite edge to win. In wall mode choose the upper-left anchor, inspect the preview, then confirm. Play pass-and-play or a two-player private room."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

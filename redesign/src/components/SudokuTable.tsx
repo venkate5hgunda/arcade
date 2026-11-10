@@ -70,7 +70,7 @@ export function SudokuTable({
         {state.values.map((n, cell) => (
           <button
             key={cell}
-            aria-label={`Row ${Math.floor(cell / 9) + 1} column ${(cell % 9) + 1}, ${n || 'empty'}${p.givens[cell] ? ', given' : ''}${conflicts.includes(cell) ? ', conflict' : ''}`}
+            aria-label={`Row ${Math.floor(cell / 9) + 1} column ${(cell % 9) + 1}, ${n || 'empty'}${p.givens[cell] ? ', given' : ''}${state.revealed.includes(cell) ? ', revealed' : ''}${state.notes[cell].length ? ', notes ' + state.notes[cell].join(', ') : ''}${conflicts.includes(cell) ? ', conflict' : ''}`}
             aria-pressed={cell === selected}
             disabled={blocked || done}
             className={`${cell % 9 === 2 || cell % 9 === 5 ? 'box-right' : ''} ${Math.floor(cell / 9) === 2 || Math.floor(cell / 9) === 5 ? 'box-bottom' : ''} ${p.givens[cell] ? 'given' : ''} ${selected === cell ? 'selected' : ''} ${conflicts.includes(cell) ? 'conflict' : ''}`}
