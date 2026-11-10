@@ -374,3 +374,18 @@ footer {
     transition: none;
   }
 }
+/* Keep the category row scrollable without widening the page. */
+.browse-tools {
+  flex-direction: row;
+}
+.browse-tools .search,
+.browse-tools .filters {
+  min-width: 0;
+  max-width: 100%;
+}
+.browse-tools .filters {
+  margin-inline: 0;
+}
+:root[data-theme='dark'] .card-title .icon {
+  filter: brightness(0) invert(1);
+}
