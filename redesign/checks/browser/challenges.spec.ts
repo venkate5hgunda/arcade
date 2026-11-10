@@ -457,7 +457,12 @@ test('every new cover and game fits a 320px screen and its legacy game alias', a
       GAMES.find((g) => g.id === id)!.name,
     );
     const art = page.locator('.puzzle-setup-art');
-    await art.evaluate((img: HTMLImageElement) => img.decode());
+    // Compact setups hide decorative covers; explicitly load the source for
+    // this asset-integrity assertion instead of waiting on lazy visibility.
+    await art.evaluate((img: HTMLImageElement) => {
+      img.loading = 'eager';
+      return img.decode();
+    });
     expect(
       await art.evaluate((img: HTMLImageElement) => img.naturalWidth),
     ).toBe(1344);
