@@ -1,3 +1,5 @@
+import { connectionsProgress } from './connections.ts';
+import type { ConnectionsState } from './connections.ts';
 import type { LocalState } from './tictactoe.ts';
 import { findWin } from './tictactoe.ts';
 import { c4Win } from './puzzles.ts';
@@ -186,6 +188,19 @@ export function localCue(
             ? win
             : pop;
     }
+    case 'connections': {
+      const a = connectionsProgress(previous as ConnectionsState),
+        b = connectionsProgress(next as ConnectionsState);
+      return b.over
+        ? b.won
+          ? win
+          : loss
+        : b.solved.length > a.solved.length
+          ? pop
+          : b.mistakes > a.mistakes
+            ? loss
+            : null;
+    }
     case 'wordle': {
       const a = previous as WordleState,
         b = next as WordleState;
@@ -287,6 +302,7 @@ export function roomCue(
 ): GameCue | null {
   if (!a || !b || a.roomId !== b.roomId) return null;
   const previous =
+    a.connectionsMatch ??
     a.islandMatch ??
     a.businessMatch ??
     a.mafiaMatch ??
@@ -296,6 +312,7 @@ export function roomCue(
     a.cardMatch ??
     a.match;
   const next =
+    b.connectionsMatch ??
     b.islandMatch ??
     b.businessMatch ??
     b.mafiaMatch ??
@@ -319,6 +336,12 @@ export function roomCue(
     if (result.losses > (old?.losses ?? 0)) return loss;
     if (result.draws > (old?.draws ?? 0)) return draw;
   }
+  if (b.connectionsMatch && a.connectionsMatch)
+    return localCue(
+      'connections',
+      a.connectionsMatch.game,
+      b.connectionsMatch.game,
+    );
   if (b.rpsMatch && a.rpsMatch) {
     const view = b.rpsMatch.view;
     if (

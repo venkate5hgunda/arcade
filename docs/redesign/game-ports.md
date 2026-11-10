@@ -1,6 +1,6 @@
 # Game migration status
 
-**All 26 games have native implementations.** Shared room breadth, sound and themes have implementation evidence; offline support and release qualification remain in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
+**All 27 current games have native implementations.** Shared room breadth, sound and themes have implementation evidence; offline support and release qualification remain in the [backlog](backlog.md). PR #2's first-game work is complete and remains unmerged for review; puzzle ports are a stacked review unit on `codex/redesign-puzzle-games`.
 
 | Family | Implemented | Remaining |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | Board | Snakes & Ladders, Ludo, Chess, Business, Island Charter | None |
 | Action | Whack-a-Mole, Air Hockey, 8-Ball Pool | None |
 | Party | Show, Taboo, Rock Paper Scissors, Dumb Charades, Imposter, Mafia | None |
-| Word | Wordle, Hangman, Word Scramble | None |
+| Word | Connections, Wordle, Hangman, Word Scramble | None |
 
 ## Puzzle acceptance and evidence
 
@@ -136,3 +136,7 @@ The native island supports three or four local or room navigators, opening rolls
 Evidence: `redesign/checks/unit/catan.check.ts`, `room.check.ts`, and `redesign/checks/browser/island.spec.ts` compare the original engine and exercise private projections, host recovery, complete local and room outcomes, replay, trading, discard and raider actions on desktop and mobile. Physical-device and cross-network qualification remain open.
 
 Evidence: `redesign/checks/unit/mafia.check.ts` compares the native rules and projections with the original across 5–10 seats; `redesign/checks/unit/room.check.ts` covers privacy, full wins, absent seats, rejected actions, protocol migration and recovery. `redesign/checks/browser/mafia.spec.ts` completes a game across five real browser contexts on desktop and mobile, including reconnection and private clues. Cross-network and physical-device qualification remain release gates.
+
+## Connections — first Todoist addition
+
+Connections extends the production shelf with original daily/practice sets, solo and shared-device cooperation, and 2–20-player cooperative private rooms. See [Connections](connections.md) for rules, persistence, protocol v10 recovery and validation evidence. The original 26-game migration baseline remains frozen.

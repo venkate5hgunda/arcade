@@ -1,4 +1,5 @@
 export const ROOM_GAMES = [
+  'connections',
   'tictactoe',
   'connect-four',
   'crazy-eights',

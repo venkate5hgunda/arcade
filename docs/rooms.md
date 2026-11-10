@@ -56,3 +56,9 @@ while enabled; turning game sounds off releases that session. Safari and iOS
 Chrome do not expose the Web Vibration API, so gameplay haptics are unavailable there;
 the directly touched native switch can give a tactile tick on supported iOS
 versions, without relying on unreliable programmatic switch clicks.
+
+## Connections cooperative rooms
+
+Choose Connections to solve one word-grouping puzzle together with 2–20 players. Each player selects words on their own screen; submitting shares the guess, solved groups and mistake budget. The host validates every submission. Spectators watch, and a disconnected player pauses submissions until reconnect. A solved puzzle credits a team win to every player; four mistakes record a team loss. The host can start a practice puzzle or return to the lobby.
+
+Connections introduces protocol v10. Everyone needs the same app version and fresh invitation links. Host backups from v1–v9 still restore with fresh v10 invitations; old links are rejected with reload guidance.

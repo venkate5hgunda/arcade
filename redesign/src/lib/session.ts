@@ -19,6 +19,7 @@ export const RESUME_MINUTES = Object.freeze({
   'show-star': 20,
   taboo: 15,
   wordle: 20,
+  connections: 1440,
   'air-hockey': 10,
   blackjack: 5,
   business: 240,

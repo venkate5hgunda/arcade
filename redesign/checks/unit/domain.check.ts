@@ -159,7 +159,7 @@ test('storage quota errors notify the UI without blocking an in-memory round', (
   }
 });
 
-test('all catalog identities, player limits, categories and icons match the original registry', async () => {
+test('frozen baseline catalog identities, player limits, categories and icons remain unchanged', async () => {
   const { pathToFileURL } = await import('node:url');
   const { resolve } = await import('node:path');
   const original = await import(
@@ -173,5 +173,9 @@ test('all catalog identities, player limits, categories and icons match the orig
     category: g.category,
     icon: g.icon,
   });
-  assert.deepEqual(GAMES.map(shape), original.GAMES.map(shape));
+  const baselineIds = new Set(original.GAMES.map((g: { id: string }) => g.id));
+  assert.deepEqual(
+    GAMES.filter((g) => baselineIds.has(g.id)).map(shape),
+    original.GAMES.map(shape),
+  );
 });
