@@ -1,3 +1,4 @@
+import { CHALLENGE_IDS, isChallenge, validChallenge } from './challenges.ts';
 import { validConnections } from './connections.ts';
 import { validBusiness } from './business-core.js';
 import { validCatanCheckpoint } from './catan-core.js';
@@ -21,6 +22,7 @@ import type { LocalState } from './tictactoe.ts';
 import { puzzleValidators, PUZZLE_IDS } from './puzzles.ts';
 import type { PuzzleId } from './puzzles.ts';
 export function validCheckpoint(id: string, state: unknown): boolean {
+  if (isChallenge(id)) return validChallenge(state) && state.gameId === id;
   if (id === 'connections') return validConnections(state);
   if (id === 'pool') return validPool(state);
   if (id === 'air-hockey') return validHockey(state);
@@ -48,6 +50,7 @@ export function validCheckpoint(id: string, state: unknown): boolean {
       : false;
 }
 export const roomGameIds = new Set([
+  ...CHALLENGE_IDS,
   'connections',
   'catan',
   'business',

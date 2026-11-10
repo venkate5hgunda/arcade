@@ -287,7 +287,7 @@ test('three Island navigators connect, roll and recover after the host reloads',
     ).toBeVisible();
     expect(
       await guests[0].evaluate(() =>
-        sessionStorage.getItem('arcade:redesign:room:v10'),
+        sessionStorage.getItem('arcade:redesign:room:v11'),
       ),
     ).toBeNull();
     await host.getByRole('button', { name: 'Roll two dice' }).click();
@@ -339,12 +339,12 @@ test('three Island navigators connect, roll and recover after the host reloads',
     await host.evaluate(
       ({ state, view }) => {
         const saved = JSON.parse(
-          sessionStorage.getItem('arcade:redesign:room:v10')!,
+          sessionStorage.getItem('arcade:redesign:room:v11')!,
         );
         saved.privateIsland = state;
         saved.snapshot.islandMatch.view = view;
         sessionStorage.setItem(
-          'arcade:redesign:room:v10',
+          'arcade:redesign:room:v11',
           JSON.stringify(saved),
         );
       },

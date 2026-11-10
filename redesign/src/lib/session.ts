@@ -20,6 +20,7 @@ export const RESUME_MINUTES = Object.freeze({
   taboo: 15,
   wordle: 20,
   connections: 1440,
+  strands: 1440,
   'air-hockey': 10,
   blackjack: 5,
   business: 240,

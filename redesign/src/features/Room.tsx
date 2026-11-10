@@ -1,3 +1,11 @@
+import { ChallengeTable } from '../components/ChallengeTable.tsx';
+import {
+  CHALLENGE_IDS,
+  challengeDone,
+  challengeHelp,
+  challengeTurn,
+  isChallenge,
+} from '../lib/challenges.ts';
 import { ConnectionsTable } from '../components/ConnectionsTable.tsx';
 import { CONNECTIONS_HELP, connectionsProgress } from '../lib/connections.ts';
 import { playCue } from '../lib/feedback.ts';
@@ -34,14 +42,15 @@ export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
   const [gameId, setGameId] = useState<RoomGameId>(() =>
-    ['mafia', 'business', 'catan', 'connections'].includes(
+    ['mafia', 'business', 'catan', 'connections', ...CHALLENGE_IDS].includes(
       new URLSearchParams(location.search).get('game') ?? '',
     )
       ? (new URLSearchParams(location.search).get('game') as
           | 'mafia'
           | 'business'
           | 'catan'
-          | 'connections')
+          | 'connections'
+          | import('../lib/challenges.ts').ChallengeId)
       : 'tictactoe',
   );
   const [businessOptions, setBusinessOptions] = useState<BusinessOptions>({
@@ -90,6 +99,7 @@ export function RoomPage({ room }: { room: Room }) {
   const mafia = s?.mafiaMatch;
   const business = s?.businessMatch;
   const island = s?.islandMatch;
+  const challenge = s?.challengeMatch;
   const connections = s?.connectionsMatch;
   const connectionProgress =
     connections && connectionsProgress(connections.game);
@@ -97,10 +107,13 @@ export function RoomPage({ room }: { room: Room }) {
   const selectedGame =
     s &&
     ((s.members.length > 4 &&
-      !['uno', 'mafia', 'business', 'connections'].includes(gameId)) ||
+      !['uno', 'mafia', 'business', 'connections', ...CHALLENGE_IDS].includes(
+        gameId,
+      )) ||
       (s.members.length > 6 && gameId === 'business') ||
       (s.members.length > 2 &&
         ![
+          ...CHALLENGE_IDS,
           'connections',
           'uno',
           'mafia',
@@ -117,6 +130,7 @@ export function RoomPage({ room }: { room: Room }) {
   const seat = s?.members.findIndex((m) => m.id === room.peerId) ?? -1;
   const spectating = !!s?.spectators?.some((m) => m.id === room.peerId);
   const inMatch = !!(
+    challenge ||
     connections ||
     match ||
     cards ||
@@ -190,9 +204,9 @@ export function RoomPage({ room }: { room: Room }) {
           <>
             Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
             UNO-inspired, Snakes &amp; Ladders, Ludo, Chess, Business, Island
-            Charter, Mafia, Rock Paper Scissors or cooperative Connections. UNO
-            and Connections welcome 2–20 players, Mafia 5–10, Business 2–6, race
-            games 2–4, and Island Charter 3–4.
+            Charter, Mafia, Rock Paper Scissors or cooperative Connections and
+            Strands. UNO and Connections welcome 2–20 players, Mafia 5–10,
+            Business 2–6, race games 2–4, and Island Charter 3–4.
           </>
         )}
       </p>
@@ -268,6 +282,7 @@ export function RoomPage({ room }: { room: Room }) {
               !chess &&
               !mafia &&
               !business &&
+              !challenge &&
               !connections &&
               !island
             }
@@ -296,7 +311,8 @@ export function RoomPage({ room }: { room: Room }) {
                           mafia ||
                           business ||
                           island ||
-                          connections
+                          connections ||
+                          challenge
                         ? String(index + 1)
                         : index === 0
                           ? 'X'
@@ -480,6 +496,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !challenge &&
             !connections &&
             !island &&
             room.role === 'host' &&
@@ -503,6 +520,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !challenge &&
             !connections &&
             !island &&
             (!output || room.role === 'guest') && (
@@ -581,6 +599,11 @@ export function RoomPage({ room }: { room: Room }) {
                         Island Charter
                       </option>
                       <option value="connections">Connections · Co-op</option>
+                      {CHALLENGE_IDS.map((id) => (
+                        <option key={id} value={id}>
+                          {gameName(id)} · Co-op
+                        </option>
+                      ))}
                       <option value="uno">UNO-inspired</option>
                     </select>
                   </label>
@@ -801,6 +824,53 @@ export function RoomPage({ room }: { room: Room }) {
                 ) : (
                   <p>Waiting for the host to start the next round.</p>
                 ))}
+            </div>
+          )}
+          {challenge && s && (
+            <div className="board-panel room-challenge-match">
+              <p className="room-game-name">{gameName(challenge.gameId)}</p>
+              <div className="turn-banner" role="status">
+                <div>
+                  <h2>
+                    {challengeDone(challenge.game)
+                      ? 'Puzzle complete!'
+                      : !connected
+                        ? 'Puzzle paused'
+                        : 'Solve it together'}
+                  </h2>
+                  <p>
+                    {spectating
+                      ? 'You are watching.'
+                      : !connected
+                        ? 'Waiting for every player to reconnect.'
+                        : 'Share the puzzle. Selections stay on your screen.'}
+                  </p>
+                </div>
+              </div>
+              <ChallengeTable
+                key={`${challenge.gameId}:${challenge.round}`}
+                state={challenge.game}
+                blocked={
+                  !connected ||
+                  spectating ||
+                  (challengeTurn(challenge.game) !== null &&
+                    challengeTurn(challenge.game) !== seat)
+                }
+                act={(input) => room.challengeAction(input)}
+              />
+              {challengeDone(challenge.game) && room.role === 'host' && (
+                <button
+                  className="primary"
+                  disabled={!connected}
+                  onClick={() => room.start()}
+                >
+                  New practice puzzle
+                </button>
+              )}
+              <details className="help-card">
+                <summary>How to play</summary>
+                <p>{challengeHelp[challenge.gameId]}</p>
+              </details>
             </div>
           )}
           {connections && s && connectionProgress && (
@@ -1160,6 +1230,7 @@ export function RoomPage({ room }: { room: Room }) {
       <p className="room-status" role="status">
         {!mafia &&
           !business &&
+          !challenge &&
           !connections &&
           !island &&
           (message || room.issue)}

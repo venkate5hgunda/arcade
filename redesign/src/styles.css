@@ -3817,3 +3817,91 @@ select:focus-visible {
     padding: 18px 12px;
   }
 }
+
+.challenge-table {
+  max-width: 42rem;
+  margin: auto;
+}
+.challenge-edition {
+  color: #c9c6da;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.challenge-message {
+  min-height: 1.5rem;
+  font-weight: 700;
+}
+.challenge-draft {
+  min-height: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+.challenge-table .actions {
+  flex-wrap: wrap;
+}
+.challenge-table button {
+  min-height: 44px;
+}
+.strands-theme {
+  padding: 0.8rem;
+  background: #8fe0d8;
+  color: #182039;
+  text-align: center;
+  border-radius: 0.7rem;
+}
+.strands-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+.strands-grid button {
+  min-width: 0;
+  padding: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid #bdb8ab;
+  background: #fff3df;
+  color: #182039;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  font-weight: 800;
+}
+.strands-grid button[aria-pressed='true'] {
+  background: #ffb5c6;
+  border-color: #ff456b;
+}
+.strands-grid button.found {
+  background: #8fe0d8;
+  opacity: 1;
+}
+.strands-grid button.spangram {
+  background: #ffd474;
+  opacity: 1;
+}
+.strands-grid button.hinted {
+  outline: 3px dashed #ffd474;
+  outline-offset: 1px;
+}
+.strands-found {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+.strands-found li {
+  background: #8fe0d8;
+  color: #182039;
+  border-radius: 1rem;
+  padding: 0.3rem 0.7rem;
+  font-weight: 700;
+}
+@media (max-width: 380px) {
+  .strands-grid {
+    gap: 2px;
+  }
+  .strands-grid button {
+    min-height: 40px;
+  }
+}

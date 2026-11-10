@@ -2,7 +2,7 @@
 
 # 🕹️ Arcade
 
-**27 beautifully illustrated games in one installable shelf — play solo, pass the device, or open a private peer-to-peer room.**
+**28 beautifully illustrated games in one installable shelf — play solo, pass the device, or open a private peer-to-peer room.**
 
 [![Play Arcade](https://img.shields.io/badge/▶_PLAY_ARCADE-ef476f?style=for-the-badge)](https://venkate5hgunda.github.io/arcade/)
 [![Deploy](https://github.com/venkate5hgunda/arcade/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/venkate5hgunda/arcade/actions/workflows/pages.yml)
@@ -22,7 +22,7 @@
 
 | | |
 | --- | --- |
-| 🎨 **27 distinct games**<br>Every title has its own inspected cover, setup, rules, saved state, and playable native interface. | 🤝 **12 private-room games**<br>Serverless WebRTC rooms support private hands, roles, cargo, spectators, reconnects, and standings. |
+| 🎨 **28 distinct games**<br>Every title has its own inspected cover, setup, rules, saved state, and playable native interface. | 🤝 **13 private-room games**<br>Serverless WebRTC rooms support private hands, roles, cargo, spectators, reconnects, and standings. |
 | 📱 **Made for every screen**<br>Responsive touch and keyboard controls, light/dark themes, reduced motion, sound, and optional haptics. | 📴 **Installable and offline**<br>The complete production asset graph is cached locally, with safe updates and resumable matches. |
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 The screenshot above follows a real pass-and-play match from setup through a Player 1 win. Prefer a different table? Search or filter the shelf, resume an unfinished match, or create a private room without signing in.
 
-## 🎲 Browse all 27 games
+## 🎲 Browse all 28 games
 
 | Category | Games |
 | --- | --- |
@@ -42,7 +42,7 @@ The screenshot above follows a real pass-and-play match from setup through a Pla
 | 🃏 **Cards** | Blackjack · Crazy Eights · UNO-inspired |
 | 🎉 **Party** | Show · Taboo · Imposter · Mafia · Dumb Charades · Rock Paper Scissors |
 | 🧩 **Puzzle** | Tic-Tac-Toe · Connect Four · Minesweeper · Memory Match · 2048 · Simon Says |
-| 🔤 **Word** | Connections · Wordle · Hangman · Word Scramble |
+| 🔤 **Word** | Strands · Connections · Wordle · Hangman · Word Scramble |
 
 <details>
 <summary><strong>Open the October shelf snapshot</strong></summary>

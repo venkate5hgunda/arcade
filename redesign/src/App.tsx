@@ -1,3 +1,4 @@
+import { isChallenge } from './lib/challenges.ts';
 import { migrateStorage } from './lib/migration.ts';
 import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
@@ -99,7 +100,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <b>{playerLabel(game)}</b>
                   <small>
                     {isImplemented(game.id)
-                      ? game.id === 'connections'
+                      ? game.id === 'connections' || isChallenge(game.id)
                         ? 'Solo or solve together'
                         : game.id === 'mafia'
                           ? 'Private room'
@@ -125,7 +126,7 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <span>
                     <b>Private room</b>
                     <small>
-                      {game.id === 'connections'
+                      {game.id === 'connections' || isChallenge(game.id)
                         ? '2–20 players · Cooperative'
                         : game.id === 'catan'
                           ? '3–4 players, private cargo'

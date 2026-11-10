@@ -1,3 +1,4 @@
+import { CHALLENGE_IDS } from './challenges.ts';
 import { PUZZLE_IDS } from './puzzles.ts';
 // Game catalog, ported from js/game-catalog.js.
 //
@@ -32,6 +33,17 @@ export interface Game {
 }
 
 export const GAMES: Game[] = [
+  {
+    id: 'strands',
+    name: 'Strands',
+    tagline: 'Follow the letters, find the theme',
+    players: { min: 1, max: 20, type: 'local-multiplayer' },
+    category: 'Word',
+    color: '#8fe0d8',
+    icon: 'tabler:abc',
+    description:
+      'Trace hidden theme words and a spangram across original offline grids. Solve solo or cooperatively in a private room.',
+  },
   {
     id: 'connections',
     name: 'Connections',
@@ -343,6 +355,7 @@ export const CATEGORIES = [
 
 /** Games with a migrated view. Others render an honest "Coming soon" screen. */
 export const implementedGameIds = new Set<string>([
+  ...CHALLENGE_IDS,
   'connections',
   'catan',
   'business',
@@ -370,6 +383,7 @@ export const implementedGameIds = new Set<string>([
 
 /** Room-supported games, matching the baseline's `REMOTE_GAMES`. */
 export const ROOM_GAMES = new Set<string>([
+  ...CHALLENGE_IDS,
   'connections',
   'tictactoe',
   'connect-four',

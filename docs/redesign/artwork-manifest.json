@@ -412,6 +412,20 @@
       "revision": 2,
       "inspection": "Inspected original output: distinct grouped color tiles, tactile resin and navy felt; coherent warm light. Deliberate partial-board crop avoids incorrect full-board geometry. Center subject remains clear at thumbnail size. No readable text or UI.",
       "notes": "First generation rejected for an incorrect complete tile arrangement. Accepted original exported to WebP at quality 88, with no creative edits."
+    },
+    {
+      "id": "strands",
+      "src": "./art/games/strands.webp",
+      "alt": "Cream letter tiles linked by a coral cord on a navy grid with a golden tray edge.",
+      "width": 1344,
+      "height": 768,
+      "bytes": 98960,
+      "sha256": "b6ceaa2740b960ff52ee8dc6e72d05702382c9b1475293c46efbd4bd06120f5e",
+      "provider": "Adobe Firefly",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. A close crop of cream letter-game tiles on a deep navy felt grid, a single coral cord winding diagonally between adjacent tiles, and one golden ribbon stretching across the tray. Abstract engraved marks only, no readable letters or words. Cozy tabletop arcade environment, deep navy shadows, coral and teal accent pieces, cream materials and warm golden light. Tactile rounded resin and painted wood, crafted playful detail. Wide landscape, main subject in middle 60%, full bleed. No UI, border, title, logo, watermark or readable text. Only a partial grid visible, continuing beyond frame.",
+      "requestId": "cd05ee6b-8517-4547-ba16-90f0a30145aa",
+      "revision": 1,
+      "inspection": "Inspected grid tiles, coral tracing cord, gold tray, navy felt, warm light and center crop. Partial grid avoids incorrect full-board counts. Distinct from Connections grouped tiles."
     }
   ]
 }

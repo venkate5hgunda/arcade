@@ -842,6 +842,28 @@
         "redesign/checks/browser/connections.spec.ts",
         "redesign/checks/browser/pwa.spec.ts"
       ]
+    },
+    {
+      "id": "G28",
+      "title": "Strands",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/strands.ts",
+        "redesign/src/features/Challenge.tsx",
+        "redesign/src/components/ChallengeTable.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Find theme words and a spangram across a complete 6\u00d78 grid with diagonal adjacency, no reused cells, hints and completion.",
+        "Preserve local daily/practice progress and shared cooperative private-room state, host validation, spectators and reconnect."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }
