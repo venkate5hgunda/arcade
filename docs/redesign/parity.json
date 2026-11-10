@@ -908,6 +908,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G31",
+      "title": "Mini Crossword",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/mini.ts",
+        "redesign/src/components/MiniTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Solve an original five-by-five crossword with Across and Down clues. Share a grid locally or in a cooperative private room.",
+        "Fill the 5\u00d75 grid using the Across and Down clues. Tap a clue to select its row or column; tap a cell again to switch direction. Type letters and use arrow keys to move. Check letters highlights incorrect entries without changing them. Reveal letter fills the selected cell and records assistance. Rooms share entries and revealed letters; the host accepts edits in revision order. These original Mini puzzles use word-square grids, so Across and Down answers intersect symmetrically."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

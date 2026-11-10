@@ -454,6 +454,21 @@
       "sha256": "bba017bd4a82323f202276ca8a51f1961fef77b0bb27f32e47a78520b6404161",
       "provider": "Adobe Firefly",
       "revision": 1
+    },
+    {
+      "id": "mini-crossword",
+      "alt": "A close crop of a cream crossword grid, ivory tiles, coral pencil and clue card on navy felt.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. Extreme macro close crop of a crossword puzzle in progress: only a small corner of a cream grid with a few black squares and chunky blank ivory letter tiles, a coral pencil crossing the navy felt foreground and corner of a blank clue card. Most of the crossword board continues far outside the frame so no complete board is visible. Tile faces are blank, no readable letters, symbols or words. Teal wooden tray edges, warm golden light, tactile resin and painted wood. Wide landscape, central 60% focal subject, full bleed. No UI, title, logo or watermark.",
+      "requestId": "32a3e4fa-da03-4c6f-841a-244630924690",
+      "inspection": "Inspected partial cream crossword grid, ivory tiles, coral pencil and blank clue card. Integral tile/clue marks appear in the crop without a readable word, title or UI. Deliberate close crop avoids an incorrect complete grid; warm lighting and navy/teal palette match the shelf.",
+      "notes": "Initial full-board generation rejected for incorrect complete-grid geometry. This close crop is the accepted second generation.",
+      "src": "./art/games/mini-crossword.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 81494,
+      "sha256": "91da9010387acec609ae086aa26a13327d50a1f28680f574e3ddc844bd3abdac",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

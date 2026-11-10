@@ -118,3 +118,34 @@ test('Letter Boxed chains two words, enforces starting letters, resumes and cove
     fullPage: true,
   });
 });
+
+test('Mini Crossword edits, checks errors, reveals and completes a restored grid', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const { newMini, miniPuzzle } = await import('../../src/lib/mini.ts');
+  const state = { ...newMini('practice'), seed: 0 };
+  const answer = miniPuzzle(0).answer;
+  state.entries = answer.split('');
+  state.entries[0] = '';
+  state.entries[24] = 'Z';
+  await seed(page, 'mini-crossword', state);
+  await page.getByRole('button', { name: 'Check letters' }).click();
+  await expect(page.locator('.mini-cell.incorrect')).toHaveCount(1);
+  await page.getByLabel('Row 5 column 5', { exact: true }).fill(answer[24]);
+  await page.reload();
+  await page.getByLabel('Row 1 column 1', { exact: true }).fill(answer[0]);
+  await expect(
+    page.getByRole('heading', { name: 'Puzzle complete!' }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `node_modules/.cache/mini-crossword-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});

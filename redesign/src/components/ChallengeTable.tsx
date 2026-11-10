@@ -4,6 +4,7 @@ import type { ChallengeState } from '../lib/challenges.ts';
 import { StrandsTable } from './StrandsTable.tsx';
 import { BeeTable } from './BeeTable.tsx';
 import { LetterTable } from './LetterTable.tsx';
+import { MiniTable } from './MiniTable.tsx';
 export function ChallengeTable({
   state,
   blocked = false,
@@ -32,6 +33,9 @@ export function ChallengeTable({
       )}
       {state.gameId === 'letter-boxed' && (
         <LetterTable state={state} blocked={blocked} action={action} />
+      )}
+      {state.gameId === 'mini-crossword' && (
+        <MiniTable state={state} blocked={blocked} action={action} />
       )}
       <p className="challenge-message" role="status">
         {message}

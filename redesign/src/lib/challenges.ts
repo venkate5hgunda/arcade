@@ -15,13 +15,16 @@ import {
   validLetter,
 } from './letter-boxed.ts';
 import type { LetterState } from './letter-boxed.ts';
+import { actMini, newMini, miniDone, validMini } from './mini.ts';
+import type { MiniState } from './mini.ts';
 export const CHALLENGE_IDS = [
   'strands',
   'spelling-bee',
   'letter-boxed',
+  'mini-crossword',
 ] as const;
 export type ChallengeId = (typeof CHALLENGE_IDS)[number];
-export type ChallengeState = StrandsState | BeeState | LetterState;
+export type ChallengeState = StrandsState | BeeState | LetterState | MiniState;
 export const isChallenge = (id: string): id is ChallengeId =>
   (CHALLENGE_IDS as readonly string[]).includes(id);
 export function newChallenge(
@@ -37,6 +40,8 @@ export function newChallenge(
       return newBee(mode);
     case 'letter-boxed':
       return newLetter(mode);
+    case 'mini-crossword':
+      return newMini(mode);
   }
 }
 export function validChallenge(
@@ -51,6 +56,8 @@ export function validChallenge(
       return validBee(value, allowFinished);
     case 'letter-boxed':
       return validLetter(value, allowFinished);
+    case 'mini-crossword':
+      return validMini(value, allowFinished);
     default:
       return false;
   }
@@ -63,6 +70,8 @@ export function challengeDone(s: ChallengeState) {
       return beeDone(s);
     case 'letter-boxed':
       return letterDone(s);
+    case 'mini-crossword':
+      return miniDone(s);
   }
 }
 export function actChallenge(
@@ -76,6 +85,8 @@ export function actChallenge(
       return actBee(s, input);
     case 'letter-boxed':
       return actLetter(s, input);
+    case 'mini-crossword':
+      return actMini(s, input);
   }
 }
 export function challengeWinners(s: ChallengeState, players: number): number[] {
@@ -99,4 +110,6 @@ export const challengeHelp: Record<ChallengeId, string> = {
     'Make words of at least four letters using only the seven hive letters. Every word must include the golden center letter. Letters may repeat. Four-letter words score 1; longer words score their length. A pangram uses all seven letters and adds 7 points. The bundled practice dictionary is finite. Reach Genius at 70% of available points, then find every accepted word for Queen Bee. Room players share the hive, found words and team score; duplicate submissions do not score twice.',
   'letter-boxed':
     'Use at least three letters per word. Consecutive letters must come from different sides of the square. Your next word must start with the last letter of the previous word. Letters may be reused, but words may not repeat. Cover all twelve letters to win; try for two words. The bundled dictionary is finite. Undo removes the last word. Private-room players cooperate on one shared chain.',
+  'mini-crossword':
+    'Fill the 5\u00d75 grid using the Across and Down clues. Tap a clue to select its row or column; tap a cell again to switch direction. Type letters and use arrow keys to move. Check letters highlights incorrect entries without changing them. Reveal letter fills the selected cell and records assistance. Rooms share entries and revealed letters; the host accepts edits in revision order. These original Mini puzzles use word-square grids, so Across and Down answers intersect symmetrically.',
 };

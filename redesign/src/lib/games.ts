@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'mini-crossword',
+    name: 'Mini Crossword',
+    tagline: 'A little grid, a little discovery',
+    players: {
+      min: 1,
+      max: 20,
+      type: 'local-multiplayer',
+    },
+    category: 'Word',
+    color: '#aac9ee',
+    icon: 'tabler:abc',
+    description:
+      'Solve an original five-by-five crossword with Across and Down clues. Share a grid locally or in a cooperative private room.',
+  },
+  {
     id: 'letter-boxed',
     name: 'Letter Boxed',
     tagline: 'Around the square, word by word',

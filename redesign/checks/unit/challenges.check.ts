@@ -102,3 +102,37 @@ test('Letter Boxed layouts have twelve distinct letters and legal two-word cover
   assert.equal(actLetter(start, { type: 'word', word: 'ZZZ' }).state, start);
   assert.deepEqual(actLetter(first, { type: 'undo' }).state.words, []);
 });
+
+test('Mini word-square crosswords have valid Across/Down clues and only accept complete correct grids', async () => {
+  const { newMini, miniPuzzle, actMini, miniDone, validMini } = await import(
+    '../../src/lib/mini.ts'
+  );
+  for (let seed = 0; seed < 8; seed++) {
+    let state = { ...newMini('practice'), seed };
+    const p = miniPuzzle(seed);
+    assert.equal(p.answer.length, 25);
+    assert.equal(p.across.length, 5);
+    assert.equal(p.down.length, 5);
+    for (let cell = 0; cell < 25; cell++)
+      state = actMini(state, {
+        type: 'entry',
+        cell,
+        value: p.answer[cell],
+      }).state;
+    assert.ok(miniDone(state));
+    assert.ok(validMini(state, true));
+    assert.equal(validMini(state), false);
+  }
+  let state = { ...newMini('practice'), seed: 0 };
+  assert.equal(
+    actMini(state, { type: 'entry', cell: 25, value: 'A' }).state,
+    state,
+  );
+  state = actMini(state, { type: 'reveal', cell: 0 }).state;
+  assert.deepEqual(state.revealed, [0]);
+  assert.equal(
+    actMini(state, { type: 'entry', cell: 0, value: 'Z' }).state,
+    state,
+  );
+  assert.equal(validMini({ ...state, revealed: [0, 0] }), false);
+});

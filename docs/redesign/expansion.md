@@ -15,3 +15,7 @@ Nine seven-letter hives use an original bundled practice vocabulary plus Arcade�
 ## Letter Boxed
 
 Six original layouts each have a verified two-word solution, with side rotations for daily/practice variation. Words must use different sides for consecutive letters and begin with the previous word’s last letter. Any legal chain covering all twelve letters wins. Local play and cooperative rooms share the chain and support undo; the offline dictionary is intentionally bounded.
+
+## Mini Crossword
+
+Eight original 5×5 word-square crosswords have distinct Across/Down clues. Entries, optional revealed letters and completion survive reload. Check letters provides local feedback without modifying the grid. Cooperative rooms serialize edits against the current revision; stale concurrent edits cannot overwrite newer entries. Revealed cells remain fixed and assistance is displayed.

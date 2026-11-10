@@ -1418,3 +1418,29 @@ test('Letter Boxed room participants extend and undo one authoritative chain', a
   host.leave();
   guest.leave();
 });
+
+test('Mini room edits reject stale overwrites and complete one shared crossword', async () => {
+  const { miniPuzzle } = await import('../../src/lib/mini.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('mini-crossword');
+  await flush();
+  const state = host.snapshot!.challengeMatch!.game;
+  if (state.gameId !== 'mini-crossword') throw Error('Wrong game');
+  const answer = miniPuzzle(state.seed).answer;
+  host.challengeAction({ type: 'entry', cell: 0, value: answer[0] });
+  guest.challengeAction({ type: 'entry', cell: 1, value: answer[1] });
+  await flush();
+  assert.equal(host.snapshot!.challengeMatch!.revision, 1);
+  for (let cell = 1; cell < 25; cell++) {
+    guest.challengeAction({ type: 'entry', cell, value: answer[cell] });
+    await flush();
+  }
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [1, 1]);
+  host.leave();
+  guest.leave();
+});
