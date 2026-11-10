@@ -1,0 +1,42 @@
+name: Arm auto-merge for agent PRs
+
+# Coding agents (Codex and similar) open PRs from codex/* branches. This
+# workflow arms GitHub auto-merge on those PRs so they merge on their own
+# once the required CI checks pass. The linked issue closes via the
+# "Fixes #N" line the agent must put in the PR body (see AGENTS.md).
+# PRs that touch workflow files are never armed: those need a human merge.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  arm:
+    if: >-
+      github.event.pull_request.draft == false &&
+      startsWith(github.event.pull_request.head.ref, 'codex/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Do not arm if the PR touches workflow files
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          files="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json files --jq '.files[].path')"
+          if printf '%s\n' "$files" | grep -q '^\.github/workflows/'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "PR touches .github/workflows/ - auto-merge not armed; needs a human merge."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Enable auto-merge
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --auto --merge
