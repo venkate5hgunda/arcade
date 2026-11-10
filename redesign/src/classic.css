@@ -420,3 +420,8 @@ footer {
     margin-inline: auto;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .game-card:hover {
+    transform: none;
+  }
+}
