@@ -184,3 +184,49 @@ test('Tiles removes shared layers, updates combos and restores the tray', async 
     fullPage: true,
   });
 });
+
+test('Sudoku saves pencil notes, protects givens and completes a uniquely generated puzzle', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const { newSudoku, sudokuPuzzle } = await import('../../src/lib/sudoku.ts');
+  const p = sudokuPuzzle(0, 'easy'),
+    state = { ...newSudoku('practice'), seed: 0, values: [...p.givens] };
+  const cell = p.givens.findIndex((n) => !n);
+  await seed(page, 'sudoku', state);
+  await page.locator('.sudoku-grid button').nth(cell).click();
+  await page.getByRole('button', { name: 'Pencil notes off' }).click();
+  await page
+    .getByRole('group', { name: 'Enter a digit' })
+    .getByRole('button', { name: '3', exact: true })
+    .click();
+  await page.reload();
+  await expect(
+    page
+      .locator('.sudoku-grid button')
+      .nth(cell)
+      .locator('small')
+      .filter({ hasText: /^3$/ }),
+  ).toHaveCount(1);
+  const finish = { ...state, values: [...p.solution] };
+  finish.values[cell] = 0;
+  await seed(page, 'sudoku', finish);
+  await page.locator('.sudoku-grid button').nth(cell).click();
+  await page
+    .getByRole('group', { name: 'Enter a digit' })
+    .getByRole('button', { name: String(p.solution[cell]), exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Puzzle complete!' }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `node_modules/.cache/sudoku-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});

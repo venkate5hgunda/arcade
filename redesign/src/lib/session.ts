@@ -21,6 +21,7 @@ export const RESUME_MINUTES = Object.freeze({
   wordle: 20,
   connections: 1440,
   strands: 1440,
+  sudoku: 1440,
   tiles: 1440,
   'mini-crossword': 1440,
   'letter-boxed': 1440,

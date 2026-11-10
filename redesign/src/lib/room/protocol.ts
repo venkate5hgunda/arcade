@@ -1237,6 +1237,7 @@ export class Room {
       this.snapshot?.match?.gameId ??
       'tictactoe',
     options?:
+      | { difficulty: string }
       | Partial<BusinessOptions>
       | { portMode: 'fixed' | 'shuffled'; boardOptions: BoardOptions },
   ) {
@@ -1280,6 +1281,10 @@ export class Room {
           gameId,
           s.challengeMatch?.gameId === gameId ? 'practice' : 'daily',
           s.members.length,
+          (options as { difficulty?: string })?.difficulty ??
+            (s.challengeMatch?.game.gameId === 'sudoku'
+              ? s.challengeMatch.game.difficulty
+              : 'easy'),
         )
       : null;
     const nextConnections =

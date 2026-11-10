@@ -19,12 +19,15 @@ import { actMini, newMini, miniDone, validMini } from './mini.ts';
 import type { MiniState } from './mini.ts';
 import { actTiles, newTiles, tilesDone, validTiles } from './tiles.ts';
 import type { TilesState } from './tiles.ts';
+import { actSudoku, newSudoku, sudokuDone, validSudoku } from './sudoku.ts';
+import type { SudokuState } from './sudoku.ts';
 export const CHALLENGE_IDS = [
   'strands',
   'spelling-bee',
   'letter-boxed',
   'mini-crossword',
   'tiles',
+  'sudoku',
 ] as const;
 export type ChallengeId = (typeof CHALLENGE_IDS)[number];
 export type ChallengeState =
@@ -32,15 +35,18 @@ export type ChallengeState =
   | BeeState
   | LetterState
   | MiniState
-  | TilesState;
+  | TilesState
+  | SudokuState;
 export const isChallenge = (id: string): id is ChallengeId =>
   (CHALLENGE_IDS as readonly string[]).includes(id);
 export function newChallenge(
   id: ChallengeId,
   mode = 'daily',
   players = 1,
+  difficulty = 'easy',
 ): ChallengeState {
   void players;
+  void difficulty;
   switch (id) {
     case 'strands':
       return newStrands(mode);
@@ -52,6 +58,8 @@ export function newChallenge(
       return newMini(mode);
     case 'tiles':
       return newTiles(mode, players);
+    case 'sudoku':
+      return newSudoku(mode, difficulty);
   }
 }
 export function validChallenge(
@@ -70,6 +78,8 @@ export function validChallenge(
       return validMini(value, allowFinished);
     case 'tiles':
       return validTiles(value, allowFinished);
+    case 'sudoku':
+      return validSudoku(value, allowFinished);
     default:
       return false;
   }
@@ -86,6 +96,8 @@ export function challengeDone(s: ChallengeState) {
       return miniDone(s);
     case 'tiles':
       return tilesDone(s);
+    case 'sudoku':
+      return sudokuDone(s);
   }
 }
 export function actChallenge(
@@ -103,6 +115,8 @@ export function actChallenge(
       return actMini(s, input);
     case 'tiles':
       return actTiles(s, input);
+    case 'sudoku':
+      return actSudoku(s, input);
   }
 }
 export function challengeWinners(s: ChallengeState, players: number): number[] {
@@ -132,4 +146,6 @@ export const challengeHelp: Record<ChallengeId, string> = {
     'Fill the 5\u00d75 grid using the Across and Down clues. Tap a clue to select its row or column; tap a cell again to switch direction. Type letters and use arrow keys to move. Check letters highlights incorrect entries without changing them. Reveal letter fills the selected cell and records assistance. Rooms share entries and revealed letters; the host accepts edits in revision order. These original Mini puzzles use word-square grids, so Across and Down answers intersect symmetrically.',
   tiles:
     'Select two different tiles sharing a ring, shape or background pattern. All matching layers disappear from both tiles. A tile clears when all three layers are gone. Reuse a remaining tile from your previous match to grow the combo; switching to a new pair starts a new combo. Clear every layer to win. Local multiplayer and private rooms take turns after each accepted match and share a team score. Invalid matches do not consume a turn.',
+  sudoku:
+    'Fill each row, column and 3\u00d73 box with digits 1\u20139 exactly once. Given and revealed cells are fixed. Select a cell and use the number pad or keyboard; arrow keys move, and Backspace clears. Pencil notes toggle candidates in empty cells. Reveal cell records assistance. Easy, medium and hard tiers use progressively fewer givens; each puzzle is checked for one unique solution. Room players share values and notes, and the host rejects stale edits.',
 };

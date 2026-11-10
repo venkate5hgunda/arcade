@@ -15,7 +15,13 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
     id,
     { mode: 'daily', players: '1', difficulty: 'easy' },
     (value) => validChallenge(value) && value.gameId === id,
-    (settings) => newChallenge(id, settings.mode, Number(settings.players)),
+    (settings) =>
+      newChallenge(
+        id,
+        settings.mode,
+        Number(settings.players),
+        settings.difficulty,
+      ),
     challengeDone,
   );
   const state = run.state,
@@ -46,6 +52,19 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
               },
             ]
           : []),
+        ...(id === 'sudoku'
+          ? [
+              {
+                key: 'difficulty',
+                label: 'Difficulty',
+                options: [
+                  ['easy', 'Easy'],
+                  ['medium', 'Medium'],
+                  ['hard', 'Hard'],
+                ] as [string, string][],
+              },
+            ]
+          : []),
       ]}
       summary={getGame(id)!.description}
       help={challengeHelp[id]}
@@ -72,6 +91,9 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
                   run.state && 'players' in run.state
                     ? run.state.players
                     : Number(run.settings.players),
+                  run.state?.gameId === 'sudoku'
+                    ? run.state.difficulty
+                    : run.settings.difficulty,
                 ),
               )
             }

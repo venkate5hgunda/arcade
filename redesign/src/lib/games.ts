@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'sudoku',
+    name: 'Sudoku',
+    tagline: 'Nine digits, one satisfying solution',
+    players: {
+      min: 1,
+      max: 20,
+      type: 'local-multiplayer',
+    },
+    category: 'Puzzle',
+    color: '#aac9ee',
+    icon: 'tabler:puzzle',
+    description:
+      'Solve a uniquely generated 9\u00d79 puzzle with daily difficulty tiers, pencil notes, conflict hints and cooperative room editing.',
+  },
+  {
     id: 'tiles',
     name: 'Tiles',
     tagline: 'Peel back the patterns',

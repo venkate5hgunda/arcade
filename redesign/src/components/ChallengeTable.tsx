@@ -6,6 +6,7 @@ import { BeeTable } from './BeeTable.tsx';
 import { LetterTable } from './LetterTable.tsx';
 import { MiniTable } from './MiniTable.tsx';
 import { TilesTable } from './TilesTable.tsx';
+import { SudokuTable } from './SudokuTable.tsx';
 export function ChallengeTable({
   state,
   blocked = false,
@@ -40,6 +41,9 @@ export function ChallengeTable({
       )}
       {state.gameId === 'tiles' && (
         <TilesTable state={state} blocked={blocked} action={action} />
+      )}
+      {state.gameId === 'sudoku' && (
+        <SudokuTable state={state} blocked={blocked} action={action} />
       )}
       <p className="challenge-message" role="status">
         {message}

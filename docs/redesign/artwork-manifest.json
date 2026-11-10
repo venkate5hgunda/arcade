@@ -483,6 +483,21 @@
       "sha256": "de0bc92ddb28f338c2d9646838d47db4074a8dc0690bb35cb121515f32be6cc1",
       "provider": "Adobe Firefly",
       "revision": 1
+    },
+    {
+      "id": "sudoku",
+      "alt": "Ivory Sudoku cells with distinct digits one, two and three beside a coral pencil.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. Extreme close crop of a Sudoku puzzle corner. Ivory square cells have crisp single digits 1, 2 and 3 in dark navy on separate cells, with thick navy box separators continuing far outside the image. Coral pencil beside the puzzle on navy felt. No tokens, no pawns. Tactile painted wood and resin, teal tray edge, warm golden tabletop light. Wide landscape with the numbered cells in the middle 60%, full bleed. Only a partial Sudoku grid, no full board. No words, title, logo, watermark or UI; only the correct individual digits 1, 2 and 3.",
+      "requestId": "b517cd13-5e87-41c4-af13-47f66d61733e",
+      "inspection": "Full-size inspection confirms distinct correct digits 1, 2 and 3 in adjacent cream cells with no repeated number. Partial grid avoids full-board geometry errors. Coral pencil, navy felt, teal edge and warm light match the shelf.",
+      "notes": "First generation rejected because the blank board and loose tokens did not clearly identify Sudoku.",
+      "src": "./art/games/sudoku.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 57154,
+      "sha256": "82c4ef7c7a05464b59645e155ac2a214118661e1a20b91c0e8d5acfc3242b7ac",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

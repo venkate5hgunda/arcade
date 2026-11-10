@@ -952,6 +952,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G33",
+      "title": "Sudoku",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/sudoku.ts",
+        "redesign/src/components/SudokuTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Solve a uniquely generated 9\u00d79 puzzle with daily difficulty tiers, pencil notes, conflict hints and cooperative room editing.",
+        "Fill each row, column and 3\u00d73 box with digits 1\u20139 exactly once. Given and revealed cells are fixed. Select a cell and use the number pad or keyboard; arrow keys move, and Backspace clears. Pencil notes toggle candidates in empty cells. Reveal cell records assistance. Easy, medium and hard tiers use progressively fewer givens; each puzzle is checked for one unique solution. Room players share values and notes, and the host rejects stale edits."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

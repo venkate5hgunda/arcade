@@ -60,6 +60,7 @@ export function RoomPage({ room }: { room: Room }) {
     ...DEFAULT_BOARD_OPTIONS,
   });
   const [islandPorts, setIslandPorts] = useState<'fixed' | 'shuffled'>('fixed');
+  const [challengeDifficulty, setChallengeDifficulty] = useState('easy');
   const [name, setName] = useState(() => names()[0] || '');
   const [input, setInput] = useState(() =>
     location.search.includes('invite=') ? window.location.href : '',
@@ -631,6 +632,19 @@ export function RoomPage({ room }: { room: Room }) {
                       Invite at least three players to start Island Charter.
                     </p>
                   )}
+                {room.role === 'host' && selectedGame === 'sudoku' && (
+                  <label>
+                    Sudoku difficulty
+                    <select
+                      value={challengeDifficulty}
+                      onChange={(e) => setChallengeDifficulty(e.target.value)}
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </label>
+                )}
                 {room.role === 'host' && selectedGame === 'business' && (
                   <details>
                     <summary>Business house rules</summary>
@@ -659,14 +673,16 @@ export function RoomPage({ room }: { room: Room }) {
                     onClick={() =>
                       room.start(
                         selectedGame,
-                        selectedGame === 'business'
-                          ? businessOptions
-                          : selectedGame === 'catan'
-                            ? {
-                                portMode: islandPorts,
-                                boardOptions: islandOptions,
-                              }
-                            : undefined,
+                        selectedGame === 'sudoku'
+                          ? { difficulty: challengeDifficulty }
+                          : selectedGame === 'business'
+                            ? businessOptions
+                            : selectedGame === 'catan'
+                              ? {
+                                  portMode: islandPorts,
+                                  boardOptions: islandOptions,
+                                }
+                              : undefined,
                       )
                     }
                   >

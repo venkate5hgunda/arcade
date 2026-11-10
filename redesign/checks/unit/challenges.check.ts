@@ -165,3 +165,49 @@ test('Tiles generated layers always clear legally, maintain even pattern counts 
   assert.equal(actTiles(s, { type: 'match', tiles: [0, 0] }).state, s);
   assert.equal(validTiles({ ...s, moves: [[0, 0]] }), false);
 });
+
+test('Sudoku generates unique solutions at each tier, protects givens and saves notes/assistance', async () => {
+  const {
+    newSudoku,
+    sudokuPuzzle,
+    sudokuSolutions,
+    actSudoku,
+    sudokuDone,
+    validSudoku,
+    sudokuConflicts,
+  } = await import('../../src/lib/sudoku.ts');
+  for (const difficulty of ['easy', 'medium', 'hard'] as const)
+    for (let seed = 0; seed < 6; seed++) {
+      const p = sudokuPuzzle(seed, difficulty);
+      assert.equal(sudokuSolutions(p.givens), 1);
+      assert.equal(sudokuSolutions(p.solution), 1);
+      assert.ok(
+        p.givens.filter(Boolean).length <=
+          { easy: 40, medium: 33, hard: 32 }[difficulty],
+      );
+      const s = {
+        ...newSudoku('practice', difficulty),
+        seed,
+        values: [...p.givens],
+      };
+      assert.ok(validSudoku(s));
+      const empty = p.givens.findIndex((n) => !n),
+        given = p.givens.findIndex(Boolean);
+      assert.equal(
+        actSudoku(s, { type: 'entry', cell: given, value: 0 }).state,
+        s,
+      );
+      const noted = actSudoku(s, { type: 'note', cell: empty, value: 3 }).state;
+      assert.deepEqual(noted.notes[empty], [3]);
+      const revealed = actSudoku(noted, { type: 'hint', cell: empty }).state;
+      assert.deepEqual(revealed.notes[empty], []);
+      assert.ok(validSudoku(revealed));
+      const finished = { ...s, values: [...p.solution] };
+      assert.ok(sudokuDone(finished));
+      assert.equal(sudokuConflicts(finished).length, 0);
+      assert.equal(validSudoku(finished), false);
+      assert.ok(validSudoku(finished, true));
+      assert.equal(validSudoku({ ...s, values: Array(81).fill(1) }), false);
+    }
+  assert.equal(sudokuSolutions(Array(81).fill(1)), 0);
+});

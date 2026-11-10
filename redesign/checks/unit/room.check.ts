@@ -1485,3 +1485,37 @@ test('Tiles rooms enforce the active seat and clear a shared tray with one team 
   host.leave();
   guest.leave();
 });
+
+test('Sudoku rooms preserve difficulty, reject stale note overwrites and record a shared completion', async () => {
+  const { sudokuPuzzle } = await import('../../src/lib/sudoku.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('sudoku', { difficulty: 'hard' });
+  await flush();
+  const state = host.snapshot!.challengeMatch!.game;
+  if (state.gameId !== 'sudoku') throw Error('Wrong game');
+  assert.equal(state.difficulty, 'hard');
+  const p = sudokuPuzzle(state.seed, 'hard'),
+    cell = p.givens.findIndex((n) => !n);
+  host.challengeAction({ type: 'note', cell, value: 3 });
+  guest.challengeAction({ type: 'entry', cell, value: p.solution[cell] });
+  await flush();
+  assert.equal(host.snapshot!.challengeMatch!.revision, 1);
+  for (let i = 0; i < 81; i++)
+    if (!p.givens[i]) {
+      guest.challengeAction({ type: 'entry', cell: i, value: p.solution[i] });
+      await flush();
+    }
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [1, 1]);
+  host.start();
+  await flush();
+  assert.equal(host.snapshot!.challengeMatch!.game.gameId, 'sudoku');
+  if (host.snapshot!.challengeMatch!.game.gameId === 'sudoku')
+    assert.equal(host.snapshot!.challengeMatch!.game.difficulty, 'hard');
+  host.leave();
+  guest.leave();
+});

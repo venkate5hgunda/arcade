@@ -23,3 +23,7 @@ Eight original 5×5 word-square crosswords have distinct Across/Down clues. Entr
 ## Tiles
 
 Twelve generated tiles each carry three independently matchable layers. Matching a ring, shape or pattern removes every shared layer; carrying a remaining tile forward grows the combo. Even pattern counts guarantee a path to clearing the tray. One-device multiplayer and rooms enforce turns after valid matches, share the score, and validate the complete move history on restore.
+
+## Sudoku
+
+Deterministic on-device generation randomizes a valid solution and removes clues only while a solver confirms one unique solution. Easy/medium/hard target 40/33/27 givens, with uniqueness taking precedence over the target. These tiers describe clue density rather than a rating of human solving techniques. Values, pencil notes, revealed cells and difficulty survive reload. Cooperative rooms share editing, reject stale revisions and preserve the selected difficulty on replay.
