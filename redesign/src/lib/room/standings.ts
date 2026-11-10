@@ -1,4 +1,6 @@
+import { CHALLENGE_IDS } from '../challenges.ts';
 export const ROOM_GAMES = [
+  ...CHALLENGE_IDS,
   'connections',
   'tictactoe',
   'connect-four',

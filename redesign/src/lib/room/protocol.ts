@@ -1,3 +1,14 @@
+import { challengePlayers, challengeMax } from '../challenges.ts';
+import {
+  actChallenge,
+  challengeDone,
+  challengeTurn,
+  challengeWinners,
+  isChallenge,
+  newChallenge,
+  validChallenge,
+} from '../challenges.ts';
+import type { ChallengeId, ChallengeState } from '../challenges.ts';
 import {
   connectionsProgress,
   newConnections,
@@ -92,11 +103,13 @@ export interface RoomSnapshot {
   businessMatch?: BusinessMatch | null;
   islandMatch?: IslandMatch | null;
   connectionsMatch?: ConnectionsMatch | null;
+  challengeMatch?: ChallengeMatch | null;
   standings?: Standings;
   wins: number[];
   draws: number;
 }
 export type RoomGameId =
+  | ChallengeId
   | 'connections'
   | 'tictactoe'
   | 'connect-four'
@@ -107,6 +120,12 @@ export type RoomGameId =
   | 'rps'
   | CardGameId
   | RaceId;
+export interface ChallengeMatch {
+  gameId: ChallengeId;
+  round: number;
+  revision: number;
+  game: ChallengeState;
+}
 export interface ConnectionsMatch {
   gameId: 'connections';
   round: number;
@@ -158,7 +177,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 10;
+  version: 11;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -167,7 +186,8 @@ interface Signal {
   spectating: boolean;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v10';
+const BACKUP = 'arcade:redesign:room:v11';
+const CONNECTIONS_BACKUP = 'arcade:redesign:room:v10';
 const SPECTATOR_BACKUP = 'arcade:redesign:room:v9';
 const STANDINGS_BACKUP = 'arcade:redesign:room:v8';
 const ISLAND_BACKUP = 'arcade:redesign:room:v7';
@@ -218,6 +238,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'businessMatch',
         'islandMatch',
         'connectionsMatch',
+        'challengeMatch',
         'standings',
         'wins',
         'draws',
@@ -233,6 +254,7 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
       s.businessMatch,
       s.islandMatch,
       s.connectionsMatch,
+      s.challengeMatch,
     ].filter(Boolean).length <= 1 &&
     validId(s.roomId) &&
     Array.isArray(s.members) &&
@@ -258,6 +280,17 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         s.standings,
         [...s.members, ...(s.spectators ?? [])].map((m) => m.id),
       )) &&
+    (s.challengeMatch == null ||
+      (s.members.length >= 2 &&
+        Object.keys(s.challengeMatch).length === 4 &&
+        isChallenge(s.challengeMatch.gameId) &&
+        integer(s.challengeMatch.round) &&
+        integer(s.challengeMatch.revision) &&
+        validChallenge(s.challengeMatch.game, true) &&
+        s.challengeMatch.gameId === s.challengeMatch.game.gameId &&
+        s.members.length <= challengeMax(s.challengeMatch.gameId) &&
+        (challengePlayers(s.challengeMatch.game) === null ||
+          challengePlayers(s.challengeMatch.game) === s.members.length))) &&
     (s.connectionsMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -428,7 +461,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 10)
+    if (s && typeof s === 'object' && s.version !== 11)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -518,6 +551,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(CONNECTIONS_BACKUP) ??
           sessionStorage.getItem(SPECTATOR_BACKUP) ??
           sessionStorage.getItem(STANDINGS_BACKUP) ??
           sessionStorage.getItem(ISLAND_BACKUP) ??
@@ -627,6 +661,7 @@ export class Room {
   private activeMatch() {
     const s = this.snapshot;
     return (
+      s?.challengeMatch ??
       s?.connectionsMatch ??
       s?.islandMatch ??
       s?.businessMatch ??
@@ -681,6 +716,7 @@ export class Room {
     s.chessMatch = null;
     s.mafiaMatch = null;
     s.businessMatch = null;
+    s.challengeMatch = null;
     s.connectionsMatch = null;
     s.islandMatch = null;
     this.privateGame = null;
@@ -780,7 +816,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 10,
+        version: 11,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -841,7 +877,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 10 ||
+      m.version !== 11 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -873,6 +909,8 @@ export class Room {
         this.commitMafia(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'chess-action' && peer.accepted)
         this.commitChess(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'challenge-action' && peer.accepted)
+        this.commitChallenge(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'connections-action' && peer.accepted)
         this.commitConnections(peer.id, m.words, m.round, m.revision);
       else if (m.type === 'rps-action' && peer.accepted)
@@ -931,6 +969,7 @@ export class Room {
       )
         throw new Error();
       const previous =
+          this.snapshot.challengeMatch ??
           this.snapshot.connectionsMatch ??
           this.snapshot.islandMatch ??
           this.snapshot.businessMatch ??
@@ -941,6 +980,7 @@ export class Room {
           this.snapshot.cardMatch ??
           this.snapshot.match,
         next =
+          (m.snapshot as RoomSnapshot).challengeMatch ??
           (m.snapshot as RoomSnapshot).connectionsMatch ??
           (m.snapshot as RoomSnapshot).islandMatch ??
           (m.snapshot as RoomSnapshot).businessMatch ??
@@ -981,7 +1021,8 @@ export class Room {
       : spectating
         ? this.snapshot.spectators?.find((m) => !m.connected)
         : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
-          ((this.snapshot.connectionsMatch ||
+          ((this.snapshot.challengeMatch ||
+            this.snapshot.connectionsMatch ||
             this.snapshot.match ||
             this.snapshot.cardMatch ||
             this.snapshot.raceMatch ||
@@ -1002,7 +1043,8 @@ export class Room {
     if (
       !existing &&
       !spectating &&
-      (this.snapshot.connectionsMatch ||
+      (this.snapshot.challengeMatch ||
+        this.snapshot.connectionsMatch ||
         this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
@@ -1043,7 +1085,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 10,
+        version: 11,
         kind: 'offer',
         spectating,
         roomId: this.snapshot.roomId,
@@ -1133,7 +1175,8 @@ export class Room {
     if (
       !existing &&
       !peer.spectating &&
-      (this.snapshot.connectionsMatch ||
+      (this.snapshot.challengeMatch ||
+        this.snapshot.connectionsMatch ||
         this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
@@ -1182,7 +1225,8 @@ export class Room {
     this.emit();
   }
   start(
-    gameId: RoomGameId = this.snapshot?.connectionsMatch?.gameId ??
+    gameId: RoomGameId = this.snapshot?.challengeMatch?.gameId ??
+      this.snapshot?.connectionsMatch?.gameId ??
       this.snapshot?.islandMatch?.gameId ??
       this.snapshot?.businessMatch?.gameId ??
       this.snapshot?.mafiaMatch?.gameId ??
@@ -1193,6 +1237,7 @@ export class Room {
       this.snapshot?.match?.gameId ??
       'tictactoe',
     options?:
+      | { difficulty: string }
       | Partial<BusinessOptions>
       | { portMode: 'fixed' | 'shuffled'; boardOptions: BoardOptions },
   ) {
@@ -1205,30 +1250,43 @@ export class Room {
     )
       throw new Error('Wait for all players to connect.');
     if (
-      ![
-        'connections',
-        'catan',
-        'business',
-        'mafia',
-        'chess',
-        'rps',
-        'tictactoe',
-        'connect-four',
-        'crazy-eights',
-        'uno',
-        'snakes-ladders',
-        'ludo',
-      ].includes(gameId) ||
+      (!isChallenge(gameId) &&
+        ![
+          'connections',
+          'catan',
+          'business',
+          'mafia',
+          'chess',
+          'rps',
+          'tictactoe',
+          'connect-four',
+          'crazy-eights',
+          'uno',
+          'snakes-ladders',
+          'ludo',
+        ].includes(gameId)) ||
       (['chess', 'rps', 'tictactoe', 'connect-four', 'crazy-eights'].includes(
         gameId,
       ) &&
         s.members.length !== 2) ||
+      (isChallenge(gameId) && s.members.length > challengeMax(gameId)) ||
       (gameId === 'catan' && (s.members.length < 3 || s.members.length > 4)) ||
       (gameId === 'business' && s.members.length > 6) ||
       (gameId === 'mafia' && (s.members.length < 5 || s.members.length > 10)) ||
       (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
     )
       throw new Error('Choose a game that supports this number of players.');
+    const nextChallenge = isChallenge(gameId)
+      ? newChallenge(
+          gameId,
+          s.challengeMatch?.gameId === gameId ? 'practice' : 'daily',
+          s.members.length,
+          (options as { difficulty?: string })?.difficulty ??
+            (s.challengeMatch?.game.gameId === 'sudoku'
+              ? s.challengeMatch.game.difficulty
+              : 'easy'),
+        )
+      : null;
     const nextConnections =
       gameId === 'connections'
         ? newConnections(s.connectionsMatch ? 'practice' : 'daily')
@@ -1264,7 +1322,8 @@ export class Room {
         : null;
     const round = Math.max(
       s.nextRound ?? 0,
-      (s.connectionsMatch?.round ??
+      (s.challengeMatch?.round ??
+        s.connectionsMatch?.round ??
         s.islandMatch?.round ??
         s.businessMatch?.round ??
         s.mafiaMatch?.round ??
@@ -1280,13 +1339,20 @@ export class Room {
     this.privateMafia = null;
     this.privateBusiness = null;
     this.privateIsland = null;
+    s.challengeMatch = null;
     s.connectionsMatch = null;
     s.islandMatch = null;
     s.businessMatch = null;
     s.mafiaMatch = null;
     s.rpsMatch = null;
     s.chessMatch = null;
-    if (gameId === 'connections') {
+    if (isChallenge(gameId)) {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      s.challengeMatch = { gameId, round, revision: 0, game: nextChallenge! };
+    } else if (gameId === 'connections') {
       this.privateGame = null;
       s.match = null;
       s.cardMatch = null;
@@ -1415,6 +1481,56 @@ export class Room {
     room.standings = next;
     if (winners === null) room.draws++;
     else for (const winner of winners) room.wins[winner]++;
+  }
+  challengeAction(action: unknown) {
+    const match = this.snapshot?.challengeMatch;
+    if (!match) return;
+    if (this.role === 'host')
+      this.commitChallenge(this.peerId, action, match.round, match.revision);
+    else if (this.role === 'guest') {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'challenge-action',
+            action,
+            round: match.round,
+            revision: match.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private commitChallenge(
+    sender: string,
+    action: unknown,
+    round: unknown,
+    revision: unknown,
+  ) {
+    const room = this.snapshot,
+      match = room?.challengeMatch;
+    if (
+      !room ||
+      !match ||
+      match.round !== round ||
+      match.revision !== revision ||
+      !room.members.every((m) => m.connected)
+    )
+      return;
+    const seat = room.members.findIndex((m) => m.id === sender),
+      turn = challengeTurn(match.game);
+    if (seat < 0 || (turn !== null && turn !== seat)) return;
+    const next = actChallenge(match.game, action).state;
+    if (next === match.game) return;
+    match.game = next;
+    match.revision++;
+    if (challengeDone(next))
+      this.recordResult(
+        match.gameId,
+        match.round,
+        challengeWinners(next, room.members.length),
+      );
+    this.publish();
   }
   connectionsAction(words: unknown) {
     const match = this.snapshot?.connectionsMatch;
@@ -2067,6 +2183,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(CONNECTIONS_BACKUP);
       sessionStorage.removeItem(SPECTATOR_BACKUP);
       sessionStorage.removeItem(STANDINGS_BACKUP);
       sessionStorage.removeItem(ISLAND_BACKUP);

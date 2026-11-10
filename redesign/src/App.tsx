@@ -1,3 +1,4 @@
+import { isChallenge } from './lib/challenges.ts';
 import { migrateStorage } from './lib/migration.ts';
 import { PwaControl } from './components/PwaControl.tsx';
 import { GameArt } from './components/GameArt.tsx';
@@ -99,22 +100,24 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <b>{playerLabel(game)}</b>
                   <small>
                     {isImplemented(game.id)
-                      ? game.id === 'connections'
-                        ? 'Solo or solve together'
-                        : game.id === 'mafia'
-                          ? 'Private room'
-                          : game.players.type === 'single'
-                            ? 'Solo challenge'
-                            : [
-                                  'crazy-eights',
-                                  'uno',
-                                  'snakes-ladders',
-                                  'ludo',
-                                  'catan',
-                                  'business',
-                                ].includes(game.id)
-                              ? 'Pass & play'
-                              : 'Solo or pass & play'
+                      ? game.id === 'quoridor'
+                        ? 'Pass & play'
+                        : game.id === 'connections' || isChallenge(game.id)
+                          ? 'Solo or solve together'
+                          : game.id === 'mafia'
+                            ? 'Private room'
+                            : game.players.type === 'single'
+                              ? 'Solo challenge'
+                              : [
+                                    'crazy-eights',
+                                    'uno',
+                                    'snakes-ladders',
+                                    'ludo',
+                                    'catan',
+                                    'business',
+                                  ].includes(game.id)
+                                ? 'Pass & play'
+                                : 'Solo or pass & play'
                       : 'Original Arcade'}
                   </small>
                 </span>
@@ -125,21 +128,23 @@ function Catalog({ query, category }: { query: string; category: string }) {
                   <span>
                     <b>Private room</b>
                     <small>
-                      {game.id === 'connections'
-                        ? '2–20 players · Cooperative'
-                        : game.id === 'catan'
-                          ? '3–4 players, private cargo'
-                          : game.id === 'business'
-                            ? '2–6 players, private decks'
-                            : game.id === 'mafia'
-                              ? '5–10 players, private roles'
-                              : game.id === 'uno'
-                                ? '2–20 players, private hands'
-                                : ['snakes-ladders', 'ludo'].includes(game.id)
-                                  ? '2–4 players, 2–4 screens'
-                                  : game.id === 'crazy-eights'
-                                    ? '2 players, private hands'
-                                    : '2 players, 2 screens'}
+                      {game.id === 'quoridor'
+                        ? '2 players · Head-to-head'
+                        : game.id === 'connections' || isChallenge(game.id)
+                          ? '2–20 players · Cooperative'
+                          : game.id === 'catan'
+                            ? '3–4 players, private cargo'
+                            : game.id === 'business'
+                              ? '2–6 players, private decks'
+                              : game.id === 'mafia'
+                                ? '5–10 players, private roles'
+                                : game.id === 'uno'
+                                  ? '2–20 players, private hands'
+                                  : ['snakes-ladders', 'ludo'].includes(game.id)
+                                    ? '2–4 players, 2–4 screens'
+                                    : game.id === 'crazy-eights'
+                                      ? '2 players, private hands'
+                                      : '2 players, 2 screens'}
                     </small>
                   </span>
                 </span>

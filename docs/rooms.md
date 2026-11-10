@@ -61,4 +61,10 @@ versions, without relying on unreliable programmatic switch clicks.
 
 Choose Connections to solve one word-grouping puzzle together with 2–20 players. Each player selects words on their own screen; submitting shares the guess, solved groups and mistake budget. The host validates every submission. Spectators watch, and a disconnected player pauses submissions until reconnect. A solved puzzle credits a team win to every player; four mistakes record a team loss. The host can start a practice puzzle or return to the lobby.
 
-Connections introduces protocol v10. Everyone needs the same app version and fresh invitation links. Host backups from v1–v9 still restore with fresh v10 invitations; old links are rejected with reload guidance.
+Current rooms use protocol v11. Everyone needs the same app version and fresh invitation links. Host backups from v1–v10 still restore with fresh v11 invitations; old links are rejected with reload guidance.
+
+## New cooperative puzzles and Quoridor
+
+Strands, Spelling Bee, Letter Boxed, Mini Crossword, Tiles and Sudoku support 2–20-player cooperative rooms. Share found words, scores, chains, grid entries, pencil notes or tile layers. Tiles takes turns after each match; the other puzzles allow any connected player to submit. Concurrent edits use the current shared revision, so a stale action cannot overwrite newer progress.
+
+Quoridor supports exactly two players head-to-head, with seat-owned pawns and walls, legal jumps/sidesteps and route validation. Every addition supports spectators, host recovery and same-seat reconnects. The host can return to the lobby and change games over the same connections. See [new game rules and evidence](redesign/expansion.md).

@@ -199,7 +199,7 @@ test('Connections cooperative room syncs both players, pauses on host reload, re
     ).toBeVisible({ timeout: 20000 });
     const id = await host.evaluate(
       () =>
-        JSON.parse(sessionStorage.getItem('arcade:redesign:room:v10')!).snapshot
+        JSON.parse(sessionStorage.getItem('arcade:redesign:room:v11')!).snapshot
           .connectionsMatch.game.puzzleId,
     );
     const groups = CONNECTIONS_PUZZLES.find((p) => p.id === id)!.groups;

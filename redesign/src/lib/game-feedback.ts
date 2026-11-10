@@ -1,3 +1,5 @@
+import { isChallenge, challengeDone } from './challenges.ts';
+import type { ChallengeState } from './challenges.ts';
 import { connectionsProgress } from './connections.ts';
 import type { ConnectionsState } from './connections.ts';
 import type { LocalState } from './tictactoe.ts';
@@ -73,6 +75,7 @@ export function localCue(
   if (!previous) return null;
   if (id === 'whack-a-mole' && justFinished) return timer;
   if (JSON.stringify(previous) === JSON.stringify(next)) return null;
+  if (isChallenge(id)) return challengeDone(next as ChallengeState) ? win : pop;
   switch (id) {
     case 'tictactoe':
     case 'connect-four': {
@@ -302,6 +305,7 @@ export function roomCue(
 ): GameCue | null {
   if (!a || !b || a.roomId !== b.roomId) return null;
   const previous =
+    a.challengeMatch ??
     a.connectionsMatch ??
     a.islandMatch ??
     a.businessMatch ??
@@ -312,6 +316,7 @@ export function roomCue(
     a.cardMatch ??
     a.match;
   const next =
+    b.challengeMatch ??
     b.connectionsMatch ??
     b.islandMatch ??
     b.businessMatch ??
@@ -336,6 +341,14 @@ export function roomCue(
     if (result.losses > (old?.losses ?? 0)) return loss;
     if (result.draws > (old?.draws ?? 0)) return draw;
   }
+  if (b.challengeMatch && a.challengeMatch)
+    return seat < 0 && challengeDone(b.challengeMatch.game)
+      ? draw
+      : localCue(
+          b.challengeMatch.gameId,
+          a.challengeMatch.game,
+          b.challengeMatch.game,
+        );
   if (b.connectionsMatch && a.connectionsMatch)
     return localCue(
       'connections',

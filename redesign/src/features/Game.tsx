@@ -1,3 +1,5 @@
+import { ChallengeGame } from './Challenge.tsx';
+import { isChallenge } from '../lib/challenges.ts';
 import { ConnectionsGame } from './Connections.tsx';
 import { BusinessGame } from './Business.tsx';
 import { IslandGame } from './Island.tsx';
@@ -348,6 +350,7 @@ export function GameRoute() {
     return <RacesGame id={game.id} key={game.id} />;
   if (game.id === 'crazy-eights' || game.id === 'uno')
     return <CardsGame id={game.id} key={game.id} />;
+  if (isChallenge(game.id)) return <ChallengeGame id={game.id} key={game.id} />;
   if (game.id === 'connections') return <ConnectionsGame key={game.id} />;
   if (game.id === 'business') return <BusinessGame key={game.id} />;
   if (game.id === 'catan') return <IslandGame key={game.id} />;
