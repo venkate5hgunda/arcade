@@ -1444,3 +1444,44 @@ test('Mini room edits reject stale overwrites and complete one shared crossword'
   host.leave();
   guest.leave();
 });
+
+test('Tiles rooms enforce the active seat and clear a shared tray with one team result', async () => {
+  const { tilesProgress } = await import('../../src/lib/tiles.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('tiles');
+  await flush();
+  let count = 0;
+  while (count < 18) {
+    const state = host.snapshot!.challengeMatch!.game;
+    if (state.gameId !== 'tiles') throw Error('Wrong game');
+    if (tilesProgress(state).done) break;
+    const board = tilesProgress(state).board;
+    let pair: number[] = [];
+    for (let a = 0; a < 12 && !pair.length; a++)
+      for (let b = a + 1; b < 12; b++)
+        if (board[a].some((n, i) => n >= 0 && n === board[b][i])) {
+          pair = [a, b];
+          break;
+        }
+    const active = count % 2 === 0 ? host : guest,
+      other = count % 2 === 0 ? guest : host;
+    other.challengeAction({ type: 'match', tiles: pair });
+    await flush();
+    assert.equal(host.snapshot!.challengeMatch!.revision, count);
+    active.challengeAction({ type: 'match', tiles: pair });
+    await flush();
+    count++;
+  }
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [1, 1]);
+  const invalid = structuredClone(host.snapshot!);
+  if (invalid.challengeMatch!.game.gameId === 'tiles')
+    invalid.challengeMatch!.game.players = 3;
+  assert.equal(validSnapshot(invalid), false);
+  host.leave();
+  guest.leave();
+});

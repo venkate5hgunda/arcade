@@ -149,3 +149,38 @@ test('Mini Crossword edits, checks errors, reveals and completes a restored grid
     fullPage: true,
   });
 });
+
+test('Tiles removes shared layers, updates combos and restores the tray', async ({
+  page,
+}) => {
+  const { newTiles, tilesProgress } = await import('../../src/lib/tiles.ts');
+  const s = { ...newTiles('practice'), seed: 0 };
+  await seed(page, 'tiles', s);
+  const p = tilesProgress(s);
+  let pair: number[] = [];
+  for (let a = 0; a < 12 && !pair.length; a++)
+    for (let b = a + 1; b < 12; b++)
+      if (p.board[a].some((n, i) => n >= 0 && n === p.board[b][i])) {
+        pair = [a, b];
+        break;
+      }
+  await page.locator('.pattern-tile').nth(pair[0]).click();
+  await page.locator('.pattern-tile').nth(pair[1]).click();
+  await expect(
+    page.getByRole('heading', { name: /points · 1× combo/ }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: /points · 1× combo/ }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `node_modules/.cache/tiles-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});

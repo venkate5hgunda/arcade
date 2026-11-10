@@ -469,6 +469,20 @@
       "sha256": "91da9010387acec609ae086aa26a13327d50a1f28680f574e3ddc844bd3abdac",
       "provider": "Adobe Firefly",
       "revision": 1
+    },
+    {
+      "id": "tiles",
+      "alt": "Layered transparent pattern tiles with coral circles, teal leaves and gold striped diamonds.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. A small arrangement of layered pattern-matching square tiles on navy felt, each tile has three tactile layers: a coral circle, a teal leaf and a warm gold striped diamond. Some transparent resin layers lifted slightly to reveal matching motifs underneath. Cream painted wooden tray, warm golden tabletop light, playful crafted miniature materials. Wide landscape with a few large clear tiles inside middle 60%, full bleed. No letters, numerals, readable text, UI, border, title, logo or watermark. Focus on layered matching patterns, not mahjong symbols or playing cards.",
+      "requestId": "d7ca8a1e-5772-47f5-87e7-30c108656cc1",
+      "inspection": "Inspected distinct stacked pattern layers, coral circles, teal leaves and gold striped diamonds in a cream tray. Transparent resin, warm lighting and central crop match the shelf. No text or unrelated props.",
+      "src": "./art/games/tiles.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 83318,
+      "sha256": "de0bc92ddb28f338c2d9646838d47db4074a8dc0690bb35cb121515f32be6cc1",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

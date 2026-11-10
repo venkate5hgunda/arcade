@@ -930,6 +930,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G32",
+      "title": "Tiles",
+      "category": "Puzzle",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/tiles.ts",
+        "redesign/src/components/TilesTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Match layered visual patterns, chain a remaining tile for combos, and clear the tray solo or in a turn-based cooperative room.",
+        "Select two different tiles sharing a ring, shape or background pattern. All matching layers disappear from both tiles. A tile clears when all three layers are gone. Reuse a remaining tile from your previous match to grow the combo; switching to a new pair starts a new combo. Clear every layer to win. Local multiplayer and private rooms take turns after each accepted match and share a team score. Invalid matches do not consume a turn."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

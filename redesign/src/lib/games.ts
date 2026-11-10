@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'tiles',
+    name: 'Tiles',
+    tagline: 'Peel back the patterns',
+    players: {
+      min: 1,
+      max: 20,
+      type: 'local-multiplayer',
+    },
+    category: 'Puzzle',
+    color: '#8fe0d8',
+    icon: 'tabler:puzzle',
+    description:
+      'Match layered visual patterns, chain a remaining tile for combos, and clear the tray solo or in a turn-based cooperative room.',
+  },
+  {
     id: 'mini-crossword',
     name: 'Mini Crossword',
     tagline: 'A little grid, a little discovery',

@@ -19,3 +19,7 @@ Six original layouts each have a verified two-word solution, with side rotations
 ## Mini Crossword
 
 Eight original 5×5 word-square crosswords have distinct Across/Down clues. Entries, optional revealed letters and completion survive reload. Check letters provides local feedback without modifying the grid. Cooperative rooms serialize edits against the current revision; stale concurrent edits cannot overwrite newer entries. Revealed cells remain fixed and assistance is displayed.
+
+## Tiles
+
+Twelve generated tiles each carry three independently matchable layers. Matching a ring, shape or pattern removes every shared layer; carrying a remaining tile forward grows the combo. Even pattern counts guarantee a path to clearing the tray. One-device multiplayer and rooms enforce turns after valid matches, share the score, and validate the complete move history on restore.

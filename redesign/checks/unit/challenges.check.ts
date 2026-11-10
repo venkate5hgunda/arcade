@@ -136,3 +136,32 @@ test('Mini word-square crosswords have valid Across/Down clues and only accept c
   );
   assert.equal(validMini({ ...state, revealed: [0, 0] }), false);
 });
+
+test('Tiles generated layers always clear legally, maintain even pattern counts and replay exact combos', async () => {
+  const { newTiles, tilesProgress, actTiles, validTiles } = await import(
+    '../../src/lib/tiles.ts'
+  );
+  for (let seed = 0; seed < 50; seed++) {
+    let s = { ...newTiles('practice', 4), seed };
+    for (let move = 0; move < 18 && !tilesProgress(s).done; move++) {
+      const board = tilesProgress(s).board;
+      let pair: number[] | null = null;
+      for (let a = 0; a < 12 && !pair; a++)
+        for (let b = a + 1; b < 12; b++)
+          if (board[a].some((n, i) => n >= 0 && n === board[b][i])) {
+            pair = [a, b];
+            break;
+          }
+      assert.ok(pair);
+      const next = actTiles(s, { type: 'match', tiles: pair }).state;
+      assert.notEqual(next, s);
+      s = next;
+      assert.ok(validTiles(s, true));
+    }
+    assert.ok(tilesProgress(s).done);
+    assert.equal(validTiles(s), false);
+  }
+  const s = newTiles('practice');
+  assert.equal(actTiles(s, { type: 'match', tiles: [0, 0] }).state, s);
+  assert.equal(validTiles({ ...s, moves: [[0, 0]] }), false);
+});

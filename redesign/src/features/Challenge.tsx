@@ -13,9 +13,9 @@ import type { ChallengeId, ChallengeState } from '../lib/challenges.ts';
 export function ChallengeGame({ id }: { id: ChallengeId }) {
   const run = useRun<ChallengeState>(
     id,
-    { mode: 'daily' },
+    { mode: 'daily', players: '1', difficulty: 'easy' },
     (value) => validChallenge(value) && value.gameId === id,
-    (settings) => newChallenge(id, settings.mode),
+    (settings) => newChallenge(id, settings.mode, Number(settings.players)),
     challengeDone,
   );
   const state = run.state,
@@ -32,6 +32,20 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
             ['practice', 'Practice puzzle'],
           ],
         },
+        ...(id === 'tiles'
+          ? [
+              {
+                key: 'players',
+                label: 'Players on this device',
+                options: [
+                  ['1', 'Solo'],
+                  ['2', '2 players'],
+                  ['3', '3 players'],
+                  ['4', '4 players'],
+                ] as [string, string][],
+              },
+            ]
+          : []),
       ]}
       summary={getGame(id)!.description}
       help={challengeHelp[id]}
@@ -50,7 +64,17 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
         done && (
           <button
             className="primary"
-            onClick={() => run.commit(newChallenge(id, 'practice'))}
+            onClick={() =>
+              run.commit(
+                newChallenge(
+                  id,
+                  'practice',
+                  run.state && 'players' in run.state
+                    ? run.state.players
+                    : Number(run.settings.players),
+                ),
+              )
+            }
           >
             New practice puzzle
           </button>

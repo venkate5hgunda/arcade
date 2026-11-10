@@ -1,3 +1,4 @@
+import { challengePlayers, challengeMax } from '../challenges.ts';
 import {
   actChallenge,
   challengeDone,
@@ -286,7 +287,10 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         integer(s.challengeMatch.round) &&
         integer(s.challengeMatch.revision) &&
         validChallenge(s.challengeMatch.game, true) &&
-        s.challengeMatch.gameId === s.challengeMatch.game.gameId)) &&
+        s.challengeMatch.gameId === s.challengeMatch.game.gameId &&
+        s.members.length <= challengeMax(s.challengeMatch.gameId) &&
+        (challengePlayers(s.challengeMatch.game) === null ||
+          challengePlayers(s.challengeMatch.game) === s.members.length))) &&
     (s.connectionsMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -1264,6 +1268,7 @@ export class Room {
         gameId,
       ) &&
         s.members.length !== 2) ||
+      (isChallenge(gameId) && s.members.length > challengeMax(gameId)) ||
       (gameId === 'catan' && (s.members.length < 3 || s.members.length > 4)) ||
       (gameId === 'business' && s.members.length > 6) ||
       (gameId === 'mafia' && (s.members.length < 5 || s.members.length > 10)) ||

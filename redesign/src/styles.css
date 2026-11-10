@@ -4128,3 +4128,30 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.pattern-tile {
+  min-width: 0;
+  padding: 0.25rem;
+  background: #fff3df;
+  border: 3px solid #bdb8ab;
+  border-radius: 0.8rem;
+  aspect-ratio: 1;
+}
+.pattern-tile svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pattern-tile.selected {
+  border-color: #ff456b;
+  box-shadow: 0 0 0 3px #ffb5c6;
+}
+.pattern-tile:disabled {
+  opacity: 0.35;
+}
