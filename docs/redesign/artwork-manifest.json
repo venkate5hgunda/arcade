@@ -426,6 +426,20 @@
       "requestId": "cd05ee6b-8517-4547-ba16-90f0a30145aa",
       "revision": 1,
       "inspection": "Inspected grid tiles, coral tracing cord, gold tray, navy felt, warm light and center crop. Partial grid avoids incorrect full-board counts. Distinct from Connections grouped tiles."
+    },
+    {
+      "id": "spelling-bee",
+      "alt": "A golden center hexagon surrounded by six cream tiles, a tiny bee and honey jar on navy felt.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. A close-up tabletop honeycomb word puzzle: a golden central hexagonal tile surrounded by six cream hexagonal tiles, small friendly resin bee and tiny honey jar beside the honeycomb. Blank tile faces with no readable letters. Deep navy felt, coral and teal accent light, warm golden lighting, tactile rounded resin and painted wood, cozy crafted game-night atmosphere. Wide landscape, essential subject within middle 60%, full bleed. No UI, border, title, logo, watermark or readable text. The hive must contain exactly seven hexagonal tiles, one central and six outer.",
+      "requestId": "0c29ba49-d658-4f15-b4c2-1b7b09eea1fd",
+      "inspection": "Inspected seven-tile hive: one gold center with six cream outer hexagons, bee and honey jar; navy felt, warm light and center crop match the shelf. Tile faces remain blank.",
+      "src": "./art/games/spelling-bee.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 45752,
+      "sha256": "2fd04089d2a03dccc17bea94718ac7a52d3eed3d64702022083c2324633cb2f9",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

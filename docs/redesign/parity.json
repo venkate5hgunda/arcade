@@ -864,6 +864,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G29",
+      "title": "Spelling Bee",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/bee.ts",
+        "redesign/src/components/BeeTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Make words using seven letters and the required center letter. Hunt pangrams solo or build a shared score in a cooperative room.",
+        "Make words of at least four letters using only the seven hive letters. Every word must include the golden center letter. Letters may repeat. Four-letter words score 1; longer words score their length. A pangram uses all seven letters and adds 7 points. The bundled practice dictionary is finite. Reach Genius at 70% of available points, then find every accepted word for Queen Bee. Room players share the hive, found words and team score; duplicate submissions do not score twice."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

@@ -56,3 +56,36 @@ test('Strands daily setup, hints, tap undo and room entry work', async ({
   await expect(hint).toHaveAttribute('aria-pressed', 'false');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+test('Spelling Bee enforces the center, scores pangrams once and restores shared vocabulary progress', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const { newBee } = await import('../../src/lib/bee.ts');
+  await seed(page, 'spelling-bee', { ...newBee('practice'), seed: 0 });
+  await expect(page.locator('.bee-cell')).toHaveCount(7);
+  await page.getByLabel('Hive word').fill('GAIN');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await expect(
+    page.getByText('Every word needs R.', { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel('Hive word').fill('READING');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await expect(page.getByRole('heading', { name: /14 points/ })).toBeVisible();
+  await page.reload();
+  await page.getByLabel('Hive word').fill('READING');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await expect(
+    page.getByText('Already found. It will not score twice.'),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `node_modules/.cache/spelling-bee-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});

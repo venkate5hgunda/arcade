@@ -1,3 +1,4 @@
+import { getGame } from '../lib/games.ts';
 import { Link } from 'react-router-dom';
 import { Frame, useRun } from '../components/GameFrame.tsx';
 import { ChallengeTable } from '../components/ChallengeTable.tsx';
@@ -32,13 +33,13 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
           ],
         },
       ]}
-      summary="A fresh challenge for your shelf. Play solo or solve it together."
+      summary={getGame(id)!.description}
       help={challengeHelp[id]}
-      title={done ? 'Puzzle complete!' : 'Find the hidden theme'}
+      title={done ? 'Puzzle complete!' : getGame(id)!.name}
       status={
         done
-          ? 'Every word is connected. Nicely done.'
-          : 'Find the theme words and the spangram.'
+          ? 'A completed puzzle. Nicely done.'
+          : 'Play at your pace. Your progress is saved on this device.'
       }
       setupExtra={
         <Link className="room-callout" to={`/room?game=${id}`}>

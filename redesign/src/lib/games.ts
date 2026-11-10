@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'spelling-bee',
+    name: 'Spelling Bee',
+    tagline: 'Seven letters, endless possibilities',
+    players: {
+      min: 1,
+      max: 20,
+      type: 'local-multiplayer',
+    },
+    category: 'Word',
+    color: '#ffd474',
+    icon: 'tabler:abc',
+    description:
+      'Make words using seven letters and the required center letter. Hunt pangrams solo or build a shared score in a cooperative room.',
+  },
+  {
     id: 'strands',
     name: 'Strands',
     tagline: 'Follow the letters, find the theme',

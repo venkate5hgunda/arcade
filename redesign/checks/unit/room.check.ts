@@ -1365,3 +1365,30 @@ test('Strands cooperative rooms validate paths, preserve hints and restore the h
   restored.leave();
   guest.leave();
 });
+
+test('Spelling Bee players share accepted words and cannot score duplicates twice', async () => {
+  const { beePuzzle } = await import('../../src/lib/bee.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('spelling-bee');
+  await flush();
+  const state = host.snapshot!.challengeMatch!.game;
+  if (state.gameId !== 'spelling-bee') throw Error('Wrong game');
+  const words = beePuzzle(state.seed).words;
+  guest.challengeAction({ type: 'word', word: words[0] });
+  await flush();
+  host.challengeAction({ type: 'word', word: words[0] });
+  await flush();
+  assert.equal(host.snapshot!.challengeMatch!.revision, 1);
+  for (const word of words.slice(1)) {
+    guest.challengeAction({ type: 'word', word });
+    await flush();
+  }
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [1, 1]);
+  host.leave();
+  guest.leave();
+});

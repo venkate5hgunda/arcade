@@ -49,3 +49,32 @@ test('Strands validates touching paths, rejects overlaps and duplicate words, an
   assert.equal(validStrands({ ...state, hints: [0, 0] }), false);
   assert.equal(validStrands({ ...state, found: [{ word: 1, path }] }), false);
 });
+
+test('Spelling Bee hives have seven letters, accepted pangrams, exact scoring and completable bounded dictionaries', async () => {
+  const { HIVES, beePuzzle, beeScore, beeProgress, newBee, actBee, validBee } =
+    await import('../../src/lib/bee.ts');
+  for (let seed = 0; seed < HIVES.length; seed++) {
+    const puzzle = beePuzzle(seed);
+    assert.equal(new Set(puzzle.letters).size, 7);
+    assert.ok(puzzle.words.some((w) => new Set(w).size === 7));
+    let state = { ...newBee('practice'), seed };
+    assert.ok(validBee(state));
+    assert.equal(actBee(state, { type: 'word', word: 'ZZZZ' }).state, state);
+    for (const word of puzzle.words) {
+      const before = state;
+      state = actBee(state, { type: 'word', word }).state;
+      assert.notEqual(state, before);
+      assert.ok(validBee(state, true));
+      assert.equal(actBee(state, { type: 'word', word }).state, state);
+    }
+    assert.equal(beeProgress(state).rank, 'Queen Bee');
+    assert.equal(
+      beeProgress(state).score,
+      puzzle.words.reduce((n, w) => n + beeScore(w), 0),
+    );
+    assert.equal(validBee(state), false);
+    assert.equal(validBee({ ...state, words: ['NOTVALID'] }, true), false);
+  }
+  assert.equal(beeScore('READ'), 1);
+  assert.equal(beeScore('READING'), 14);
+});
