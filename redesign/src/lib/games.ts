@@ -34,6 +34,21 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'letter-boxed',
+    name: 'Letter Boxed',
+    tagline: 'Around the square, word by word',
+    players: {
+      min: 1,
+      max: 20,
+      type: 'local-multiplayer',
+    },
+    category: 'Word',
+    color: '#ffb5c6',
+    icon: 'tabler:abc',
+    description:
+      'Chain words around a twelve-letter square without consecutive letters from the same side. Cover every letter solo or cooperatively.',
+  },
+  {
     id: 'spelling-bee',
     name: 'Spelling Bee',
     tagline: 'Seven letters, endless possibilities',

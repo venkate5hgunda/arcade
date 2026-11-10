@@ -1392,3 +1392,29 @@ test('Spelling Bee players share accepted words and cannot score duplicates twic
   host.leave();
   guest.leave();
 });
+
+test('Letter Boxed room participants extend and undo one authoritative chain', async () => {
+  const { letterPuzzle } = await import('../../src/lib/letter-boxed.ts');
+  cache.clear();
+  const host = new Room(factory),
+    guest = new Room(factory);
+  host.createHost('Mira');
+  await connect(host, guest);
+  host.start('letter-boxed');
+  await flush();
+  const s = host.snapshot!.challengeMatch!.game;
+  if (s.gameId !== 'letter-boxed') throw Error('Wrong game');
+  const words = letterPuzzle(s.seed).solution;
+  guest.challengeAction({ type: 'word', word: words[0] });
+  await flush();
+  host.challengeAction({ type: 'undo' });
+  await flush();
+  guest.challengeAction({ type: 'word', word: words[0] });
+  await flush();
+  host.challengeAction({ type: 'word', word: words[1] });
+  await flush();
+  assert.ok(validSnapshot(host.snapshot));
+  assert.deepEqual(host.snapshot!.wins, [1, 1]);
+  host.leave();
+  guest.leave();
+});

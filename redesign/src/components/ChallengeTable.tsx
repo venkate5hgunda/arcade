@@ -3,6 +3,7 @@ import { actChallenge } from '../lib/challenges.ts';
 import type { ChallengeState } from '../lib/challenges.ts';
 import { StrandsTable } from './StrandsTable.tsx';
 import { BeeTable } from './BeeTable.tsx';
+import { LetterTable } from './LetterTable.tsx';
 export function ChallengeTable({
   state,
   blocked = false,
@@ -28,6 +29,9 @@ export function ChallengeTable({
       )}
       {state.gameId === 'spelling-bee' && (
         <BeeTable state={state} blocked={blocked} action={action} />
+      )}
+      {state.gameId === 'letter-boxed' && (
+        <LetterTable state={state} blocked={blocked} action={action} />
       )}
       <p className="challenge-message" role="status">
         {message}

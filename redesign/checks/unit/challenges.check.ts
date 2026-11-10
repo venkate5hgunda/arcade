@@ -78,3 +78,27 @@ test('Spelling Bee hives have seven letters, accepted pangrams, exact scoring an
   assert.equal(beeScore('READ'), 1);
   assert.equal(beeScore('READING'), 14);
 });
+
+test('Letter Boxed layouts have twelve distinct letters and legal two-word covering chains', async () => {
+  const { newLetter, letterPuzzle, actLetter, letterDone, validLetter } =
+    await import('../../src/lib/letter-boxed.ts');
+  for (let seed = 0; seed < 24; seed++) {
+    const puzzle = letterPuzzle(seed);
+    assert.equal(new Set(puzzle.sides.join('')).size, 12);
+    let state = { ...newLetter('practice'), seed };
+    for (const word of puzzle.solution) {
+      const next = actLetter(state, { type: 'word', word }).state;
+      assert.notEqual(next, state, `${seed}: ${word}`);
+      state = next;
+    }
+    assert.ok(letterDone(state));
+    assert.ok(validLetter(state, true));
+    assert.equal(validLetter(state), false);
+  }
+  const start = { ...newLetter('practice'), seed: 0 },
+    first = actLetter(start, { type: 'word', word: 'RAINBOW' }).state;
+  assert.equal(actLetter(first, { type: 'word', word: 'DANCE' }).state, first);
+  assert.equal(actLetter(start, { type: 'word', word: 'BAD' }).state, start);
+  assert.equal(actLetter(start, { type: 'word', word: 'ZZZ' }).state, start);
+  assert.deepEqual(actLetter(first, { type: 'undo' }).state.words, []);
+});

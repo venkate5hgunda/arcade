@@ -89,3 +89,32 @@ test('Spelling Bee enforces the center, scores pangrams once and restores shared
     fullPage: true,
   });
 });
+
+test('Letter Boxed chains two words, enforces starting letters, resumes and covers all letters', async ({
+  page,
+}) => {
+  const { newLetter } = await import('../../src/lib/letter-boxed.ts');
+  await seed(page, 'letter-boxed', { ...newLetter('practice'), seed: 0 });
+  await page.getByLabel('Chain word', { exact: true }).fill('RAINBOW');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await page.reload();
+  await expect(page.getByLabel('Chain word', { exact: true })).toHaveValue('W');
+  await page.getByLabel('Chain word', { exact: true }).fill('DANCE');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await expect(page.getByText('Start the next word with W.')).toBeVisible();
+  await page.getByLabel('Chain word', { exact: true }).fill('WILDCATS');
+  await page.getByRole('button', { name: 'Submit word' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Puzzle complete!' }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `node_modules/.cache/letter-boxed-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+});

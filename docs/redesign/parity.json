@@ -886,6 +886,28 @@
         "redesign/checks/unit/room.check.ts",
         "redesign/checks/browser/challenges.spec.ts"
       ]
+    },
+    {
+      "id": "G30",
+      "title": "Letter Boxed",
+      "category": "Word",
+      "status": "implemented",
+      "sources": [
+        "redesign/src/lib/letter-boxed.ts",
+        "redesign/src/components/LetterTable.tsx",
+        "redesign/src/features/Challenge.tsx",
+        "docs/redesign/expansion.md"
+      ],
+      "acceptance": [
+        "Chain words around a twelve-letter square without consecutive letters from the same side. Cover every letter solo or cooperatively.",
+        "Use at least three letters per word. Consecutive letters must come from different sides of the square. Your next word must start with the last letter of the previous word. Letters may be reused, but words may not repeat. Cover all twelve letters to win; try for two words. The bundled dictionary is finite. Undo removes the last word. Private-room players cooperate on one shared chain."
+      ],
+      "baselineTests": [],
+      "implementationTests": [
+        "redesign/checks/unit/challenges.check.ts",
+        "redesign/checks/unit/room.check.ts",
+        "redesign/checks/browser/challenges.spec.ts"
+      ]
     }
   ]
 }

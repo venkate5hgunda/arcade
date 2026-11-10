@@ -440,6 +440,20 @@
       "sha256": "2fd04089d2a03dccc17bea94718ac7a52d3eed3d64702022083c2324633cb2f9",
       "provider": "Adobe Firefly",
       "revision": 1
+    },
+    {
+      "id": "letter-boxed",
+      "alt": "Twelve cream tiles around a wooden square linked by coral thread on navy felt.",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. A square painted wooden frame with three blank cream letter tiles set along each of its four sides, viewed in perspective on deep navy felt. Coral thread weaves across the open square linking tiles on different sides. Teal and warm gold accents. Tactile rounded resin, wood grain, cozy warm table lighting, crafted playful game-night atmosphere. Wide landscape, clear square frame centered in middle 60%. Full-bleed art only, no UI, border, title, logo, watermark or readable text. Twelve blank tiles total arranged around the square, not a filled grid.",
+      "requestId": "3904890a-43a2-4062-8c71-34ca7c705e10",
+      "inspection": "Inspected twelve blank tiles around an open wooden square, coral linking thread, navy felt and warm coral/teal light. Full-size inspection confirmed twelve distinct tiles, with the subject legible in the central crop.",
+      "src": "./art/games/letter-boxed.webp",
+      "width": 1344,
+      "height": 768,
+      "bytes": 89894,
+      "sha256": "bba017bd4a82323f202276ca8a51f1961fef77b0bb27f32e47a78520b6404161",
+      "provider": "Adobe Firefly",
+      "revision": 1
     }
   ]
 }

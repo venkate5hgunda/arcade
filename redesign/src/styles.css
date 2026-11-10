@@ -3983,3 +3983,74 @@ select:focus-visible {
 .challenge-table .help-card p {
   color: #c9c6da;
 }
+
+.letter-square {
+  position: relative;
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  margin: 1.5rem auto;
+  border: 3px solid #ffb5c6;
+  border-radius: 1rem;
+}
+.letter-side {
+  position: absolute;
+  display: flex;
+  justify-content: space-around;
+  gap: 0.3rem;
+}
+.letter-side-0 {
+  left: 14%;
+  right: 14%;
+  top: -22px;
+}
+.letter-side-1 {
+  top: 14%;
+  bottom: 14%;
+  right: -22px;
+  flex-direction: column;
+}
+.letter-side-2 {
+  left: 14%;
+  right: 14%;
+  bottom: -22px;
+}
+.letter-side-3 {
+  top: 14%;
+  bottom: 14%;
+  left: -22px;
+  flex-direction: column;
+}
+.letter-side button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid #ccb7e6;
+  border-radius: 50%;
+  background: #fff3df;
+  color: #182039;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.letter-side button.used {
+  background: #8fe0d8;
+}
+.letter-square-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffb5c6;
+  font-size: 2rem;
+  font-weight: 900;
+}
+.letter-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-weight: 800;
+  padding-left: 1.5rem;
+  overflow-wrap: anywhere;
+}
+.challenge-letter-boxed {
+  padding: 0 22px;
+}

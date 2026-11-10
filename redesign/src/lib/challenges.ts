@@ -8,9 +8,20 @@ import {
 import type { StrandsState } from './strands.ts';
 import { actBee, newBee, beeDone, validBee } from './bee.ts';
 import type { BeeState } from './bee.ts';
-export const CHALLENGE_IDS = ['strands', 'spelling-bee'] as const;
+import {
+  actLetter,
+  newLetter,
+  letterDone,
+  validLetter,
+} from './letter-boxed.ts';
+import type { LetterState } from './letter-boxed.ts';
+export const CHALLENGE_IDS = [
+  'strands',
+  'spelling-bee',
+  'letter-boxed',
+] as const;
 export type ChallengeId = (typeof CHALLENGE_IDS)[number];
-export type ChallengeState = StrandsState | BeeState;
+export type ChallengeState = StrandsState | BeeState | LetterState;
 export const isChallenge = (id: string): id is ChallengeId =>
   (CHALLENGE_IDS as readonly string[]).includes(id);
 export function newChallenge(
@@ -24,6 +35,8 @@ export function newChallenge(
       return newStrands(mode);
     case 'spelling-bee':
       return newBee(mode);
+    case 'letter-boxed':
+      return newLetter(mode);
   }
 }
 export function validChallenge(
@@ -36,6 +49,8 @@ export function validChallenge(
       return validStrands(value, allowFinished);
     case 'spelling-bee':
       return validBee(value, allowFinished);
+    case 'letter-boxed':
+      return validLetter(value, allowFinished);
     default:
       return false;
   }
@@ -46,6 +61,8 @@ export function challengeDone(s: ChallengeState) {
       return strandsDone(s);
     case 'spelling-bee':
       return beeDone(s);
+    case 'letter-boxed':
+      return letterDone(s);
   }
 }
 export function actChallenge(
@@ -57,6 +74,8 @@ export function actChallenge(
       return actStrands(s, input);
     case 'spelling-bee':
       return actBee(s, input);
+    case 'letter-boxed':
+      return actLetter(s, input);
   }
 }
 export function challengeWinners(s: ChallengeState, players: number): number[] {
@@ -78,4 +97,6 @@ export const challengeHelp: Record<ChallengeId, string> = {
     'Find all theme words and the spangram in the letter grid. Tap adjacent letters, including diagonals, then submit. You may not reuse a letter or cross a found word. The spangram joins opposite sides. Three hints highlight the start of unfound words. Play solo, together on one device, or cooperatively in a private room. Found words and hints are shared; your letter selection stays local.',
   'spelling-bee':
     'Make words of at least four letters using only the seven hive letters. Every word must include the golden center letter. Letters may repeat. Four-letter words score 1; longer words score their length. A pangram uses all seven letters and adds 7 points. The bundled practice dictionary is finite. Reach Genius at 70% of available points, then find every accepted word for Queen Bee. Room players share the hive, found words and team score; duplicate submissions do not score twice.',
+  'letter-boxed':
+    'Use at least three letters per word. Consecutive letters must come from different sides of the square. Your next word must start with the last letter of the previous word. Letters may be reused, but words may not repeat. Cover all twelve letters to win; try for two words. The bundled dictionary is finite. Undo removes the last word. Private-room players cooperate on one shared chain.',
 };
