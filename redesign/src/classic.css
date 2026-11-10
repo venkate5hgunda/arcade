@@ -411,3 +411,12 @@ footer {
     padding-inline: 8px;
   }
 }
+@media (min-width: 701px) {
+  .match-layout {
+    grid-template-columns: minmax(0, 560px) minmax(180px, 1fr);
+  }
+  .match-layout .ttt-board {
+    width: min(100%, max(240px, calc(100dvh - 380px)));
+    margin-inline: auto;
+  }
+}
