@@ -53,3 +53,13 @@ the standard GitHub release suite installs the actual Chromium/WebKit runtimes
 and is the required browser qualification before merging. Physical-device sound,
 haptics, installation, camera and cross-network limitations remain as documented
 in release qualification.
+
+## Captured interface
+
+| Desktop catalog | Mobile catalog (dark) |
+| --- | --- |
+| ![Compact desktop catalog](../images/arcade-classic-catalog-desktop.png) | ![Dark mobile catalog](../images/arcade-classic-catalog-mobile.png) |
+
+| Desktop match | Mobile match (dark) |
+| --- | --- |
+| ![Desktop match controls](../images/arcade-classic-game-desktop.png) | ![Mobile match controls](../images/arcade-classic-game-mobile.png) |
