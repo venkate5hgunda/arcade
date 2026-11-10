@@ -45,7 +45,11 @@ test('Strands daily setup, hints, tap undo and room entry work', async ({
   page,
 }) => {
   await page.goto('/#/game/strands');
-  await expect(page.locator('.puzzle-setup-art')).toBeVisible();
+  const cover = page.locator('.puzzle-setup-art');
+  await expect(cover).toHaveAttribute('src', './art/games/strands.webp');
+  if ((page.viewportSize()?.width ?? 0) <= 640)
+    await expect(cover).toBeHidden();
+  else await expect(cover).toBeVisible();
   await page.getByRole('button', { name: 'Start playing' }).click();
   await page.getByRole('button', { name: 'Hint (3)' }).click();
   await expect(page.locator('.hinted')).toHaveCount(1);
