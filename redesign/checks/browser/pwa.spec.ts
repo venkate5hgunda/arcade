@@ -41,7 +41,7 @@ test('verified offline assets cover all games, artwork, QR and approved movie fi
   expect(manifest.icons).toHaveLength(4);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.locator('.game-card')).toHaveCount(26);
+  await expect(page.locator('.game-card')).toHaveCount(GAMES.length);
   const unavailable = await page.evaluate(async (assets) => {
     const results = await Promise.all(
       assets.map(async ({ path }) => {
@@ -63,6 +63,14 @@ test('verified offline assets cover all games, artwork, QR and approved movie fi
       page.getByRole('heading', { name: game.name, exact: true, level: 1 }),
     ).toBeVisible();
   }
+  await page.goto('/#/game/connections');
+  await page.getByRole('button', { name: 'Start playing' }).click();
+  await expect(page.locator('.connections-word')).toHaveCount(16);
+  await page.reload();
+  await expect(page.locator('.connections-word')).toHaveCount(16);
+  await expect(
+    page.getByRole('heading', { name: '4 groups to find' }),
+  ).toBeVisible();
   await page.goto('/#/game/tictactoe');
   await page.getByText('Match options & player names').click();
   await page.getByRole('button', { name: '2 players', exact: true }).click();

@@ -3725,3 +3725,95 @@ select:focus-visible {
 .pwa-notice button {
   margin: 0.2rem;
 }
+
+/* Connections keeps word tiles tactile and readable on a four-column phone grid. */
+.connections-table {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.connections-table .count,
+.connections-edition {
+  color: #c9c6da;
+  font-size: 0.9rem;
+}
+.connections-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.connections-word {
+  min-width: 0;
+  min-height: 5rem;
+  padding: 0.55rem 0.25rem;
+  border: 2px solid var(--line);
+  border-radius: 0.8rem;
+  background: #eee6d7;
+  color: #182039;
+  box-shadow: 0 3px 0 #d3c7b4;
+  font-size: clamp(0.7rem, 2.2vw, 0.95rem);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.connections-word[aria-pressed='true'] {
+  background: #25334d;
+  color: #fffaf1;
+  border-color: #25334d;
+  box-shadow: 0 3px 0 #10192b;
+}
+.connections-word:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.connections-groups {
+  display: grid;
+  gap: 0.5rem;
+}
+.connections-group {
+  padding: 1rem 0.7rem;
+  border-radius: 0.8rem;
+  text-align: center;
+  color: #182039;
+}
+.connections-group h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+.connections-group p {
+  margin: 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.connections-color-0 {
+  background: #f4d477;
+}
+.connections-color-1 {
+  background: #a8d7bf;
+}
+.connections-color-2 {
+  background: #aac9ee;
+}
+.connections-color-3 {
+  background: #ccb7e6;
+}
+.connections-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.connections-actions button {
+  min-height: 2.75rem;
+}
+.connections-message {
+  min-height: 1.5rem;
+  font-weight: 700;
+}
+.connections-history li {
+  margin-bottom: 0.6rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .room-connections-match {
+    padding: 18px 12px;
+  }
+}

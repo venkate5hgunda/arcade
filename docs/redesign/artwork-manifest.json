@@ -397,6 +397,21 @@
       "revision": 1,
       "inspection": "Subject, palette, materials, center crop and thumbnail clarity reviewed.",
       "notes": ""
+    },
+    {
+      "id": "connections",
+      "src": "./art/games/connections.webp",
+      "alt": "Gold, teal, coral and lavender word-game tiles grouped on navy felt.",
+      "width": 1344,
+      "height": 768,
+      "bytes": 84290,
+      "sha256": "0b25ad927132145b46465ab8f5dbe0486e8b43fdce05f8e12b3207d5b614f559",
+      "provider": "Adobe Firefly",
+      "prompt": "A premium stylized 3D miniature illustration for Arcade's Living Game Shelf. Extreme close crop on chunky blank rounded word-game tiles as they are being sorted into color groups. Only a partial board is visible, edges continuing out of frame. Four distinct tactile materials: warm gold tiles, teal tiles, coral tiles and lavender tiles, loosely grouped on a navy felt table beside small cream paper cards. Several embossed linking curves on the blank faces, absolutely no letters or readable text. Cozy tabletop arcade environment; deep navy shadows, coral and teal accent pieces, cream materials and warm golden light. Tactile rounded resin, painted wood and felt, lively crafted detail, polished game-night atmosphere. Wide landscape, one clear focal subject centered inside the middle 60%, readable at thumbnail size. Full-bleed art only: no UI, no border, no title, no logo, no watermark or readable text. Do not show a complete board, avoid unrelated game props.",
+      "requestId": "89979a60-c171-445b-85bd-809cf53d2024",
+      "revision": 2,
+      "inspection": "Inspected original output: distinct grouped color tiles, tactile resin and navy felt; coherent warm light. Deliberate partial-board crop avoids incorrect full-board geometry. Center subject remains clear at thumbnail size. No readable text or UI.",
+      "notes": "First generation rejected for an incorrect complete tile arrangement. Accepted original exported to WebP at quality 88, with no creative edits."
     }
   ]
 }

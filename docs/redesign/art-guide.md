@@ -37,5 +37,5 @@ Each asset's final prompt and generator are recorded in [the artwork manifest](a
 2. Preserve downloaded originals in local scratch during inspection; commit optimized local web assets with stable game-ID filenames. Format conversion is an export step, not an unreviewed creative change.
 3. Record provenance, exact prompt, dimensions, hash and inspection notes without signed download URLs or secrets.
 4. Use one manifest-backed art component for hero, shelf, catalog, resume, setup and unported-game details. Preserve aspect ratio and provide fitting/crop guidance where needed.
-5. Run coverage/uniqueness checks for all 26 IDs, verify real browser image loading, inspect desktop/mobile crops, and update captures after changes.
+5. Run coverage/uniqueness checks for all current catalog IDs, verify real browser image loading, inspect desktop/mobile crops, and update captures after changes.
 6. Keep original Arcade and third-party icon credits. Do not add external runtime image hosts.

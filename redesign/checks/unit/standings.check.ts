@@ -27,8 +27,8 @@ test('all room games accumulate wins/losses/draws, share team wins and ignore du
     leaders.map((p) => p.id),
     ['mira', 'rae', 'kai'],
   );
-  assert.equal(leaders[0].wins, 11);
-  assert.equal(leaders[2].losses, 11);
+  assert.equal(leaders[0].wins, ROOM_GAMES.length);
+  assert.equal(leaders[2].losses, ROOM_GAMES.length);
   assert.equal(leaders[0].draws, 1);
   assert.equal(
     leaderboard(

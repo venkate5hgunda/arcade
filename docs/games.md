@@ -1,6 +1,6 @@
 # Game catalog
 
-All 26 games, their player counts and special options.
+All 27 games, their player counts and special options.
 
 [← Back to the README](../README.md)
 
@@ -32,6 +32,7 @@ All 26 games, their player counts and special options.
 | Show | 3–8 | Party | ✅ Implemented |
 | Taboo | 4–20 | Party | ✅ Implemented |
 | Wordle | 1 | Word | ✅ Implemented |
+| Connections | 1–20 | Word | ✅ Implemented |
 
 
 ### Imposter options

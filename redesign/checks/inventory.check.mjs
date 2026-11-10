@@ -68,6 +68,7 @@ test('all local documentation links resolve', () => {
     'art-guide.md',
     'design-qa.md',
     'game-ports.md',
+    'connections.md',
   ]) {
     const path = resolve(root, 'docs/redesign', name);
     const body = readFileSync(path, 'utf8');
@@ -82,7 +83,7 @@ test('all local documentation links resolve', () => {
   }
 });
 
-test('every production game is mapped to a dedicated parity requirement', async () => {
+test('every frozen baseline game retains its dedicated parity requirement', async () => {
   const { GAMES } = await import('../../js/game-catalog.js');
   for (const game of GAMES)
     assert.ok(
@@ -92,21 +93,25 @@ test('every production game is mapped to a dedicated parity requirement', async 
       game.id,
     );
   assert.equal(
-    manifest.requirements.filter((r) => r.id.startsWith('G')).length,
+    manifest.requirements.filter((r) =>
+      r.sources.some((p) => p.startsWith('games/')),
+    ).length,
     GAMES.length,
   );
 });
 
-test('all 26 games have distinct inspected local artwork with verifiable provenance', async () => {
-  const { GAMES } = await import('../../js/game-catalog.js');
+test('all current games have distinct inspected local artwork with verifiable provenance', () => {
+  const ids = [
+    ...readFileSync(
+      resolve(root, 'redesign/src/lib/games.ts'),
+      'utf8',
+    ).matchAll(/^\s+id: '([^']+)'/gm),
+  ].map((match) => match[1]);
   const art = read('docs/redesign/artwork-manifest.json');
-  assert.deepEqual(
-    art.assets.map((a) => a.id).sort(),
-    GAMES.map((g) => g.id).sort(),
-  );
+  assert.deepEqual(art.assets.map((a) => a.id).sort(), ids.sort());
   assert.ok(existsSync(resolve(root, art.styleGuide)));
-  assert.equal(new Set(art.assets.map((a) => a.sha256)).size, 26);
-  assert.equal(new Set(art.assets.map((a) => a.src)).size, 26);
+  assert.equal(new Set(art.assets.map((a) => a.sha256)).size, ids.length);
+  assert.equal(new Set(art.assets.map((a) => a.src)).size, ids.length);
   for (const a of art.assets) {
     assert.equal(a.src, `./art/games/${a.id}.webp`);
     const bytes = readFileSync(resolve(root, 'redesign/public', a.src));

@@ -1,3 +1,5 @@
+import { ConnectionsTable } from '../components/ConnectionsTable.tsx';
+import { CONNECTIONS_HELP, connectionsProgress } from '../lib/connections.ts';
 import { playCue } from '../lib/feedback.ts';
 import { roomCue } from '../lib/game-feedback.ts';
 import type { RoomSnapshot } from '../lib/room/protocol.ts';
@@ -32,13 +34,14 @@ export function RoomPage({ room }: { room: Room }) {
   const location = useLocation();
   const [, refresh] = useState(0);
   const [gameId, setGameId] = useState<RoomGameId>(() =>
-    ['mafia', 'business', 'catan'].includes(
+    ['mafia', 'business', 'catan', 'connections'].includes(
       new URLSearchParams(location.search).get('game') ?? '',
     )
       ? (new URLSearchParams(location.search).get('game') as
           | 'mafia'
           | 'business'
-          | 'catan')
+          | 'catan'
+          | 'connections')
       : 'tictactoe',
   );
   const [businessOptions, setBusinessOptions] = useState<BusinessOptions>({
@@ -87,13 +90,18 @@ export function RoomPage({ room }: { room: Room }) {
   const mafia = s?.mafiaMatch;
   const business = s?.businessMatch;
   const island = s?.islandMatch;
+  const connections = s?.connectionsMatch;
+  const connectionProgress =
+    connections && connectionsProgress(connections.game);
   const chessEnd = chess ? chessResult(chess.game) : null;
   const selectedGame =
     s &&
-    ((s.members.length > 4 && !['uno', 'mafia', 'business'].includes(gameId)) ||
+    ((s.members.length > 4 &&
+      !['uno', 'mafia', 'business', 'connections'].includes(gameId)) ||
       (s.members.length > 6 && gameId === 'business') ||
       (s.members.length > 2 &&
         ![
+          'connections',
           'uno',
           'mafia',
           'business',
@@ -109,6 +117,7 @@ export function RoomPage({ room }: { room: Room }) {
   const seat = s?.members.findIndex((m) => m.id === room.peerId) ?? -1;
   const spectating = !!s?.spectators?.some((m) => m.id === room.peerId);
   const inMatch = !!(
+    connections ||
     match ||
     cards ||
     race ||
@@ -181,8 +190,9 @@ export function RoomPage({ room }: { room: Room }) {
           <>
             Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
             UNO-inspired, Snakes &amp; Ladders, Ludo, Chess, Business, Island
-            Charter, Mafia or Rock Paper Scissors. UNO welcomes 2–20 players,
-            Mafia 5–10, Business 2–6, race games 2–4, and Island Charter 3–4.
+            Charter, Mafia, Rock Paper Scissors or cooperative Connections. UNO
+            and Connections welcome 2–20 players, Mafia 5–10, Business 2–6, race
+            games 2–4, and Island Charter 3–4.
           </>
         )}
       </p>
@@ -258,6 +268,7 @@ export function RoomPage({ room }: { room: Room }) {
               !chess &&
               !mafia &&
               !business &&
+              !connections &&
               !island
             }
           >
@@ -284,7 +295,8 @@ export function RoomPage({ room }: { room: Room }) {
                           chess ||
                           mafia ||
                           business ||
-                          island
+                          island ||
+                          connections
                         ? String(index + 1)
                         : index === 0
                           ? 'X'
@@ -468,6 +480,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !connections &&
             !island &&
             room.role === 'host' &&
             s &&
@@ -490,6 +503,7 @@ export function RoomPage({ room }: { room: Room }) {
             !chess &&
             !mafia &&
             !business &&
+            !connections &&
             !island &&
             (!output || room.role === 'guest') && (
               <div className="setup-card">
@@ -566,6 +580,7 @@ export function RoomPage({ room }: { room: Room }) {
                       >
                         Island Charter
                       </option>
+                      <option value="connections">Connections · Co-op</option>
                       <option value="uno">UNO-inspired</option>
                     </select>
                   </label>
@@ -786,6 +801,50 @@ export function RoomPage({ room }: { room: Room }) {
                 ) : (
                   <p>Waiting for the host to start the next round.</p>
                 ))}
+            </div>
+          )}
+          {connections && s && connectionProgress && (
+            <div className="board-panel room-connections-match">
+              <p className="room-game-name">Connections · Cooperative</p>
+              <div className="turn-banner" role="status">
+                <div>
+                  <h2>
+                    {connectionProgress.over
+                      ? connectionProgress.won
+                        ? 'All connections found!'
+                        : 'Out of mistakes'
+                      : !connected
+                        ? 'Puzzle paused'
+                        : 'Solve it together'}
+                  </h2>
+                  <p>
+                    {spectating
+                      ? 'You are watching. Players share one puzzle and mistake budget.'
+                      : !connected
+                        ? 'Waiting for every player to reconnect.'
+                        : 'Everyone can submit a group. Your selections stay on your screen.'}
+                  </p>
+                </div>
+              </div>
+              <ConnectionsTable
+                key={connections.round}
+                game={connections.game}
+                blocked={!connected || spectating}
+                submit={(words) => room.connectionsAction(words)}
+              />
+              {connectionProgress.over && room.role === 'host' && (
+                <button
+                  className="primary"
+                  disabled={!connected}
+                  onClick={() => room.start()}
+                >
+                  New practice puzzle
+                </button>
+              )}
+              <details className="help-card">
+                <summary>How to play</summary>
+                <p>{CONNECTIONS_HELP}</p>
+              </details>
             </div>
           )}
           {rps && s && (
@@ -1099,7 +1158,11 @@ export function RoomPage({ room }: { room: Room }) {
         <p role="status">Preparing your connection link… Keep this tab open.</p>
       )}
       <p className="room-status" role="status">
-        {!mafia && !business && !island && (message || room.issue)}
+        {!mafia &&
+          !business &&
+          !connections &&
+          !island &&
+          (message || room.issue)}
       </p>
     </section>
   );

@@ -1,3 +1,10 @@
+import {
+  connectionsProgress,
+  newConnections,
+  submitConnections,
+  validConnections,
+} from '../connections.ts';
+import type { ConnectionsState } from '../connections.ts';
 import { recordStanding, validStandings } from './standings.ts';
 import type { Standings, RoomGame } from './standings.ts';
 import {
@@ -84,11 +91,13 @@ export interface RoomSnapshot {
   mafiaMatch?: MafiaMatch | null;
   businessMatch?: BusinessMatch | null;
   islandMatch?: IslandMatch | null;
+  connectionsMatch?: ConnectionsMatch | null;
   standings?: Standings;
   wins: number[];
   draws: number;
 }
 export type RoomGameId =
+  | 'connections'
   | 'tictactoe'
   | 'connect-four'
   | 'catan'
@@ -98,6 +107,12 @@ export type RoomGameId =
   | 'rps'
   | CardGameId
   | RaceId;
+export interface ConnectionsMatch {
+  gameId: 'connections';
+  round: number;
+  revision: number;
+  game: ConnectionsState;
+}
 export interface IslandMatch {
   gameId: 'catan';
   round: number;
@@ -143,7 +158,7 @@ export interface CardMatch {
   view: CardView;
 }
 interface Signal {
-  version: 9;
+  version: 10;
   kind: 'offer' | 'answer';
   roomId: string;
   host: string;
@@ -152,7 +167,8 @@ interface Signal {
   spectating: boolean;
   description: RTCSessionDescriptionInit;
 }
-const BACKUP = 'arcade:redesign:room:v9';
+const BACKUP = 'arcade:redesign:room:v10';
+const SPECTATOR_BACKUP = 'arcade:redesign:room:v9';
 const STANDINGS_BACKUP = 'arcade:redesign:room:v8';
 const ISLAND_BACKUP = 'arcade:redesign:room:v7';
 const BUSINESS_BACKUP = 'arcade:redesign:room:v6';
@@ -201,11 +217,23 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         'mafiaMatch',
         'businessMatch',
         'islandMatch',
+        'connectionsMatch',
         'standings',
         'wins',
         'draws',
       ].includes(k),
     ) &&
+    [
+      s.match,
+      s.cardMatch,
+      s.raceMatch,
+      s.rpsMatch,
+      s.chessMatch,
+      s.mafiaMatch,
+      s.businessMatch,
+      s.islandMatch,
+      s.connectionsMatch,
+    ].filter(Boolean).length <= 1 &&
     validId(s.roomId) &&
     Array.isArray(s.members) &&
     s.members.length >= 1 &&
@@ -230,6 +258,23 @@ export function validSnapshot(value: unknown): value is RoomSnapshot {
         s.standings,
         [...s.members, ...(s.spectators ?? [])].map((m) => m.id),
       )) &&
+    (s.connectionsMatch == null ||
+      (!s.match &&
+        !s.cardMatch &&
+        !s.raceMatch &&
+        !s.rpsMatch &&
+        !s.chessMatch &&
+        !s.mafiaMatch &&
+        !s.businessMatch &&
+        !s.islandMatch &&
+        s.members.length >= 2 &&
+        Object.keys(s.connectionsMatch).length === 4 &&
+        s.connectionsMatch.gameId === 'connections' &&
+        integer(s.connectionsMatch.round) &&
+        integer(s.connectionsMatch.revision) &&
+        s.connectionsMatch.revision ===
+          s.connectionsMatch.game?.guesses?.length &&
+        validConnections(s.connectionsMatch.game, true))) &&
     (s.islandMatch == null ||
       (!s.match &&
         !s.cardMatch &&
@@ -383,7 +428,7 @@ export function readSignal(input: string, kind: Signal['kind']): Signal {
         Uint8Array.from(raw, (c) => c.charCodeAt(0)),
       ),
     );
-    if (s && typeof s === 'object' && s.version !== 9)
+    if (s && typeof s === 'object' && s.version !== 10)
       throw new Error(incompatibleLink);
     if (
       !s ||
@@ -473,6 +518,7 @@ export class Room {
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(BACKUP) ??
+          sessionStorage.getItem(SPECTATOR_BACKUP) ??
           sessionStorage.getItem(STANDINGS_BACKUP) ??
           sessionStorage.getItem(ISLAND_BACKUP) ??
           sessionStorage.getItem(BUSINESS_BACKUP) ??
@@ -581,6 +627,7 @@ export class Room {
   private activeMatch() {
     const s = this.snapshot;
     return (
+      s?.connectionsMatch ??
       s?.islandMatch ??
       s?.businessMatch ??
       s?.mafiaMatch ??
@@ -634,6 +681,7 @@ export class Room {
     s.chessMatch = null;
     s.mafiaMatch = null;
     s.businessMatch = null;
+    s.connectionsMatch = null;
     s.islandMatch = null;
     this.privateGame = null;
     this.privateRps = null;
@@ -732,7 +780,7 @@ export class Room {
     peer.channel.send(
       JSON.stringify({
         ...fields,
-        version: 9,
+        version: 10,
         roomId: this.snapshot.roomId,
         sender: this.peerId,
         sequence: ++peer.sequence,
@@ -793,7 +841,7 @@ export class Room {
       throw new Error();
     const m = JSON.parse(raw);
     if (
-      m.version !== 9 ||
+      m.version !== 10 ||
       m.roomId !== this.snapshot.roomId ||
       m.sender !== peer.id ||
       !integer(m.sequence) ||
@@ -825,6 +873,8 @@ export class Room {
         this.commitMafia(peer.id, m.action, m.round, m.revision);
       else if (m.type === 'chess-action' && peer.accepted)
         this.commitChess(peer.id, m.action, m.round, m.revision);
+      else if (m.type === 'connections-action' && peer.accepted)
+        this.commitConnections(peer.id, m.words, m.round, m.revision);
       else if (m.type === 'rps-action' && peer.accepted)
         this.commitRps(peer.id, m.action, m.round, m.revision, m.turns);
       else if (m.type === 'race-action' && peer.accepted)
@@ -881,6 +931,7 @@ export class Room {
       )
         throw new Error();
       const previous =
+          this.snapshot.connectionsMatch ??
           this.snapshot.islandMatch ??
           this.snapshot.businessMatch ??
           this.snapshot.mafiaMatch ??
@@ -890,6 +941,7 @@ export class Room {
           this.snapshot.cardMatch ??
           this.snapshot.match,
         next =
+          (m.snapshot as RoomSnapshot).connectionsMatch ??
           (m.snapshot as RoomSnapshot).islandMatch ??
           (m.snapshot as RoomSnapshot).businessMatch ??
           (m.snapshot as RoomSnapshot).mafiaMatch ??
@@ -929,7 +981,8 @@ export class Room {
       : spectating
         ? this.snapshot.spectators?.find((m) => !m.connected)
         : (this.snapshot.members.slice(1).find((m) => !m.connected) ??
-          ((this.snapshot.match ||
+          ((this.snapshot.connectionsMatch ||
+            this.snapshot.match ||
             this.snapshot.cardMatch ||
             this.snapshot.raceMatch ||
             this.snapshot.rpsMatch ||
@@ -949,7 +1002,8 @@ export class Room {
     if (
       !existing &&
       !spectating &&
-      (this.snapshot.match ||
+      (this.snapshot.connectionsMatch ||
+        this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
         this.snapshot.rpsMatch ||
@@ -989,7 +1043,7 @@ export class Room {
     this.publish();
     return signalLink(
       {
-        version: 9,
+        version: 10,
         kind: 'offer',
         spectating,
         roomId: this.snapshot.roomId,
@@ -1079,7 +1133,8 @@ export class Room {
     if (
       !existing &&
       !peer.spectating &&
-      (this.snapshot.match ||
+      (this.snapshot.connectionsMatch ||
+        this.snapshot.match ||
         this.snapshot.cardMatch ||
         this.snapshot.raceMatch ||
         this.snapshot.rpsMatch ||
@@ -1127,7 +1182,8 @@ export class Room {
     this.emit();
   }
   start(
-    gameId: RoomGameId = this.snapshot?.islandMatch?.gameId ??
+    gameId: RoomGameId = this.snapshot?.connectionsMatch?.gameId ??
+      this.snapshot?.islandMatch?.gameId ??
       this.snapshot?.businessMatch?.gameId ??
       this.snapshot?.mafiaMatch?.gameId ??
       this.snapshot?.chessMatch?.gameId ??
@@ -1150,6 +1206,7 @@ export class Room {
       throw new Error('Wait for all players to connect.');
     if (
       ![
+        'connections',
         'catan',
         'business',
         'mafia',
@@ -1172,6 +1229,10 @@ export class Room {
       (['snakes-ladders', 'ludo'].includes(gameId) && s.members.length > 4)
     )
       throw new Error('Choose a game that supports this number of players.');
+    const nextConnections =
+      gameId === 'connections'
+        ? newConnections(s.connectionsMatch ? 'practice' : 'daily')
+        : null;
     const nextBusiness =
       gameId === 'business'
         ? createBusiness(
@@ -1203,7 +1264,8 @@ export class Room {
         : null;
     const round = Math.max(
       s.nextRound ?? 0,
-      (s.islandMatch?.round ??
+      (s.connectionsMatch?.round ??
+        s.islandMatch?.round ??
         s.businessMatch?.round ??
         s.mafiaMatch?.round ??
         s.chessMatch?.round ??
@@ -1218,12 +1280,24 @@ export class Room {
     this.privateMafia = null;
     this.privateBusiness = null;
     this.privateIsland = null;
+    s.connectionsMatch = null;
     s.islandMatch = null;
     s.businessMatch = null;
     s.mafiaMatch = null;
     s.rpsMatch = null;
     s.chessMatch = null;
-    if (gameId === 'catan') {
+    if (gameId === 'connections') {
+      this.privateGame = null;
+      s.match = null;
+      s.cardMatch = null;
+      s.raceMatch = null;
+      s.connectionsMatch = {
+        gameId: 'connections',
+        round,
+        revision: 0,
+        game: nextConnections!,
+      };
+    } else if (gameId === 'catan') {
       this.privateGame = null;
       s.match = null;
       s.cardMatch = null;
@@ -1341,6 +1415,58 @@ export class Room {
     room.standings = next;
     if (winners === null) room.draws++;
     else for (const winner of winners) room.wins[winner]++;
+  }
+  connectionsAction(words: unknown) {
+    const match = this.snapshot?.connectionsMatch;
+    if (!match) return;
+    if (this.role === 'host')
+      this.commitConnections(this.peerId, words, match.round, match.revision);
+    else if (this.role === 'guest') {
+      const peer = this.peers.values().next().value;
+      if (peer)
+        this.send(
+          {
+            type: 'connections-action',
+            words,
+            round: match.round,
+            revision: match.revision,
+          },
+          peer,
+        );
+    }
+  }
+  private commitConnections(
+    sender: string,
+    words: unknown,
+    round: unknown,
+    revision: unknown,
+  ) {
+    const room = this.snapshot,
+      match = room?.connectionsMatch;
+    if (
+      !room ||
+      !match ||
+      round !== match.round ||
+      revision !== match.revision ||
+      !room.members.some((member) => member.id === sender) ||
+      !room.members.every((member) => member.connected)
+    )
+      return;
+    const result = submitConnections(match.game, words);
+    if (result.state === match.game) {
+      this.publish();
+      return;
+    }
+    match.game = result.state;
+    match.revision++;
+    const progress = connectionsProgress(match.game);
+    if (progress.over)
+      this.recordResult(
+        'connections',
+        match.round,
+        progress.won ? room.members.map((_, i) => i) : [],
+      );
+    this.publish();
   }
   move(cell: number) {
     const s = this.snapshot?.match;
@@ -1941,6 +2067,7 @@ export class Room {
     this.pendingGuest = '';
     try {
       sessionStorage.removeItem(BACKUP);
+      sessionStorage.removeItem(SPECTATOR_BACKUP);
       sessionStorage.removeItem(STANDINGS_BACKUP);
       sessionStorage.removeItem(ISLAND_BACKUP);
       sessionStorage.removeItem(BUSINESS_BACKUP);

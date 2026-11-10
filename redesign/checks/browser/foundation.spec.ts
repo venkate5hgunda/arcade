@@ -22,9 +22,9 @@ test('complete shelf, categories, search and native game handoff', async ({
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await expect(page).toHaveTitle('Arcade · Good games, better together');
-  await expect(page.locator('.game-card')).toHaveCount(26);
+  await expect(page.locator('.game-card')).toHaveCount(GAMES.length);
   await expect(page.locator('.catalog-note')).toHaveText(
-    'All 26 games are ready. Browse the complete collection, then choose solo, pass-and-play, or a supported private room.',
+    `All ${GAMES.length} games are ready. Browse the complete collection, then choose solo, pass-and-play, or a supported private room.`,
   );
   await expect(page.getByText('The new shelf is taking shape.')).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(

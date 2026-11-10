@@ -33,6 +33,17 @@ export interface Game {
 
 export const GAMES: Game[] = [
   {
+    id: 'connections',
+    name: 'Connections',
+    tagline: 'Sixteen words, four hidden threads',
+    players: { min: 1, max: 20, type: 'local-multiplayer' },
+    category: 'Word',
+    color: '#b8a3df',
+    icon: 'tabler:abc',
+    description:
+      'Find four groups of four words in original daily and practice puzzles. Solve solo, together on one screen, or cooperatively in a private room.',
+  },
+  {
     id: 'show-star',
     name: 'Show',
     tagline: 'Match four, race to slap',
@@ -332,6 +343,7 @@ export const CATEGORIES = [
 
 /** Games with a migrated view. Others render an honest "Coming soon" screen. */
 export const implementedGameIds = new Set<string>([
+  'connections',
   'catan',
   'business',
   'mafia',
@@ -358,6 +370,7 @@ export const implementedGameIds = new Set<string>([
 
 /** Room-supported games, matching the baseline's `REMOTE_GAMES`. */
 export const ROOM_GAMES = new Set<string>([
+  'connections',
   'tictactoe',
   'connect-four',
   'chess',
