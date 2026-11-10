@@ -205,11 +205,10 @@ export function RoomPage({ room }: { room: Room }) {
           `${s?.members.length ?? 0} players · ${s?.spectators?.length ?? 0} spectators · One shared table.`
         ) : (
           <>
-            Your own table for Tic-Tac-Toe, Connect Four, Crazy Eights,
-            UNO-inspired, Snakes &amp; Ladders, Ludo, Chess, Business, Island
-            Charter, Mafia, Rock Paper Scissors or cooperative Connections and
-            Strands. UNO and Connections welcome 2–20 players, Mafia 5–10,
-            Business 2–6, race games 2–4, and Island Charter 3–4.
+            Bring your group to a shared board, card game or cooperative puzzle.
+            Connections, Strands, Spelling Bee, Letter Boxed, Mini Crossword,
+            Tiles and Sudoku welcome 2–20 players. Quoridor is head-to-head for
+            two. Choose a game in the lobby to see its player limits.
           </>
         )}
       </p>
