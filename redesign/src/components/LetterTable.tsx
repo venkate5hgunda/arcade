@@ -18,6 +18,18 @@ export function LetterTable({
   useEffect(() => {
     setInput(last);
   }, [state.seed, state.words.length, last]);
+  function point(letter: string) {
+    const side = puzzle.sides.findIndex((value) => value.includes(letter));
+    if (side < 0) return null;
+    const position = 26 + puzzle.sides[side].indexOf(letter) * 24;
+    return side === 0
+      ? `${position},0`
+      : side === 1
+        ? `100,${position}`
+        : side === 2
+          ? `${position},100`
+          : `0,${position}`;
+  }
   return (
     <>
       <p className="challenge-edition">
@@ -29,6 +41,24 @@ export function LetterTable({
         role="group"
         aria-label="Letters around the square"
       >
+        <svg
+          className="letter-paths"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {state.words.map((word, index) => (
+            <polyline
+              key={index}
+              className="found-line"
+              points={[...word].map(point).filter(Boolean).join(' ')}
+            />
+          ))}
+          <polyline
+            className="active-line"
+            points={[...input].map(point).filter(Boolean).join(' ')}
+          />
+        </svg>
         {puzzle.sides.map((side, i) => (
           <div
             className={`letter-side letter-side-${i}`}
@@ -38,7 +68,8 @@ export function LetterTable({
           >
             {[...side].map((letter) => (
               <button
-                className={used.has(letter) ? 'used' : ''}
+                className={`${used.has(letter) ? 'used' : ''} ${input.includes(letter) ? 'selected' : ''}`}
+                aria-pressed={input.includes(letter)}
                 key={letter}
                 disabled={blocked || done}
                 aria-label={`${letter}, side ${i + 1}${used.has(letter) ? ', used' : ''}`}

@@ -136,8 +136,12 @@ export function IslandGame() {
         />
       }
       setupExtra={
-        <Link className="room-callout" to="/room?game=catan">
-          Different screens? Open a private room →
+        <Link
+          className="room-callout"
+          to="/room?game=catan"
+          aria-label="Different screens? Open a private room →"
+        >
+          Private room
         </Link>
       }
       after={

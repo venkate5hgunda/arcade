@@ -95,8 +95,12 @@ export function ChallengeGame({ id }: { id: ChallengeId }) {
           : 'Play at your pace. Your progress is saved on this device.'
       }
       setupExtra={
-        <Link className="room-callout" to={`/room?game=${id}`}>
-          Play together in a private room →
+        <Link
+          className="room-callout"
+          to={`/room?game=${id}`}
+          aria-label="Play together in a private room →"
+        >
+          Play together
         </Link>
       }
       after={

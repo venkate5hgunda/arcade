@@ -1,3 +1,4 @@
+import { GameMenu } from '../components/GameMenu.tsx';
 import { Link } from 'react-router-dom';
 import { GameArt } from '../components/GameArt.tsx';
 export function MafiaGame() {
@@ -27,14 +28,13 @@ export function MafiaGame() {
           </Link>
         </div>
         <GameArt id="mafia" className="puzzle-setup-art" />
-        <details className="help-card">
-          <summary>How to play</summary>
+        <GameMenu label={<> How to play </>}>
           <p>
             Each night, Mafia chooses a target, the Doctor protects, and the
             Detective investigates. Discuss and vote by day. The host can mark
             disconnected players absent for the phase.
           </p>
-        </details>
+        </GameMenu>
       </div>
     </section>
   );

@@ -98,8 +98,12 @@ function ConnectGame() {
             Play again
           </button>
         ) : (
-          <Link className="room-callout" to="/room">
-            Play on separate screens →
+          <Link
+            className="room-callout"
+            to="/room"
+            aria-label="Play on separate screens →"
+          >
+            Play
           </Link>
         )
       }
@@ -671,7 +675,7 @@ function SimonGame() {
           <button
             key={name}
             className={`simon-pad pad-${pad} ${active === pad ? 'active' : ''}`}
-            aria-label={`Play ${name} pad`}
+            aria-label={`Play ${pad + 1} ${name}${active === pad ? ' Watch' : ''} pad`}
             aria-disabled={phase !== 'input' || !!s?.over}
             onClick={() => {
               if (s && phase === 'input' && !s.over) {
@@ -680,9 +684,13 @@ function SimonGame() {
               }
             }}
           >
-            <b>{pad + 1}</b>
-            <span>{name}</span>
-            {active === pad && <small>Watch</small>}
+            <b>{pad + 1}</b> <span>{name}</span>
+            {active === pad && (
+              <>
+                {' '}
+                <small>Watch</small>
+              </>
+            )}
           </button>
         ))}
       </div>

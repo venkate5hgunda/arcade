@@ -91,8 +91,12 @@ export function ChessGame() {
       }
       help="White moves first. Select a piece to see its legal moves; select a highlighted square to move. Castling requires a clear, safe path. En passant is available immediately after an adjacent pawn advances two squares. Pawns promote to your choice of queen, rook, bishop or knight. Checkmate wins; stalemate and insufficient material draw. Use arrow keys and Enter or Space on the board."
       setupExtra={
-        <Link className="room-callout" to="/room">
-          Different screens? Start a private room →
+        <Link
+          className="room-callout"
+          to="/room"
+          aria-label="Different screens? Start a private room →"
+        >
+          Private room
         </Link>
       }
       after={

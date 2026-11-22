@@ -1,3 +1,4 @@
+import { GameMenu } from './GameMenu.tsx';
 import { useEffect, useState } from 'react';
 import type { MafiaView, Role } from '../lib/mafia.ts';
 const ROLES: Record<Role | 'spectator', [string, string, string]> = {
@@ -168,15 +169,14 @@ export function MafiaTable({
           </>
         )}
         {view.role === 'detective' && view.clues.length > 0 && (
-          <details className="help-card">
-            <summary>My private case file</summary>
+          <GameMenu label={<> My private case file </>}>
             {view.clues.map((c) => (
               <p key={c.day}>
                 Night {c.day}: {names[c.target]} —{' '}
                 {c.mafia ? 'Mafia' : 'not Mafia'}.
               </p>
             ))}
-          </details>
+          </GameMenu>
         )}
         {view.phase === 'discussion' && host && (
           <button
@@ -239,8 +239,7 @@ export function MafiaTable({
           </>
         )}
       </div>
-      <details className="help-card">
-        <summary>People of the city</summary>
+      <GameMenu label={<> People of the city </>}>
         {names.map((name, i) => (
           <p key={i}>
             {name} ·{' '}
@@ -255,9 +254,8 @@ export function MafiaTable({
                     : 'In the city'}
           </p>
         ))}
-      </details>
-      <details className="help-card">
-        <summary>House rules & privacy</summary>
+      </GameMenu>
+      <GameMenu label={<> House rules & privacy </>}>
         <p>
           5–10 players. One Mafia at 5–6 players; two at 7–10. Mafia chooses a
           victim, Doctor protects and Detective investigates. Ties spare
@@ -265,7 +263,7 @@ export function MafiaTable({
           parity. Eliminated players observe. The host device knows every role
           and action.
         </p>
-      </details>
+      </GameMenu>
     </div>
   );
 }

@@ -109,3 +109,9 @@ test/                 original baseline regression suites
 ## 📄 License
 
 [MIT](LICENSE) © 2026 Venkatesh Gunda. Third-party artwork and code retain their own licenses; see [credits](docs/credits.md).
+
+Strands supports touch/mouse drag tracing and tap or keyboard selection, with persistent found-word paths and a gold spangram. Letter Boxed draws the current and accepted word chains around its square. Word feedback respects reduced-motion preferences.
+
+### Editorial interface
+
+Arcade uses a quiet editorial interface across its catalog, setup, local games and rooms: white surfaces, dark type, thin rules and pill controls. Existing distinct artwork and semantic board colors remain. Rules, room options and other secondary details open in accessible modal menus with Escape dismissal and focus restoration. Scores, turns and validation feedback stay visible. Word reveals, traced paths and button feedback respect reduced motion; existing board and canvas motion retain their game rules.

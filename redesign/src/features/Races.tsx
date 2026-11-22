@@ -1,3 +1,4 @@
+import { GameMenu } from '../components/GameMenu.tsx';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Frame, useRun } from '../components/GameFrame.tsx';
@@ -86,8 +87,7 @@ export function RacesGame({ id }: { id: RaceId }) {
       help={HELP[id]}
       setupExtra={
         <>
-          <details className="help-card">
-            <summary>Player names</summary>
+          <GameMenu label={<> Player names </>}>
             {Array.from(
               {
                 length: Math.max(
@@ -112,9 +112,13 @@ export function RacesGame({ id }: { id: RaceId }) {
                 </label>
               ),
             )}
-          </details>
-          <Link className="room-callout" to="/room">
-            Different screens? Start a private room →
+          </GameMenu>
+          <Link
+            className="room-callout"
+            to="/room"
+            aria-label="Different screens? Start a private room →"
+          >
+            Private room
           </Link>
         </>
       }
@@ -135,8 +139,12 @@ export function RacesGame({ id }: { id: RaceId }) {
           onMotion={setMoving}
         />
       )}
-      <Link className="room-callout" to="/room">
-        Different screens? Start a private room →
+      <Link
+        className="room-callout"
+        to="/room"
+        aria-label="Different screens? Start a private room →"
+      >
+        Private room
       </Link>
     </Frame>
   );

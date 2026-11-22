@@ -36,8 +36,12 @@ export function ConnectionsGame() {
       summary="Sixteen words. Four hidden connections. Find the threads that tie them together."
       setupSummary="Solo or solve together on one screen · 24 original offline puzzles"
       setupExtra={
-        <Link className="room-callout" to="/room?game=connections">
-          Solve together in a private room →
+        <Link
+          className="room-callout"
+          to="/room?game=connections"
+          aria-label="Solve together in a private room →"
+        >
+          Private room
         </Link>
       }
       help={CONNECTIONS_HELP}

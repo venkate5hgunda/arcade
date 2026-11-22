@@ -1,3 +1,4 @@
+import { GameMenu } from '../components/GameMenu.tsx';
 import { challengeMax } from '../lib/challenges.ts';
 import { ChallengeTable } from '../components/ChallengeTable.tsx';
 import {
@@ -198,19 +199,11 @@ export function RoomPage({ room }: { room: Room }) {
       <Link className="back" to="/">
         ← All games
       </Link>
-      <p className="eyebrow">Different screens. Same game night.</p>
       <h1>Your private table</h1>
       <p className="lede">
-        {inMatch ? (
-          `${s?.members.length ?? 0} players · ${s?.spectators?.length ?? 0} spectators · One shared table.`
-        ) : (
-          <>
-            Bring your group to a shared board, card game or cooperative puzzle.
-            Connections, Strands, Spelling Bee, Letter Boxed, Mini Crossword,
-            Tiles and Sudoku welcome 2–20 players. Quoridor is head-to-head for
-            two. Choose a game in the lobby to see its player limits.
-          </>
-        )}
+        {inMatch
+          ? `${s?.members.length ?? 0} players · ${s?.spectators?.length ?? 0} spectators · One shared table.`
+          : 'Invite friends. Choose a game.'}
       </p>
       {!room.role ? (
         <div className="room-columns">
@@ -343,8 +336,7 @@ export function RoomPage({ room }: { room: Room }) {
             </div>
           </details>
           {!!s?.spectators?.length && (
-            <details className="help-card">
-              <summary>Spectators ({s.spectators.length})</summary>
+            <GameMenu label={<> Spectators ({s.spectators.length}) </>}>
               <ul>
                 {s.spectators.map((member) => (
                   <li key={member.id}>
@@ -364,7 +356,7 @@ export function RoomPage({ room }: { room: Room }) {
                   </li>
                 ))}
               </ul>
-            </details>
+            </GameMenu>
           )}
           {spectating && (
             <p className="room-callout" role="status">
@@ -899,10 +891,9 @@ export function RoomPage({ room }: { room: Room }) {
                     : 'New practice puzzle'}
                 </button>
               )}
-              <details className="help-card">
-                <summary>How to play</summary>
+              <GameMenu label={<> How to play </>}>
                 <p>{challengeHelp[challenge.gameId]}</p>
-              </details>
+              </GameMenu>
             </div>
           )}
           {connections && s && connectionProgress && (
@@ -943,10 +934,9 @@ export function RoomPage({ room }: { room: Room }) {
                   New practice puzzle
                 </button>
               )}
-              <details className="help-card">
-                <summary>How to play</summary>
+              <GameMenu label={<> How to play </>}>
                 <p>{CONNECTIONS_HELP}</p>
-              </details>
+              </GameMenu>
             </div>
           )}
           {rps && s && (
@@ -1192,8 +1182,7 @@ export function RoomPage({ room }: { room: Room }) {
               members={[...s.members, ...(s.spectators ?? [])]}
             />
           )}
-          <details className="help-card">
-            <summary>Room options</summary>
+          <GameMenu label={<> Room options </>}>
             {room.role === 'host' && inMatch && (
               <button
                 className="quiet"
@@ -1253,7 +1242,7 @@ export function RoomPage({ room }: { room: Room }) {
             >
               Leave room
             </button>
-          </details>
+          </GameMenu>
         </>
       )}
       {busy && (

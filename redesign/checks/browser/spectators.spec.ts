@@ -112,10 +112,21 @@ test('a spectator watches a full win, recovers with the host, and never blocks t
       viewer.getByText('You’re spectating.', { exact: false }),
     ).toBeVisible();
     host.once('dialog', (dialog) => dialog.accept());
+    await host
+      .getByRole('button', { name: 'Room options', exact: true })
+      .click();
     await host.getByRole('button', { name: 'Return to lobby' }).click();
-    await host.getByLabel('Play in next game: Kai').uncheck();
+    await host.getByLabel('Play in next game: Kai').click();
+    await expect(host.getByLabel('Play in next game: Kai')).toHaveCount(0);
     await host.getByText('Spectators (2)', { exact: true }).click();
-    await host.getByLabel('Play in next game: Rae').check();
+    await host.getByLabel('Play in next game: Rae').click();
+    await expect(
+      host.getByRole('dialog').getByLabel('Play in next game: Rae'),
+    ).toHaveCount(0);
+    await host
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Close menu' })
+      .click();
     await host.getByRole('button', { name: 'Start Tic-Tac-Toe' }).click();
     await contexts[0].close();
     await host.locator('.square').nth(4).click();

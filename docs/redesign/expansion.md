@@ -57,3 +57,19 @@ Captured from the production build in desktop Chromium and mobile WebKit. These 
 | Tiles | [Capture](../images/arcade-tiles-desktop.png) | [Capture](../images/arcade-tiles-mobile.png) |
 | Sudoku | [Capture](../images/arcade-sudoku-desktop.png) | [Capture](../images/arcade-sudoku-mobile.png) |
 | Quoridor | [Capture](../images/arcade-quoridor-desktop.png) | [Capture](../images/arcade-quoridor-mobile.png) |
+
+## Word tracing presentation
+
+The supplied NYT Games screen recording shows Strands. The existing native game now supports drag-to-trace and release-to-submit alongside tap, keyboard and explicit submission. SVG paths show active selections, accepted words and the gold spangram. Letter Boxed shows draft and accepted chains; word badges enter with a short animation. Reduced motion disables these transitions. Existing offline puzzles, rules and checkpoint formats remain unchanged.
+
+Validation for this presentation change: root tests, redesign inventory/domain tests, formatting and production build pass. Four focused desktop browser checks pass, covering tap/keyboard-compatible selection, hints, completion, drag submission, persisted paths, Letter Boxed chains and accessibility. The mobile WebKit checks cannot launch in this workspace because required system libraries are missing; mobile-device animation behavior remains unverified.
+
+## Editorial interface and minimal game UX
+
+The expanded request applies the recording’s design principles across Arcade, rather than copying its branding or puzzle content. `redesign/src/editorial.css` is the final shared presentation layer: restrained surfaces, typography, hairline borders, pill controls, semantic board colors and compact phone layouts. It removes ornamental table gradients, keeps distinct existing artwork and leaves actual board/canvas physics intact. The existing game-specific motion is retained, with staggered word reveals and short press feedback added under reduced-motion guards.
+
+`GameMenu` uses native modal dialogs for rules, room options, player details and private game records. The browser traps focus; Escape, Close and backdrop dismissal restore the trigger. Contents mount only while open. Essential scores, turns, errors and result messages remain on the game screen. Generic setup descriptions and redundant explanatory footers are removed from the primary flow. Instructions and room-entry controls remain available in menus.
+
+Regression coverage: `redesign/checks/browser/editorial.spec.ts` checks the entire game catalog at phone width and exercises modal help, focus containment, Escape and focus restoration. The existing game suites retain functional and room coverage.
+
+Final editorial validation: production build, formatting, root tests (31), redesign inventory (5) and domain tests (114) pass. The broad desktop browser run and correction reruns cover 137 scenarios, with three existing platform-specific skips. Final phone-width accessibility, popup focus and spectator checks pass. Native WebKit remains blocked by missing system libraries. See the root `design-qa.md` for evidence and limitations.

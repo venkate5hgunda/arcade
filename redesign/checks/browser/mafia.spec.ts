@@ -135,6 +135,10 @@ test('Mafia five-browser room protects roles, restores the host and resolves a c
         await expect(players[i].getByText('My private case file')).toHaveCount(
           0,
         );
+    await players[detective]
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Close menu' })
+      .click();
     await host
       .getByRole('button', { name: 'End discussion · open secret vote' })
       .click();

@@ -49,6 +49,10 @@ test('Business handoffs, trading, board inspection and a completed game work acr
     path: `node_modules/.cache/business-${test.info().project.name}.png`,
     fullPage: true,
   });
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Close menu' })
+    .click();
   await page.getByRole('button', { name: 'End turn →' }).click();
   await expect(
     page.getByRole('heading', { name: 'Final standings', level: 2 }),

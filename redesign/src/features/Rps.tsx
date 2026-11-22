@@ -92,8 +92,12 @@ export function RpsGame() {
       }
       help="Rock beats scissors, scissors beats paper, paper beats rock. A draw adds no points. Choose first to 3, 5 or 7 wins. With a friend, pass the device before their secret throw. In a room both players choose independently; first to 3 wins."
       setupExtra={
-        <Link className="room-callout" to="/room">
-          Different screens? Start a private room →
+        <Link
+          className="room-callout"
+          to="/room"
+          aria-label="Different screens? Start a private room →"
+        >
+          Private room
         </Link>
       }
       after={
