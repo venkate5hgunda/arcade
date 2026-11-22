@@ -40,6 +40,10 @@ test('clean game surfaces retain contrast and fit a phone viewport', async ({
         path: `node_modules/.cache/editorial-${game.id}.png`,
         fullPage: true,
       });
+    const home = page.getByRole('link', { name: 'Arcade home' });
+    await expect(home).toBeInViewport();
+    await home.click();
+    await expect(page.locator('.game-card')).toHaveCount(GAMES.length);
   }
   expect(findings).toEqual([]);
   expect(errors).toEqual([]);

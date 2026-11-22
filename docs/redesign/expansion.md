@@ -73,3 +73,5 @@ The expanded request applies the recording’s design principles across Arcade, 
 Regression coverage: `redesign/checks/browser/editorial.spec.ts` checks the entire game catalog at phone width and exercises modal help, focus containment, Escape and focus restoration. The existing game suites retain functional and room coverage.
 
 Final editorial validation: production build, formatting, root tests (31), redesign inventory (5) and domain tests (114) pass. The broad desktop browser run and correction reruns cover 137 scenarios, with three existing platform-specific skips. Final phone-width accessibility, popup focus and spectator checks pass. Native WebKit remains blocked by missing system libraries. See the root `design-qa.md` for evidence and limitations.
+
+Compact phone matches use the persistent Arcade home link to exit, avoiding a duplicate back row above the board. Navigation and all-game phone-width checks exercise that visible control, including keyboard activation outside the Pool table.
