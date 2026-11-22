@@ -194,6 +194,10 @@ test('UNO supports 20 local players, a 216-card deck, complete wins, names and r
     .selectOption('20');
   await page.getByText('Player names', { exact: true }).click();
   await page.getByLabel('Player 20 name', { exact: true }).fill('Rae');
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Close menu' })
+    .click();
   await page.getByRole('button', { name: 'Start playing' }).click();
   const s = await saved<UnoState>(page, 'uno');
   expect(s.hands).toHaveLength(20);

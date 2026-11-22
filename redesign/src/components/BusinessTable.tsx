@@ -1,3 +1,4 @@
+import { GameMenu } from './GameMenu.tsx';
 import { useState } from 'react';
 import { BOARD, DEEDS, GROUPS, netWorth, rent } from '../lib/business-core.js';
 import type { BusinessAction, BusinessPublic } from '../lib/business-core.js';
@@ -396,8 +397,7 @@ export function BusinessTable({
           </span>
         ))}
       </div>
-      <details className="help-card">
-        <summary>Explore the board & inspect deeds</summary>
+      <GameMenu label={<> Explore the board & inspect deeds </>}>
         <div
           className="business-scroll"
           tabIndex={0}
@@ -520,15 +520,14 @@ export function BusinessTable({
             </button>
           </div>
         </section>
-      </details>
-      <details className="help-card">
-        <summary>Recent events</summary>
+      </GameMenu>
+      <GameMenu label={<> Recent events </>}>
         <ol>
           {view.log.map((entry, i) => (
             <li key={i}>{entry}</li>
           ))}
         </ol>
-      </details>
+      </GameMenu>
     </div>
   );
 }

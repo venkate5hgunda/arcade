@@ -41,7 +41,7 @@ test('Pool shortcuts leave keyboard navigation available outside the table', asy
   await page.getByRole('button', { name: 'Start playing' }).click();
   await expect(page.locator('canvas')).toBeVisible();
 
-  const exit = page.getByRole('link', { name: 'All games' });
+  const exit = page.getByRole('link', { name: 'Arcade home' });
   await exit.focus();
   await page.keyboard.press('Enter');
 

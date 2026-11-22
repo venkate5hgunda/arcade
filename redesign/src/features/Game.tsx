@@ -1,3 +1,4 @@
+import { GameMenu } from '../components/GameMenu.tsx';
 import { ChallengeGame } from './Challenge.tsx';
 import { isChallenge } from '../lib/challenges.ts';
 import { ConnectionsGame } from './Connections.tsx';
@@ -257,15 +258,14 @@ function LocalGame() {
           </div>
           <aside>
             <Help />
-            <details className="help-card">
-              <summary>Match details</summary>
+            <GameMenu label={<> Match details </>}>
               <p>
                 {state.mode === 'ai'
                   ? 'You are X. The computer is O and plays perfectly. Your best result is a draw!'
                   : 'Pass the device after each turn. X always starts.'}
               </p>
               <p>Wins are saved for each player on this device.</p>
-            </details>
+            </GameMenu>
           </aside>
         </div>
       )}
@@ -322,8 +322,7 @@ function LocalGame() {
 }
 function Help() {
   return (
-    <details className="help-card">
-      <summary>How to play</summary>
+    <GameMenu label={<> How to play </>}>
       <p>
         Take turns placing X and O. The first line of three across, down, or
         diagonally wins.
@@ -332,7 +331,7 @@ function Help() {
         Use arrow keys to move between squares. Press Enter or Space to place a
         mark.
       </p>
-    </details>
+    </GameMenu>
   );
 }
 export function GameRoute() {

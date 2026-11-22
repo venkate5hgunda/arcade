@@ -1,0 +1,744 @@
+/* Editorial game surfaces. Semantic board colors remain game-specific. */
+:root {
+  --paper: #fff;
+  --surface: #fff;
+  --ink: #121212;
+  --muted: #595959;
+  --line: #dcdcdc;
+  --accent: #121212;
+  --selected: #ededed;
+  --shadow: none;
+  --word-blue: #aed5e7;
+  --word-yellow: #f8da74;
+  --word-draft: #d7d7d7;
+}
+:root[data-theme='dark'] {
+  --paper: #161616;
+  --surface: #202020;
+  --ink: #f5f5f5;
+  --muted: #bdbdbd;
+  --line: #484848;
+  --accent: #f5f5f5;
+  --selected: #363636;
+  --header: #161616;
+  --header-ink: #f5f5f5;
+}
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+.app-header {
+  padding-block: 8px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.brand {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 26px;
+  letter-spacing: -1px;
+}
+.brand > img {
+  display: none;
+}
+.app-header .room-link,
+.app-header .icon-button,
+.feedback-control > summary {
+  border-color: transparent;
+  border-radius: 50px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 400;
+}
+.app-header .room-link {
+  border-color: var(--ink);
+}
+.app-header :focus-visible,
+:focus-visible {
+  outline-color: #286b91;
+}
+.catalog-intro {
+  text-align: center;
+  padding-top: 48px;
+  padding-bottom: 32px;
+}
+.catalog-intro h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(34px, 5vw, 52px);
+}
+.catalog-intro p {
+  font-size: 16px;
+}
+.browse-tools .search input {
+  border-radius: 50px;
+}
+.filter {
+  border-radius: 50px;
+  font-weight: 400;
+}
+.filter[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.filter[aria-pressed='true'] .icon {
+  filter: brightness(0) invert(1);
+}
+:root[data-theme='dark'] .filter[aria-pressed='true'] .icon {
+  filter: none;
+}
+.collection {
+  border-top: 1px solid var(--line);
+}
+.collection-grid {
+  gap: 24px;
+}
+.section-head h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 25px;
+}
+.game-card {
+  border-radius: 6px;
+  box-shadow: none;
+}
+.game-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink);
+  box-shadow: none;
+}
+.card-image {
+  height: 156px;
+}
+.card-copy {
+  padding: 20px;
+}
+.card-copy h3 {
+  font-size: 23px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.card-copy p {
+  font-size: 14px;
+}
+.card-category {
+  border-radius: 3px;
+}
+.card-action {
+  color: var(--ink);
+}
+.continue-card,
+.setup-card,
+.setup-art,
+.puzzle-setup-art {
+  border-radius: 6px;
+  box-shadow: none;
+}
+.game-heading {
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.game-heading h1,
+.room-page h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(30px, 5vw, 42px);
+  margin-bottom: 0;
+}
+.back {
+  color: var(--ink);
+}
+.primary,
+.board-panel .primary {
+  background: #121212;
+  border: 1px solid #121212;
+  color: #fff;
+  border-radius: 50px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.primary:hover,
+.board-panel .primary:hover {
+  background: #363636;
+  color: #fff;
+}
+.quiet,
+.board-panel .quiet,
+.segmented button {
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 50px;
+  background: transparent;
+  font-weight: 400;
+}
+button {
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 160ms ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+button:disabled {
+  cursor: default;
+}
+input,
+textarea,
+select {
+  border-radius: 4px;
+  border-color: #888;
+}
+.setup-card {
+  padding: 28px;
+  border: 1px solid var(--line);
+}
+.setup-start {
+  max-width: 320px;
+}
+.board-panel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 24px 16px;
+}
+.turn-banner {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+}
+.turn-banner h2 {
+  font-size: 22px;
+}
+.turn-banner p,
+.board-panel .count,
+.challenge-edition,
+.challenge-table .help-card p {
+  color: var(--muted);
+}
+.help-card {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.help-card summary {
+  font-weight: 600;
+}
+.room-callout {
+  border-radius: 4px;
+}
+footer {
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.puzzle-strands.is-playing {
+  max-width: 640px;
+}
+.puzzle-strands.is-playing .game-heading {
+  margin-bottom: 28px;
+}
+.puzzle-strands .puzzle-play {
+  max-width: 440px;
+}
+.puzzle-strands .board-panel {
+  padding: 0 12px;
+}
+.puzzle-strands .turn-banner.sr-only {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  min-height: 0;
+}
+.strands-theme-card {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+  text-align: center;
+  margin: 0 0 24px;
+}
+.strands-theme-card > p {
+  background: #e4eef2;
+  color: #121212;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding: 3px 8px;
+  line-height: 1.4;
+}
+.strands-theme-card .strands-theme {
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  margin: 0;
+  padding: 10px 8px 12px;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+.challenge-strands .challenge-draft {
+  text-align: center;
+  height: 32px;
+  margin: 0 0 20px;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+.strands-board {
+  width: 100%;
+  margin: 0 auto 24px;
+}
+.strands-board .strands-grid button {
+  border: 5px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font-size: clamp(20px, 5.8vw, 28px);
+  font-weight: 400;
+  line-height: 1;
+}
+.strands-board .strands-grid button[aria-pressed='true'] {
+  background-color: var(--word-draft);
+  border-color: transparent;
+}
+.strands-board .strands-grid button.found {
+  background-color: var(--word-blue);
+  color: #121212;
+}
+.strands-board .strands-grid button.spangram {
+  background-color: var(--word-yellow);
+  color: #121212;
+}
+.strands-paths .found-line {
+  stroke: var(--word-blue);
+}
+.strands-paths .span-line {
+  stroke: var(--word-yellow);
+}
+.strands-paths .active-line {
+  stroke: var(--word-draft);
+}
+.strands-paths polyline {
+  stroke-width: 24;
+}
+.strands-grid button.hinted {
+  outline-color: #956d09;
+  outline-offset: -5px;
+}
+.strands-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.strands-progress p {
+  margin: 0;
+  font-size: 14px;
+}
+.strands-progress button {
+  min-width: 88px;
+  padding: 8px 16px;
+}
+.strands-secondary {
+  justify-content: center;
+  margin-top: 22px;
+}
+.strands-found {
+  gap: 6px;
+  margin: 16px 0;
+}
+.strands-found li {
+  color: var(--ink);
+  background: transparent;
+  border-radius: 0;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.challenge-strands > p[role='status']:empty {
+  display: none;
+}
+.letter-square {
+  border-color: #c68d9e;
+  border-radius: 0;
+  background: #f8e7ec;
+}
+.letter-side button {
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  font-weight: 400;
+}
+.letter-side button.used {
+  background: var(--word-blue);
+  color: #121212;
+}
+.letter-side button.selected {
+  background: var(--word-yellow);
+  color: #121212;
+}
+.letter-square-center {
+  color: #4c3940;
+  font-size: 19px;
+  font-weight: 400;
+}
+.letter-paths .active-line {
+  stroke: #353535;
+}
+.letter-paths .found-line {
+  stroke: #8c5565;
+}
+.letter-chain {
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .app-header {
+    padding: 6px 12px;
+  }
+  .app-header .brand {
+    font-size: 22px;
+  }
+  .header-tools {
+    gap: 4px;
+  }
+  .catalog-intro {
+    padding-top: 32px;
+    padding-bottom: 24px;
+  }
+  .collection-grid {
+    gap: 14px;
+  }
+  .card-image {
+    height: 120px;
+  }
+  .card-copy {
+    padding: 14px;
+  }
+  .card-copy h3 {
+    font-size: 20px;
+  }
+  .game-heading {
+    margin-bottom: 16px;
+  }
+  .puzzle-page .board-panel {
+    padding: 16px 4px;
+  }
+  .puzzle-strands.is-playing {
+    width: calc(100% - 32px);
+    padding-top: 4px;
+  }
+  .puzzle-strands.is-playing > .back {
+    margin-bottom: 0;
+    font-size: 12px;
+  }
+  .puzzle-strands.is-playing .game-heading {
+    margin-bottom: 28px;
+    padding-bottom: 10px;
+  }
+  .puzzle-strands.is-playing .game-heading h1 {
+    font-size: 26px;
+  }
+  .puzzle-strands .board-panel {
+    padding: 0 8px;
+  }
+  .strands-theme-card {
+    margin-bottom: 22px;
+  }
+  .strands-theme-card .strands-theme {
+    font-size: 18px;
+  }
+  .strands-board .strands-grid button {
+    min-height: 0;
+  }
+  .strands-progress p {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+  button:active:not(:disabled),
+  .game-card:hover {
+    transform: none;
+  }
+}
+.game-menu {
+  margin-top: 16px;
+}
+.game-menu > button {
+  min-height: 44px;
+  font-size: 13px;
+  padding: 8px 18px;
+}
+.game-menu dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-height: 80dvh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 24px;
+  box-shadow: 0 12px 64px #0002;
+}
+.game-menu dialog::backdrop {
+  background: #0006;
+  backdrop-filter: blur(3px);
+}
+.game-menu-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.game-menu-heading h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.game-menu dialog p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.game-menu dialog details {
+  border-top: 1px solid var(--line);
+  padding-block: 16px;
+}
+.game-menu dialog summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.game-menu dialog .room-callout {
+  margin-top: 16px;
+  color: var(--ink);
+}
+.setup-description {
+  display: none;
+}
+.catalog-note {
+  display: none;
+}
+.challenge-message:empty {
+  display: none;
+}
+.puzzle-strands .strands-secondary {
+  gap: 8px;
+}
+.puzzle-strands .strands-secondary button {
+  font-size: 12px;
+  padding: 6px 14px;
+  min-height: 38px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .game-menu dialog[open] {
+    animation: menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes menu-in {
+    from {
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+/* Remove decorative table shells; retain the playable board and semantic colors. */
+.wordle-table,
+.hangman-table,
+.scramble-table,
+.whack-table,
+.taboo-table,
+.show-table,
+.race-table,
+.blackjack-table,
+.private-card-table {
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  padding: 12px 0;
+}
+.direction-controls .quiet,
+.flag-toggle {
+  color: var(--ink);
+}
+.wordle-tile {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: none;
+}
+.wordle-key {
+  border-radius: 4px;
+}
+.wordle-table > p:last-child {
+  display: none;
+}
+.connections-grid button {
+  border-radius: 5px;
+}
+.number-tile {
+  border-radius: 4px;
+  border-bottom-width: 0;
+}
+.memory-card {
+  border-radius: 5px;
+}
+.mine-cell {
+  border-radius: 2px;
+}
+.square {
+  border-radius: 4px;
+}
+.board-panel .challenge-edition,
+.puzzle-status,
+.room-race-match .count,
+.room-match .count,
+.room-card-match .count {
+  color: var(--muted);
+}
+.challenge-form label,
+.mini-clue {
+  color: var(--ink);
+}
+.room-game-name {
+  color: var(--muted);
+}
+.connections-edition,
+.room-roster span {
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .wordle-tile.correct,
+  .wordle-tile.present,
+  .wordle-tile.absent {
+    animation: letter-reveal 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .wordle-tile:nth-child(2) {
+    animation-delay: 35ms;
+  }
+  .wordle-tile:nth-child(3) {
+    animation-delay: 70ms;
+  }
+  .wordle-tile:nth-child(4) {
+    animation-delay: 105ms;
+  }
+  .wordle-tile:nth-child(5) {
+    animation-delay: 140ms;
+  }
+  @keyframes letter-reveal {
+    from {
+      transform: rotateX(75deg);
+    }
+    to {
+      transform: rotateX(0);
+    }
+  }
+}
+.whack-status b {
+  color: var(--ink);
+}
+.puzzle-play .room-callout {
+  color: var(--ink);
+}
+.round-marker,
+.private-card-table .eyebrow,
+.hangman-clue summary {
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .puzzle-page.is-playing > .back {
+    display: none;
+  }
+  .puzzle-page.is-playing .game-heading {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  .puzzle-page.is-playing .turn-banner:not(.sr-only) {
+    min-height: 40px;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+  .puzzle-strands.is-playing .game-heading {
+    margin-bottom: 24px;
+  }
+  .puzzle-strands .strands-board {
+    width: min(100%, max(264px, calc((100svh - 440px) * 0.75)));
+  }
+  .puzzle-wordle .wordle-board {
+    width: min(100%, max(220px, calc((100svh - 520px) * 0.8333)));
+  }
+  .wordle-form {
+    margin-bottom: 12px;
+  }
+}
+.game-menu dialog {
+  overscroll-behavior: contain;
+}
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+.feedback-panel {
+  background: var(--paper);
+  color: var(--ink);
+}
+.room-roster > div {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.room-roster .x-text {
+  color: #b82545;
+}
+.room-roster .o-text {
+  color: #00736e;
+}
+:root[data-theme='dark'] .room-roster .x-text {
+  color: #ff8192;
+}
+:root[data-theme='dark'] .room-roster .o-text {
+  color: #81ddd8;
+}
+.game-heading > h1 {
+  margin-right: auto;
+}
+.game-heading .game-menu {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+.game-heading .game-menu > button {
+  padding-inline: 14px;
+}
+@media (max-width: 640px) {
+  .game-heading {
+    gap: 8px;
+  }
+}
+.taboo-clock {
+  color: var(--ink);
+}
+/* Role-dependent Mafia controls share the surrounding editorial surface. */
+.mafia-hero,
+.mafia-panel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.mafia-hero h2 {
+  color: var(--ink);
+}
+.mafia-hero .eyebrow {
+  color: var(--muted);
+}
+.mafia-role {
+  color: #fff5e5;
+}
+.mafia-reveal span {
+  background: var(--selected);
+  color: var(--ink);
+}

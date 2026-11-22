@@ -482,3 +482,26 @@ test('every new cover and game fits a 320px screen and its legacy game alias', a
     );
   }
 });
+
+test('Strands mouse tracing submits on release and keeps its colored path', async ({
+  page,
+}) => {
+  await seed(page, 'strands', { ...newStrands('practice'), seed: 0 });
+  const path = strandsPuzzle(0).paths[0];
+  for (const [index, cell] of path.entries()) {
+    const box = await page
+      .locator('.strands-grid button')
+      .nth(cell)
+      .boundingBox();
+    if (!box) throw new Error('Missing letter');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+      steps: 5,
+    });
+    if (index === 0) await page.mouse.down();
+  }
+  await page.mouse.up();
+  await expect(page.locator('.strands-found')).toContainText('Spangram');
+  await expect(page.locator('.strands-paths .span-line')).toHaveCount(1);
+  await page.reload();
+  await expect(page.locator('.strands-paths .span-line')).toHaveCount(1);
+});

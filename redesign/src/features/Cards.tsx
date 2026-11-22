@@ -1,3 +1,4 @@
+import { GameMenu } from '../components/GameMenu.tsx';
 import { KEYS, saveJSON } from '../lib/storage.ts';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -88,8 +89,7 @@ export function CardsGame({ id }: { id: CardGameId }) {
       }
       setupExtra={
         <>
-          <details className="help-card">
-            <summary>Player names</summary>
+          <GameMenu label={<> Player names </>}>
             {Array.from(
               {
                 length:
@@ -114,9 +114,13 @@ export function CardsGame({ id }: { id: CardGameId }) {
                 </label>
               ),
             )}
-          </details>
-          <Link className="room-callout" to="/room">
-            Different screens? Start a private room →
+          </GameMenu>
+          <Link
+            className="room-callout"
+            to="/room"
+            aria-label="Different screens? Start a private room →"
+          >
+            Private room
           </Link>
         </>
       }
@@ -163,8 +167,12 @@ export function CardsGame({ id }: { id: CardGameId }) {
           onAction={act}
         />
       )}
-      <Link className="room-callout" to="/room">
-        Different screens? Start a private room →
+      <Link
+        className="room-callout"
+        to="/room"
+        aria-label="Different screens? Start a private room →"
+      >
+        Private room
       </Link>
     </Frame>
   );

@@ -93,9 +93,10 @@ test('Mafia five-browser room protects roles, restores the host and resolves a c
       );
     expect(spy).toBeGreaterThanOrEqual(0);
     expect(victim).toBeGreaterThanOrEqual(0);
-    expect((await new AxeBuilder({ page: host }).analyze()).violations).toEqual(
-      [],
-    );
+    for (const player of players)
+      expect(
+        (await new AxeBuilder({ page: player }).analyze()).violations,
+      ).toEqual([]);
     for (let i = 0; i < 5; i++)
       await expect(players[i].locator('.mafia-role')).not.toContainText(
         roles.filter((_, j) => j !== i).join(', '),
@@ -135,6 +136,10 @@ test('Mafia five-browser room protects roles, restores the host and resolves a c
         await expect(players[i].getByText('My private case file')).toHaveCount(
           0,
         );
+    await players[detective]
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Close menu' })
+      .click();
     await host
       .getByRole('button', { name: 'End discussion · open secret vote' })
       .click();

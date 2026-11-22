@@ -284,7 +284,7 @@ test('Simon plays distinct sequence notes and mute silences both playback and co
   await page.clock.runFor(1000);
   await page
     .getByRole('button', {
-      name: `Play ${['Red', 'Blue', 'Yellow', 'Green'][state.sequence[0]]} pad`,
+      name: `Play ${state.sequence[0] + 1} ${['Red', 'Blue', 'Yellow', 'Green'][state.sequence[0]]} pad`,
     })
     .click();
   await expect(

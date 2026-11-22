@@ -128,8 +128,12 @@ export function BusinessGame() {
         <BusinessOptionsForm options={options} onChange={setOptions} />
       }
       setupExtra={
-        <Link className="room-callout" to="/room?game=business">
-          Different screens? Start a private room →
+        <Link
+          className="room-callout"
+          to="/room?game=business"
+          aria-label="Different screens? Start a private room →"
+        >
+          Private room
         </Link>
       }
       after={

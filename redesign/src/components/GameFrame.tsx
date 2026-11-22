@@ -1,3 +1,4 @@
+import { GameMenu } from './GameMenu.tsx';
 import { GameArt } from './GameArt.tsx';
 import { useMemo, useRef, useState } from 'react';
 import { localCue } from '../lib/game-feedback.ts';
@@ -126,12 +127,20 @@ export function Frame<T extends object>({
       .filter(Boolean)
       .join(' · ');
   return (
-    <section className={`play-page puzzle-page puzzle-${run.id}`}>
+    <section
+      className={`play-page puzzle-page puzzle-${run.id} ${run.state ? 'is-playing' : 'is-setup'}`}
+    >
       <Link className="back" to="/">
         ← All games
       </Link>
       <div className="game-heading">
         <h1>{game.name}</h1>
+        <GameMenu label="Game menu">
+          <details>
+            <summary>How to play</summary>
+            <p>{help}</p>
+          </details>
+        </GameMenu>
         {run.state && (
           <button className="quiet" onClick={run.reset}>
             New match
@@ -140,7 +149,7 @@ export function Frame<T extends object>({
       </div>
       {!run.state ? (
         <div className="puzzle-setup">
-          <p className="lede">{summary}</p>
+          <p className="lede setup-description">{summary}</p>
           <div className="setup-card">
             {selection && <p className="setup-selection">{selection}</p>}
             <button className="primary setup-start" onClick={run.start}>
@@ -175,10 +184,6 @@ export function Frame<T extends object>({
           </div>
           {setupExtra}
           <GameArt id={run.id} className="puzzle-setup-art" />
-          <details className="help-card">
-            <summary>How to play</summary>
-            <p>{help}</p>
-          </details>
         </div>
       ) : (
         <div className="puzzle-play">
@@ -187,19 +192,28 @@ export function Frame<T extends object>({
             aria-busy={run.saving}
             inert={run.saving}
           >
-            <div className="turn-banner" role="status">
+            <div
+              className={`turn-banner ${run.id === 'strands' && title === 'Strands' ? 'sr-only' : ''}`}
+              role="status"
+            >
               <div>
                 <h2>{title}</h2>
-                <p>{status}</p>
+                <p
+                  className={
+                    status ===
+                      'Play at your pace. Your progress is saved on this device.' ||
+                    status === 'A completed puzzle. Nicely done.'
+                      ? 'sr-only'
+                      : 'game-status-detail'
+                  }
+                >
+                  {status}
+                </p>
               </div>
             </div>
             {children}
             {after}
           </div>
-          <details className="help-card">
-            <summary>How to play</summary>
-            <p>{help}</p>
-          </details>
         </div>
       )}
     </section>

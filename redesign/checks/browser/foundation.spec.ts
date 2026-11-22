@@ -89,7 +89,7 @@ test('local match saves names, resumes from home, announces O win once and remat
     });
   await cell(1, 1).click();
   await cell(2, 1).click();
-  await page.getByRole('link', { name: 'All games' }).click();
+  await page.getByRole('link', { name: 'Arcade home' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Pick a game. Press play.',
   );
@@ -175,7 +175,7 @@ test('AI draw, keyboard board controls, reload and stale timer disposal', async 
   await page.clock.pauseAt(new Date('2026-01-01T11:00:00Z'));
   await page.getByRole('button', { name: 'Play again' }).click();
   await first.click();
-  await page.getByRole('link', { name: 'All games' }).click();
+  await page.getByRole('link', { name: 'Arcade home' }).click();
   await expect(
     page.getByRole('heading', { name: 'Pick a game. Press play.' }),
   ).toBeVisible();

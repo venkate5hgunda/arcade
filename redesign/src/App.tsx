@@ -413,8 +413,6 @@ function Shell() {
         <Link className="brand" to="/">
           ARCADE<span aria-hidden="true">✦</span>
         </Link>
-        <p>Good games. Better together.</p>
-        <Link to="/requirements/A01">Parity &amp; verification</Link>
       </footer>
     </>
   );
