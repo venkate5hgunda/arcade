@@ -77,3 +77,5 @@ Final editorial validation: production build, formatting, root tests (31), redes
 Compact phone matches use the persistent Arcade home link to exit, avoiding a duplicate back row above the board. Navigation and all-game phone-width checks exercise that visible control, including keyboard activation outside the Pool table.
 
 Mobile release CI found a role-dependent Mafia contrast gap: dark legacy panels conflicted with the shared light control text. Hero and action panels now use the shared surface/ink tokens, while the private role card retains its distinct dark treatment. The five-browser test checks accessibility for every role instead of whichever role the host happens to receive.
+
+Accepted-word, menu and letter-reveal feedback uses transform motion without fading textual content. This keeps contrast stable throughout an animation, including when a cooperative room receives a new word during an accessibility scan. A browser check freezes word arrival mid-animation and verifies opacity and contrast.

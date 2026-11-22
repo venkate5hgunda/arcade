@@ -5,6 +5,8 @@ building Arcade, so no context is lost between sessions.
 
 ## Unreleased
 
+- Preserve full text contrast throughout word, letter and menu motion; add a mid-animation accessibility check.
+
 - Keep Mafia role-dependent action panels and revealed player tags readable in both themes; verify every private seat in the multi-browser accessibility check.
 
 - Overhaul the shared catalog, setup and in-game presentation with an original editorial design inspired by the supplied game recording. Replace decorative table shells with clean surfaces, add accessible modal menus for secondary details, compact phone layouts and staggered word reveals. Preserve game rules, canvas physics, saved games, room protocols and reduced-motion behavior.
