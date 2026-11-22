@@ -75,3 +75,5 @@ Regression coverage: `redesign/checks/browser/editorial.spec.ts` checks the enti
 Final editorial validation: production build, formatting, root tests (31), redesign inventory (5) and domain tests (114) pass. The broad desktop browser run and correction reruns cover 137 scenarios, with three existing platform-specific skips. Final phone-width accessibility, popup focus and spectator checks pass. Native WebKit remains blocked by missing system libraries. See the root `design-qa.md` for evidence and limitations.
 
 Compact phone matches use the persistent Arcade home link to exit, avoiding a duplicate back row above the board. Navigation and all-game phone-width checks exercise that visible control, including keyboard activation outside the Pool table.
+
+Mobile release CI found a role-dependent Mafia contrast gap: dark legacy panels conflicted with the shared light control text. Hero and action panels now use the shared surface/ink tokens, while the private role card retains its distinct dark treatment. The five-browser test checks accessibility for every role instead of whichever role the host happens to receive.

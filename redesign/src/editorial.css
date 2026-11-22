@@ -725,3 +725,24 @@ body:has(dialog[open]) {
 .taboo-clock {
   color: var(--ink);
 }
+/* Role-dependent Mafia controls share the surrounding editorial surface. */
+.mafia-hero,
+.mafia-panel {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.mafia-hero h2 {
+  color: var(--ink);
+}
+.mafia-hero .eyebrow {
+  color: var(--muted);
+}
+.mafia-role {
+  color: #fff5e5;
+}
+.mafia-reveal span {
+  background: var(--selected);
+  color: var(--ink);
+}
